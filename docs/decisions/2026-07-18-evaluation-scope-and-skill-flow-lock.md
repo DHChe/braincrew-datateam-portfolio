@@ -70,6 +70,16 @@ existing Braincrew research and AX_portfolio context
 
 Ask Matt determines how the work moves from evidence and clarified requirements into specification, tickets, implementation, and review. It is not the source of each incremental design-approval question.
 
+### Workflow navigation and recovery contract
+
+The locked route must remain visible to the user and recoverable without relying on conversation memory.
+
+- Announce the active skill or workflow before it begins, including its purpose, expected artifact, and completion condition.
+- When a step completes, report the evidence of completion and identify the exact next skill or action with its entry condition.
+- Do not silently substitute `to-prd`, `writing-plans`, `ralplan`, or another parallel planning surface for the Ask Matt route. A supporting skill may be used only for a specific gap inside the current step, and the handoff back to the canonical route must be explicit.
+- Record every canonical phase transition in `docs/status/braincrew-delivery-workflow.md`, including completed evidence, the active phase, the next phase, and any blocker.
+- Git branch, commit, push, pull-request, and merge actions follow the repository's Git Lifecycle Proposal Gate; they do not replace or implicitly advance a skill phase.
+
 ## 5. Non-negotiable wording for the final submission
 
 Preferred claim:

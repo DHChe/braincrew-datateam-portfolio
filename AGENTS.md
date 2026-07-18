@@ -36,6 +36,17 @@ These rules apply only inside this repository. They govern the final answer rega
 - Preserve exact file names, commands, schema fields, and code identifiers when needed, but explain their role in ordinary language beside them.
 - Prefer short sections, concrete examples, and simple sentences over dense jargon. Do not hide uncertainty or weaken technical accuracy merely to simplify wording.
 
+## Skill Workflow Navigation Contract
+
+The canonical delivery route is the locked Ask Matt flow documented in `docs/decisions/2026-07-18-evaluation-scope-and-skill-flow-lock.md`: setup or verify the Matt Pocock skills, run `to-spec`, run `to-tickets`, then execute each ready ticket in fresh context with TDD and code review before the full benchmark and submission verification.
+
+- Before taking task actions with a skill or workflow, tell the user the active skill or workflow, why it applies now, the artifact it should produce, and the condition that will make the step complete.
+- If the active skill or workflow changes, announce the transition before acting. Never silently replace the locked Ask Matt route with a parallel planning workflow such as `to-prd`, `writing-plans`, or `ralplan`.
+- Use a parallel or supporting skill only when it fills a concrete gap inside the current canonical step. Explain its limited role and return explicitly to the locked route afterward.
+- When one skill or workflow step finishes, report its completion evidence and name the exact next skill or action, why it follows, and what must be true before it starts.
+- Update `docs/status/braincrew-delivery-workflow.md` whenever the canonical delivery phase starts, completes, becomes blocked, or changes. Keep completed phases and their evidence visible so both the user and future agents can recover the route without relying on conversation memory.
+- A Git lifecycle action is not a workflow phase transition. Continue to follow the separate Git Lifecycle Proposal Gate for commits, pushes, pull requests, and merges.
+
 ## Git Lifecycle Proposal Gate
 
 For this repository, agents must actively propose the next Git lifecycle action whenever it is warranted; they must not silently leave completed work uncommitted or remotely unintegrated.
