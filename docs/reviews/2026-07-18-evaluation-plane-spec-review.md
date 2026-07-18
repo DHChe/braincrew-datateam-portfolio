@@ -63,3 +63,7 @@ Verified. The metric claimed to score all generated claim atoms, but ordinary ca
 Verified. The schedule's old “pin candidate SUT SHA” phrase could be read as authorizing a product-code change even though `candidate-plan-v1` freezes the AX SHA and varies only `evidence_limit`. Day 8 now explicitly reuses the pinned baseline SUT SHA and freezes the candidate configuration. A product-code candidate remains a separate versioned experiment.
 
 These corrections require independent specification re-review before the written design returns to user approval.
+
+### B and C re-review iteration 1
+
+The reviewer confirmed B's full generated-field traversal and C's same-SHA schedule, but found one deterministic wording mismatch: claim-support treated both absent and empty required-output paths as failures while citation coverage named only absent paths. Both citation-coverage formulas now retain every absent or empty required-output path in the denominator.

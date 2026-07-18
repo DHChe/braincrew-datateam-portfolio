@@ -377,7 +377,7 @@ An atom mapping to no proposition is `A-UNMAPPED-CLAIM`; mapping to multiple pro
 
 For a high-risk case, a matched conclusive proposition that is forbidden, unsupported, or contradicted emits `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`. Any ambiguous or unmapped atom on any path covered by derived `high-risk-guard-v1` emits the same critical identity. Both conditions fail Gate 1. This derived coverage makes the decision deterministic even when unknown text cannot be labeled conclusive by a proposition matcher, prevents case-author omissions, and prevents novel high-risk wording from receiving a passing score. Supplementary LLM-judge output may help a human review unmatched language, but it cannot change the deterministic score or gate.
 
-Citation coverage, a secondary metric, is generated claim paths from `claim-traversal-v1` with at least one linked citation / all generated claim paths, plus any absent required-output path in the denominator. It is intentionally separate from claim-support precision.
+Citation coverage, a secondary metric, is generated claim paths from `claim-traversal-v1` with at least one linked citation / all generated claim paths, plus every absent or empty required-output path in the denominator. It is intentionally separate from claim-support precision.
 
 For grounded-answer cases, zero returned citations produce citation precision `0`. A primary metric with zero applicable cases is unavailable and makes the run `INVALID`. Any applicable case that cannot be scored because required observation fields are missing makes the run `INVALID`; it is never removed from the denominator.
 
