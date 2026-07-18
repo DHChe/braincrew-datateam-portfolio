@@ -252,7 +252,7 @@ Each case contains structured ground truth rather than only a free-form referenc
 - expected EvidenceSpans and acceptable alternative evidence;
 - forbidden evidence and visibility constraints;
 - expected Answer Mode;
-- versioned proposition catalog, required claim paths, high-risk conclusion paths, and forbidden propositions;
+- versioned proposition catalog, required claim paths, and forbidden propositions;
 - evaluator configuration and applicability conditions;
 - difficulty and adversarial tags;
 - public or synthetic provenance and license metadata;
@@ -352,7 +352,6 @@ Claim support is a closed-world, deterministic contract over the frozen evaluati
 - `polarity`: `affirmed` or `denied`;
 - `modality`: `must`, `may`, `must_not`, `unknown`, or `review_required`;
 - `risk_level` and `conclusive`: whether the assertion can trigger a high-risk gate;
-- case-level `high_risk_conclusion_paths`: exact structured-answer paths where unrecognized language must fail closed;
 - normalized literal or regular-expression surface matchers with their own digest;
 - `supports`: acceptable evidence groups whose text supports this exact proposition;
 - `contradicts`: evidence groups whose text supports the opposite proposition;
@@ -360,20 +359,21 @@ Claim support is a closed-world, deterministic contract over the frozen evaluati
 
 The evaluator creates a stable atom identity `(claim_path, atom_index, normalized_text_digest)`. List elements are already separate paths. Scalar `summary` and `answer` values are split on normalized newlines and the terminal punctuation characters `.`, `?`, `!`, `。`, `？`, and `！`; empty segments are removed. Support-required paths are `summary`, `answer`, and every `grounds[i]`; a case may additionally mark exact `review_points[i]`, `additional_checks[i]`, or `risk_warning` paths.
 
+For high-risk gating, `high-risk-guard-v1` derives its coverage from the returned answer rather than trusting a case-authored list. It atomizes every non-empty generated path in `summary`, `answer`, `grounds[*]`, `review_points[*]`, `additional_checks[*]`, and `risk_warning`. A dataset author cannot remove any of these paths. Schema validation rejects a high-risk evaluator configuration that overrides or narrows this derived coverage.
+
 `claim-normalizer-v1` applies Unicode NFC normalization, converts CRLF to LF, trims leading and trailing whitespace, collapses internal whitespace, and normalizes only declared punctuation variants. It performs no stemming, stop-word deletion, embedding similarity, or negation/modality removal. Matchers use anchored whole-atom literal equality or anchored bounded regular expressions. The atomizer, normalizer, matcher-set version, proposition catalog digest, and case catalog digest are comparison compatibility fields.
 
 The deterministic support predicate is true only when all of the following hold:
 
 1. the atom maps to exactly one proposition;
-2. a returned citation declares the atom's exact claim path;
-3. the citation identity belongs to the proposition's `supports` evidence groups;
-4. the same citation does not belong to the proposition's `contradicts` groups;
-5. the proposition's polarity, modality, and allowed Answer Mode match the case contract;
-6. no forbidden proposition is present in the same atom.
+2. at least one returned citation declares the atom's exact parent claim path and belongs to the proposition's `supports` evidence groups;
+3. no returned citation declaring that parent claim path belongs to the proposition's `contradicts` evidence groups;
+4. the proposition's polarity, modality, and allowed Answer Mode match the case contract;
+5. no forbidden proposition is present in the same atom.
 
 An atom mapping to no proposition is `A-UNMAPPED-CLAIM`; mapping to multiple propositions is `A-AMBIGUOUS-CLAIM`; citing no supporting evidence is `A-UNSUPPORTED-CLAIM`; and citing contradictory evidence is `A-CONTRADICTED-CLAIM`. All four remain in the metric denominator with score `0`; none may be dropped as inapplicable. An empty support-required path is also an unsupported atom when the case requires content there.
 
-For a high-risk case, a matched conclusive proposition that is forbidden, unsupported, or contradicted emits `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`. Any ambiguous or unmapped atom occurring in a declared `high_risk_conclusion_paths` location emits the same critical identity. Both conditions fail Gate 1. This path policy makes the decision deterministic even when unknown text cannot be labeled conclusive by a proposition matcher, and prevents novel high-risk wording from receiving a passing score. Supplementary LLM-judge output may help a human review unmatched language, but it cannot change the deterministic score or gate.
+For a high-risk case, a matched conclusive proposition that is forbidden, unsupported, or contradicted emits `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`. Any ambiguous or unmapped atom on any path covered by derived `high-risk-guard-v1` emits the same critical identity. Both conditions fail Gate 1. This derived coverage makes the decision deterministic even when unknown text cannot be labeled conclusive by a proposition matcher, prevents case-author omissions, and prevents novel high-risk wording from receiving a passing score. Supplementary LLM-judge output may help a human review unmatched language, but it cannot change the deterministic score or gate.
 
 Citation coverage, a secondary metric, is support-required claim paths with at least one linked citation / all support-required claim paths regardless of semantic support. It is intentionally separate from claim-support precision.
 
@@ -383,7 +383,7 @@ Returned rank is array order. Duplicate evidence or citation identities keep the
 
 Calculations retain exact integer counts and rational division through gate comparison. Gate deltas use unrounded values. Stored display values round half-even to four decimal places, and displayed percentages round half-even to two decimal places.
 
-Each primary metric has at least one hand-calculated golden fixture containing its case numerator, denominator, case score, macro aggregate, and expected gate delta. Claim-support fixtures must include at least one supported atom, one contradiction using a correct document identity, one negation or modality reversal, one unmapped atom, one ambiguous atom, and one high-risk fail-closed result.
+Each primary metric has at least one hand-calculated golden fixture containing its case numerator, denominator, case score, macro aggregate, and expected gate delta. Claim-support fixtures must include at least one supported atom, one contradiction using a correct document identity, one atom with both supporting and contradicting citations, one negation or modality reversal, one unmapped atom, one ambiguous atom, one omitted-case-configuration attempt rejected by derived high-risk coverage, and one high-risk fail-closed result.
 
 ### Gate 1: non-negotiable hard failures
 

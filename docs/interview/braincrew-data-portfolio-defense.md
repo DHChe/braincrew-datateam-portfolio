@@ -145,7 +145,7 @@ Primary quality metrics:
 : EvidenceSpan recovery rate, Recall@5, claim-support precision, citation precision, Answer Mode accuracy, and abstention accuracy.
 
 Semantic-support boundary:
-: Claim-support is not inferred merely from a linked document. Each frozen case defines a closed-world proposition catalog with polarity, modality, supporting and contradicting evidence, and deterministic Korean surface matchers. A generated claim atom passes only when its meaning, citation, evidence stance, and Answer Mode agree.
+: Claim-support is not inferred merely from a linked document. Each frozen case defines a closed-world proposition catalog with polarity, modality, supporting and contradicting evidence, and deterministic Korean surface matchers. A generated claim atom passes only when its meaning, citation, evidence stance, and Answer Mode agree. Any contradictory citation linked to the same path makes the atom fail even when another citation supports it.
 
 Concrete example:
 : If a rule says immediate dismissal is prohibited, an answer saying “dismiss immediately” fails even when it cites that exact rule. The evidence identity is correct, but its stance contradicts the generated proposition.
@@ -181,7 +181,7 @@ Likely follow-ups:
 - "Can latency gains compensate for quality loss?" — Only within the 2-point limit and never for a hard failure.
 - "Why not let an LLM judge decide semantic quality?" — It can help analyze nuance, but model drift and judge bias make it unsuitable as the sole release authority.
 - "Is a correct citation enough to call a claim grounded?" — No. Citation coverage checks linkage only. Claim-support additionally requires a deterministic proposition match, correct polarity and modality, supporting rather than contradicting evidence, and an allowed Answer Mode.
-- "How is a high-risk unsupported conclusion detected reproducibly?" — The case declares high risk and a versioned proposition catalog. Unsupported, contradicted, ambiguous, or unmapped conclusive atoms fail closed and emit the deterministic critical identity.
+- "How is a high-risk unsupported conclusion detected reproducibly?" — The case declares high risk and a versioned proposition catalog. The evaluator automatically inspects every generated structured-answer path, so a dataset author cannot omit a path. Unsupported or contradicted matched conclusions and every ambiguous or unmapped high-risk atom fail closed and emit the deterministic critical identity.
 - "Does this understand every possible Korean sentence?" — No. It is a closed-world regression contract for the frozen dataset. Unknown wording receives no credit and high-risk unknown conclusions fail closed; an LLM judge may assist review but never changes the gate.
 
 ### D7. Fail closed and preserve a complete run manifest

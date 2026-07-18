@@ -38,3 +38,7 @@ The independent-review budget is exhausted. The branch must not be pushed, opene
 The user selected option A: a versioned claim-proposition contract with deterministic semantic-support predicates. `metric-contract-v2` now separates citation linkage from claim support, preserves unsupported or unrecognized claims in the denominator, and fails closed on unscorable high-risk conclusions.
 
 This decision starts a new independent specification review cycle. The earlier final verdict remains preserved as historical evidence and is not rewritten as an approval.
+
+### New cycle iteration 1
+
+The reviewer found two critical consistency gaps: mixed supporting and contradicting citations could produce different outcomes across the canonical documents, and manually authored high-risk path coverage could omit a generated answer path. The repair makes any linked contradiction fail support and derives high-risk guard coverage from every generated structured-answer path rather than a case-authored list.
