@@ -71,3 +71,7 @@ The reviewer confirmed B's full generated-field traversal and C's same-SHA sched
 ### B and C re-review iteration 2
 
 The reviewer found one remaining stale sentence in the formal design that described the required-output placeholder as absent-only. It now uses the same absent-or-empty rule as the formulas and canonical decision.
+
+### B and C re-review iteration 3
+
+`APPROVED` at `1bf9aab`. The reviewer confirmed that absent and empty required-output paths fail the same denominators, ordinary and high-risk cases share immutable all-field traversal, and Day 8 explicitly reuses the pinned baseline AX SUT SHA.
