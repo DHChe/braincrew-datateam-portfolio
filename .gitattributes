@@ -1,0 +1,2 @@
+*.md whitespace=-blank-at-eol,-blank-at-eof
+*.vtt whitespace=-blank-at-eol,-blank-at-eof
