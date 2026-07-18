@@ -324,6 +324,35 @@ The primary quality metrics used for regression and improvement decisions are:
 
 All percentage changes in quality gates are percentage-point changes. Latency and cost limits are relative percentage changes.
 
+### `metric-contract-v1`
+
+All gate-authoritative primary metrics use case-level macro aggregation. Each applicable case produces a score in `[0, 1]`; the dataset score is the arithmetic mean of case scores, with every applicable case weighted equally. Micro-pooling across claims, spans, or citations is prohibited.
+
+Gold evidence is stored as requirement groups. Each group contains one or more exact acceptable alternatives. Matching uses canonical identity, not fuzzy semantic overlap:
+
+- parsing spans match `(document_id, source_text_digest, start_char, end_char)`;
+- retrieval and citation evidence match `(record_kind, record_id, evidence_span_id, source_text_digest)`, with explicitly nullable tuple members compared as stored;
+- an expected group is satisfied when any one declared alternative matches.
+
+Primary formulas are:
+
+- EvidenceSpan recovery case score = matched required span groups / required span groups;
+- Recall@5 case score = required evidence groups represented at least once in the first five unique returned evidence identities / required evidence groups;
+- claim-support precision case score = generated support-required claim paths with at least one linked citation matching that claim's acceptable evidence group / all generated support-required claim paths;
+- citation precision case score = unique returned citations that match at least one acceptable evidence alternative for one of their declared existing claim paths / all unique returned citations;
+- Answer Mode accuracy case score = `1` when the normalized returned enum exactly equals the case's expected enum, otherwise `0`;
+- abstention accuracy case score = `1` only when the required abstention mode matches and no case-declared forbidden conclusive claim is present, otherwise `0`.
+
+Support-required claim paths are `summary`, `answer`, and every `grounds[i]`; a case may additionally mark exact `review_points[i]`, `additional_checks[i]`, or `risk_warning` paths as support-required. Citation coverage, a secondary metric, is support-required claim paths with at least one linked citation / all support-required claim paths regardless of evidence acceptability.
+
+For grounded-answer cases, zero returned citations produce citation precision `0`. A primary metric with zero applicable cases is unavailable and makes the run `INVALID`. Any applicable case that cannot be scored because required observation fields are missing makes the run `INVALID`; it is never removed from the denominator.
+
+Returned rank is array order. Duplicate evidence or citation identities keep their first occurrence and later duplicates are ignored. MRR@10 uses the reciprocal rank of the first unique result satisfying any required evidence group, or `0` if none appears in the first ten.
+
+Calculations retain exact integer counts and rational division through gate comparison. Gate deltas use unrounded values. Stored display values round half-even to four decimal places, and displayed percentages round half-even to two decimal places.
+
+Each primary metric has at least one hand-calculated golden fixture containing its case numerator, denominator, case score, macro aggregate, and expected gate delta.
+
 ### Gate 1: non-negotiable hard failures
 
 The candidate fails if the Verification split contains any of the following:
@@ -406,7 +435,7 @@ Secrets, credentials, personal information, and private document content are red
 - Results and manifests are append-only. Corrections create a new run and, where applicable, a new version.
 - A partial run may support diagnosis but never release evidence.
 - Missing compatibility or provenance fails closed as `INVALID`; the dashboard must display unavailable data rather than fabricate a comparison.
-- The repository provides one documented command that can reproduce a run from its manifest, subject to external model availability and credentials.
+- The repository provides one documented command that performs deterministic artifact replay or a separately labeled best-effort live rerun from a manifest, subject to external model availability and credentials.
 
 “Reproduction” has two explicit modes:
 
@@ -502,7 +531,7 @@ Day 9  Static dashboard, README, reproduction and interview dossier completion
 Day 10 Independent QA, demo video, resume bullets and release pull request
 ```
 
-`candidate-plan-v1` is an immediately executable retrieval-depth comparison over the existing AX HTTP contract: baseline uses `top_k=3`, candidate uses the product default `top_k=5`, while SUT SHA, corpus, model, prompt, role, evaluator, and thresholds remain fixed. It is described as a configuration experiment, not a product-code improvement. A later product-fix candidate may be added as a separate versioned experiment but cannot silently replace this frozen pair.
+`candidate-plan-v1` is an immediately executable answer-context-depth comparison over the existing AX HTTP contract. Both runs retrieve with `top_k=5`; baseline passes `evidence_limit=3` and candidate passes the product default `evidence_limit=5`. SUT SHA, corpus, model, prompt, role, evaluator, thresholds, and retrieval measurement depth remain fixed. It is described as a configuration experiment, not a product-code improvement. Retrieval metrics are expected to remain identical and are retained as a confound check. A later product-fix candidate may be added as a separate versioned experiment but cannot silently replace this frozen pair.
 
 Day 1 preflight must prove `/health/ready`, retrieval, answer, role visibility, synthetic corpus identity, and parsed-artifact observability. If parsed artifacts require the allowed local/test-only endpoint, that endpoint is the only AX evaluation-unblocking priority on Days 1–2. Failure to make it observable by the end of Day 2 is a go/no-go failure for the locked parsing acceptance criteria; dashboard ornamentation and supplementary LLM-judge work are cut before any evidence, coverage, or live-Verification requirement.
 

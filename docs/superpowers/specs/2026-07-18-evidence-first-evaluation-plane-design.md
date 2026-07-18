@@ -1,7 +1,7 @@
 # Evidence-First HR/Labor RAG Evaluation Plane — Design
 
 Date: 2026-07-18  
-Status: User-approved design; pending independent specification review
+Status: User-approved design; independent specification review in progress
 
 ## 1. Objective
 
@@ -208,6 +208,21 @@ Operational metrics:
 
 Primary quality metrics are EvidenceSpan recovery, Recall@5, claim-support precision, citation precision, Answer Mode accuracy, and abstention accuracy.
 
+### Metric contract v1
+
+Every primary metric is a case score in `[0, 1]`; dataset results are unweighted macro means over applicable cases. Micro-pooling is prohibited. Gold evidence uses requirement groups with exact acceptable alternatives. Parsing spans match document ID, source digest, and inclusive/exclusive code-point offsets. Retrieval and citations match record kind, record ID, span ID, and source digest. Any declared alternative satisfies its group.
+
+- EvidenceSpan recovery = matched required span groups / required span groups.
+- Recall@5 = required evidence groups appearing in the first five unique returned evidence identities / required evidence groups.
+- Claim-support precision = generated support-required claim paths with a linked citation matching that claim's acceptable evidence / all generated support-required claim paths.
+- Citation precision = unique citations matching acceptable evidence for one of their declared existing claim paths / all unique citations.
+- Answer Mode accuracy is exact normalized-enum equality.
+- Abstention accuracy requires the expected abstention mode and absence of case-declared forbidden conclusive claims.
+
+`summary`, `answer`, and `grounds[i]` are support-required; cases may add other exact structured paths. Secondary citation coverage measures paths with any linked citation regardless of acceptability. Grounded cases with no citations score citation precision `0`. Zero applicable cases, missing required observation fields, or any unscorable applicable case makes the run `INVALID`.
+
+Array order defines rank; duplicate identities keep the first occurrence. MRR@10 is reciprocal rank of the first unique relevant result or zero. Gates use unrounded exact counts and rational divisions. Stored decimals use half-even four-place display rounding and percentages use half-even two-place display rounding. Each primary metric requires a hand-calculated golden containing case and macro calculations plus expected gate delta.
+
 ## 11. Release gates
 
 Quality deltas use percentage points. Latency and cost deltas use relative percentages.
@@ -298,7 +313,7 @@ Day 9  Dashboard, README, reproduction and interview dossier
 Day 10 Independent QA, demo, resume bullets and release PR
 ```
 
-The guaranteed first experiment is `candidate-plan-v1`: baseline `top_k=3` versus candidate `top_k=5` through the existing retrieval and answer endpoints. SUT SHA, corpus, model, prompt, roles, evaluators, and thresholds stay fixed. This is labeled a retrieval-depth configuration experiment. A product-code candidate may be evaluated separately but cannot replace the frozen pair without a new candidate-plan version.
+The guaranteed first experiment is `candidate-plan-v1`: both runs use `top_k=5`; baseline uses `evidence_limit=3` and candidate uses `evidence_limit=5` through the existing answer endpoint. SUT SHA, corpus, model, prompt, roles, evaluators, thresholds, and retrieval depth stay fixed. This is labeled an answer-context-depth configuration experiment. Retrieval metrics must remain identical as a confound check. A product-code candidate may be evaluated separately but cannot replace the frozen pair without a new candidate-plan version.
 
 Day 1 preflight verifies health, retrieval, answer, role visibility, synthetic corpus identity, and parsed-artifact observability. If parsing needs the permitted local/test-only observation endpoint, it is the sole AX unblocking priority through Day 2. Missing that checkpoint is a no-go for the locked parsing acceptance criteria; dashboard ornamentation and supplementary judge analysis are cut before any evidence requirement.
 

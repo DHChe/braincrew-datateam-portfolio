@@ -260,7 +260,7 @@ Schedule rationale:
 : Contracts and dataset cases begin before UI work. A baseline is run before candidate improvement. The dashboard is built from validated artifacts only after the evidence pipeline exists. Submission QA and storytelling occupy dedicated final days instead of being treated as leftover work.
 
 Frozen first comparison:
-: The existing AX API supports an immediate `top_k=3` baseline and `top_k=5` candidate while holding SUT SHA and other contracts constant. This guarantees an honest configuration experiment even if no product-code fix is ready; a failed candidate remains valid evidence.
+: The existing AX API supports an immediate `evidence_limit=3` baseline and `evidence_limit=5` candidate while both retrieve with `top_k=5` and hold SUT SHA and other contracts constant. This guarantees an honest answer-context configuration experiment without changing retrieval measurement opportunity; a failed candidate remains valid evidence.
 
 Rejected alternative:
 : Build the dashboard first and backfill evaluation data later. It would optimize visible progress while leaving the core evidence and failure analysis at highest schedule risk.
@@ -280,7 +280,8 @@ Likely follow-ups:
 - "What would you cut first if behind?" — Dashboard ornamentation and supplementary LLM-judge analysis, not provenance, live Verification, critical gates, or failure analysis.
 - "Why is the dashboard late in the schedule?" — It must render validated evidence rather than drive the design of the evaluation system.
 - "How do you know the project is complete?" — Every submission claim maps to versioned evidence, the full Verification run is valid, reproduction passes cleanly, and the release gates produce an auditable decision.
-- "Why choose top-k as the first candidate?" — It is already executable through the current API, isolates one retrieval-depth variable, and can reveal whether added evidence justifies latency and cost. It is not misrepresented as a code improvement.
+- "Why choose evidence limit as the first candidate?" — It is already executable through the current API, keeps retrieval depth identical, and isolates whether transferring two more evidence items improves grounding enough to justify latency, token, and cost changes. It is not misrepresented as a code improvement.
+- "How do two engineers get the same metric?" — Metric contract v1 freezes case-level formulas, exact alternative matching, macro aggregation, duplicate and rank rules, zero-denominator behavior, and unrounded gate comparison, with hand-calculated goldens for every primary metric.
 
 ## Failure taxonomy defense
 
