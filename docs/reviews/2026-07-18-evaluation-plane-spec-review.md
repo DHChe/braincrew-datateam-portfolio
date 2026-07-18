@@ -67,3 +67,7 @@ These corrections require independent specification re-review before the written
 ### B and C re-review iteration 1
 
 The reviewer confirmed B's full generated-field traversal and C's same-SHA schedule, but found one deterministic wording mismatch: claim-support treated both absent and empty required-output paths as failures while citation coverage named only absent paths. Both citation-coverage formulas now retain every absent or empty required-output path in the denominator.
+
+### B and C re-review iteration 2
+
+The reviewer found one remaining stale sentence in the formal design that described the required-output placeholder as absent-only. It now uses the same absent-or-empty rule as the formulas and canonical decision.
