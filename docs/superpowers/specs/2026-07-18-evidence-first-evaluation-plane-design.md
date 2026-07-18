@@ -1,7 +1,7 @@
 # Evidence-First HR/Labor RAG Evaluation Plane — Design
 
 Date: 2026-07-18  
-Status: Blocked after final independent specification review; user decision required
+Status: User selected semantic-support option A; new independent specification review in progress
 
 ## 1. Objective
 
@@ -152,7 +152,7 @@ The Verification split is reproducible and frozen, not described as a secret sta
 
 Minimum applicable Verification denominators are 6 for EvidenceSpan recovery, 9 for Recall@5, 10 each for claim-support and citation precision, 15 for Answer Mode accuracy, and 5 for abstention accuracy. Actual denominators are reported. Falling below any primary minimum makes the run `INVALID`.
 
-Each case contains a stable identifier, dataset version, split, focus and tags, role, query, document references, corpus versions, expected and alternative EvidenceSpans, forbidden evidence, visibility rules, expected Answer Mode, required and forbidden claims, evaluator applicability, difficulty, provenance, license, and review history.
+Each case contains a stable identifier, dataset version, split, focus and tags, role, query, document references, corpus versions, expected and alternative EvidenceSpans, forbidden evidence, visibility rules, expected Answer Mode, a versioned proposition catalog, required claim paths, high-risk conclusion paths, forbidden propositions, evaluator applicability, difficulty, provenance, license, and review history.
 
 ## 9. Failure taxonomy
 
@@ -208,20 +208,32 @@ Operational metrics:
 
 Primary quality metrics are EvidenceSpan recovery, Recall@5, claim-support precision, citation precision, Answer Mode accuracy, and abstention accuracy.
 
-### Metric contract v1
+### Metric contract v2
 
 Every primary metric is a case score in `[0, 1]`; dataset results are unweighted macro means over applicable cases. Micro-pooling is prohibited. Gold evidence uses requirement groups with exact acceptable alternatives. Parsing spans match document ID, source digest, and inclusive/exclusive code-point offsets. Retrieval and citations match record kind, record ID, span ID, and source digest. Any declared alternative satisfies its group.
 
 - EvidenceSpan recovery = matched required span groups / required span groups.
 - Recall@5 = required evidence groups appearing in the first five unique returned evidence identities / required evidence groups.
-- Claim-support precision = generated support-required claim paths with a linked citation matching that claim's acceptable evidence / all generated support-required claim paths.
-- Citation precision = unique citations matching acceptable evidence for one of their declared existing claim paths / all unique citations.
+- Claim-support precision = supported generated claim atoms / all generated claim atoms. Unsupported, contradicted, ambiguous, and unmapped atoms remain in the denominator with score zero.
+- Citation precision = unique citations belonging to a matched proposition's supporting evidence groups for one of their declared existing claim paths / all unique citations.
 - Answer Mode accuracy is exact normalized-enum equality.
 - Abstention accuracy requires the expected abstention mode and absence of case-declared forbidden conclusive claims.
 
-`summary`, `answer`, and `grounds[i]` are support-required; cases may add other exact structured paths. Secondary citation coverage measures paths with any linked citation regardless of acceptability. Grounded cases with no citations score citation precision `0`. Zero applicable cases, missing required observation fields, or any unscorable applicable case makes the run `INVALID`.
+#### Claim-proposition contract v1
 
-Array order defines rank; duplicate identities keep the first occurrence. MRR@10 is reciprocal rank of the first unique relevant result or zero. Gates use unrounded exact counts and rational divisions. Stored decimals use half-even four-place display rounding and percentages use half-even two-place display rounding. Each primary metric requires a hand-calculated golden containing case and macro calculations plus expected gate delta.
+The first release uses a closed-world deterministic proposition catalog for the frozen dataset rather than claiming unrestricted natural-language understanding. Each case declares stable proposition IDs, subject/predicate/object concepts, affirmed or denied polarity, modality, risk and conclusion flags, versioned literal or regular-expression surface matchers, supporting and contradicting evidence groups, allowed or forbidden Answer Modes, and exact `high_risk_conclusion_paths` where unknown wording must fail closed.
+
+The evaluator gives every atom the stable identity `(claim_path, atom_index, normalized_text_digest)`. List entries are already separate structured paths. Scalar `summary` and `answer` values split on normalized newlines and `.`, `?`, `!`, `。`, `？`, or `！`. Normalization uses Unicode NFC, CRLF-to-LF conversion, edge trimming, internal whitespace collapse, and declared punctuation variants only; it never removes negation or modality and uses no stemming or embedding similarity. Matchers are anchored whole-atom literals or bounded regular expressions.
+
+An atom is supported only when it maps to exactly one proposition, its exact parent path has a citation, the citation belongs to the proposition's supporting evidence, no cited evidence contradicts it, polarity and modality match, the Answer Mode is allowed, and no forbidden proposition occurs in the atom. Atomizer, normalizer, matcher-set, and proposition-catalog versions and digests are required comparison compatibility fields.
+
+Unmapped, ambiguous, unsupported, and contradicted atoms receive score zero and remain in the denominator. A required empty path is unsupported. On a high-risk case, a matched conclusive proposition that is forbidden, unsupported, or contradicted fails closed as `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`; an ambiguous or unmapped atom on a declared `high_risk_conclusion_paths` location produces the same critical failure. An LLM judge may explain unmatched language but cannot alter the score or gate.
+
+Example: if rule 15 says that an employee cannot be dismissed immediately, the proposition “immediate dismissal is prohibited” lists rule 15 under `supports`, while “immediate dismissal is allowed” lists the same evidence under `contradicts` and is forbidden. An answer saying “dismiss immediately” with a citation to rule 15 therefore scores zero and triggers the high-risk gate even though it cited the correct document identity.
+
+Secondary citation coverage measures only whether paths have linked citations and is explicitly not semantic groundedness. Grounded cases with no citations score citation precision `0`. Zero applicable cases or missing required observation fields makes the run `INVALID`.
+
+Array order defines rank; duplicate identities keep the first occurrence. MRR@10 is reciprocal rank of the first unique relevant result or zero. Gates use unrounded exact counts and rational divisions. Stored decimals use half-even four-place display rounding and percentages use half-even two-place display rounding. Each primary metric requires a hand-calculated golden containing case and macro calculations plus expected gate delta. Claim-support goldens include a correct support, a correct-document contradiction, a negation or modality reversal, an unmapped atom, an ambiguous atom, and a high-risk fail-closed case.
 
 ## 11. Release gates
 
@@ -258,7 +270,7 @@ Every run records:
 
 - Evaluation Plane and AX commit SHAs and dirty flags;
 - dataset, split, and corpus identifiers and digests;
-- adapter, evaluator, and threshold versions and configuration digests;
+- adapter, evaluator, atomizer, claim normalizer, matcher set, proposition catalog, and threshold versions and configuration digests;
 - prompt hash, provider, model, and generation parameters;
 - dependency-lock and runtime-environment digests;
 - live or fixture mode;
@@ -294,9 +306,9 @@ PostgreSQL and pgvector remain in AX_portfolio. A local DuckDB database is dispo
 
 ## 15. Testing strategy
 
-Required layers are schema tests, hand-calculated metric goldens, relevant property tests, Adapter HTTP contracts, state and storage invariants, fixture-mode E2E, live AX smoke and Verification, dashboard export and browser checks, and clean Docker reproduction.
+Required layers are schema tests, hand-calculated metric goldens, claim atomization and proposition-matcher tests, relevant property tests, Adapter HTTP contracts, state and storage invariants, fixture-mode E2E, live AX smoke and Verification, dashboard export and browser checks, and clean Docker reproduction.
 
-Adversarial tests must prove retry limits, non-retryable invalidation, immutable results, comparison incompatibility rejection, fixture-live rejection, hard-gate safety failure, redaction, and complete 30-case live Verification.
+Adversarial tests must prove that a correct document with the opposite proposition fails support, negation and modality reversals fail, unknown high-risk wording fails closed, retry limits hold, non-retryable errors invalidate, results remain immutable, incompatible and fixture-live comparisons are rejected, hard-gate safety failures block release, exports are redacted, and all 30 live Verification cases execute.
 
 ## 16. Ten-day execution sequence
 

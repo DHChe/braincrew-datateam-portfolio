@@ -29,6 +29,12 @@ Minimum acceptable resolution:
 1. introduce a versioned claim-proposition contract and a deterministic claim-to-evidence support predicate; or
 2. rename the current metric to evidence-link precision and exclude it from groundedness claims and unsupported-conclusion gates.
 
-## Workflow stop
+## Historical workflow stop
 
 The independent-review budget is exhausted. The branch must not be pushed, opened as a pull request, merged, or used for implementation planning until the user chooses the semantic-support contract or explicitly accepts a narrower evidence-link scope. After that decision, the affected specification must be revised and independently reviewed under a new review cycle.
+
+## User resolution and new review cycle
+
+The user selected option A: a versioned claim-proposition contract with deterministic semantic-support predicates. `metric-contract-v2` now separates citation linkage from claim support, preserves unsupported or unrecognized claims in the denominator, and fails closed on unscorable high-risk conclusions.
+
+This decision starts a new independent specification review cycle. The earlier final verdict remains preserved as historical evidence and is not rewritten as an approval.

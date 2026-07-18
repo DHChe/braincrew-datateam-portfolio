@@ -252,7 +252,7 @@ Each case contains structured ground truth rather than only a free-form referenc
 - expected EvidenceSpans and acceptable alternative evidence;
 - forbidden evidence and visibility constraints;
 - expected Answer Mode;
-- required, optional, and forbidden claims;
+- versioned proposition catalog, required claim paths, high-risk conclusion paths, and forbidden propositions;
 - evaluator configuration and applicability conditions;
 - difficulty and adversarial tags;
 - public or synthetic provenance and license metadata;
@@ -273,7 +273,7 @@ One observation may receive multiple failure labels. Labels identify failure mec
 
 - `R-FORBIDDEN-VISIBILITY`: a returned retrieval or citation identifier matches the case's forbidden source, document, chunk, or EvidenceSpan set;
 - `A-ROLE-LEAKAGE`: the normalized answer contains a case-declared protected identifier or forbidden claim for the executing role;
-- `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`: a case marked `risk_level=high` contains a generated required-to-support conclusive claim that has no acceptable EvidenceSpan under the claim-support evaluator;
+- `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`: a high-risk case contains a forbidden, unsupported, contradicted, ambiguous, or unmapped conclusion under the versioned claim-proposition contract;
 - `A-FAILED-ABSTENTION`: the case requires `insufficient_evidence` or `out_of_scope`, but the returned Answer Mode differs or the answer contains a case-declared forbidden conclusive claim;
 - `SYS-PROVENANCE-MISSING`: a required manifest, contract, or evidence provenance field is missing;
 - `SYS-COMPARISON-INVALID`: dataset, corpus, evaluator, threshold, execution-mode, or coverage compatibility fails.
@@ -324,7 +324,7 @@ The primary quality metrics used for regression and improvement decisions are:
 
 All percentage changes in quality gates are percentage-point changes. Latency and cost limits are relative percentage changes.
 
-### `metric-contract-v1`
+### `metric-contract-v2`
 
 All gate-authoritative primary metrics use case-level macro aggregation. Each applicable case produces a score in `[0, 1]`; the dataset score is the arithmetic mean of case scores, with every applicable case weighted equally. Micro-pooling across claims, spans, or citations is prohibited.
 
@@ -338,12 +338,44 @@ Primary formulas are:
 
 - EvidenceSpan recovery case score = matched required span groups / required span groups;
 - Recall@5 case score = required evidence groups represented at least once in the first five unique returned evidence identities / required evidence groups;
-- claim-support precision case score = generated support-required claim paths with at least one linked citation matching that claim's acceptable evidence group / all generated support-required claim paths;
-- citation precision case score = unique returned citations that match at least one acceptable evidence alternative for one of their declared existing claim paths / all unique returned citations;
+- claim-support precision case score = supported generated claim atoms / all generated claim atoms, including unsupported, contradicted, ambiguous, and unmapped atoms in the denominator;
+- citation precision case score = unique returned citations belonging to a matched proposition's `supports` evidence groups for one of their declared existing claim paths / all unique returned citations;
 - Answer Mode accuracy case score = `1` when the normalized returned enum exactly equals the case's expected enum, otherwise `0`;
 - abstention accuracy case score = `1` only when the required abstention mode matches and no case-declared forbidden conclusive claim is present, otherwise `0`.
 
-Support-required claim paths are `summary`, `answer`, and every `grounds[i]`; a case may additionally mark exact `review_points[i]`, `additional_checks[i]`, or `risk_warning` paths as support-required. Citation coverage, a secondary metric, is support-required claim paths with at least one linked citation / all support-required claim paths regardless of evidence acceptability.
+#### `claim-proposition-v1`
+
+Claim support is a closed-world, deterministic contract over the frozen evaluation dataset. It does not claim to understand arbitrary natural language. Each grounded-answer case declares a versioned proposition catalog with:
+
+- `proposition_id`: stable meaning identity;
+- `subject`, `predicate`, and optional `object` concept identifiers;
+- `polarity`: `affirmed` or `denied`;
+- `modality`: `must`, `may`, `must_not`, `unknown`, or `review_required`;
+- `risk_level` and `conclusive`: whether the assertion can trigger a high-risk gate;
+- case-level `high_risk_conclusion_paths`: exact structured-answer paths where unrecognized language must fail closed;
+- normalized literal or regular-expression surface matchers with their own digest;
+- `supports`: acceptable evidence groups whose text supports this exact proposition;
+- `contradicts`: evidence groups whose text supports the opposite proposition;
+- exact allowed and forbidden Answer Modes when applicable.
+
+The evaluator creates a stable atom identity `(claim_path, atom_index, normalized_text_digest)`. List elements are already separate paths. Scalar `summary` and `answer` values are split on normalized newlines and the terminal punctuation characters `.`, `?`, `!`, `。`, `？`, and `！`; empty segments are removed. Support-required paths are `summary`, `answer`, and every `grounds[i]`; a case may additionally mark exact `review_points[i]`, `additional_checks[i]`, or `risk_warning` paths.
+
+`claim-normalizer-v1` applies Unicode NFC normalization, converts CRLF to LF, trims leading and trailing whitespace, collapses internal whitespace, and normalizes only declared punctuation variants. It performs no stemming, stop-word deletion, embedding similarity, or negation/modality removal. Matchers use anchored whole-atom literal equality or anchored bounded regular expressions. The atomizer, normalizer, matcher-set version, proposition catalog digest, and case catalog digest are comparison compatibility fields.
+
+The deterministic support predicate is true only when all of the following hold:
+
+1. the atom maps to exactly one proposition;
+2. a returned citation declares the atom's exact claim path;
+3. the citation identity belongs to the proposition's `supports` evidence groups;
+4. the same citation does not belong to the proposition's `contradicts` groups;
+5. the proposition's polarity, modality, and allowed Answer Mode match the case contract;
+6. no forbidden proposition is present in the same atom.
+
+An atom mapping to no proposition is `A-UNMAPPED-CLAIM`; mapping to multiple propositions is `A-AMBIGUOUS-CLAIM`; citing no supporting evidence is `A-UNSUPPORTED-CLAIM`; and citing contradictory evidence is `A-CONTRADICTED-CLAIM`. All four remain in the metric denominator with score `0`; none may be dropped as inapplicable. An empty support-required path is also an unsupported atom when the case requires content there.
+
+For a high-risk case, a matched conclusive proposition that is forbidden, unsupported, or contradicted emits `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`. Any ambiguous or unmapped atom occurring in a declared `high_risk_conclusion_paths` location emits the same critical identity. Both conditions fail Gate 1. This path policy makes the decision deterministic even when unknown text cannot be labeled conclusive by a proposition matcher, and prevents novel high-risk wording from receiving a passing score. Supplementary LLM-judge output may help a human review unmatched language, but it cannot change the deterministic score or gate.
+
+Citation coverage, a secondary metric, is support-required claim paths with at least one linked citation / all support-required claim paths regardless of semantic support. It is intentionally separate from claim-support precision.
 
 For grounded-answer cases, zero returned citations produce citation precision `0`. A primary metric with zero applicable cases is unavailable and makes the run `INVALID`. Any applicable case that cannot be scored because required observation fields are missing makes the run `INVALID`; it is never removed from the denominator.
 
@@ -351,7 +383,7 @@ Returned rank is array order. Duplicate evidence or citation identities keep the
 
 Calculations retain exact integer counts and rational division through gate comparison. Gate deltas use unrounded values. Stored display values round half-even to four decimal places, and displayed percentages round half-even to two decimal places.
 
-Each primary metric has at least one hand-calculated golden fixture containing its case numerator, denominator, case score, macro aggregate, and expected gate delta.
+Each primary metric has at least one hand-calculated golden fixture containing its case numerator, denominator, case score, macro aggregate, and expected gate delta. Claim-support fixtures must include at least one supported atom, one contradiction using a correct document identity, one negation or modality reversal, one unmapped atom, one ambiguous atom, and one high-risk fail-closed result.
 
 ### Gate 1: non-negotiable hard failures
 
@@ -416,7 +448,7 @@ Every run records:
 - Evaluation Plane commit SHA and dirty-worktree flag;
 - AX SUT commit SHA and dirty-worktree flag;
 - dataset, split, and corpus identifiers and content digests;
-- SUT Adapter, evaluator, and threshold-manifest versions and configuration digests;
+- SUT Adapter, evaluator, atomizer, claim normalizer, matcher set, proposition catalog, and threshold-manifest versions and configuration digests;
 - prompt hash;
 - model, provider, and generation parameters;
 - dependency-lock and execution-environment digests;

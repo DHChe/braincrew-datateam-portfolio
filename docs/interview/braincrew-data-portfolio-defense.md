@@ -144,6 +144,12 @@ Why:
 Primary quality metrics:
 : EvidenceSpan recovery rate, Recall@5, claim-support precision, citation precision, Answer Mode accuracy, and abstention accuracy.
 
+Semantic-support boundary:
+: Claim-support is not inferred merely from a linked document. Each frozen case defines a closed-world proposition catalog with polarity, modality, supporting and contradicting evidence, and deterministic Korean surface matchers. A generated claim atom passes only when its meaning, citation, evidence stance, and Answer Mode agree.
+
+Concrete example:
+: If a rule says immediate dismissal is prohibited, an answer saying “dismiss immediately” fails even when it cites that exact rule. The evidence identity is correct, but its stance contradicts the generated proposition.
+
 Hard failures:
 : Zero forbidden visibility exposure, role leakage, unsupported high-risk conclusion, required-abstention violation, missing required provenance, missing applicable Verification result, or invalid comparison.
 
@@ -163,7 +169,7 @@ Trade-off:
 : A zero-tolerance hard gate can block release on one case. That strictness is intentional for access leakage and high-risk unsupported conclusions, but every failure must be reproducible and reviewed for dataset validity.
 
 Failure modes:
-: tuning thresholds on Verification, comparing incompatible evaluator versions, confusing percentage with percentage points, missing operational measurements, and allowing an LLM judge to override deterministic evidence.
+: tuning thresholds on Verification, comparing incompatible evaluator versions, confusing percentage with percentage points, missing operational measurements, treating document linkage as semantic support, and allowing an LLM judge to override deterministic evidence.
 
 Evidence required before interview:
 : Metric contracts, Calibration threshold manifest and digest, gate decision trace, baseline-candidate compatible manifest, and at least one intentionally failing gate fixture.
@@ -174,7 +180,9 @@ Likely follow-ups:
 - "Why require positive evidence?" — Passing only by not getting worse does not justify calling a candidate an improvement.
 - "Can latency gains compensate for quality loss?" — Only within the 2-point limit and never for a hard failure.
 - "Why not let an LLM judge decide semantic quality?" — It can help analyze nuance, but model drift and judge bias make it unsuitable as the sole release authority.
-- "How is a high-risk unsupported conclusion detected reproducibly?" — The case declares high risk and claims requiring support; the deterministic claim-support evaluator checks acceptable EvidenceSpans and emits the versioned critical identity.
+- "Is a correct citation enough to call a claim grounded?" — No. Citation coverage checks linkage only. Claim-support additionally requires a deterministic proposition match, correct polarity and modality, supporting rather than contradicting evidence, and an allowed Answer Mode.
+- "How is a high-risk unsupported conclusion detected reproducibly?" — The case declares high risk and a versioned proposition catalog. Unsupported, contradicted, ambiguous, or unmapped conclusive atoms fail closed and emit the deterministic critical identity.
+- "Does this understand every possible Korean sentence?" — No. It is a closed-world regression contract for the frozen dataset. Unknown wording receives no credit and high-risk unknown conclusions fail closed; an LLM judge may assist review but never changes the gate.
 
 ### D7. Fail closed and preserve a complete run manifest
 
@@ -281,7 +289,7 @@ Likely follow-ups:
 - "Why is the dashboard late in the schedule?" — It must render validated evidence rather than drive the design of the evaluation system.
 - "How do you know the project is complete?" — Every submission claim maps to versioned evidence, the full Verification run is valid, reproduction passes cleanly, and the release gates produce an auditable decision.
 - "Why choose evidence limit as the first candidate?" — It is already executable through the current API, keeps retrieval depth identical, and isolates whether transferring two more evidence items improves grounding enough to justify latency, token, and cost changes. It is not misrepresented as a code improvement.
-- "How do two engineers get the same metric?" — Metric contract v1 freezes case-level formulas, exact alternative matching, macro aggregation, duplicate and rank rules, zero-denominator behavior, and unrounded gate comparison, with hand-calculated goldens for every primary metric.
+- "How do two engineers get the same metric?" — Metric contract v2 freezes case-level formulas, the claim-proposition catalog, exact alternative matching, macro aggregation, duplicate and rank rules, zero-denominator behavior, and unrounded gate comparison, with hand-calculated goldens for every primary metric.
 
 ## Failure taxonomy defense
 
