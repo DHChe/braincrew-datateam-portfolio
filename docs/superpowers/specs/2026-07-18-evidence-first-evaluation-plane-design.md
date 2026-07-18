@@ -91,6 +91,20 @@ Owns orchestration, timeouts, retries, case attempts, execution mode, and versio
 
 Maps standard evaluation requests to AX HTTP endpoints and normalizes responses. It does not score, invent missing values, hide contract mismatch, or import AX internals.
 
+The versioned `ax-sut-http-v1` interface has `preflight`, `parse`, `retrieve`, `answer`, and permission-checked `source_text` operations. The first mapping freezes methods, paths, schema digests, and field mappings in `ax-http-v1.yaml`:
+
+- `GET /health/ready`;
+- `POST /v1/retrieval/search`;
+- `POST /v1/answers/generate`;
+- `GET /v1/retrieval/source-text/{record_kind}/{record_id}`;
+- existing attachment upload/status APIs plus one local/test-only parsed-document observation endpoint when AX preflight proves parsed text, sections, tables/lists, and spans are otherwise unavailable.
+
+Canonical requests carry run, case, evaluation correlation, tenant, role, corpus, query or document, `top_k`, evidence limit, and timeout fields as applicable. Canonical observations carry opaque AX identifiers, order and rank, source/chunk/span identifiers, source class, authority, visibility, snippets, allowed full text, structured answer, Answer Mode, citations, provider metadata, timings, AX correlation identifiers, and explicit availability flags.
+
+EvidenceSpan offsets are zero-based Unicode code-point offsets over canonical source text, inclusive at `start_char` and exclusive at `end_char`, and include the source-text digest. Citation identity is `(record_kind, record_id, evidence_span_id, source_text_digest)`.
+
+Local/test runs use AX role headers; bearer credentials remain environment-only. Only public or synthetic corpora are allowed. Preflight records capabilities and schema digests. Required missing operations or fields fail closed when they violate coverage. Authentication and contract failures are permanent; only timeout, `429`, and `5xx` are retryable.
+
 ### Normalized Observation
 
 Preserves the answer, retrieved evidence, citations, Answer Mode, role context, timing, token and cost information when available, errors, attempt history, and provenance required for evaluation.
@@ -116,9 +130,12 @@ Generates sanitized versioned JSON exports and renders interactive static compar
 The dataset contains exactly 100 cases:
 
 ```text
-Calibration     70
-Verification    30
-Total          100
+Primary focus                 Calibration  Verification  Total
+Parsing                                14             6     20
+Retrieval                              21             9     30
+Grounded answer                        30            10     40
+Visibility and abstention               5             5     10
+Total                                  70            30    100
 ```
 
 Primary focus allocation:
@@ -133,6 +150,8 @@ Total                          100
 
 The Verification split is reproducible and frozen, not described as a secret statistical holdout. Its assignment and content digest are frozen before final candidate tuning. Any correction requires a new dataset version and invalidates incompatible comparisons.
 
+Minimum applicable Verification denominators are 6 for EvidenceSpan recovery, 9 for Recall@5, 10 each for claim-support and citation precision, 15 for Answer Mode accuracy, and 5 for abstention accuracy. Actual denominators are reported. Falling below any primary minimum makes the run `INVALID`.
+
 Each case contains a stable identifier, dataset version, split, focus and tags, role, query, document references, corpus versions, expected and alternative EvidenceSpans, forbidden evidence, visibility rules, expected Answer Mode, required and forbidden claims, evaluator applicability, difficulty, provenance, license, and review history.
 
 ## 9. Failure taxonomy
@@ -145,6 +164,17 @@ Each case contains a stable identifier, dataset version, split, focus and tags, 
 - `TRJ-*`: reserved and unused by the first release.
 
 One observation may receive multiple labels. Taxonomy diagnoses mechanisms, metrics measure prevalence, and gates decide release eligibility.
+
+The versioned taxonomy assigns `critical`, `major`, `minor`, or `diagnostic` severity. Gate-authoritative critical identities are deterministic `(case_id, failure_code, evaluator_contract_version)` tuples:
+
+- forbidden returned source/chunk/span identity: `R-FORBIDDEN-VISIBILITY`;
+- case-declared protected identifier or forbidden role claim in the answer: `A-ROLE-LEAKAGE`;
+- unsupported conclusive claim on a high-risk case: `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`;
+- wrong mode or forbidden conclusive claim on a required-abstention case: `A-FAILED-ABSTENTION`;
+- required provenance missing: `SYS-PROVENANCE-MISSING`;
+- incompatible or under-covered comparison: `SYS-COMPARISON-INVALID`.
+
+A baseline critical identity is removed only if its case remains applicable and the identity is absent in the candidate. Any candidate critical identity absent from baseline is new. LLM-judge output cannot create, clear, or reclassify critical identity.
 
 ## 10. Metrics
 
@@ -221,6 +251,8 @@ Every run records:
 
 Published results require clean committed states. Fixture and live runs are never compared. Submission claims require at least one complete live-SUT Verification run. Results are append-only, secrets are redacted, and missing compatibility fails closed.
 
+Deterministic artifact replay recalculates evaluators, aggregates, and gates from stored normalized observations and must reproduce canonical logical-content digests in a clean container. A best-effort live rerun sends the same pinned inputs and configuration, creates a new run, and may differ because of external-model stochasticity or availability. It reports drift and never overwrites the original. Publication claims reproducible artifacts and calculations, not byte-identical external responses.
+
 ## 14. Technology stack
 
 Evaluation core:
@@ -254,7 +286,7 @@ Adversarial tests must prove retry limits, non-retryable invalidation, immutable
 ## 16. Ten-day execution sequence
 
 ```text
-Day 1  Design, reviewed spec and plan; pin baseline SUT SHA
+Day 1  Design, reviewed spec and plan; pin baseline SUT SHA; preflight capabilities; freeze candidate-plan-v1
 Day 2  Contracts, manifests, artifact store and 20 parsing cases
 Day 3  Adapter, retrieval evaluator and 20 cases
 Day 4  Answer evaluators and 20 cases
@@ -265,6 +297,10 @@ Day 8  Pin candidate SHA and run compatible live Verification A/B
 Day 9  Dashboard, README, reproduction and interview dossier
 Day 10 Independent QA, demo, resume bullets and release PR
 ```
+
+The guaranteed first experiment is `candidate-plan-v1`: baseline `top_k=3` versus candidate `top_k=5` through the existing retrieval and answer endpoints. SUT SHA, corpus, model, prompt, roles, evaluators, and thresholds stay fixed. This is labeled a retrieval-depth configuration experiment. A product-code candidate may be evaluated separately but cannot replace the frozen pair without a new candidate-plan version.
+
+Day 1 preflight verifies health, retrieval, answer, role visibility, synthetic corpus identity, and parsed-artifact observability. If parsing needs the permitted local/test-only observation endpoint, it is the sole AX unblocking priority through Day 2. Missing that checkpoint is a no-go for the locked parsing acceptance criteria; dashboard ornamentation and supplementary judge analysis are cut before any evidence requirement.
 
 Evaluation work receives 9 to 10 hours per day. AX work is limited to 2 to 3 hours and must already be in progress or unblock evaluation. Product work blocking the portfolio for more than one day is deferred.
 

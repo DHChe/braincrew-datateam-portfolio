@@ -155,6 +155,30 @@ Owns run orchestration, dependency ordering, timeouts, retries, and version capt
 
 Translates standard evaluation inputs into documented AX HTTP requests and converts AX responses into normalized observations. It must not calculate quality scores or hide missing SUT fields.
 
+The versioned `ax-sut-http-v1` contract exposes these logical operations:
+
+- `preflight()` verifies readiness, authentication mode, corpus identity, endpoint schemas, and available telemetry;
+- `parse()` uploads or selects a synthetic/public document and returns parser, document, section, table/list, and EvidenceSpan observations;
+- `retrieve()` submits a role-scoped query and returns ordered retrieval candidates and visibility decisions;
+- `answer()` submits a role-scoped question and returns the Answer Mode, structured answer, citations, provider metadata, and evidence packaging;
+- `source_text()` resolves an allowed source or EvidenceSpan when evaluator evidence requires full text.
+
+The first AX mapping uses:
+
+- `GET /health/ready` for readiness;
+- `POST /v1/retrieval/search` for retrieval;
+- `POST /v1/answers/generate` for answer generation;
+- `GET /v1/retrieval/source-text/{record_kind}/{record_id}` for permission-checked source text;
+- the existing attachment upload and status APIs plus, if preflight proves parsed artifacts are not observable, one local/test-only parsed-document observation endpoint implemented in AX through its own reviewed Track P branch.
+
+Exact method, path, request mapping, response mapping, and expected schema digest are frozen in `ax-http-v1.yaml`. The Adapter's canonical request includes `run_id`, `case_id`, `eval_correlation_id`, role, tenant, query or document reference, corpus version, `top_k`, evidence limit, and timeout where applicable. Canonical observations preserve opaque AX identifiers, ordered rank, source and chunk identifiers, EvidenceSpan identifier, source class, authority level, visibility decision, snippets, allowed full text, answer and SUT correlation identifiers, provider metadata, latency, and explicit field-availability flags.
+
+EvidenceSpan offsets are zero-based Unicode code-point offsets over canonical source text, with inclusive `start_char` and exclusive `end_char`, plus source-text digest. A citation refers to the canonical tuple `(record_kind, record_id, evidence_span_id, source_text_digest)`; missing members remain null and may invalidate the applicable evaluator.
+
+Local/test authentication uses the documented AX tenant, user, and role headers. Any bearer token is supplied only through environment secrets and is never persisted. Portfolio runs are restricted to public or synthetic corpora. Adapter-generated correlation IDs and returned AX correlation IDs are both recorded.
+
+Preflight stores a capability manifest. If a required operation, identifier, span field, citation field, visibility decision, or provenance field is unavailable, applicable cases are not silently skipped: the run becomes `INVALID` when the minimum coverage contract cannot be met. `401`, `403`, contract `4xx`, schema mismatch, and missing required fields are permanent contract failures; timeout, `429`, and `5xx` follow the bounded retry contract.
+
 ### Normalized Observation
 
 Preserves the answer, retrieved evidence, citations, answer mode, role context, timing, token and cost measurements when available, errors, and provenance needed by evaluators. Missing values remain explicitly missing rather than inferred.
@@ -184,15 +208,28 @@ The contracts may later add trajectory observations and evaluators as new regist
 The first production release uses exactly 100 versioned evaluation scenarios.
 
 ```text
-Calibration split    70 cases
-Verification split   30 cases
-Total               100 cases
+Primary focus                 Calibration  Verification  Total
+Parsing                                14             6     20
+Retrieval                              21             9     30
+Grounded answer                        30            10     40
+Visibility and abstention               5             5     10
+Total                                  70            30    100
 ```
 
 - The Calibration split may be used to develop evaluators and tune explicit thresholds.
 - The Verification split is frozen before final candidate tuning and is used for the submission comparison.
 - Because the repository is public, this is a reproducible verification split rather than a claim of a secret statistical holdout.
 - The split assignment, dataset manifest, and content digest are recorded. Changing a frozen case requires a new dataset version and invalidates comparisons made against the old version.
+
+The Verification split must provide these minimum applicable denominators:
+
+- EvidenceSpan recovery rate: 6;
+- Recall@5: 9;
+- claim-support precision and citation precision: 10 each;
+- Answer Mode accuracy: 15 across grounded-answer and visibility/abstention cases;
+- abstention accuracy: 5.
+
+Each metric reports its actual denominator. If applicability, missing telemetry, or execution failure reduces a primary metric below its minimum denominator, the run is `INVALID`; no aggregate score or gate decision is emitted for that comparison.
 
 The 100 cases have one primary focus each:
 
@@ -231,6 +268,17 @@ Failure labels use stable families:
 - `TRJ-*`: reserved for future trajectory evaluation and unused by the first production release.
 
 One observation may receive multiple failure labels. Labels identify failure mechanisms; aggregate metrics determine scale, and release gates determine ship eligibility.
+
+`failure-taxonomy-v1.yaml` assigns every failure code one severity: `critical`, `major`, `minor`, or `diagnostic`. Only deterministic evaluator outputs may create gate-authoritative critical failures. The first critical predicates are:
+
+- `R-FORBIDDEN-VISIBILITY`: a returned retrieval or citation identifier matches the case's forbidden source, document, chunk, or EvidenceSpan set;
+- `A-ROLE-LEAKAGE`: the normalized answer contains a case-declared protected identifier or forbidden claim for the executing role;
+- `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`: a case marked `risk_level=high` contains a generated required-to-support conclusive claim that has no acceptable EvidenceSpan under the claim-support evaluator;
+- `A-FAILED-ABSTENTION`: the case requires `insufficient_evidence` or `out_of_scope`, but the returned Answer Mode differs or the answer contains a case-declared forbidden conclusive claim;
+- `SYS-PROVENANCE-MISSING`: a required manifest, contract, or evidence provenance field is missing;
+- `SYS-COMPARISON-INVALID`: dataset, corpus, evaluator, threshold, execution-mode, or coverage compatibility fails.
+
+A failure identity is `(case_id, failure_code, evaluator_contract_version)`. A critical baseline failure is eliminated only when the same case remains applicable and that identity is absent from the candidate. A candidate introduces another critical failure when it contains any critical identity absent from the compatible baseline. LLM-judge outputs cannot create, clear, or change the severity of these identities.
 
 ## 10. Metrics and release gates
 
@@ -360,6 +408,13 @@ Secrets, credentials, personal information, and private document content are red
 - Missing compatibility or provenance fails closed as `INVALID`; the dashboard must display unavailable data rather than fabricate a comparison.
 - The repository provides one documented command that can reproduce a run from its manifest, subject to external model availability and credentials.
 
+“Reproduction” has two explicit modes:
+
+- deterministic artifact replay reloads stored normalized observations, recalculates evaluators, aggregates, and gates, and must reproduce the same canonical logical-content digests;
+- best-effort live rerun sends the same versioned inputs and configuration to the pinned SUT and external provider, creates a new immutable run, and is not expected to reproduce identical generated text.
+
+Clean-container equality applies to deterministic artifact replay. Live reruns report metric and gate deltas, provider availability, and observed drift; they never overwrite the original run. Published wording says “reproducible evaluation artifacts and calculations” rather than promising byte-identical external-model responses.
+
 ## 12. First-production-release technology stack
 
 The Evaluation Plane uses a Python evaluation core, DuckDB over Parquet and JSON evidence, and a statically exported Next.js dashboard.
@@ -435,7 +490,7 @@ Required adversarial evidence includes:
 ### Ten-day sequence
 
 ```text
-Day 1  Final design, reviewed specification and plan; pin AX baseline SHA
+Day 1  Final design, reviewed specification and plan; pin AX baseline SHA; run capability preflight; freeze candidate-plan-v1
 Day 2  Contracts, manifest, artifact store and 20 parsing-focused cases
 Day 3  SUT Adapter, retrieval evaluator and 20 additional cases
 Day 4  Answer, citation and abstention evaluators and 20 additional cases
@@ -446,6 +501,10 @@ Day 8  Pin candidate SUT SHA; execute compatible live Verification A/B run
 Day 9  Static dashboard, README, reproduction and interview dossier completion
 Day 10 Independent QA, demo video, resume bullets and release pull request
 ```
+
+`candidate-plan-v1` is an immediately executable retrieval-depth comparison over the existing AX HTTP contract: baseline uses `top_k=3`, candidate uses the product default `top_k=5`, while SUT SHA, corpus, model, prompt, role, evaluator, and thresholds remain fixed. It is described as a configuration experiment, not a product-code improvement. A later product-fix candidate may be added as a separate versioned experiment but cannot silently replace this frozen pair.
+
+Day 1 preflight must prove `/health/ready`, retrieval, answer, role visibility, synthetic corpus identity, and parsed-artifact observability. If parsed artifacts require the allowed local/test-only endpoint, that endpoint is the only AX evaluation-unblocking priority on Days 1–2. Failure to make it observable by the end of Day 2 is a go/no-go failure for the locked parsing acceptance criteria; dashboard ornamentation and supplementary LLM-judge work are cut before any evidence, coverage, or live-Verification requirement.
 
 The Evaluation Plane receives 9 to 10 hours per day. Existing AX work receives at most 2 to 3 hours per day and only for already-started work or evaluation-unblocking changes. If AX work blocks the portfolio for more than one day, defer that product work until after submission.
 

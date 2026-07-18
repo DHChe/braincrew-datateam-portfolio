@@ -5,6 +5,7 @@
 
 # OMX session-local runtime state
 .omx/
+.serena/
 
 # Language and tool caches
 __pycache__/

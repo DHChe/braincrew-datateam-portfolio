@@ -101,7 +101,7 @@ Why call it Verification rather than secret holdout:
 : The repository is public and reproducible. The defensible claim is that the split and digest were frozen before final candidate tuning, not that nobody can inspect it.
 
 Case focus allocation:
-: 20 parsing, 30 retrieval, 40 grounded answer, and 10 visibility or abstention cases. Operational metrics run across compatible live cases.
+: 20 parsing, 30 retrieval, 40 grounded answer, and 10 visibility or abstention cases. The frozen Calibration/Verification allocation is 14/6, 21/9, 30/10, and 5/5 respectively. Operational metrics run across compatible live cases.
 
 Rejected alternative:
 : Use a small set of hand-picked success examples. It would encourage cherry-picking and provide little failure coverage.
@@ -117,6 +117,7 @@ Likely follow-ups:
 - "Is 100 statistically sufficient?" — It is a scoped engineering regression suite, not a population estimate; claims remain bounded to this dataset.
 - "How did you prevent leakage?" — Freeze split and digest, prohibit final tuning on Verification, and version any correction.
 - "Why not use only LLM-generated labels?" — Expected evidence and safety constraints require deterministic reviewable contracts; LLM assistance cannot be the sole authority.
+- "What if a metric has too few applicable Verification cases?" — The run becomes invalid under the frozen minimum-denominator contract; it does not publish a misleading average.
 
 ### D5. Reserve trajectory extension points without claiming Agent evaluation
 
@@ -146,6 +147,9 @@ Primary quality metrics:
 Hard failures:
 : Zero forbidden visibility exposure, role leakage, unsupported high-risk conclusion, required-abstention violation, missing required provenance, missing applicable Verification result, or invalid comparison.
 
+Critical-failure identity:
+: A versioned deterministic tuple of case, failure code, and evaluator contract. Candidate removal and new-failure detection operate on these tuples, not subjective reviewer judgment.
+
 Regression limits:
 : No primary metric worse by more than 2 percentage points; p95 latency no more than 15 percent slower; compatible-case cost no more than 20 percent higher.
 
@@ -170,6 +174,7 @@ Likely follow-ups:
 - "Why require positive evidence?" — Passing only by not getting worse does not justify calling a candidate an improvement.
 - "Can latency gains compensate for quality loss?" — Only within the 2-point limit and never for a hard failure.
 - "Why not let an LLM judge decide semantic quality?" — It can help analyze nuance, but model drift and judge bias make it unsuitable as the sole release authority.
+- "How is a high-risk unsupported conclusion detected reproducibly?" — The case declares high risk and claims requiring support; the deterministic claim-support evaluator checks acceptable EvidenceSpans and emits the versioned critical identity.
 
 ### D7. Fail closed and preserve a complete run manifest
 
@@ -202,6 +207,7 @@ Likely follow-ups:
 - "Why distinguish FAILED from INVALID?" — FAILED describes execution failure; INVALID says the evidence cannot support the requested comparison even if execution produced data.
 - "Can a partially successful run still teach you something?" — Yes for diagnosis, but it cannot support release or submission claims.
 - "How do you reproduce an external model response?" — Pin every controllable input and preserve the original observation; exact provider determinism may be impossible, so replayability and live rerun are reported separately.
+- "What exactly is reproducible?" — Artifact replay, metric calculation, aggregation, and gates reproduce canonical logical digests. A live external-model rerun is a new drift measurement, not a promise of identical text.
 - "Why record dirty flags?" — A commit SHA does not describe uncommitted code, so a dirty system cannot support a fully reproducible published result.
 
 ### D8. Use Python, DuckDB and Parquet with a static Next.js dashboard
@@ -253,6 +259,9 @@ Why:
 Schedule rationale:
 : Contracts and dataset cases begin before UI work. A baseline is run before candidate improvement. The dashboard is built from validated artifacts only after the evidence pipeline exists. Submission QA and storytelling occupy dedicated final days instead of being treated as leftover work.
 
+Frozen first comparison:
+: The existing AX API supports an immediate `top_k=3` baseline and `top_k=5` candidate while holding SUT SHA and other contracts constant. This guarantees an honest configuration experiment even if no product-code fix is ready; a failed candidate remains valid evidence.
+
 Rejected alternative:
 : Build the dashboard first and backfill evaluation data later. It would optimize visible progress while leaving the core evidence and failure analysis at highest schedule risk.
 
@@ -271,6 +280,7 @@ Likely follow-ups:
 - "What would you cut first if behind?" — Dashboard ornamentation and supplementary LLM-judge analysis, not provenance, live Verification, critical gates, or failure analysis.
 - "Why is the dashboard late in the schedule?" — It must render validated evidence rather than drive the design of the evaluation system.
 - "How do you know the project is complete?" — Every submission claim maps to versioned evidence, the full Verification run is valid, reproduction passes cleanly, and the release gates produce an auditable decision.
+- "Why choose top-k as the first candidate?" — It is already executable through the current API, isolates one retrieval-depth variable, and can reveal whether added evidence justifies latency and cost. It is not misrepresented as a code improvement.
 
 ## Failure taxonomy defense
 
