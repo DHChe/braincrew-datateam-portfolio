@@ -45,6 +45,9 @@ The canonical delivery route is the locked Ask Matt flow documented in `docs/dec
 - Use a parallel or supporting skill only when it fills a concrete gap inside the current canonical step. Explain its limited role and return explicitly to the locked route afterward.
 - When one skill or workflow step finishes, report its completion evidence and name the exact next skill or action, why it follows, and what must be true before it starts.
 - Update `docs/status/braincrew-delivery-workflow.md` whenever the canonical delivery phase starts, completes, becomes blocked, or changes. Keep completed phases and their evidence visible so both the user and future agents can recover the route without relying on conversation memory.
+- Treat this project as a guided Matt Pocock skill-learning environment as well as a delivery project. At the moment a Matt Pocock skill becomes appropriate, proactively explain when that skill is generally useful, why it fits the current situation, what the user must decide, what the agent will execute, and which durable artifact it will leave behind.
+- Teach skills in context rather than as a detached tutorial. Do not invoke extra skills merely for practice; propose them only when they advance the portfolio or remove a concrete uncertainty, and explicitly distinguish required canonical steps from optional supporting skills.
+- After completing a Matt Pocock skill for the first time, give the user a short reusable mental model for recognizing the same situation in future work.
 - A Git lifecycle action is not a workflow phase transition. Continue to follow the separate Git Lifecycle Proposal Gate for commits, pushes, pull requests, and merges.
 
 ## Git Lifecycle Proposal Gate

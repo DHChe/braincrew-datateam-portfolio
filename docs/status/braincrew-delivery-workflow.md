@@ -28,11 +28,12 @@ research and AX_portfolio context
 - Completed phase: research, role comparison, and Data Team red-team assessment.
 - Completed phase: portfolio direction and evaluation boundaries locked.
 - Completed phase: `brainstorming` design loop, independent specification review, and PR #1 merge into `develop`.
+- Completed phase: `setup-matt-pocock-skills`; GitHub Issues was selected, the five canonical triage labels were configured, and the single-context domain-document rules were recorded.
 - Active canonical phase: none.
-- Next canonical phase: `setup-matt-pocock-skills` verification and repository configuration.
-- Entry condition: local `develop` matches the merged remote `origin/develop`, and the Matt Pocock issue-tracker and domain-document configuration is inspected.
-- Entry condition status: Git synchronization is satisfied as of 2026-07-19; local `develop` and `origin/develop` both point to merge commit `18a768ab5299959ccc9257a766295768cf87b3ad`. Matt Pocock repository configuration inspection remains for the next phase.
-- Following phase: `to-spec`, using the merged design, review history, and interview defense dossier as its sources.
+- Next canonical phase: `to-spec`, using the merged design, review history, and interview defense dossier as its sources.
+- Entry condition: the setup documents and GitHub labels are verified, and the merged design remains the authoritative source rather than being reopened from scratch.
+- Entry condition status: satisfied locally on 2026-07-19; remote persistence still requires the repository Git lifecycle gate.
+- Following phase: `to-tickets`, which will split the approved specification into vertical implementation tickets with explicit dependency edges.
 - Blocker: none.
 
 ## Transition record format
