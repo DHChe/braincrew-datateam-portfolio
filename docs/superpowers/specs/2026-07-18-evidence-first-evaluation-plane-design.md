@@ -1,7 +1,7 @@
 # Evidence-First HR/Labor RAG Evaluation Plane — Design
 
 Date: 2026-07-18  
-Status: User selected semantic-support option A; new independent specification review in progress
+Status: Independent specification review approved; pending user review before implementation planning
 
 ## 1. Objective
 
