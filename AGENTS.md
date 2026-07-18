@@ -23,6 +23,19 @@ When executable evaluation code is introduced, add its exact install, lint, type
 - Do not commit `.omx/`, credentials, local environment files, generated caches, or unreviewed benchmark outputs containing sensitive data.
 - Whenever a design decision becomes locked, update both its canonical design or decision document and the interview defense dossier. Record the rationale, rejected alternative, trade-offs, failure modes, validation evidence, and likely follow-up questions; do not leave interview preparation to retrospective reconstruction.
 
+## User Communication Contract
+
+These rules apply only inside this repository. They govern the final answer regardless of which skill, workflow, or subagent produced the underlying work.
+
+- Respond in clear Korean when the user writes in Korean.
+- Lead with the result and current state, then explain the reason and next action.
+- On first use, write specialized terms as `Korean explanation (English term, plain meaning)`. Expand abbreviations such as SUT or PR immediately.
+- Do not paste raw specialist or subagent language without translating it to this level. The lead agent owns the final plain-language explanation.
+- For every material technical defect, explain: what is wrong, why it matters, one concrete example, what is currently blocked or affected, the available choices, and the recommended choice.
+- Distinguish clearly between a code failure, a design flaw, an unverified assumption, and a workflow gate. Do not call all of them “bugs.”
+- Preserve exact file names, commands, schema fields, and code identifiers when needed, but explain their role in ordinary language beside them.
+- Prefer short sections, concrete examples, and simple sentences over dense jargon. Do not hide uncertainty or weaken technical accuracy merely to simplify wording.
+
 ## Git Lifecycle Proposal Gate
 
 For this repository, agents must actively propose the next Git lifecycle action whenever it is warranted; they must not silently leave completed work uncommitted or remotely unintegrated.
@@ -78,6 +91,6 @@ The locked first-release stack is Python 3.12 with `uv`, Pydantic v2, Typer, `ht
 - [Data Team growth red-team assessment](./docs/research/braincrew-data-team-growth-red-team-2026-07-18.md)
 - [AX-adjacent open-role comparison](./docs/research/braincrew-open-roles-ax-closeness.md)
 - [Living interview defense dossier](./docs/interview/braincrew-data-portfolio-defense.md)
-- [Approved Evaluation Plane design](./docs/superpowers/specs/2026-07-18-evidence-first-evaluation-plane-design.md)
+- [Evaluation Plane design and review status](./docs/superpowers/specs/2026-07-18-evidence-first-evaluation-plane-design.md)
 
 Keep accepted design decisions in durable documents. Use production-grade language and distinguish measured facts, inferences, plans, and exclusions.
