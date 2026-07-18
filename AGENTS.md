@@ -19,7 +19,7 @@ When executable evaluation code is introduced, add its exact install, lint, type
 - Evaluator and experiment contracts may reserve extension points for future Agent trajectory evaluation, but those extension points must be labeled `planned` or `not evaluated` until implemented and verified.
 - Every published experiment must record the exact SUT commit SHA and dataset, evaluator, prompt, and model versions.
 - Do not commit private customer, employee, or company documents. Use synthetic or publicly releasable evidence only.
-- Keep AX product development and the Braincrew Evaluation Plane on separate branches/worktrees. Do not copy unmerged AX product files into evaluation work.
+- Keep AX product development and the Braincrew Evaluation Plane in separate repositories with separate histories. Connect them through the documented SUT Adapter contract; do not copy or import unmerged AX product internals into evaluation work.
 - Do not commit `.omx/`, credentials, local environment files, generated caches, or unreviewed benchmark outputs containing sensitive data.
 
 ## Git Lifecycle Proposal Gate
@@ -52,6 +52,16 @@ Not-tested: <known gaps>
 
 Never merge with failing required checks, unresolved review blockers, or unverifiable benchmark claims.
 
+## Branching Strategy
+
+- `main` is the stable, recruiter-facing release branch.
+- `develop` is the integration branch and the source for design and feature branches.
+- Start design work on `docs/evaluation-plane-design` from a verified `develop`.
+- Start each implementation branch from the latest verified `develop`; keep it bounded to one ticket or cohesive capability.
+- Merge feature branches into `develop` through reviewed pull requests, then release through a `develop` to `main` pull request after the full benchmark passes.
+- Do not create speculative feature branches before their dependencies and ticket contracts are ready.
+- Never commit product work directly to `main` or `develop` after bootstrap.
+
 ## Project Context
 
 This repository contains the application portfolio for Braincrew's Data Team: an Evidence-First HR/Labor RAG Evaluation Plane built around AX_portfolio as the SUT. The first production release focuses on parsing, retrieval, grounded-answer, operational, experiment-comparison, and release-gate evaluation.
@@ -66,4 +76,3 @@ The ten-day delivery structure is asymmetric: the Evaluation Plane is the primar
 - [AX-adjacent open-role comparison](./docs/research/braincrew-open-roles-ax-closeness.md)
 
 Keep accepted design decisions in durable documents. Use production-grade language and distinguish measured facts, inferences, plans, and exclusions.
-

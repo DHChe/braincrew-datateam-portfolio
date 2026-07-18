@@ -76,3 +76,47 @@ Preferred claim:
 
 > While an HR/labor AX product was evolving, I introduced measurable quality criteria, a versioned evaluation dataset, failure taxonomy, experiment comparison, and release gates for the capabilities that were actually available and tested. The evaluation contracts are designed to extend to Agent trajectories, but Agent evaluation is not claimed in this submission.
 
+## 6. Repository and SUT boundary
+
+The Evaluation Plane and AX_portfolio are separate repositories with separate histories and responsibilities.
+
+```text
+braincrew-datateam-portfolio
+  ├─ versioned evaluation datasets
+  ├─ experiment runner and result store
+  ├─ parsing, retrieval, answer, and operational evaluators
+  ├─ comparison and release-gate logic
+  ├─ dashboard and submission material
+  └─ SUT Adapter ──HTTP──> AX_portfolio
+```
+
+- `braincrew-datateam-portfolio` owns the Evaluation Plane and submission evidence.
+- `AX_portfolio` remains the evolving product and Subject Under Test.
+- The live adapter calls AX through a documented HTTP contract and normalizes responses into evaluation observations.
+- AX internals are not copied or imported into the Evaluation Plane.
+- If required evaluation observations are unavailable, AX may receive a narrowly scoped observability endpoint through its own product branch and review process.
+- Recorded fixtures may support deterministic development and replay, but they do not replace at least one reproducible live-SUT benchmark for submission claims.
+
+## 7. Branching strategy
+
+Use a lightweight integration-branch workflow for the ten-day delivery window:
+
+```text
+main
+  └─ develop
+       ├─ docs/evaluation-plane-design
+       ├─ feat/evaluation-contracts
+       ├─ feat/dataset-registry
+       ├─ feat/ax-sut-adapter
+       ├─ feat/evaluator-runner
+       ├─ feat/experiment-comparison
+       └─ feat/dashboard-release-gates
+```
+
+- `main` is the stable, recruiter-facing release branch. It receives release pull requests from `develop` only.
+- `develop` is the integration baseline for the approved design and verified feature work.
+- Design work starts on `docs/evaluation-plane-design` from `develop`; implementation does not start before the written design and implementation plan pass their gates.
+- Each feature branch starts from the latest verified `develop`, owns one bounded capability, and returns through a pull request with tests and review evidence.
+- Do not create all feature branches in advance. Create a branch only when its dependency is ready and its ticket is executable.
+- After integration and full benchmark verification, open a release pull request from `develop` to `main` and tag the frozen submission commit.
+- AX_portfolio keeps its own branch and worktree lifecycle. No branch crosses repository boundaries.
