@@ -1,7 +1,7 @@
 # Evidence-First HR/Labor RAG Evaluation Plane — Design
 
 Date: 2026-07-18  
-Status: User-approved design; independent specification review in progress
+Status: Blocked after final independent specification review; user decision required
 
 ## 1. Objective
 
