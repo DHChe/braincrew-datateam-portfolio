@@ -145,7 +145,7 @@ Primary quality metrics:
 : EvidenceSpan recovery rate, Recall@5, claim-support precision, citation precision, Answer Mode accuracy, and abstention accuracy.
 
 Semantic-support boundary:
-: Claim-support is not inferred merely from a linked document. Each frozen case defines a closed-world proposition catalog with polarity, modality, supporting and contradicting evidence, and deterministic Korean surface matchers. A generated claim atom passes only when its meaning, citation, evidence stance, and Answer Mode agree. Any contradictory citation linked to the same path makes the atom fail even when another citation supports it.
+: Claim-support is not inferred merely from a linked document. `claim-traversal-v1` inspects every generated value in summary, answer, grounds, review points, additional checks, and risk warning for every grounded-answer case, regardless of risk level. Each frozen case defines a closed-world proposition catalog with polarity, modality, supporting and contradicting evidence, and deterministic Korean surface matchers. A generated claim atom passes only when its meaning, citation, evidence stance, and Answer Mode agree. Any contradictory citation linked to the same path makes the atom fail even when another citation supports it.
 
 Concrete example:
 : If a rule says immediate dismissal is prohibited, an answer saying “dismiss immediately” fails even when it cites that exact rule. The evidence identity is correct, but its stance contradicts the generated proposition.
@@ -181,6 +181,7 @@ Likely follow-ups:
 - "Can latency gains compensate for quality loss?" — Only within the 2-point limit and never for a hard failure.
 - "Why not let an LLM judge decide semantic quality?" — It can help analyze nuance, but model drift and judge bias make it unsuitable as the sole release authority.
 - "Is a correct citation enough to call a claim grounded?" — No. Citation coverage checks linkage only. Claim-support additionally requires a deterministic proposition match, correct polarity and modality, supporting rather than contradicting evidence, and an allowed Answer Mode.
+- "Can a non-high-risk claim in review points or additional checks escape the metric?" — No. The same immutable traversal covers every generated structured-answer field at every risk level; high-risk mode changes the gate consequence, not metric coverage.
 - "How is a high-risk unsupported conclusion detected reproducibly?" — The case declares high risk and a versioned proposition catalog. The evaluator automatically inspects every generated structured-answer path, so a dataset author cannot omit a path. Unsupported or contradicted matched conclusions and every ambiguous or unmapped high-risk atom fail closed and emit the deterministic critical identity.
 - "Does this understand every possible Korean sentence?" — No. It is a closed-world regression contract for the frozen dataset. Unknown wording receives no credit and high-risk unknown conclusions fail closed; an LLM judge may assist review but never changes the gate.
 
@@ -270,6 +271,9 @@ Schedule rationale:
 Frozen first comparison:
 : The existing AX API supports an immediate `evidence_limit=3` baseline and `evidence_limit=5` candidate while both retrieve with `top_k=5` and hold SUT SHA and other contracts constant. This guarantees an honest answer-context configuration experiment without changing retrieval measurement opportunity; a failed candidate remains valid evidence.
 
+Same-SHA schedule guard:
+: Day 8 reuses the AX SUT SHA pinned for the baseline and freezes only the candidate run configuration. Pinning a new AX commit would create a different, separately versioned product-code experiment and cannot be substituted into `candidate-plan-v1`.
+
 Rejected alternative:
 : Build the dashboard first and backfill evaluation data later. It would optimize visible progress while leaving the core evidence and failure analysis at highest schedule risk.
 
@@ -289,6 +293,7 @@ Likely follow-ups:
 - "Why is the dashboard late in the schedule?" — It must render validated evidence rather than drive the design of the evaluation system.
 - "How do you know the project is complete?" — Every submission claim maps to versioned evidence, the full Verification run is valid, reproduction passes cleanly, and the release gates produce an auditable decision.
 - "Why choose evidence limit as the first candidate?" — It is already executable through the current API, keeps retrieval depth identical, and isolates whether transferring two more evidence items improves grounding enough to justify latency, token, and cost changes. It is not misrepresented as a code improvement.
+- "Why does Day 8 not pin a new candidate SHA?" — The frozen first comparison changes only `evidence_limit`; both runs must record the same AX SHA. A code-change candidate requires a new candidate-plan version and a separate comparison.
 - "How do two engineers get the same metric?" — Metric contract v2 freezes case-level formulas, the claim-proposition catalog, exact alternative matching, macro aggregation, duplicate and rank rules, zero-denominator behavior, and unrounded gate comparison, with hand-calculated goldens for every primary metric.
 
 ## Failure taxonomy defense

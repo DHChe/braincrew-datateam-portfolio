@@ -1,7 +1,7 @@
 # Evidence-First HR/Labor RAG Evaluation Plane — Design
 
 Date: 2026-07-18  
-Status: Independent specification review approved; pending user review before implementation planning
+Status: PR review corrections for claim coverage and same-SHA scheduling; independent re-review pending
 
 ## 1. Objective
 
@@ -152,7 +152,7 @@ The Verification split is reproducible and frozen, not described as a secret sta
 
 Minimum applicable Verification denominators are 6 for EvidenceSpan recovery, 9 for Recall@5, 10 each for claim-support and citation precision, 15 for Answer Mode accuracy, and 5 for abstention accuracy. Actual denominators are reported. Falling below any primary minimum makes the run `INVALID`.
 
-Each case contains a stable identifier, dataset version, split, focus and tags, role, query, document references, corpus versions, expected and alternative EvidenceSpans, forbidden evidence, visibility rules, expected Answer Mode, a versioned proposition catalog, required claim paths, forbidden propositions, evaluator applicability, difficulty, provenance, license, and review history.
+Each case contains a stable identifier, dataset version, split, focus and tags, role, query, document references, corpus versions, expected and alternative EvidenceSpans, forbidden evidence, visibility rules, expected Answer Mode, a versioned proposition catalog, required-output paths, forbidden propositions, evaluator applicability, difficulty, provenance, license, and review history. Cases cannot narrow the evaluator-derived coverage of generated answer paths.
 
 ## 9. Failure taxonomy
 
@@ -223,17 +223,19 @@ Every primary metric is a case score in `[0, 1]`; dataset results are unweighted
 
 The first release uses a closed-world deterministic proposition catalog for the frozen dataset rather than claiming unrestricted natural-language understanding. Each case declares stable proposition IDs, subject/predicate/object concepts, affirmed or denied polarity, modality, risk and conclusion flags, versioned literal or regular-expression surface matchers, supporting and contradicting evidence groups, and allowed or forbidden Answer Modes.
 
-The evaluator gives every atom the stable identity `(claim_path, atom_index, normalized_text_digest)`. List entries are already separate structured paths. Scalar `summary` and `answer` values split on normalized newlines and `.`, `?`, `!`, `。`, `？`, or `！`. Normalization uses Unicode NFC, CRLF-to-LF conversion, edge trimming, internal whitespace collapse, and declared punctuation variants only; it never removes negation or modality and uses no stemming or embedding similarity. Matchers are anchored whole-atom literals or bounded regular expressions.
+`claim-traversal-v1` automatically enumerates every non-empty generated value in `summary`, `answer`, `grounds[*]`, `review_points[*]`, `additional_checks[*]`, and `risk_warning` for every grounded-answer case, not only high-risk cases. It splits every value on normalized newlines and `.`, `?`, `!`, `。`, `？`, or `！`, and gives each atom the stable identity `(claim_path, atom_index, normalized_text_digest)`. A case cannot opt out a returned path. Case-declared required-output paths only add a zero-score placeholder when expected content is absent; they never narrow generated-content scoring.
+
+Normalization uses Unicode NFC, CRLF-to-LF conversion, edge trimming, internal whitespace collapse, and declared punctuation variants only; it never removes negation or modality and uses no stemming or embedding similarity. Matchers are anchored whole-atom literals or bounded regular expressions.
 
 An atom is supported only when it maps to exactly one proposition, at least one citation linked to its exact parent path belongs to the proposition's supporting evidence, no citation linked to that path belongs to contradicting evidence, polarity and modality match, the Answer Mode is allowed, and no forbidden proposition occurs in the atom. Therefore one supporting citation cannot cancel out a second contradictory citation. Atomizer, normalizer, matcher-set, and proposition-catalog versions and digests are required comparison compatibility fields.
 
-Unmapped, ambiguous, unsupported, and contradicted atoms receive score zero and remain in the denominator. A required empty path is unsupported. For high-risk cases, `high-risk-guard-v1` automatically atomizes every non-empty generated path in `summary`, `answer`, `grounds[*]`, `review_points[*]`, `additional_checks[*]`, and `risk_warning`; a case cannot narrow this coverage. A matched conclusive proposition that is forbidden, unsupported, or contradicted fails closed as `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`, and every ambiguous or unmapped atom anywhere in the derived guard coverage produces the same critical failure. An LLM judge may explain unmatched language but cannot alter the score or gate.
+Unmapped, ambiguous, unsupported, and contradicted atoms receive score zero and remain in the denominator. An absent or empty required-output path adds one unsupported placeholder atom. `high-risk-guard-v1` consumes the same `claim-traversal-v1` atoms and adds fail-closed behavior rather than broader coverage. For high-risk cases, a matched conclusive proposition that is forbidden, unsupported, or contradicted fails closed as `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`, and every ambiguous or unmapped atom produces the same critical failure. An LLM judge may explain unmatched language but cannot alter the score or gate.
 
 Example: if rule 15 says that an employee cannot be dismissed immediately, the proposition “immediate dismissal is prohibited” lists rule 15 under `supports`, while “immediate dismissal is allowed” lists the same evidence under `contradicts` and is forbidden. An answer saying “dismiss immediately” with a citation to rule 15 therefore scores zero and triggers the high-risk gate even though it cited the correct document identity.
 
-Secondary citation coverage measures only whether paths have linked citations and is explicitly not semantic groundedness. Grounded cases with no citations score citation precision `0`. Zero applicable cases or missing required observation fields makes the run `INVALID`.
+Secondary citation coverage measures whether every generated path from `claim-traversal-v1` has a linked citation, with absent required-output paths retained in the denominator. It is explicitly not semantic groundedness. Grounded cases with no citations score citation precision `0`. Zero applicable cases or missing required observation fields makes the run `INVALID`.
 
-Array order defines rank; duplicate identities keep the first occurrence. MRR@10 is reciprocal rank of the first unique relevant result or zero. Gates use unrounded exact counts and rational divisions. Stored decimals use half-even four-place display rounding and percentages use half-even two-place display rounding. Each primary metric requires a hand-calculated golden containing case and macro calculations plus expected gate delta. Claim-support goldens include a correct support, a correct-document contradiction, mixed supporting and contradicting citations, a negation or modality reversal, an unmapped atom, an ambiguous atom, a rejected attempt to narrow high-risk coverage, and a high-risk fail-closed case.
+Array order defines rank; duplicate identities keep the first occurrence. MRR@10 is reciprocal rank of the first unique relevant result or zero. Gates use unrounded exact counts and rational divisions. Stored decimals use half-even four-place display rounding and percentages use half-even two-place display rounding. Each primary metric requires a hand-calculated golden containing case and macro calculations plus expected gate delta. Claim-support goldens include a correct support, a correct-document contradiction, mixed supporting and contradicting citations, a negation or modality reversal, an unmapped atom, an ambiguous atom, a non-high-risk unsupported claim in `additional_checks[*]`, a rejected attempt to narrow traversal, and a high-risk fail-closed case.
 
 ## 11. Release gates
 
@@ -319,8 +321,8 @@ Day 3  Adapter, retrieval evaluator and 20 cases
 Day 4  Answer evaluators and 20 cases
 Day 5  Taxonomy, gates and 20 cases
 Day 6  Finish 100 cases; review and freeze 70/30 digest
-Day 7  Live baseline and failure analysis; candidate preparation
-Day 8  Pin candidate SHA and run compatible live Verification A/B
+Day 7  Live baseline and failure analysis; candidate-configuration preparation
+Day 8  Reuse the pinned baseline SUT SHA, freeze candidate configuration, and run compatible live Verification A/B
 Day 9  Dashboard, README, reproduction and interview dossier
 Day 10 Independent QA, demo, resume bullets and release PR
 ```

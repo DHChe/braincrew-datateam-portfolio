@@ -49,3 +49,17 @@ The reviewer found two critical consistency gaps: mixed supporting and contradic
 The independent reviewer approved the specification. The approval confirmed that atom support requires at least one supporting citation and zero contradictory citations, that `high-risk-guard-v1` cannot be narrowed by dataset authors, and that the fixed traversal and exact matching rules remain deterministic and feasible within the ten-day plan.
 
 The written specification now returns to the user-review gate. Approval authorizes GitHub publication for review, not implementation or merge.
+
+## PR 1 Codex review corrections
+
+The user brought forward two automated PR review findings for verification.
+
+### B. Generated claim paths omitted from ordinary claim-support scoring
+
+Verified. The metric claimed to score all generated claim atoms, but ordinary cases automatically traversed only `summary`, `answer`, and `grounds[*]`; the remaining structured fields were automatic only under the high-risk guard. The repair introduces immutable `claim-traversal-v1` coverage over every generated structured-answer field at every risk level. `high-risk-guard-v1` reuses that same atom set and changes only the Gate 1 consequence. A non-high-risk unsupported claim in `additional_checks[*]` is now a required golden.
+
+### C. Day 8 wording conflicted with the same-SHA candidate plan
+
+Verified. The schedule's old “pin candidate SUT SHA” phrase could be read as authorizing a product-code change even though `candidate-plan-v1` freezes the AX SHA and varies only `evidence_limit`. Day 8 now explicitly reuses the pinned baseline SUT SHA and freezes the candidate configuration. A product-code candidate remains a separate versioned experiment.
+
+These corrections require independent specification re-review before the written design returns to user approval.

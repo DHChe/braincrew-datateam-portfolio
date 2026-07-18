@@ -252,7 +252,7 @@ Each case contains structured ground truth rather than only a free-form referenc
 - expected EvidenceSpans and acceptable alternative evidence;
 - forbidden evidence and visibility constraints;
 - expected Answer Mode;
-- versioned proposition catalog, required claim paths, and forbidden propositions;
+- versioned proposition catalog, required-output paths, and forbidden propositions; generated-path scoring coverage is evaluator-derived and cannot be narrowed per case;
 - evaluator configuration and applicability conditions;
 - difficulty and adversarial tags;
 - public or synthetic provenance and license metadata;
@@ -357,9 +357,11 @@ Claim support is a closed-world, deterministic contract over the frozen evaluati
 - `contradicts`: evidence groups whose text supports the opposite proposition;
 - exact allowed and forbidden Answer Modes when applicable.
 
-The evaluator creates a stable atom identity `(claim_path, atom_index, normalized_text_digest)`. List elements are already separate paths. Scalar `summary` and `answer` values are split on normalized newlines and the terminal punctuation characters `.`, `?`, `!`, `。`, `？`, and `！`; empty segments are removed. Support-required paths are `summary`, `answer`, and every `grounds[i]`; a case may additionally mark exact `review_points[i]`, `additional_checks[i]`, or `risk_warning` paths.
+`claim-traversal-v1` derives scoring coverage from every returned structured answer, regardless of case risk level. It enumerates every non-empty generated value in `summary`, `answer`, `grounds[*]`, `review_points[*]`, `additional_checks[*]`, and `risk_warning`. Every value is split on normalized newlines and the terminal punctuation characters `.`, `?`, `!`, `。`, `？`, and `！`; empty segments are removed. Each resulting atom receives the stable identity `(claim_path, atom_index, normalized_text_digest)`.
 
-For high-risk gating, `high-risk-guard-v1` derives its coverage from the returned answer rather than trusting a case-authored list. It atomizes every non-empty generated path in `summary`, `answer`, `grounds[*]`, `review_points[*]`, `additional_checks[*]`, and `risk_warning`. A dataset author cannot remove any of these paths. Schema validation rejects a high-risk evaluator configuration that overrides or narrows this derived coverage.
+A dataset author cannot remove generated paths from this traversal. Case-authored `required-output paths` only add a zero-score placeholder when expected content is absent or empty; they never define or narrow which generated content is scored. Schema validation rejects evaluator configuration that overrides or narrows `claim-traversal-v1`.
+
+`high-risk-guard-v1` consumes the exact same atom set. It adds fail-closed Gate 1 behavior for high-risk cases but does not have a broader traversal than ordinary claim-support scoring.
 
 `claim-normalizer-v1` applies Unicode NFC normalization, converts CRLF to LF, trims leading and trailing whitespace, collapses internal whitespace, and normalizes only declared punctuation variants. It performs no stemming, stop-word deletion, embedding similarity, or negation/modality removal. Matchers use anchored whole-atom literal equality or anchored bounded regular expressions. The atomizer, normalizer, matcher-set version, proposition catalog digest, and case catalog digest are comparison compatibility fields.
 
@@ -371,11 +373,11 @@ The deterministic support predicate is true only when all of the following hold:
 4. the proposition's polarity, modality, and allowed Answer Mode match the case contract;
 5. no forbidden proposition is present in the same atom.
 
-An atom mapping to no proposition is `A-UNMAPPED-CLAIM`; mapping to multiple propositions is `A-AMBIGUOUS-CLAIM`; citing no supporting evidence is `A-UNSUPPORTED-CLAIM`; and citing contradictory evidence is `A-CONTRADICTED-CLAIM`. All four remain in the metric denominator with score `0`; none may be dropped as inapplicable. An empty support-required path is also an unsupported atom when the case requires content there.
+An atom mapping to no proposition is `A-UNMAPPED-CLAIM`; mapping to multiple propositions is `A-AMBIGUOUS-CLAIM`; citing no supporting evidence is `A-UNSUPPORTED-CLAIM`; and citing contradictory evidence is `A-CONTRADICTED-CLAIM`. All four remain in the metric denominator with score `0`; none may be dropped as inapplicable. An absent or empty case-declared required-output path adds one unsupported placeholder atom.
 
 For a high-risk case, a matched conclusive proposition that is forbidden, unsupported, or contradicted emits `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`. Any ambiguous or unmapped atom on any path covered by derived `high-risk-guard-v1` emits the same critical identity. Both conditions fail Gate 1. This derived coverage makes the decision deterministic even when unknown text cannot be labeled conclusive by a proposition matcher, prevents case-author omissions, and prevents novel high-risk wording from receiving a passing score. Supplementary LLM-judge output may help a human review unmatched language, but it cannot change the deterministic score or gate.
 
-Citation coverage, a secondary metric, is support-required claim paths with at least one linked citation / all support-required claim paths regardless of semantic support. It is intentionally separate from claim-support precision.
+Citation coverage, a secondary metric, is generated claim paths from `claim-traversal-v1` with at least one linked citation / all generated claim paths, plus any absent required-output path in the denominator. It is intentionally separate from claim-support precision.
 
 For grounded-answer cases, zero returned citations produce citation precision `0`. A primary metric with zero applicable cases is unavailable and makes the run `INVALID`. Any applicable case that cannot be scored because required observation fields are missing makes the run `INVALID`; it is never removed from the denominator.
 
@@ -383,7 +385,7 @@ Returned rank is array order. Duplicate evidence or citation identities keep the
 
 Calculations retain exact integer counts and rational division through gate comparison. Gate deltas use unrounded values. Stored display values round half-even to four decimal places, and displayed percentages round half-even to two decimal places.
 
-Each primary metric has at least one hand-calculated golden fixture containing its case numerator, denominator, case score, macro aggregate, and expected gate delta. Claim-support fixtures must include at least one supported atom, one contradiction using a correct document identity, one atom with both supporting and contradicting citations, one negation or modality reversal, one unmapped atom, one ambiguous atom, one omitted-case-configuration attempt rejected by derived high-risk coverage, and one high-risk fail-closed result.
+Each primary metric has at least one hand-calculated golden fixture containing its case numerator, denominator, case score, macro aggregate, and expected gate delta. Claim-support fixtures must include at least one supported atom, one contradiction using a correct document identity, one atom with both supporting and contradicting citations, one negation or modality reversal, one unmapped atom, one ambiguous atom, one non-high-risk unsupported claim in `additional_checks[*]`, one attempt to narrow traversal rejected by schema validation, and one high-risk fail-closed result.
 
 ### Gate 1: non-negotiable hard failures
 
@@ -557,8 +559,8 @@ Day 3  SUT Adapter, retrieval evaluator and 20 additional cases
 Day 4  Answer, citation and abstention evaluators and 20 additional cases
 Day 5  Failure taxonomy, release gates and 20 additional cases
 Day 6  Complete and review 100 cases; freeze 70/30 split and content digest
-Day 7  Execute live baseline; analyze representative failures; prepare candidate
-Day 8  Pin candidate SUT SHA; execute compatible live Verification A/B run
+Day 7  Execute live baseline; analyze representative failures; prepare candidate configuration
+Day 8  Reuse the pinned baseline SUT SHA; freeze candidate configuration; execute compatible live Verification A/B run
 Day 9  Static dashboard, README, reproduction and interview dossier completion
 Day 10 Independent QA, demo video, resume bullets and release pull request
 ```
