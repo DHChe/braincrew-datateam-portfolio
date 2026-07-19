@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -35,7 +34,12 @@ from braincrew.contracts import (
     RunEnvelope,
     SutProvenance,
 )
-from braincrew.evaluator import evaluate_exact_answer, evaluate_retrieval_run
+from braincrew.digest import canonical_digest
+from braincrew.evaluator import (
+    evaluate_exact_answer,
+    evaluate_parsing_run,
+    evaluate_retrieval_run,
+)
 from braincrew.gate import decide_fixture_gate
 from braincrew.grounded_contracts import (
     GroundedAdapterProvenance,
@@ -54,16 +58,6 @@ from braincrew.grounded_evaluator import (
 )
 from braincrew.grounded_run import execute_grounded_fixture
 from braincrew.repository import RepositoryState
-
-
-def canonical_digest(value: object) -> str:
-    canonical = json.dumps(
-        value,
-        ensure_ascii=False,
-        separators=(",", ":"),
-        sort_keys=True,
-    ).encode("utf-8")
-    return f"sha256:{hashlib.sha256(canonical).hexdigest()}"
 
 
 def build_run_artifact(
@@ -468,6 +462,36 @@ def replay_run_artifact(path: Path) -> dict[str, str]:
     if not isinstance(raw_artifact, dict):
         raise ValueError("artifact must be a JSON object")
     schema_version = raw_artifact.get("schema_version")
+    if schema_version == "dataset-run-artifact-v1":
+        from braincrew.dataset_run import replay_dataset_run_artifact
+
+        return replay_dataset_run_artifact(raw_artifact)
+    if schema_version == "parsing-run-artifact-v1":
+        parsing_artifact = ParsingRunArtifactDocument.model_validate(raw_artifact)
+        stored_parsing_result = parsing_artifact.logical_result
+        recomputed_parsing_result = ParsingLogicalResult(
+            dataset_snapshot=stored_parsing_result.dataset_snapshot,
+            observation_snapshot=stored_parsing_result.observation_snapshot,
+            evaluation=evaluate_parsing_run(
+                stored_parsing_result.dataset_snapshot,
+                stored_parsing_result.observation_snapshot,
+            ),
+        )
+        recomputed_parsing_digest = canonical_digest(
+            {
+                "provenance": parsing_artifact.provenance.model_dump(mode="json"),
+                "logical_result": recomputed_parsing_result.model_dump(mode="json"),
+            }
+        )
+        if (
+            stored_parsing_result != recomputed_parsing_result
+            or parsing_artifact.logical_digest != recomputed_parsing_digest
+        ):
+            raise ValueError("artifact logical content does not reproduce its stored digest")
+        return {
+            "logical_digest": recomputed_parsing_digest,
+            "run_state": recomputed_parsing_result.evaluation.state,
+        }
     if schema_version == "grounded-run-artifact-v1":
         grounded_artifact = GroundedRunArtifactDocument.model_validate(raw_artifact)
         stored_grounded_result = grounded_artifact.logical_result

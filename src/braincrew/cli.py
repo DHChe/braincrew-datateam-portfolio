@@ -9,6 +9,13 @@ from typing import Annotated
 import typer
 from pydantic import ValidationError
 
+from braincrew.dataset_registry import validate_dataset_bundle
+from braincrew.dataset_run import (
+    build_dataset_run_artifact,
+    execute_dataset_fixture,
+    load_dataset_observations,
+    write_dataset_run_artifact,
+)
 from braincrew.fixture_run import execute_fixture_case, load_fixture_case
 from braincrew.grounded_run import (
     execute_grounded_fixture,
@@ -248,6 +255,78 @@ def run_grounded_fixture(
     )
     try:
         artifact_path = write_grounded_run_artifact(artifact, output_dir)
+    except FileExistsError as error:
+        typer.echo(f"Artifact already exists: {output_dir / f'{run_id}.json'}", err=True)
+        raise typer.Exit(code=2) from error
+    typer.echo(
+        json.dumps(
+            {
+                "artifact_path": str(artifact_path),
+                "run_state": artifact.logical_result.evaluation.state,
+                "logical_digest": artifact.logical_digest,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+@app.command("run-dataset")
+def run_dataset_fixture(
+    manifest_path: Annotated[
+        Path,
+        typer.Option("--manifest", exists=True, dir_okay=False, readable=True),
+    ],
+    parsing_observations_path: Annotated[
+        Path,
+        typer.Option("--parsing-observations", exists=True, dir_okay=False, readable=True),
+    ],
+    retrieval_observations_path: Annotated[
+        Path,
+        typer.Option("--retrieval-observations", exists=True, dir_okay=False, readable=True),
+    ],
+    grounded_observations_path: Annotated[
+        Path,
+        typer.Option("--grounded-observations", exists=True, dir_okay=False, readable=True),
+    ],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    run_id: Annotated[str, typer.Option("--run-id")],
+    sut_sha: Annotated[str, typer.Option("--sut-sha")],
+) -> None:
+    """Evaluate the frozen integrated 100-case fixture dataset."""
+    _validate_run_identity(run_id, sut_sha)
+    validation = validate_dataset_bundle(manifest_path)
+    if validation.state != "VALID":
+        codes = ",".join(item.code for item in validation.violations)
+        typer.echo(f"Invalid dataset: {codes}", err=True)
+        raise typer.Exit(code=2)
+    try:
+        observations = load_dataset_observations(
+            parsing_path=parsing_observations_path,
+            retrieval_path=retrieval_observations_path,
+            grounded_path=grounded_observations_path,
+        )
+    except (json.JSONDecodeError, UnicodeError, ValidationError) as error:
+        typer.echo(f"Invalid dataset observations: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    if sut_sha != observations.grounded.sut_commit_sha:
+        typer.echo(
+            "Invalid dataset observations: --sut-sha does not match grounded observation SUT SHA",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    evaluation_state = _capture_repository_state()
+    evaluation = execute_dataset_fixture(validation, observations)
+    artifact = build_dataset_run_artifact(
+        validation=validation,
+        observations=observations,
+        evaluation=evaluation,
+        run_id=run_id,
+        evaluation_state=evaluation_state,
+        sut_sha=sut_sha,
+    )
+    try:
+        artifact_path = write_dataset_run_artifact(artifact, output_dir)
     except FileExistsError as error:
         typer.echo(f"Artifact already exists: {output_dir / f'{run_id}.json'}", err=True)
         raise typer.Exit(code=2) from error

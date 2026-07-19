@@ -110,14 +110,31 @@ Failure modes:
 : ambiguous expected evidence, duplicate cases, leakage between splits, undocumented corpus changes, thresholds tuned on Verification, and reference answers that allow unsupported claims.
 
 Evidence required before interview:
-: Dataset manifest, schema validation, content digest, split assignment, distribution report, provenance report, and representative passing and failing cases.
+: Dataset manifest, schema validation, content digest, split assignment, distribution report, provenance report, dataset card, deterministic full fixture create/replay, and representative passing and failing cases.
+
+Issue #12 implementation decision:
+: `datasets/dataset_manifest_v1.json` now composes the existing parsing, retrieval, and grounded sources as `braincrew-evaluation-dataset@1.0.0`; it does not create a second copy of their case content. `datasets/DATASET_CARD.md` records the approved synthetic `CC0-1.0` provenance/license boundary, risk policy, applicability minimums, leakage controls, exclusions, and frozen integrated digest `sha256:7fb0b58c5ad7c242696bcaef13773eb5dc6358e8127219fa7dc65c19c7a5d71b`.
+
+Why the digest covers normalized scoring content:
+: Identity-only or file-byte-only hashes would either miss evaluator-relevant edits or change for irrelevant formatting. The accepted digest covers the normalized manifest contract plus every validated component field used to define scoring, provenance, risk, applicability, and split identity. A legitimate scoring correction is intentionally incompatible until the dataset version and digests are updated.
+
+Execution and replay evidence:
+: `braincrew-eval run-dataset` executes all 100 fixture observations into an immutable `dataset-run-artifact-v1` with component case results and aggregates. Independent run IDs produce the same logical digest because run-envelope identity is excluded. Replay revalidates the frozen snapshot and recomputes parsing, retrieval, and grounded evaluations. The earlier parsing artifact replay gap was reproduced as an unsupported-schema failure and repaired without changing the 20-, 30-, or 50-case contracts.
+
+Invalid-state boundary:
+: Missing or duplicate cases, unstable identities, count/split drift, schema mismatch, a component path outside the dataset bundle, missing or unreviewed provenance, source-type disagreement between the manifest and any component/case, unapproved component- or case-level license, invalid risk policy, focus-specific metric applicability drift, inadequate Verification denominators, cross-split scoring-content duplication, an expected grounded-answer literal embedded in a query, banned answer keys, or digest mismatch returns `INVALID`; it never publishes a partial aggregate. Retrieval, grounded-answer, and visibility/abstention cases each preserve their required metric family rather than merely enabling any one metric. Case-level provenance status is derived from the source review state, and bundle load and replay share the same semantic checks. A successful fixture run demonstrates evaluator and artifact determinism only, not live AX quality.
 
 Likely follow-ups:
 
 - "Is 100 statistically sufficient?" — It is a scoped engineering regression suite, not a population estimate; claims remain bounded to this dataset.
 - "How did you prevent leakage?" — Freeze split and digest, prohibit final tuning on Verification, and version any correction.
+- "Why is the Verification split not secret?" — The repository is public; the defensible control is a frozen pre-tuning assignment and digest, not secrecy.
+- "Why not merge the three JSON files into one?" — Composition preserves one authoritative source per existing contract and lets the registry detect drift without introducing a fourth case copy.
+- "What does a matching replay prove?" — It proves the stored snapshot reproduces the same deterministic evaluator result and logical digest; it does not prove live model quality.
 - "Why not use only LLM-generated labels?" — Expected evidence and safety constraints require deterministic reviewable contracts; LLM assistance cannot be the sole authority.
 - "What if a metric has too few applicable Verification cases?" — The run becomes invalid under the frozen minimum-denominator contract; it does not publish a misleading average.
+- "Could a case count toward 100 without testing its declared focus?" — No. Retrieval requires Recall@5 and MRR@10, grounded-answer requires its claim/citation/mode metrics, and visibility/abstention requires mode and abstention, in addition to the aggregate Verification minimums.
+- "How do you stop the prompt from containing the answer?" — Grounded queries are checked against their literal proposition matchers, and any exact normalized answer literal makes the dataset invalid.
 
 ### D5. Reserve trajectory extension points without claiming Agent evaluation
 
