@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime
+from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -144,6 +145,261 @@ class ParsingDatasetDocument(StrictContract):
         if len(self.cases) != 20 or calibration_count != 14 or verification_count != 6:
             raise ValueError("parsing dataset must contain 14 calibration and 6 verification cases")
         return self
+
+
+class RetrievalCorpusIdentity(StrictContract):
+    id: str
+    version: str
+
+
+class RetrievalSourceExpectation(StrictContract):
+    record_kind: str
+    record_id: str
+    evidence_span_id: str | None
+    source_text_digest: LogicalDigest | None
+    authority_level: int | None = Field(ge=1)
+
+
+class RetrievalEvidenceGroup(StrictContract):
+    id: str
+    alternatives: list[RetrievalSourceExpectation]
+
+
+class RetrievalExpected(StrictContract):
+    source_identity_status: Literal["resolved", "missing", "ambiguous"]
+    unresolved_identity_policy: Literal["not_applicable", "denominator_zero", "invalid"]
+    evidence_groups: list[RetrievalEvidenceGroup] = Field(min_length=1)
+    preferred_authority_level: int | None = Field(ge=1)
+    forbidden_sources: list[RetrievalSourceExpectation] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_expected_source_identity_policy(self) -> RetrievalExpected:
+        alternatives = [
+            alternative for group in self.evidence_groups for alternative in group.alternatives
+        ]
+        if self.source_identity_status == "resolved":
+            if any(not group.alternatives for group in self.evidence_groups):
+                raise ValueError("resolved expected source identities require alternatives")
+            if self.unresolved_identity_policy != "not_applicable":
+                raise ValueError(
+                    "resolved expected source identities require not_applicable policy"
+                )
+        else:
+            if alternatives:
+                raise ValueError(
+                    "unresolved expected source identities cannot declare alternatives"
+                )
+            if self.unresolved_identity_policy == "not_applicable":
+                raise ValueError("unresolved expected source identities require an explicit policy")
+        return self
+
+
+class RetrievalApplicability(StrictContract):
+    recall_at_5: bool
+    mrr_at_10: bool
+    authority_ordering: bool
+    forbidden_visibility: bool
+
+
+class RetrievalReview(StrictContract):
+    status: Literal["reviewed"]
+    reviewer: str
+
+
+class RetrievalCase(StrictContract):
+    id: str
+    split: Literal["calibration", "verification"]
+    primary_focus: Literal["retrieval"]
+    tags: list[str]
+    role: Literal["Executive", "HRManager"]
+    query: str = Field(min_length=1)
+    corpus: RetrievalCorpusIdentity
+    expected: RetrievalExpected
+    applicability: RetrievalApplicability
+    difficulty: Literal["standard", "adversarial"]
+    provenance: FixtureProvenance
+    review: RetrievalReview
+
+    @model_validator(mode="after")
+    def validate_metric_applicability(self) -> RetrievalCase:
+        if (
+            self.applicability.authority_ordering
+            and self.expected.preferred_authority_level is None
+        ):
+            raise ValueError("authority ordering requires a preferred authority level")
+        if (
+            self.expected.source_identity_status != "resolved"
+            and self.applicability.authority_ordering
+        ):
+            raise ValueError("unresolved expected source identity cannot score authority ordering")
+        return self
+
+
+class RetrievalDatasetDocument(StrictContract):
+    schema_version: Literal["retrieval-dataset-v1"]
+    dataset: DatasetIdentity
+    provenance: FixtureProvenance
+    cases: list[RetrievalCase]
+
+    @model_validator(mode="after")
+    def validate_case_set(self) -> RetrievalDatasetDocument:
+        case_ids = [case.id for case in self.cases]
+        if len(case_ids) != len(set(case_ids)):
+            raise ValueError("case IDs must be unique")
+        calibration_count = sum(case.split == "calibration" for case in self.cases)
+        verification_cases = [case for case in self.cases if case.split == "verification"]
+        if len(self.cases) != 30 or calibration_count != 21 or len(verification_cases) != 9:
+            raise ValueError(
+                "retrieval dataset must contain 21 calibration and 9 verification cases"
+            )
+        if any(
+            case.expected.source_identity_status != "resolved" or not case.applicability.recall_at_5
+            for case in verification_cases
+        ):
+            raise ValueError("all 9 verification cases must have resolved Recall@5 ground truth")
+        return self
+
+
+class RetrievalCandidateObservation(StrictContract):
+    rank: int = Field(ge=1)
+    record_kind: str
+    record_id: str
+    evidence_span_id: str | None
+    source_text_digest: LogicalDigest | None
+    authority_level: int | None = Field(ge=1)
+    visibility_allowed: bool
+    visibility_reason: str
+
+
+class RetrievalObservation(StrictContract):
+    schema_version: Literal["retrieval-observation-v1"]
+    case_id: str
+    query: str
+    retrieval_available: bool
+    failure_code: str | None
+    candidates: list[RetrievalCandidateObservation]
+
+    @model_validator(mode="after")
+    def validate_availability_and_rank_contract(self) -> RetrievalObservation:
+        if self.retrieval_available and self.failure_code is not None:
+            raise ValueError("available retrieval cannot declare a failure code")
+        if not self.retrieval_available and self.failure_code is None:
+            raise ValueError("unavailable retrieval requires an explicit failure code")
+        if [candidate.rank for candidate in self.candidates] != list(
+            range(1, len(self.candidates) + 1)
+        ):
+            raise ValueError("retrieval candidate rank must equal one-based array order")
+        return self
+
+
+class RetrievalObservationBatch(StrictContract):
+    schema_version: Literal["retrieval-observation-batch-v1"]
+    adapter_version: Literal["fixture-retrieval-sut-v1"]
+    observations: list[RetrievalObservation]
+
+    @model_validator(mode="after")
+    def require_unique_case_observations(self) -> RetrievalObservationBatch:
+        case_ids = [observation.case_id for observation in self.observations]
+        if len(case_ids) != len(set(case_ids)):
+            raise ValueError("retrieval observation case IDs must be unique")
+        return self
+
+
+class RetrievalMetricScore(StrictContract):
+    numerator: int = Field(ge=0)
+    denominator: int = Field(gt=0)
+    display_value: str = Field(pattern=r"^(0|1)\.[0-9]{4}$")
+
+    @model_validator(mode="after")
+    def validate_exact_score(self) -> RetrievalMetricScore:
+        if self.numerator > self.denominator:
+            raise ValueError("retrieval metric numerator cannot exceed denominator")
+        expected_display = (Decimal(self.numerator) / Decimal(self.denominator)).quantize(
+            Decimal("0.0001"),
+            rounding=ROUND_HALF_EVEN,
+        )
+        if self.display_value != f"{expected_display:.4f}":
+            raise ValueError("retrieval metric display must match its exact fraction")
+        return self
+
+
+class RetrievalCaseEvaluation(StrictContract):
+    schema_version: Literal["retrieval-case-evaluation-v1"]
+    evaluator_version: Literal["retrieval-quality-v1"]
+    case_id: str
+    status: Literal["SCORED", "INVALID"]
+    invalid_reasons: list[str]
+    failure_codes: list[str]
+    hard_failure: bool
+    recall_at_5: RetrievalMetricScore | None
+    mrr_at_10: RetrievalMetricScore | None
+    authority_priority: RetrievalMetricScore | None
+    forbidden_visibility: RetrievalMetricScore | None
+
+
+class RetrievalCoverage(StrictContract):
+    total_cases: int = Field(ge=0)
+    scored_cases: int = Field(ge=0)
+    calibration_cases: int = Field(ge=0)
+    verification_cases: int = Field(ge=0)
+    verification_recall_at_5_cases: int = Field(ge=0)
+    authority_ordering_cases: int = Field(ge=0)
+    forbidden_visibility_cases: int = Field(ge=0)
+
+
+class RetrievalAggregateMetric(RetrievalMetricScore):
+    case_count: int = Field(gt=0)
+
+
+class RetrievalAggregate(StrictContract):
+    recall_at_5: RetrievalAggregateMetric
+    mrr_at_10: RetrievalAggregateMetric
+    authority_priority: RetrievalAggregateMetric
+    forbidden_visibility: RetrievalAggregateMetric
+
+
+class RetrievalRunEvaluation(StrictContract):
+    schema_version: Literal["retrieval-run-evaluation-v1"]
+    evaluator_version: Literal["retrieval-quality-v1"]
+    state: Literal["COMPLETED", "FAILED", "INVALID"]
+    invalid_reasons: list[str]
+    hard_failure_cases: list[str]
+    coverage: RetrievalCoverage
+    case_results: list[RetrievalCaseEvaluation]
+    aggregate: RetrievalAggregate | None
+
+
+class RetrievalAdapterProvenance(StrictContract):
+    version: Literal["fixture-retrieval-sut-v1"]
+    execution_mode: Literal["fixture"]
+
+
+class RetrievalEvaluatorProvenance(StrictContract):
+    version: Literal["retrieval-quality-v1"]
+
+
+class RetrievalArtifactProvenance(StrictContract):
+    evaluation_plane: EvaluationPlaneProvenance
+    sut: SutProvenance
+    dataset: DatasetArtifactProvenance
+    adapter: RetrievalAdapterProvenance
+    evaluator: RetrievalEvaluatorProvenance
+    prompt: PromptIdentity
+    model: ModelIdentity
+
+
+class RetrievalLogicalResult(StrictContract):
+    dataset_snapshot: RetrievalDatasetDocument
+    observation_snapshot: RetrievalObservationBatch
+    evaluation: RetrievalRunEvaluation
+
+
+class RetrievalRunArtifactDocument(StrictContract):
+    schema_version: Literal["retrieval-run-artifact-v1"]
+    run: RunEnvelope
+    provenance: RetrievalArtifactProvenance
+    logical_result: RetrievalLogicalResult
+    logical_digest: LogicalDigest
 
 
 class ParsingObservation(StrictContract):

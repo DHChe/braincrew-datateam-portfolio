@@ -287,6 +287,29 @@ Likely follow-ups:
 - "Why store exact fractions as well as decimals?" — Gate comparison must use unrounded values. The four-place decimal is presentation; the numerator and denominator are the authoritative, reproducible calculation.
 - "Why no PASS decision?" — This ticket evaluates one fixture run, not a compatible baseline-candidate release comparison. `COMPLETED` means evidence is complete; a future release gate decides pass or fail under its own versioned contract.
 
+Issue #9 implementation decision:
+: Freeze `braincrew-retrieval-quality@1.0.0` as 30 synthetic retrieval cases with a 21/9 Calibration/Verification split, score exact identity groups with deterministic `retrieval-quality-v1`, and persist the complete query, candidate identity, rank, authority, visibility, version, and failure evidence in `retrieval-run-artifact-v1`.
+
+Why:
+: Search quality claims are not auditable when a dashboard shows only aggregate decimals. Exact source tuples and case-level ranks let an interviewer trace Recall@5, MRR@10, authority ordering, and forbidden visibility back to the returned evidence. Keeping fixture observations separate from dataset ground truth also prevents the evaluator from grading an answer key it generated itself.
+
+Rejected alternatives:
+: Use fuzzy text or embedding similarity to decide relevant identity, drop cases whose expected source is missing or ambiguous, treat a returned forbidden item as acceptable when AX marks it denied, or collapse safety and quality into one weighted retrieval score. These options would make denominator changes invisible, weaken the role boundary, or allow good relevance to mask critical leakage.
+
+Trade-offs and failure modes:
+: Exact tuple matching is intentionally strict and can expose annotation debt. A reviewed unresolved identity therefore has only two legal paths: remain in the denominator as zero with `R-EXPECTED-SOURCE-IDENTITY-UNRESOLVED`, or make the case `INVALID`; it is never silently skipped. All nine Verification cases require resolved Recall@5 ground truth. Recall@5 counts the first five unique identities after duplicate removal, while MRR@10 preserves the first matching identity's original rank. Authority priority scores the first relevant unique result against the reviewed preferred authority. Any forbidden identity in returned candidates emits `R-FORBIDDEN-VISIBILITY` and a `hard_failure_cases` entry even if the candidate carries a deny-like visibility reason or the observation is otherwise `INVALID`; the fully scored run remains `COMPLETED`, while any later release gate must fail it. Missing, unavailable, query-mismatched, unexpected, or zero-applicability aggregate evidence invalidates the run and suppresses aggregates without erasing separately observed forbidden-source evidence.
+
+Validation evidence:
+: Contract tests freeze all 30 unique cases, the 21/9 split, strict schemas, reviewed applicability, exact fixture coverage, one-based array rank, and unresolved-identity policy. Hand-calculated goldens prove duplicate suppression, the fifth unique identity at original rank 6 still entering Recall@5, Recall@5 `2/2`, MRR@10 `1/2`, authority inversion `0/1`, denominator-zero unresolved identity, and explicit invalidation. Negative tests reject impossible or display-mismatched exact fractions, make a zero-applicability aggregate `INVALID`, prove forbidden identity produces a critical `hard_failure_cases` entry in both a fully scored `COMPLETED` run and an otherwise unavailable `INVALID` observation, and prove missing Verification evidence reduces the Recall@5 denominator below nine and produces `INVALID`. The CLI stores all 30 cases through the create-only result store with exact dataset/evaluator/adapter/SUT provenance; replay recomputes the retrieval evaluation and digest and rejects tampered case scores. A live synthetic request against pinned AX commit `c318b2192006bdb36a5bd5b3a2bc403425b45701` completed after the temporary demo tenant and official seed were installed, returned zero candidates, and therefore recorded empty identity/rank/authority evidence plus zero retrieval scores without a quality claim.
+
+Likely follow-ups:
+
+- "Why does an unresolved expected identity sometimes score zero instead of always invalidating?" — `denominator_zero` is an explicit conservative annotation policy for reviewed Calibration cases: the unresolved group remains visible and cannot improve the metric. `invalid` is available when scoring would be misleading. Verification forbids unresolved Recall@5 ground truth entirely.
+- "What exactly counts as a duplicate?" — The tuple `(record_kind, record_id, evidence_span_id, source_text_digest)`. The first array occurrence keeps its original rank; later identical tuples are ignored for Recall@5 and MRR@10.
+- "Why can rank 6 count toward Recall@5?" — Recall@5 is explicitly defined over five unique identities. If rank 2 duplicates rank 1, the fifth unique result can first appear at raw rank 6; MRR still uses that result's original rank 6.
+- "Why is a forbidden-source run still COMPLETED?" — Run state describes whether execution finished and the evidence is comparable. Zero-tolerance safety is carried separately by `hard_failure_cases`; the release gate must fail that run even though its evaluation completed. `FAILED` remains reserved for runtime or infrastructure failure.
+- "Did the live smoke prove the fixture's 30-case quality?" — No. It proved pinned HTTP execution and evaluator wiring for one synthetic query. AX returned no candidates and did not verify the declared corpus identity, so the result is explicit negative diagnostic evidence, not a benchmark pass.
+
 ### D8. Use Python, DuckDB and Parquet with a static Next.js dashboard
 
 Decision:

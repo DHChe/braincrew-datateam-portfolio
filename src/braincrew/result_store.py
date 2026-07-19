@@ -23,11 +23,19 @@ from braincrew.contracts import (
     ParsingRunArtifactDocument,
     ParsingRunEvaluation,
     PromptIdentity,
+    RetrievalAdapterProvenance,
+    RetrievalArtifactProvenance,
+    RetrievalDatasetDocument,
+    RetrievalEvaluatorProvenance,
+    RetrievalLogicalResult,
+    RetrievalObservationBatch,
+    RetrievalRunArtifactDocument,
+    RetrievalRunEvaluation,
     RunArtifactDocument,
     RunEnvelope,
     SutProvenance,
 )
-from braincrew.evaluator import evaluate_exact_answer
+from braincrew.evaluator import evaluate_exact_answer, evaluate_retrieval_run
 from braincrew.gate import decide_fixture_gate
 from braincrew.repository import RepositoryState
 
@@ -102,7 +110,7 @@ def write_run_artifact(
 
 
 def _write_artifact_document(
-    artifact: RunArtifactDocument | ParsingRunArtifactDocument,
+    artifact: RunArtifactDocument | ParsingRunArtifactDocument | RetrievalRunArtifactDocument,
     output_dir: Path,
 ) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -182,22 +190,126 @@ def write_parsing_run_artifact(
     return _write_artifact_document(artifact, output_dir)
 
 
-def replay_run_artifact(path: Path) -> tuple[str, str]:
-    artifact = RunArtifactDocument.model_validate_json(path.read_text(encoding="utf-8"))
-    stored_result = artifact.logical_result
-    evaluation = evaluate_exact_answer(stored_result.case_snapshot.case, stored_result.observation)
-    recomputed_result = LogicalResult(
-        case_snapshot=stored_result.case_snapshot,
-        observation=stored_result.observation,
+def build_retrieval_run_artifact(
+    *,
+    dataset: RetrievalDatasetDocument,
+    observations: RetrievalObservationBatch,
+    evaluation: RetrievalRunEvaluation,
+    run_id: str,
+    evaluation_state: RepositoryState,
+    sut_sha: str,
+) -> RetrievalRunArtifactDocument:
+    provenance = RetrievalArtifactProvenance(
+        evaluation_plane=EvaluationPlaneProvenance(
+            commit_sha=evaluation_state.commit_sha,
+            dirty_worktree=evaluation_state.dirty_worktree,
+            executed=True,
+        ),
+        sut=SutProvenance(
+            commit_sha=sut_sha,
+            dirty_worktree=None,
+            executed=False,
+            claim="identity placeholder only; live AX was not called",
+        ),
+        dataset=DatasetArtifactProvenance(
+            **dataset.dataset.model_dump(mode="python"),
+            **dataset.provenance.model_dump(mode="python"),
+            content_digest=canonical_digest(dataset.model_dump(mode="json")),
+        ),
+        adapter=RetrievalAdapterProvenance(
+            version=observations.adapter_version,
+            execution_mode="fixture",
+        ),
+        evaluator=RetrievalEvaluatorProvenance(version=evaluation.evaluator_version),
+        prompt=PromptIdentity(id="not-applicable", hash="not-applicable:deterministic-retrieval"),
+        model=ModelIdentity(provider="none", name="not-called", parameters={}),
+    )
+    logical_result = RetrievalLogicalResult(
+        dataset_snapshot=dataset,
+        observation_snapshot=observations,
+        evaluation=evaluation,
+    )
+    digest_payload = {
+        "provenance": provenance.model_dump(mode="json"),
+        "logical_result": logical_result.model_dump(mode="json"),
+    }
+    return RetrievalRunArtifactDocument(
+        schema_version="retrieval-run-artifact-v1",
+        run=RunEnvelope(
+            run_id=run_id,
+            execution_mode="fixture",
+            created_at=datetime.now(UTC),
+        ),
+        provenance=provenance,
+        logical_result=logical_result,
+        logical_digest=canonical_digest(digest_payload),
+    )
+
+
+def write_retrieval_run_artifact(
+    artifact: RetrievalRunArtifactDocument,
+    output_dir: Path,
+) -> Path:
+    return _write_artifact_document(artifact, output_dir)
+
+
+def replay_run_artifact(path: Path) -> dict[str, str]:
+    raw_artifact: object = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw_artifact, dict):
+        raise ValueError("artifact must be a JSON object")
+    schema_version = raw_artifact.get("schema_version")
+    if schema_version == "retrieval-run-artifact-v1":
+        retrieval_artifact = RetrievalRunArtifactDocument.model_validate(raw_artifact)
+        stored_retrieval_result = retrieval_artifact.logical_result
+        recomputed_retrieval_result = RetrievalLogicalResult(
+            dataset_snapshot=stored_retrieval_result.dataset_snapshot,
+            observation_snapshot=stored_retrieval_result.observation_snapshot,
+            evaluation=evaluate_retrieval_run(
+                stored_retrieval_result.dataset_snapshot,
+                stored_retrieval_result.observation_snapshot,
+            ),
+        )
+        recomputed_retrieval_digest = canonical_digest(
+            {
+                "provenance": retrieval_artifact.provenance.model_dump(mode="json"),
+                "logical_result": recomputed_retrieval_result.model_dump(mode="json"),
+            }
+        )
+        if (
+            stored_retrieval_result != recomputed_retrieval_result
+            or retrieval_artifact.logical_digest != recomputed_retrieval_digest
+        ):
+            raise ValueError("artifact logical content does not reproduce its stored digest")
+        return {
+            "logical_digest": recomputed_retrieval_digest,
+            "run_state": recomputed_retrieval_result.evaluation.state,
+        }
+    if schema_version != "run-artifact-v1":
+        raise ValueError(f"unsupported artifact schema: {schema_version}")
+    fixture_artifact = RunArtifactDocument.model_validate(raw_artifact)
+    stored_fixture_result = fixture_artifact.logical_result
+    evaluation = evaluate_exact_answer(
+        stored_fixture_result.case_snapshot.case,
+        stored_fixture_result.observation,
+    )
+    recomputed_fixture_result = LogicalResult(
+        case_snapshot=stored_fixture_result.case_snapshot,
+        observation=stored_fixture_result.observation,
         evaluation=evaluation,
         gate=decide_fixture_gate(evaluation),
     )
-    recomputed_digest = canonical_digest(
+    recomputed_fixture_digest = canonical_digest(
         {
-            "provenance": artifact.provenance.model_dump(mode="json"),
-            "logical_result": recomputed_result.model_dump(mode="json"),
+            "provenance": fixture_artifact.provenance.model_dump(mode="json"),
+            "logical_result": recomputed_fixture_result.model_dump(mode="json"),
         }
     )
-    if stored_result != recomputed_result or artifact.logical_digest != recomputed_digest:
+    if (
+        stored_fixture_result != recomputed_fixture_result
+        or fixture_artifact.logical_digest != recomputed_fixture_digest
+    ):
         raise ValueError("artifact logical content does not reproduce its stored digest")
-    return recomputed_digest, recomputed_result.gate.decision
+    return {
+        "logical_digest": recomputed_fixture_digest,
+        "gate_decision": recomputed_fixture_result.gate.decision,
+    }

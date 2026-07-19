@@ -18,10 +18,17 @@ from braincrew.parsing_run import (
 from braincrew.repository import RepositoryState, capture_evaluation_repository_state
 from braincrew.result_store import (
     build_parsing_run_artifact,
+    build_retrieval_run_artifact,
     build_run_artifact,
     replay_run_artifact,
     write_parsing_run_artifact,
+    write_retrieval_run_artifact,
     write_run_artifact,
+)
+from braincrew.retrieval_run import (
+    execute_retrieval_fixture,
+    load_retrieval_dataset,
+    load_retrieval_observations,
 )
 
 app = typer.Typer(no_args_is_help=True)
@@ -146,6 +153,55 @@ def run_parsing_fixture(
     )
 
 
+@app.command("run-retrieval")
+def run_retrieval_fixture(
+    dataset_path: Annotated[
+        Path,
+        typer.Option("--dataset", exists=True, dir_okay=False, readable=True),
+    ],
+    observations_path: Annotated[
+        Path,
+        typer.Option("--observations", exists=True, dir_okay=False, readable=True),
+    ],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    run_id: Annotated[str, typer.Option("--run-id")],
+    sut_sha: Annotated[str, typer.Option("--sut-sha")],
+) -> None:
+    """Evaluate one versioned retrieval dataset with fixture observations."""
+    _validate_run_identity(run_id, sut_sha)
+    try:
+        dataset = load_retrieval_dataset(dataset_path)
+        observations = load_retrieval_observations(observations_path)
+    except (json.JSONDecodeError, UnicodeError, ValidationError) as error:
+        typer.echo(f"Invalid retrieval input: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    evaluation_state = _capture_repository_state()
+    artifact = build_retrieval_run_artifact(
+        dataset=dataset,
+        observations=observations,
+        evaluation=execute_retrieval_fixture(dataset, observations),
+        run_id=run_id,
+        evaluation_state=evaluation_state,
+        sut_sha=sut_sha,
+    )
+    try:
+        artifact_path = write_retrieval_run_artifact(artifact, output_dir)
+    except FileExistsError as error:
+        typer.echo(f"Artifact already exists: {output_dir / f'{run_id}.json'}", err=True)
+        raise typer.Exit(code=2) from error
+    typer.echo(
+        json.dumps(
+            {
+                "artifact_path": str(artifact_path),
+                "run_state": artifact.logical_result.evaluation.state,
+                "logical_digest": artifact.logical_digest,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
 @app.command("replay")
 def replay_fixture(
     artifact_path: Annotated[
@@ -153,9 +209,9 @@ def replay_fixture(
         typer.Option("--artifact", exists=True, dir_okay=False, readable=True),
     ],
 ) -> None:
-    """Recompute a stored fixture artifact's logical result and gate."""
+    """Recompute a stored fixture artifact's logical result and digest."""
     try:
-        logical_digest, gate_decision = replay_run_artifact(artifact_path)
+        replay_summary = replay_run_artifact(artifact_path)
     except ValueError as error:
         typer.echo(f"Invalid artifact: {error}", err=True)
         raise typer.Exit(code=2) from error
@@ -163,8 +219,7 @@ def replay_fixture(
         json.dumps(
             {
                 "artifact_path": str(artifact_path),
-                "gate_decision": gate_decision,
-                "logical_digest": logical_digest,
+                **replay_summary,
             },
             ensure_ascii=False,
             sort_keys=True,
