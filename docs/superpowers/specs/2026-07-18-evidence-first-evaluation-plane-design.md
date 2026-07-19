@@ -117,6 +117,33 @@ Runs registered parsing, retrieval, grounded-answer, and operational evaluators.
 
 Stores manifests, observations, metrics, failure labels, and aggregate outputs as append-only artifacts. Corrections create a new run or version.
 
+#### Issue #6 tracer-bullet artifact contract
+
+The first executable slice freezes two Typer commands: `braincrew-eval run` executes one `fixture-case-v1` document, while `braincrew-eval replay` re-evaluates one stored `run-artifact-v1`. The module form `python -m braincrew.cli` exposes the same commands for acceptance testing.
+
+`run-artifact-v1` separates a volatile run envelope from canonical logical content:
+
+- `run` contains `run_id`, `execution_mode=fixture`, and creation time;
+- `provenance` records the automatically captured Evaluation Plane commit and dirty-worktree state, declared non-executed SUT identity, dataset content digest, `fixture-sut-v1`, `exact-answer-v1`, and explicit prompt/model placeholders;
+- `logical_result` contains the versioned case snapshot, normalized observation, exact-answer evaluation, and gate decision;
+- `logical_digest` is SHA-256 over canonical UTF-8 JSON containing `provenance` and recomputed `logical_result`, with sorted object keys and no insignificant whitespace.
+
+The run envelope and artifact path are excluded from `logical_digest`, so the same versioned fixture inputs and contracts reproduce the same logical identity under a different `run_id`. Provenance remains inside the digest boundary so a SUT, dataset, adapter, evaluator, prompt, or model identity change cannot masquerade as the same logical result.
+
+The Evaluation Plane commit is not accepted from a CLI argument. The command reads its own repository `HEAD` and dirty-worktree state immediately before building the artifact. The fixture-only SUT SHA remains a declared identity with `executed=false` and `dirty_worktree=null`, because this ticket does not inspect or execute an AX checkout.
+
+The dataset content digest covers only the dataset identity, case contract, and public-or-synthetic source provenance. It excludes the fixture SUT response and prompt/model placeholders, which are execution configuration and observation inputs rather than dataset identity. The enclosing logical digest still covers those execution contracts through provenance and the normalized result.
+
+The local JSON store uses create-only file semantics for `<run_id>.json`. A collision fails without changing existing bytes; corrections use a new run ID. Replay does not trust the stored score or gate: it recomputes them from the stored case snapshot and normalized observation, then rejects a mismatched logical payload or digest. This is application-level append-only evidence, not a claim of tamper-proof remote storage.
+
+Pydantic validates the complete `run-artifact-v1` envelope and every nested run, provenance, observation, evaluation, and gate contract before storage and replay. A missing envelope or incompatible nested schema fails explicitly instead of replaying a partial artifact.
+
+Because `run_id` becomes a local filename, `run-artifact-v1` accepts only 1–64 ASCII letters, digits, dots, underscores, and hyphens, beginning with a letter or digit. Evaluation Plane and SUT commit identities accept exactly 40 lowercase hexadecimal characters. Invalid identifiers fail before output creation, preventing path traversal and malformed provenance from entering the artifact store.
+
+The fixture SUT records `executed=false` and `model.name=not-called`. It proves the CLI-to-gate and replay seams only; it does not claim a live AX call, production metric coverage, or model execution.
+
+The executable slice preserves the architecture boundary in code: the fixture adapter creates only a normalized observation, the evaluator computes only the exact-answer score, the gate converts that score to a decision, the result store owns schema validation, digesting, append-only writes and replay, and the runner only orchestrates those components.
+
 ### Comparison and Release Gate
 
 Rejects incompatible runs, computes paired baseline-candidate deltas, applies frozen thresholds, and records a pass, fail, or invalid decision with reasons.

@@ -31,12 +31,66 @@ research and AX_portfolio context
 - Completed phase: `setup-matt-pocock-skills`; GitHub Issues was selected, the five canonical triage labels were configured, and the single-context domain-document rules were recorded.
 - Completed phase: `to-spec`; the user approved the CLI-to-gate, AX Adapter, and dashboard-export test seams, and implementation specification Issue #4 was published with the `ready-for-agent` label.
 - Completed phase: `to-tickets`; the user approved 12 vertical implementation slices, GitHub Issues #6 through #17 were published as sub-issues of #4, and 22 native dependency edges were recorded.
-- Active canonical phase: none.
-- Next canonical phase: fresh-context implementation of Issue #6 with TDD, followed by ticket-scoped code review.
+- Completed phase: Issue #6 implementation with `test-driven-development`; ten acceptance cases cover CLI execution, deterministic rerun and replay, append-only collision handling, invalid and tampered input, complete artifact-envelope validation, dataset-digest boundaries, path traversal, and commit identity validation.
+- Completed phase: Issue #6 ticket-scoped code review; both the standards and specification axes passed with zero unresolved blockers after review-driven TDD repairs.
+- Completed phase: the user approved the Issue #6 Git lifecycle proposal; Lore commit `b63b2f9` was pushed to `origin/feat/issue-6-cli-immutable-gate`, and PR #20 was opened against `develop`.
+- Active canonical phase: PR #20 verification and review gate.
+- Active artifact: [PR #20](https://github.com/DHChe/braincrew-datateam-portfolio/pull/20), with merge intentionally left pending.
+- Active completion condition: the latest PR head passes required checks with no unresolved review blocker, then the user explicitly authorizes merge.
+- Next canonical phase: present the latest remote check and review evidence through the Git Lifecycle Proposal Gate; merge only after explicit authorization.
 - Entry condition: Issue #6 is the only unblocked implementation ticket and carries `ready-for-agent`; Issues #7 through #17 remain blocked by their recorded dependency edges.
 - Entry condition status: satisfied on 2026-07-19; implementation must start from the latest verified `develop` on a ticket-bounded feature branch.
-- Following phase: after Issue #6 passes its implementation and review gates, remove its frontier role and activate the next dependency-unblocked ticket.
+- Following phase: after Issue #6 is reviewed and merged into `develop`, remove its frontier role and activate the next dependency-unblocked ticket in a fresh context.
 - Blocker: none.
+
+## Transition history
+
+### 2026-07-19 — Issue #6 implementation started
+
+- Active skill: `test-driven-development`.
+- Expected artifact: one versioned fixture case that runs from the Typer CLI through a fixture SUT adapter and deterministic evaluator into an append-only JSON result with a gate decision, plus deterministic artifact replay.
+- Completion condition: the acceptance test is observed failing before implementation, then passes with Ruff, mypy, full pytest, and repeated-run logical digest equality evidence.
+- Entry evidence: `feat/issue-6-cli-immutable-gate` and fetched `origin/develop` both point to `ffb56a86ca6a83b4c081cfd5571e4bc4aaf2d06d`; Issue #6 is open, labeled `ready-for-agent`, and has no blocker.
+- Scope exclusions: live AX HTTP, the full metric suite, the 100-case dataset, dashboard work, and Agent trajectory evaluation.
+- Next action: write and run the failing Issue #6 CLI acceptance test before production implementation.
+
+### 2026-07-19 — Issue #6 implementation completed; code review started
+
+- Completed skill: `test-driven-development`.
+- Completion evidence: `uv run ruff format --check .`, `uv run ruff check .`, `uv run mypy`, `uv run pytest -q`, and `git diff --check` passed; two console-script fixture runs and artifact replay produced the same logical digest `sha256:d11ba8fc170c5b2be94688d73b4db707aeeefe00bcdea0a73854a0555b83759e` and `PASS` decision.
+- Active skill: `code-review`.
+- Expected artifact: ticket-scoped review findings with severity and exact file references.
+- Completion condition: all blocking findings are fixed through TDD and fresh verification passes.
+- Next action: review the full Issue #6 diff before proposing commit, push, pull request, or merge actions.
+
+### 2026-07-19 — Issue #6 code review requested fixes
+
+- Standards axis: four findings; worst findings were the advanced `origin/develop` base and non-UTF-8 fixture traceback instead of an explicit invalid-input failure.
+- Spec axis: four findings; worst finding was accepting a caller-supplied Evaluation Plane SHA as executed provenance without recording dirty state.
+- Shared findings: dataset digest incorrectly covered fixture response and prompt/model configuration; replay did not require the complete `run-artifact-v1` envelope; runner, evaluator, adapter, and store responsibilities were mixed.
+- Scope review: no live AX, full metric suite, 100-case dataset, dashboard, or Agent trajectory scope creep found.
+- Active skill: `test-driven-development` for review-driven repairs.
+- Completion condition: each behavior defect is observed RED before its fix, module boundaries are repaired without behavior change, the branch is moved onto current `origin/develop`, and fresh review plus verification passes.
+
+### 2026-07-19 — Issue #6 code review and verification completed
+
+- Completed skills: `test-driven-development`, `code-review`, and `verification-before-completion`.
+- Review evidence: the independent standards and specification review axes both returned `PASS` with zero blockers after confirming the provenance, invalid-input, full artifact-envelope, dataset-digest, module-boundary, and latest-`develop` repairs.
+- Branch evidence: `feat/issue-6-cli-immutable-gate`, fetched `origin/develop`, and their merge base all point to `2c3540ed37afeb865bde1466ef992af278799700`; the ancestor check returned zero.
+- Verification evidence: `uv lock --check`, `uv sync --frozen --all-groups`, `uv run ruff format --check .`, `uv run ruff check .`, `uv run mypy`, `uv run pytest -q`, and `git diff --check` passed; pytest reported ten passing acceptance tests.
+- Replay evidence: two console-script fixture runs and artifact replay returned `PASS` with the same logical digest `sha256:ed3a600bf7bcf75d8c5664a71fec6efbaeac78e8e59d9cdacdd04870ff140155`.
+- Scope evidence: no live AX HTTP connection, full metric suite, 100-case dataset, dashboard, or Agent trajectory evaluation was added or claimed.
+- Active gate: Git Lifecycle Proposal Gate; no commit, push, pull request, or merge has been performed.
+- Next action: present the verified ticket-scoped lifecycle proposal and wait for explicit authorization before executing its first write action.
+
+### 2026-07-19 — Issue #6 lifecycle proposal approved; PR opened
+
+- Authorization: the user approved the proposed commit, push, and pull-request sequence; merge remains a separate evidence-gated action.
+- Commit evidence: Lore commit `b63b2f926e17c549afbfc9037eb3e8e2f92a5df4` contains the reviewed Issue #6 implementation and documentation.
+- Remote evidence: `origin/feat/issue-6-cli-immutable-gate` was created and [PR #20](https://github.com/DHChe/braincrew-datateam-portfolio/pull/20) targets `develop` with `Closes #6`.
+- Pre-push verification: the committed branch remained based on `origin/develop` at `2c3540ed37afeb865bde1466ef992af278799700`; Ruff, mypy, ten pytest cases, and diff checks passed.
+- Replay evidence: two clean committed-state CLI runs and replay returned `PASS` with logical digest `sha256:b033d931313f3ae2462ed0068712f900b7cf9f8b8dd1433c961fdc10c6e063dc`.
+- Active gate: wait for the latest PR checks and review evidence, then request explicit merge authorization.
 
 ## Transition record format
 
