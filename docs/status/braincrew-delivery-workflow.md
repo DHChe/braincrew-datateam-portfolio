@@ -38,16 +38,70 @@ research and AX_portfolio context
 - Completed phase: Issue #7 implementation with `test-driven-development`; controlled HTTP tests and live synthetic smoke cover the pinned Adapter boundary without claiming quality.
 - Completed phase: Issue #7 ticket-scoped code review and `verification-before-completion`; both review axes have zero unresolved blocker and every fresh local gate passed.
 - Completed phase: Lore commit `3aa7264` was pushed to `origin/feat/issue-7-ax-http-contract`; draft PR #21 was opened against `develop`, its first Python quality gate passed, and its remote merge state was `CLEAN` with no review comment or change request.
-- Active canonical phase: Issue #7 authorized squash-merge transaction and post-merge verification.
-- Active artifact: [PR #21](https://github.com/DHChe/braincrew-datateam-portfolio/pull/21) for [Issue #7](https://github.com/DHChe/braincrew-datateam-portfolio/issues/7) on branch `feat/issue-7-ax-http-contract`.
-- Active completion condition: PR #21 is squash-merged into `develop`, fetched `origin/develop` contains the returned merge commit, Issue #7 is closed, and the remote feature branch is absent.
-- Next canonical action: publish this authorization record, require the new head's checks to pass, execute the approved squash merge, remove the remote feature branch, and verify each terminal condition.
-- Entry condition: Issue #7 is the only open implementation ticket whose native blockers are all closed; it carries `ready-for-agent`. Issues #8, #9, #10, and #15 still depend on open Issue #7.
-- Entry condition status: satisfied on 2026-07-19 from fetched `origin/develop@230f90fb53df950173896bd6824792e3a70945ae`; the dedicated branch starts at that exact commit and its clean baseline passed.
-- Following phase: after an authorized commit, push, and pull request, wait for required checks and review evidence before proposing merge.
+- Completed phase: PR #21 passed its required Python quality check, merged into `develop` as `0d137a6`, and closed Issue #7.
+- Completed phase: Issue #8 implementation with `test-driven-development`; 20 versioned parsing cases, exact metric goldens, fixture CLI/result-store execution, and fail-closed `INVALID` behavior are implemented.
+- Completed phase: Issue #8 ticket-scoped `code-review`; Standards and Spec axes both passed with zero remaining finding after a bounded duplication refactor and re-review.
+- Completed phase: Issue #8 `verification-before-completion`; every required local gate and the installed-console-script fixture run passed with fresh evidence.
+- Completed phase: the user approved the Issue #8 Git lifecycle proposal for one Lore commit, committed-state verification, branch push, and pull-request creation; merge remains excluded.
+- Active canonical phase: Issue #8 pull-request verification and review gate.
+- Active artifact: [Issue #8](https://github.com/DHChe/braincrew-datateam-portfolio/issues/8), labeled `ready-for-agent`, on branch `feat/issue-8-parsing-quality`.
+- Active completion condition: the pushed Issue #8 pull-request head passes required checks with no unresolved review blocker, then merge is proposed separately for explicit authorization.
+- Entry condition: Issues #6 and #7 are closed through merged PRs #20 and #21, and `origin/develop` points to the Issue #7 merge commit `0d137a64b86158e33a14d435caaabf5d42ea20c1`.
+- Entry condition status: satisfied on 2026-07-19; the dedicated worktree is clean and based exactly on that `origin/develop` commit.
+- Next canonical phase: create the authorized Lore commit, verify its clean committed state, push `feat/issue-8-parsing-quality`, and open a `develop` pull request with `Closes #8`; then wait at the remote verification gate.
+- Following phase: after review fixes and full verification, stop at the Git Lifecycle Proposal Gate before any commit, push, pull request, or merge.
 - Blocker: none.
 
 ## Transition history
+
+### 2026-07-19 — Issue #8 lifecycle proposal approved
+
+- Authorization: the user approved one Lore commit, clean committed-state verification, push to `origin/feat/issue-8-parsing-quality`, and pull-request creation against `develop`; merge was not authorized.
+- Included scope: the reviewed Issue #8 dataset, contracts, deterministic parsing evaluator, fixture CLI/result store, tests, design decision, interview defense card, and workflow evidence.
+- Required pre-push evidence: the committed worktree is clean; Ruff, mypy, full pytest, diff checks, and an installed-console-script parsing run pass with the committed Evaluation Plane provenance.
+- Pull-request strategy: use `Closes #8`, require the Python quality check and no unresolved review blocker, and keep squash merge as a separately proposed action.
+- Known risk: live AX parsing remains unobservable, so fixture completion cannot be presented as live AX parsing quality or a release `PASS`.
+- Next action: create the Lore commit and run the committed-state verification before any push.
+
+### 2026-07-19 — Issue #8 final verification completed; lifecycle proposal gate reached
+
+- Completed skill: `verification-before-completion`.
+- Quality evidence: `uv sync --frozen --all-groups`, `uv run ruff format --check .`, `uv run ruff check .`, `uv run mypy`, `uv run pytest -q`, and `git diff --check` all exited successfully; pytest reported `43 passed`.
+- CLI evidence: installed `braincrew-eval run-parsing` executed `datasets/parsing/parsing_cases_v1.json` with `tests/fixtures/parsing_observations_v1.json` and stored `parsing-run-artifact-v1` outside the repository.
+- Artifact evidence: run state `COMPLETED`; 20 total and scored cases; 14 Calibration and 6 Verification cases; Verification EvidenceSpan denominator 6; five applicable table and five list cases; dataset digest `sha256:a4ce3d2381853288e92cc2fd21df5cfcd9629db39ea134d8314594e146b48127`; logical digest `sha256:3e612b659ad662ce666c74e9b9bff523b43729efbdd3bb1266302ab402a906fc`.
+- Provenance evidence: dataset `braincrew-parsing-quality@1.0.0`, adapter `fixture-parsing-sut-v1`, parser `fixture-parser-v1`, evaluator `parsing-quality-v1`, and declared non-executed AX SUT commit `c318b2192006bdb36a5bd5b3a2bc403425b45701` were recorded exactly.
+- Review evidence: post-refactor Standards and Spec axes both returned `PASS` with zero remaining finding.
+- Scope evidence: no AX parsing implementation, retrieval/answer scoring, full benchmark, or Agent trajectory evaluation was added or claimed; live AX parse observability remains explicitly unavailable and therefore invalid for a live parsing benchmark.
+- Active gate: Git Lifecycle Proposal Gate; no commit, push, pull request, or merge has been performed.
+- Next action: propose one Lore commit on `feat/issue-8-parsing-quality`, push to `origin`, and open a reviewed PR targeting `develop`; wait for explicit authorization before executing.
+
+### 2026-07-19 — Issue #8 code review completed; final verification started
+
+- Completed skill: `code-review`.
+- Review evidence: the Spec axis passed with no missing, partial, incorrect, or out-of-scope behavior; the Standards axis initially reported two LOW duplicated-code smells, then passed with zero remaining finding after common CLI validation/provenance and create-only writer helpers were extracted and re-reviewed.
+- Refactor evidence: fixture and parsing acceptance tests reported `13 passed`; Ruff and mypy passed before re-review.
+- Active skill: `verification-before-completion`.
+- Completion condition: fresh `uv sync --frozen --all-groups`, Ruff format/lint, mypy, full pytest, `git diff --check`, and the versioned 20-case fixture CLI execution all exit successfully and the stored artifact reports `COMPLETED`, 20 scored cases, Verification denominator 6, and exact provenance.
+- Next action: execute the full required gate set, inspect Git status and artifact evidence, then stop at the Git Lifecycle Proposal Gate.
+
+### 2026-07-19 — Issue #8 implementation completed; code review started
+
+- Completed skill: `test-driven-development`.
+- Completion evidence: dataset, EvidenceSpan integrity, strict schema, exact metric golden, 20-case macro aggregation, parser-version/case-set integrity, fixture CLI artifact, append-only collision, and unobservable-parse `INVALID` tests all passed; full pytest reported `43 passed` before review.
+- Active skill: `code-review` with separate Standards and Spec axes.
+- Expected artifact: findings with severity and exact file references against the complete uncommitted Issue #8 worktree diff.
+- Completion condition: every blocking finding is repaired through a new RED/GREEN cycle and both axes pass on re-review.
+- Next action: pin `origin/develop@0d137a64b86158e33a14d435caaabf5d42ea20c1`, enumerate tracked and untracked worktree changes, and run the two review axes without committing.
+
+### 2026-07-19 — Issue #8 implementation started
+
+- Active skill: `test-driven-development`.
+- Expected artifact: a versioned 20-case parsing dataset with a frozen 14 Calibration / 6 Verification split, fixture parsing observations, deterministic EvidenceSpan/structure/metadata/table/list metrics, hand-calculated goldens, and an append-only CLI result artifact.
+- Completion condition: each new behavior is observed failing before implementation, all 20 cases execute through the CLI and result store, unavailable parsing produces `INVALID` rather than `PASS`, exact dataset/evaluator/adapter/SUT identities are recorded, and Ruff, mypy, full pytest, and diff checks pass.
+- Entry evidence: `origin/develop`, branch HEAD, and merge base all equal `0d137a64b86158e33a14d435caaabf5d42ea20c1`; Issues #6 and #7 are closed through merged PRs #20 and #21 with successful required checks; Issue #8 has `ready-for-agent`.
+- Clean baseline: `uv sync --frozen --all-groups`, Ruff format and lint, mypy, full pytest (`25 passed`), and `git diff --check` succeeded before the first RED.
+- Scope exclusions: AX parsing implementation changes, retrieval or answer scoring, the complete 100-case/live benchmark, and Agent trajectory evaluation.
+- Next action: add and run the first failing parsing dataset-contract and hand-calculated metric tests before production implementation.
 
 ### 2026-07-19 — Issue #6 implementation started
 

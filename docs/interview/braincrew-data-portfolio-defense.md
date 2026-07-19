@@ -265,6 +265,28 @@ Likely follow-ups:
 - "Why preserve failed attempts?" — Retry hides operational instability unless every timeout and transient response remains in the evidence. The final success alone would bias reliability reporting.
 - "Why is corpus identity unverified?" — The current AX response surface has no authoritative corpus identifier or digest. The Adapter records the declared synthetic corpus but refuses to relabel it as SUT-verified.
 
+Issue #8 implementation decision:
+: Freeze `braincrew-parsing-quality@1.0.0` as 20 synthetic parsing cases with a 14/6 Calibration/Verification split, keep dataset ground truth separate from `fixture-parsing-sut-v1` observations, and evaluate EvidenceSpan, structure, metadata, table, and list preservation with deterministic `parsing-quality-v1` exact counts.
+
+Why:
+: Separating expected evidence from observed parser output prevents fixture changes from silently changing dataset identity. Exact numerators, denominators, and case-level macro aggregation make every published decimal traceable to reviewable case evidence. A frozen six-case Verification denominator demonstrates coverage without claiming that 20 cases estimate population quality.
+
+Rejected alternatives:
+: Generate fixture observations from the expected dataset during the run, which would let the evaluator grade its own answer key; treat missing parse telemetry as score zero, which would conflate product quality with unobservable evidence; or return `PASS` for a fixture-complete run, which would misrepresent a deterministic pipeline check as a release decision.
+
+Trade-offs and failure modes:
+: The explicit dataset and fixture files duplicate some text and span identities, but that duplication is intentional independent evidence. Unicode offsets, source digests, parser versions, case IDs, split counts, and table/list applicability can drift; strict Pydantic contracts reject drift before scoring. A missing or unavailable Verification parse reduces the EvidenceSpan denominator below six, makes the run `INVALID`, and suppresses the aggregate while retaining case diagnostics.
+
+Validation evidence:
+: Contract tests validate all 20 unique cases, the 14/6 split, every EvidenceSpan Unicode slice and SHA-256 source digest, strict extra-field rejection, parser-version consistency, and exact fixture coverage. Hand-calculated goldens prove EvidenceSpan `1/2`, metadata `1/2`, structure `1/1`, and applicable table/list outcomes. The CLI executes all 20 fixture cases into a create-only `parsing-run-artifact-v1`, records exact dataset/evaluator/adapter/SUT identities, and persists an unavailable parse as `INVALID` with no aggregate or `PASS` claim.
+
+Likely follow-ups:
+
+- "Does a perfect fixture aggregate prove AX parsing quality?" — No. It proves the versioned evaluator, observation, aggregation, provenance, and storage contracts. The live AX contract currently exposes no parse observation and remains explicitly invalid for this benchmark.
+- "Why not score missing parse output as zero?" — Zero means an observed parser failed to recover evidence. `INVALID` means the evidence required to make that quality judgment was not observable; combining them would hide an integration boundary failure inside a quality average.
+- "Why store exact fractions as well as decimals?" — Gate comparison must use unrounded values. The four-place decimal is presentation; the numerator and denominator are the authoritative, reproducible calculation.
+- "Why no PASS decision?" — This ticket evaluates one fixture run, not a compatible baseline-candidate release comparison. `COMPLETED` means evidence is complete; a future release gate decides pass or fail under its own versioned contract.
+
 ### D8. Use Python, DuckDB and Parquet with a static Next.js dashboard
 
 Decision:

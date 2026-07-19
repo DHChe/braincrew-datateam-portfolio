@@ -153,6 +153,20 @@ The fixture SUT records `executed=false` and `model.name=not-called`. It proves 
 
 The executable slice preserves the architecture boundary in code: the fixture adapter creates only a normalized observation, the evaluator computes only the exact-answer score, the gate converts that score to a decision, the result store owns schema validation, digesting, append-only writes and replay, and the runner only orchestrates those components.
 
+#### Issue #8 parsing-quality artifact contract
+
+`parsing-dataset-v1` freezes 20 synthetic HR parsing cases at dataset `braincrew-parsing-quality@1.0.0` with exactly 14 Calibration and 6 Verification cases. The Pydantic contract rejects a different count or split, duplicate case IDs, unknown fields, malformed table rows, and EvidenceSpan text, offset, or source-digest drift. Each expected EvidenceSpan records zero-based Unicode code-point offsets with inclusive `start_char`, exclusive `end_char`, and the SHA-256 digest of canonical source text.
+
+Dataset ground truth and fixture observations are separate versioned inputs. `parsing_observations_v1.json` is validated as `parsing-observation-batch-v1` under `fixture-parsing-sut-v1` and `fixture-parser-v1`; every available per-case observation must carry that exact parser version. Missing, duplicate, unknown, or version-drifted observations are rejected or make the run invalid rather than being silently ignored. Fixture observations prove deterministic evaluator and result-store behavior only; they do not claim live AX parsing quality.
+
+`parsing-quality-v1` computes case-level EvidenceSpan recovery, structure preservation, metadata completeness, and applicable table/list preservation. Every score retains exact integer numerator and denominator; display decimals use half-even rounding to four places. Dataset aggregates are case-level macro means represented as reduced exact fractions, and table/list denominators include only applicable cases. The Verification EvidenceSpan denominator must be exactly 6 for this slice.
+
+The runner emits `COMPLETED` only when all 20 expected cases are scored and the Verification EvidenceSpan denominator is 6. Any unavailable or missing parse observation, unexpected case, or denominator shortfall emits `INVALID`, preserves case diagnostics, omits the aggregate, and never emits `PASS` or a release-gate decision. This keeps parsing capability evidence distinct from a future compatible baseline-candidate release comparison.
+
+`parsing-run-artifact-v1` stores the complete dataset and observation snapshots, case results, coverage, exact aggregates when valid, and provenance for the automatically captured Evaluation Plane state, declared non-executed SUT SHA, dataset content digest, adapter/parser versions, evaluator version, and explicit non-applicable prompt/model identities. Its logical digest covers provenance and logical content but excludes volatile run ID, timestamp, and path. The result store uses create-only `<run_id>.json` files; a collision cannot mutate existing bytes.
+
+The pinned AX contract remains unchanged. The Issue #7 live smoke proved `parse` unavailable with `AX_PARSE_OBSERVABILITY_UNAVAILABLE`; Issue #8 therefore supplies a fixture-complete path and a tested invalid live-capability outcome without adding or inferring an AX parsing endpoint.
+
 ### Comparison and Release Gate
 
 Rejects incompatible runs, computes paired baseline-candidate deltas, applies frozen thresholds, and records a pass, fail, or invalid decision with reasons.
