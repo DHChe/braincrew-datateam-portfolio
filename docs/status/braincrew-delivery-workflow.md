@@ -29,11 +29,12 @@ research and AX_portfolio context
 - Completed phase: portfolio direction and evaluation boundaries locked.
 - Completed phase: `brainstorming` design loop, independent specification review, and PR #1 merge into `develop`.
 - Completed phase: `setup-matt-pocock-skills`; GitHub Issues was selected, the five canonical triage labels were configured, and the single-context domain-document rules were recorded.
+- Completed phase: `to-spec`; the user approved the CLI-to-gate, AX Adapter, and dashboard-export test seams, and implementation specification Issue #4 was published with the `ready-for-agent` label.
 - Active canonical phase: none.
-- Next canonical phase: `to-spec`, using the merged design, review history, and interview defense dossier as its sources.
-- Entry condition: the setup documents and GitHub labels are verified, and the merged design remains the authoritative source rather than being reopened from scratch.
-- Entry condition status: satisfied locally on 2026-07-19; remote persistence still requires the repository Git lifecycle gate.
-- Following phase: `to-tickets`, which will split the approved specification into vertical implementation tickets with explicit dependency edges.
+- Next canonical phase: `to-tickets`, using Issue #4 as the parent specification and source of acceptance criteria.
+- Entry condition: Issue #4 remains open, carries `ready-for-agent`, and preserves the locked design and claim boundaries.
+- Entry condition status: satisfied on 2026-07-19; the local workflow checkpoint still requires the repository Git lifecycle gate.
+- Following phase: fresh-context implementation of the first unblocked ticket with TDD, followed by ticket-scoped code review.
 - Blocker: none.
 
 ## Transition record format
