@@ -24,7 +24,7 @@ def grounded_run_module() -> ModuleType:
         pytest.fail("grounded run orchestration is not implemented")
 
 
-def test_ten_case_grounded_run_matches_hand_calculated_macro_goldens() -> None:
+def test_fifty_case_answer_run_matches_hand_calculated_macro_goldens() -> None:
     grounded_run = grounded_run_module()
     dataset = grounded_run.load_grounded_dataset(DATASET_PATH)
     observations = grounded_run.load_grounded_observations(OBSERVATIONS_PATH)
@@ -32,28 +32,36 @@ def test_ten_case_grounded_run_matches_hand_calculated_macro_goldens() -> None:
     result = grounded_run.execute_grounded_fixture(dataset, observations)
 
     assert result.state == "COMPLETED"
-    assert len(result.case_evaluations) == 10
-    assert result.coverage.total_cases == 10
-    assert result.coverage.verification_cases == 10
-    assert result.coverage.verification_claim_support_cases == 10
-    assert result.coverage.verification_citation_precision_cases == 10
-    assert result.aggregate.claim_support_precision.exact == "1/4"
-    assert result.aggregate.claim_support_precision.display == "0.2500"
-    assert result.aggregate.citation_precision.exact == "9/20"
-    assert result.aggregate.citation_precision.display == "0.4500"
-    assert result.aggregate.citation_coverage.exact == "13/20"
-    assert result.aggregate.citation_coverage.display == "0.6500"
-    assert result.hard_failure_cases == ("GA-003", "GA-008")
+    assert len(result.case_evaluations) == 50
+    assert result.coverage.total_cases == 50
+    assert result.coverage.verification_cases == 15
+    assert result.coverage.verification_answer_mode_cases == 15
+    assert result.coverage.verification_abstention_cases == 5
+    assert result.aggregate is not None
+    assert result.aggregate.claim_support_precision.exact == "13/16"
+    assert result.aggregate.citation_precision.exact == "69/80"
+    assert result.aggregate.citation_coverage.exact == "73/80"
+    assert result.aggregate.answer_mode_accuracy.exact == "49/50"
+    assert result.aggregate.abstention_accuracy.exact == "4/5"
+    assert result.hard_failure_cases == (
+        "GA-003",
+        "GA-008",
+        "VA-003",
+        "VA-005",
+        "VA-008",
+        "VA-009",
+    )
 
 
-def test_grounded_goldens_preserve_case_counts_and_zero_replay_gate_delta() -> None:
+def test_answer_goldens_preserve_case_scores_and_zero_replay_gate_delta() -> None:
     grounded_run = grounded_run_module()
     result = grounded_run.execute_grounded_fixture(
         grounded_run.load_grounded_dataset(DATASET_PATH),
         grounded_run.load_grounded_observations(OBSERVATIONS_PATH),
     )
 
-    assert [case.claim_support_precision.exact for case in result.case_evaluations] == [
+    grounded_cases = result.case_evaluations[:40]
+    assert [case.claim_support_precision.exact for case in grounded_cases[:10]] == [
         "1/1",
         "0/1",
         "0/1",
@@ -65,7 +73,8 @@ def test_grounded_goldens_preserve_case_counts_and_zero_replay_gate_delta() -> N
         "0/1",
         "1/1",
     ]
-    assert [case.citation_precision.exact for case in result.case_evaluations] == [
+    assert [case.claim_support_precision.exact for case in grounded_cases[10:]] == ["1/1"] * 30
+    assert [case.citation_precision.exact for case in grounded_cases[:10]] == [
         "1/1",
         "1/2",
         "0/1",
@@ -77,7 +86,8 @@ def test_grounded_goldens_preserve_case_counts_and_zero_replay_gate_delta() -> N
         "0/1",
         "1/1",
     ]
-    assert [case.citation_coverage.exact for case in result.case_evaluations] == [
+    assert [case.citation_precision.exact for case in grounded_cases[10:]] == ["1/1"] * 30
+    assert [case.citation_coverage.exact for case in grounded_cases[:10]] == [
         "1/1",
         "1/1",
         "1/1",
@@ -86,14 +96,35 @@ def test_grounded_goldens_preserve_case_counts_and_zero_replay_gate_delta() -> N
         "0/1",
         "1/2",
         "1/1",
+        "1/1",
+        "1/1",
+    ]
+    assert [case.citation_coverage.exact for case in grounded_cases[10:]] == ["1/1"] * 30
+    assert [case.answer_mode_accuracy.exact for case in result.case_evaluations] == [
+        *("1/1" for _ in range(42)),
+        "0/1",
+        *("1/1" for _ in range(7)),
+    ]
+    assert [case.abstention_accuracy.exact for case in result.case_evaluations] == [
+        *("0/0" for _ in range(40)),
+        "1/1",
+        "1/1",
+        "0/1",
+        "1/1",
+        "1/1",
+        "1/1",
+        "1/1",
+        "0/1",
         "1/1",
         "1/1",
     ]
     assert result.aggregate is not None
     baseline_goldens = {
-        "claim_support_precision": Fraction(1, 4),
-        "citation_precision": Fraction(9, 20),
-        "citation_coverage": Fraction(13, 20),
+        "claim_support_precision": Fraction(13, 16),
+        "citation_precision": Fraction(69, 80),
+        "citation_coverage": Fraction(73, 80),
+        "answer_mode_accuracy": Fraction(49, 50),
+        "abstention_accuracy": Fraction(4, 5),
     }
     expected_gate_delta_percentage_points = {}
     for name, baseline in baseline_goldens.items():
@@ -104,6 +135,8 @@ def test_grounded_goldens_preserve_case_counts_and_zero_replay_gate_delta() -> N
         "claim_support_precision": "0.00",
         "citation_precision": "0.00",
         "citation_coverage": "0.00",
+        "answer_mode_accuracy": "0.00",
+        "abstention_accuracy": "0.00",
     }
 
 
@@ -114,6 +147,95 @@ def test_grounded_run_is_invalid_when_a_verification_case_is_missing() -> None:
     incomplete = observations.model_copy(update={"observations": observations.observations[:-1]})
 
     result = grounded_run.execute_grounded_fixture(dataset, incomplete)
+
+    assert result.state == "INVALID"
+    assert result.aggregate is None
+    assert "SYS-GROUNDED-COVERAGE-INVALID" in result.failure_codes
+
+
+def test_grounded_run_is_invalid_when_the_frozen_split_drifts_at_runtime() -> None:
+    grounded_run = grounded_run_module()
+    dataset = grounded_run.load_grounded_dataset(DATASET_PATH)
+    observations = grounded_run.load_grounded_observations(OBSERVATIONS_PATH)
+    drifted_cases = tuple(
+        case.model_copy(update={"split": "Verification"}) if case.case_id == "VA-001" else case
+        for case in dataset.cases
+    )
+    drifted_dataset = dataset.model_copy(update={"cases": drifted_cases})
+
+    result = grounded_run.execute_grounded_fixture(drifted_dataset, observations)
+
+    assert result.state == "INVALID"
+    assert result.aggregate is None
+    assert "SYS-GROUNDED-COVERAGE-INVALID" in result.failure_codes
+
+
+def test_grounded_run_is_invalid_when_an_observation_is_unavailable() -> None:
+    grounded_run = grounded_run_module()
+    dataset = grounded_run.load_grounded_dataset(DATASET_PATH)
+    observations = grounded_run.load_grounded_observations(OBSERVATIONS_PATH)
+    unavailable = tuple(
+        observation.model_copy(update={"available": False, "error": "fixture unavailable"})
+        if observation.case_id == "GA-011"
+        else observation
+        for observation in observations.observations
+    )
+
+    result = grounded_run.execute_grounded_fixture(
+        dataset,
+        observations.model_copy(update={"observations": unavailable}),
+    )
+
+    assert result.state == "INVALID"
+    assert result.aggregate is None
+
+
+def test_invalid_run_preserves_hard_failure_evidence_from_unavailable_observation() -> None:
+    grounded_run = grounded_run_module()
+    dataset = grounded_run.load_grounded_dataset(DATASET_PATH)
+    observations = grounded_run.load_grounded_observations(OBSERVATIONS_PATH)
+    unavailable = tuple(
+        observation.model_copy(update={"available": False, "error": "fixture unavailable"})
+        if observation.case_id == "VA-009"
+        else observation
+        for observation in observations.observations
+    )
+
+    result = grounded_run.execute_grounded_fixture(
+        dataset,
+        observations.model_copy(update={"observations": unavailable}),
+    )
+
+    assert result.state == "INVALID"
+    assert "VA-009" in result.hard_failure_cases
+    va_009 = next(item for item in result.case_evaluations if item.case_id == "VA-009")
+    assert "A-ROLE-LEAKAGE" in va_009.hard_failure_codes
+
+
+@pytest.mark.parametrize(
+    ("case_id", "metric"),
+    [("GA-001", "answer_mode_accuracy"), ("VA-006", "abstention_accuracy")],
+)
+def test_grounded_run_is_invalid_below_primary_metric_minimum_applicability(
+    case_id: str,
+    metric: str,
+) -> None:
+    grounded_run = grounded_run_module()
+    dataset = grounded_run.load_grounded_dataset(DATASET_PATH)
+    observations = grounded_run.load_grounded_observations(OBSERVATIONS_PATH)
+    cases = tuple(
+        case.model_copy(
+            update={"applicability": case.applicability.model_copy(update={metric: False})}
+        )
+        if case.case_id == case_id
+        else case
+        for case in dataset.cases
+    )
+
+    result = grounded_run.execute_grounded_fixture(
+        dataset.model_copy(update={"cases": cases}),
+        observations,
+    )
 
     assert result.state == "INVALID"
     assert result.aggregate is None

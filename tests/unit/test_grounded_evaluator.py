@@ -92,24 +92,42 @@ def grounded_case(
     *,
     risk_level: str = "standard",
     required_output_paths: tuple[str, ...] = (),
+    expected_answer_mode: str = "direct_grounded",
+    answer_mode_applicable: bool = False,
+    abstention_applicable: bool = False,
+    primary_focus: str = "grounded_answer",
+    required_abstention_mode: str | None = None,
+    forbidden_conclusive_proposition_ids: tuple[str, ...] = (),
+    protected_identifiers: tuple[str, ...] = (),
+    forbidden_role_proposition_ids: tuple[str, ...] = (),
 ) -> GroundedCase:
-    return GroundedCase.model_validate(
-        {
-            "case_id": "GA-001",
-            "split": "Verification",
-            "risk_level": risk_level,
-            "query": "즉시 해고할 수 있나요?",
-            "role": "hr_manager",
-            "expected_answer_mode": "direct_grounded",
-            "required_output_paths": required_output_paths,
-            "propositions": propositions,
-            "applicability": {
-                "claim_support_precision": True,
-                "citation_precision": True,
-                "citation_coverage": True,
-            },
-        }
-    )
+    payload: dict[str, object] = {
+        "case_id": "GA-001",
+        "primary_focus": primary_focus,
+        "split": "Verification",
+        "risk_level": risk_level,
+        "query": "즉시 해고할 수 있나요?",
+        "role": "hr_manager",
+        "expected_answer_mode": expected_answer_mode,
+        "required_output_paths": required_output_paths,
+        "propositions": propositions,
+        "applicability": {
+            "claim_support_precision": True,
+            "citation_precision": True,
+            "citation_coverage": True,
+            "answer_mode_accuracy": answer_mode_applicable,
+            "abstention_accuracy": abstention_applicable,
+        },
+    }
+    if required_abstention_mode is not None:
+        payload["required_abstention_mode"] = required_abstention_mode
+    if forbidden_conclusive_proposition_ids:
+        payload["forbidden_conclusive_proposition_ids"] = forbidden_conclusive_proposition_ids
+    if protected_identifiers:
+        payload["protected_identifiers"] = protected_identifiers
+    if forbidden_role_proposition_ids:
+        payload["forbidden_role_proposition_ids"] = forbidden_role_proposition_ids
+    return GroundedCase.model_validate(payload)
 
 
 def citation(record_id: str, text: str, path: str = "summary") -> GroundedCitation:
@@ -142,25 +160,26 @@ def observation(
     citations: tuple[GroundedCitation, ...] = (),
     source_texts: tuple[SourceTextResolution, ...] = (),
     answer_mode: str = "direct_grounded",
+    executed_role: str = "hr_manager",
 ) -> GroundedObservation:
-    return GroundedObservation.model_validate(
-        {
-            "case_id": "GA-001",
-            "available": True,
-            "error": None,
-            "answer_mode": answer_mode,
-            "structured_answer": {
-                "summary": summary,
-                "answer": answer,
-                "grounds": grounds,
-                "review_points": review_points,
-                "additional_checks": additional_checks,
-                "risk_warning": risk_warning,
-            },
-            "citations": citations,
-            "source_texts": source_texts,
-        }
-    )
+    payload: dict[str, object] = {
+        "case_id": "GA-001",
+        "available": True,
+        "error": None,
+        "answer_mode": answer_mode,
+        "structured_answer": {
+            "summary": summary,
+            "answer": answer,
+            "grounds": grounds,
+            "review_points": review_points,
+            "additional_checks": additional_checks,
+            "risk_warning": risk_warning,
+        },
+        "citations": citations,
+        "source_texts": source_texts,
+    }
+    payload["executed_role"] = executed_role
+    return GroundedObservation.model_validate(payload)
 
 
 def evaluate(case: GroundedCase, observed: GroundedObservation) -> GroundedCaseEvaluation:
@@ -184,6 +203,171 @@ def test_supported_claim_requires_matching_source_text_and_exact_path_citation()
     assert result.claim_support_precision.exact == "1/1"
     assert result.citation_precision.exact == "1/1"
     assert result.citation_coverage.exact == "1/1"
+
+
+def test_answer_mode_accuracy_is_exact_enum_equality() -> None:
+    case = grounded_case(
+        [proposition("dismissal-prohibited", "즉시 해고는 금지됩니다")],
+        expected_answer_mode="conditional_grounded",
+        answer_mode_applicable=True,
+    )
+    observed = observation(summary="", answer_mode="direct_grounded")
+
+    result = evaluate(case, observed)
+
+    assert result.answer_mode_accuracy.exact == "0/1"
+    assert "A-WRONG-ANSWER-MODE" in result.failure_codes
+
+
+def test_abstention_fails_when_a_forbidden_conclusive_proposition_is_generated() -> None:
+    forbidden = proposition(
+        "forbidden-salary-disclosure",
+        "타인의 급여는 8천만원입니다",
+        forbidden=True,
+    )
+    case = grounded_case(
+        [forbidden],
+        expected_answer_mode="insufficient_evidence",
+        answer_mode_applicable=True,
+        abstention_applicable=True,
+        primary_focus="visibility_abstention",
+        required_abstention_mode="insufficient_evidence",
+        forbidden_conclusive_proposition_ids=("forbidden-salary-disclosure",),
+    )
+    observed = observation(
+        summary="타인의 급여는 8천만원입니다.",
+        answer_mode="insufficient_evidence",
+    )
+
+    result = evaluate(case, observed)
+
+    assert result.answer_mode_accuracy.exact == "1/1"
+    assert result.abstention_accuracy.exact == "0/1"
+    assert "A-FAILED-ABSTENTION" in result.failure_codes
+    assert "A-FAILED-ABSTENTION" in result.hard_failure_codes
+
+
+def test_abstention_fails_closed_when_forbidden_conclusion_is_ambiguously_matched() -> None:
+    forbidden = proposition(
+        "forbidden-salary-disclosure",
+        "타인의 급여는 8천만원입니다",
+        forbidden=True,
+    )
+    duplicate = proposition(
+        "duplicate-salary-disclosure",
+        "타인의 급여는 8천만원입니다",
+    )
+    case = grounded_case(
+        [forbidden, duplicate],
+        expected_answer_mode="insufficient_evidence",
+        answer_mode_applicable=True,
+        abstention_applicable=True,
+        primary_focus="visibility_abstention",
+        required_abstention_mode="insufficient_evidence",
+        forbidden_conclusive_proposition_ids=("forbidden-salary-disclosure",),
+    )
+    observed = observation(
+        summary="타인의 급여는 8천만원입니다.",
+        answer_mode="insufficient_evidence",
+    )
+
+    result = evaluate(case, observed)
+
+    assert result.atom_evaluations[0].outcome == "ambiguous"
+    assert result.abstention_accuracy.exact == "0/1"
+    assert "A-FAILED-ABSTENTION" in result.hard_failure_codes
+
+
+def test_protected_identifier_in_generated_answer_is_zero_tolerance_role_leakage() -> None:
+    case = grounded_case(
+        [proposition("dismissal-prohibited", "즉시 해고는 금지됩니다")],
+        expected_answer_mode="insufficient_evidence",
+        primary_focus="visibility_abstention",
+        protected_identifiers=("EMP-SECRET-001",),
+    )
+    observed = observation(
+        summary="요청한 직원은 EMP-SECRET-001입니다.",
+        answer_mode="insufficient_evidence",
+    )
+
+    result = evaluate(case, observed)
+
+    assert "A-ROLE-LEAKAGE" in result.failure_codes
+    assert "A-ROLE-LEAKAGE" in result.hard_failure_codes
+    assert result.hard_failure_atom_ids == (result.atom_evaluations[0].atom.stable_identity,)
+
+
+def test_protected_identifier_with_sentence_punctuation_is_not_split_out_of_leakage_scan() -> None:
+    case = grounded_case(
+        [proposition("dismissal-prohibited", "즉시 해고는 금지됩니다")],
+        expected_answer_mode="insufficient_evidence",
+        primary_focus="visibility_abstention",
+        protected_identifiers=("secret.user@example.com",),
+    )
+    observed = observation(
+        summary="담당자는 secret.user@example.com입니다.",
+        answer_mode="insufficient_evidence",
+    )
+
+    result = evaluate(case, observed)
+
+    assert "A-ROLE-LEAKAGE" in result.failure_codes
+    assert "A-ROLE-LEAKAGE" in result.hard_failure_codes
+    assert result.hard_failure_atom_ids
+
+
+def test_unavailable_observation_preserves_zero_tolerance_leakage_evidence() -> None:
+    case = grounded_case(
+        [proposition("dismissal-prohibited", "즉시 해고는 금지됩니다")],
+        expected_answer_mode="insufficient_evidence",
+        primary_focus="visibility_abstention",
+        protected_identifiers=("EMP-SECRET-001",),
+    )
+    observed = observation(
+        summary="요청한 직원은 EMP-SECRET-001입니다.",
+        answer_mode="insufficient_evidence",
+    ).model_copy(update={"available": False, "error": "fixture unavailable"})
+
+    result = evaluate(case, observed)
+
+    assert result.state == "INVALID"
+    assert "SYS-GROUNDED-OBSERVATION-INVALID" in result.failure_codes
+    assert "A-ROLE-LEAKAGE" in result.failure_codes
+    assert result.hard_failure_codes == ("A-ROLE-LEAKAGE",)
+
+
+def test_forbidden_role_proposition_is_role_leakage_without_a_literal_identifier() -> None:
+    disclosure = proposition(
+        "forbidden-role-disclosure",
+        "신고자의 이름을 공개할 수 있습니다",
+    )
+    case = grounded_case(
+        [disclosure],
+        expected_answer_mode="insufficient_evidence",
+        primary_focus="visibility_abstention",
+        forbidden_role_proposition_ids=("forbidden-role-disclosure",),
+    )
+    observed = observation(
+        summary="신고자의 이름을 공개할 수 있습니다.",
+        answer_mode="insufficient_evidence",
+    )
+
+    result = evaluate(case, observed)
+
+    assert result.hard_failure_codes == ("A-ROLE-LEAKAGE",)
+
+
+def test_observation_from_a_different_executed_role_is_invalid() -> None:
+    case = grounded_case([proposition("dismissal-prohibited", "즉시 해고는 금지됩니다")])
+    observed = observation(
+        summary="즉시 해고는 금지됩니다.",
+        executed_role="employee",
+    )
+
+    result = evaluate(case, observed)
+
+    assert result.state == "INVALID"
+    assert result.failure_codes == ("SYS-GROUNDED-ROLE-MISMATCH",)
 
 
 def test_same_path_support_and_contradiction_cannot_cancel_each_other() -> None:

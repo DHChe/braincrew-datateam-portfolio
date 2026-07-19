@@ -3,10 +3,14 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
+from collections import Counter
+from pathlib import Path
 from types import ModuleType
 
 import pytest
 from pydantic import ValidationError
+
+DATASET_PATH = Path("datasets/grounded/grounded_cases_v1.json")
 
 
 def contracts_module() -> ModuleType:
@@ -50,6 +54,7 @@ def case_payload() -> dict[str, object]:
     contradicting_text = "제20조: 긴급한 경우 즉시 해고할 수 있습니다."
     return {
         "case_id": "GA-001",
+        "primary_focus": "grounded_answer",
         "split": "Verification",
         "risk_level": "high",
         "query": "즉시 해고할 수 있나요?",
@@ -118,6 +123,9 @@ def dataset_payload() -> dict[str, object]:
         "traversal_contract_version": "claim-traversal-v1",
         "normalizer_version": "claim-normalizer-v1",
         "source_resolution_version": "source-text-resolution-v1",
+        "answer_mode_contract_version": "answer-mode-v1",
+        "abstention_contract_version": "abstention-v1",
+        "visibility_contract_version": "answer-visibility-v1",
         "cases": [case_payload()],
         "provenance": {
             "source_kind": "synthetic",
@@ -125,6 +133,75 @@ def dataset_payload() -> dict[str, object]:
             "review_status": "reviewed",
         },
     }
+
+
+def test_issue_11_dataset_freezes_answer_and_visibility_case_allocation() -> None:
+    contracts = contracts_module()
+
+    dataset = contracts.GroundedDatasetDocument.model_validate_json(
+        DATASET_PATH.read_text(encoding="utf-8")
+    )
+    allocation = Counter((case.primary_focus, case.split) for case in dataset.cases)
+
+    assert dataset.case_count == 50
+    assert allocation == {
+        ("grounded_answer", "Calibration"): 30,
+        ("grounded_answer", "Verification"): 10,
+        ("visibility_abstention", "Calibration"): 5,
+        ("visibility_abstention", "Verification"): 5,
+    }
+
+
+def test_issue_11_dataset_rejects_split_allocation_drift() -> None:
+    contracts = contracts_module()
+    payload = json.loads(DATASET_PATH.read_text(encoding="utf-8"))
+    payload["cases"][0]["split"] = "Calibration"
+
+    with pytest.raises(ValidationError, match="case allocation"):
+        contracts.GroundedDatasetDocument.model_validate(payload)
+
+
+def test_answer_mode_and_abstention_applicability_are_explicit_contract_fields() -> None:
+    contracts = contracts_module()
+
+    applicability = contracts.GroundedApplicability.model_validate(
+        {
+            "claim_support_precision": True,
+            "citation_precision": True,
+            "citation_coverage": True,
+            "answer_mode_accuracy": True,
+            "abstention_accuracy": False,
+        }
+    )
+
+    assert applicability.answer_mode_accuracy is True
+    assert applicability.abstention_accuracy is False
+
+
+def test_out_of_scope_is_a_required_abstention_mode() -> None:
+    contracts = contracts_module()
+    payload = case_payload()
+    payload["primary_focus"] = "visibility_abstention"
+    payload["expected_answer_mode"] = "out_of_scope"
+    payload["required_abstention_mode"] = "out_of_scope"
+    payload["forbidden_conclusive_proposition_ids"] = ("dismissal-immediate-allowed",)
+    payload["applicability"]["answer_mode_accuracy"] = True  # type: ignore[index]
+    payload["applicability"]["abstention_accuracy"] = True  # type: ignore[index]
+
+    case = contracts.GroundedCase.model_validate(payload)
+
+    assert case.expected_answer_mode == "out_of_scope"
+    assert case.required_abstention_mode == "out_of_scope"
+
+
+def test_forbidden_conclusive_identity_must_reference_a_conclusive_proposition() -> None:
+    contracts = contracts_module()
+    payload = case_payload()
+    payload["propositions"][1]["conclusive"] = False  # type: ignore[index]
+    payload["forbidden_conclusive_proposition_ids"] = ("dismissal-immediate-allowed",)
+
+    with pytest.raises(ValidationError, match="conclusive proposition"):
+        contracts.GroundedCase.model_validate(payload)
 
 
 def test_claim_proposition_contract_preserves_polarity_modality_and_allowed_modes() -> None:
@@ -199,6 +276,7 @@ def test_grounded_observation_requires_unique_case_identities() -> None:
     contracts = contracts_module()
     observation = {
         "case_id": "GA-001",
+        "executed_role": "hr_manager",
         "available": True,
         "error": None,
         "answer_mode": "direct_grounded",
