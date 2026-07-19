@@ -10,6 +10,11 @@ import typer
 from pydantic import ValidationError
 
 from braincrew.fixture_run import execute_fixture_case, load_fixture_case
+from braincrew.grounded_run import (
+    execute_grounded_fixture,
+    load_grounded_dataset,
+    load_grounded_observations,
+)
 from braincrew.parsing_run import (
     execute_parsing_fixture,
     load_parsing_dataset,
@@ -17,10 +22,12 @@ from braincrew.parsing_run import (
 )
 from braincrew.repository import RepositoryState, capture_evaluation_repository_state
 from braincrew.result_store import (
+    build_grounded_run_artifact,
     build_parsing_run_artifact,
     build_retrieval_run_artifact,
     build_run_artifact,
     replay_run_artifact,
+    write_grounded_run_artifact,
     write_parsing_run_artifact,
     write_retrieval_run_artifact,
     write_run_artifact,
@@ -186,6 +193,61 @@ def run_retrieval_fixture(
     )
     try:
         artifact_path = write_retrieval_run_artifact(artifact, output_dir)
+    except FileExistsError as error:
+        typer.echo(f"Artifact already exists: {output_dir / f'{run_id}.json'}", err=True)
+        raise typer.Exit(code=2) from error
+    typer.echo(
+        json.dumps(
+            {
+                "artifact_path": str(artifact_path),
+                "run_state": artifact.logical_result.evaluation.state,
+                "logical_digest": artifact.logical_digest,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+@app.command("run-grounded")
+def run_grounded_fixture(
+    dataset_path: Annotated[
+        Path,
+        typer.Option("--dataset", exists=True, dir_okay=False, readable=True),
+    ],
+    observations_path: Annotated[
+        Path,
+        typer.Option("--observations", exists=True, dir_okay=False, readable=True),
+    ],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    run_id: Annotated[str, typer.Option("--run-id")],
+    sut_sha: Annotated[str, typer.Option("--sut-sha")],
+) -> None:
+    """Evaluate the bounded grounded-answer fixture dataset."""
+    _validate_run_identity(run_id, sut_sha)
+    try:
+        dataset = load_grounded_dataset(dataset_path)
+        observations = load_grounded_observations(observations_path)
+    except (json.JSONDecodeError, UnicodeError, ValidationError) as error:
+        typer.echo(f"Invalid grounded input: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    if sut_sha != observations.sut_commit_sha:
+        typer.echo(
+            "Invalid grounded input: --sut-sha does not match observation SUT SHA",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    evaluation_state = _capture_repository_state()
+    artifact = build_grounded_run_artifact(
+        dataset=dataset,
+        observations=observations,
+        evaluation=execute_grounded_fixture(dataset, observations),
+        run_id=run_id,
+        evaluation_state=evaluation_state,
+        sut_sha=sut_sha,
+    )
+    try:
+        artifact_path = write_grounded_run_artifact(artifact, output_dir)
     except FileExistsError as error:
         typer.echo(f"Artifact already exists: {output_dir / f'{run_id}.json'}", err=True)
         raise typer.Exit(code=2) from error

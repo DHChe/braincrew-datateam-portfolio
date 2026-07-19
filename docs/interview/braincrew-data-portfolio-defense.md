@@ -147,6 +147,32 @@ Primary quality metrics:
 Semantic-support boundary:
 : Claim-support is not inferred merely from a linked document. `claim-traversal-v1` inspects every generated value in summary, answer, grounds, review points, additional checks, and risk warning for every grounded-answer case, regardless of risk level. Each frozen case defines a closed-world proposition catalog with polarity, modality, supporting and contradicting evidence, and deterministic Korean surface matchers. A generated claim atom passes only when its meaning, citation, evidence stance, and Answer Mode agree. Any contradictory citation linked to the same path makes the atom fail even when another citation supports it.
 
+Issue #10 implementation decision:
+: The first executable grounded-answer slice uses ten synthetic Verification cases at `braincrew-grounded-answer-initial@1.0.0`, with canonical `claim-proposition-v1` modalities, `claim-traversal-v1`, permission-checked source-text resolution through the AX SUT Adapter seam, three exact macro metrics, and fail-closed high-risk evidence. Ten cases satisfy the initial claim-support and citation-precision denominator but are explicitly not the complete 40-case answer benchmark.
+
+Why this design:
+: Citation identity proves where the answer pointed, not whether the source actually supports the sentence. The evaluator therefore resolves the pinned source text and checks its stance. Traversal belongs to the evaluator, so a case author cannot omit a difficult returned field. Unmapped and ambiguous language stays in the denominator, making evaluator uncertainty visible instead of improving the score by omission.
+
+Rejected alternative:
+: Document-level citation matching, case-authored path allowlists, dropping unmatched atoms, and LLM-judge overrides were rejected. A correct document can contradict the generated claim, path allowlists can cherry-pick coverage, dropping atoms hides uncertainty, and a judge override would make deterministic release evidence irreproducible.
+
+Trade-off:
+: Closed-world proposition catalogs are auditable but do not claim unrestricted Korean natural-language understanding. A legitimate unseen paraphrase scores unmapped until a reviewed matcher and dataset version explicitly cover it.
+
+Failure modes and response:
+: Mixed supporting and contradicting citations on one claim path score the atom zero. Missing required output creates a zero-score placeholder that remains in the coverage denominator but cannot gain numerator credit from a dangling citation. Unsupported, contradicted, unmapped, and ambiguous atoms preserve the exact release identities `A-UNSUPPORTED-CLAIM`, `A-CONTRADICTED-CLAIM`, `A-UNMAPPED-CLAIM`, and `A-AMBIGUOUS-CLAIM`; high-risk variants also preserve `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`. A zero-applicability metric or missing Verification observation makes the run `INVALID` rather than silently shrinking coverage.
+
+Validation evidence:
+: The ten fixture cases freeze every case numerator and denominator and produce hand-calculated macro goldens of claim-support precision `1/4`, citation precision `9/20`, and citation coverage `13/20`, with a `0.00` percentage-point compatibility-replay delta. Controlled HTTP evidence proves that cited source text is fetched through `AxHttpAdapter.source_text()`. `grounded-run-artifact-v1` rejects a CLI/observation SUT SHA mismatch and records dataset, evaluator, adapter, SUT, atomizer, proposition, traversal, normalizer, matcher-set, case-catalog, source-resolution, and guard identities or digests; replay recomputes the stored snapshots and rejects tampering. This proves deterministic fixture evaluation and the Adapter seam, not live AX answer quality.
+
+Likely follow-ups:
+
+- "Why not use an LLM judge for paraphrases?" — A judge can later explain unmatched language, but it cannot change the authoritative score or clear a critical identity because that would weaken reproducibility.
+- "Why does a correct citation still fail?" — Citation identity and evidence stance are different. If the source says dismissal is prohibited while the answer says it is allowed, the identity is correct but the proposition is contradicted.
+- "Why only ten cases?" — Ten is the locked initial Verification denominator for these two primary metrics. The remaining grounded-answer and Issue #11 mode/abstention cases are separately scoped and cannot be claimed early.
+- "Why can a completed run contain a hard failure?" — `COMPLETED` means execution and scoring succeeded. The preserved hard-failure identity is later consumed by the release gate; calling it an execution failure would mix quality evidence with infrastructure state.
+- "Why store both versions and digests?" — A version names the contract family; the digest proves the exact atomizer, normalizer, matcher set, proposition catalog, and case catalog configuration used. A changed catalog cannot masquerade as a comparable run under the same label.
+
 Concrete example:
 : If a rule says immediate dismissal is prohibited, an answer saying “dismiss immediately” fails even when it cites that exact rule. The evidence identity is correct, but its stance contradicts the generated proposition.
 

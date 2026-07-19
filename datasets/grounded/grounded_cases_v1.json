@@ -1,0 +1,302 @@
+{
+  "schema_version": "grounded-dataset-v1",
+  "dataset_id": "braincrew-grounded-answer-initial",
+  "dataset_version": "1.0.0",
+  "case_count": 10,
+  "proposition_contract_version": "claim-proposition-v1",
+  "traversal_contract_version": "claim-traversal-v1",
+  "normalizer_version": "claim-normalizer-v1",
+  "source_resolution_version": "source-text-resolution-v1",
+  "provenance": {
+    "source_kind": "synthetic",
+    "license": "CC0-1.0",
+    "review_status": "reviewed"
+  },
+  "cases": [
+    {
+      "case_id": "GA-001",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "즉시 해고할 수 있나요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_output_paths": [],
+      "applicability": {"claim_support_precision": true, "citation_precision": true, "citation_coverage": true},
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": ["direct_grounded", "conditional_grounded"],
+          "surface_matchers": [{"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}],
+          "supporting_evidence_groups": [{"group_id": "support", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "source_matcher": {"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}}]}],
+          "contradicting_evidence_groups": [{"group_id": "contradict", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-20", "evidence_span_id": "span-rule-20", "source_text_digest": "sha256:b78193dec7867d2918b733d8ea1900e508af6fb076c5fb4ae65658bb129bc984", "source_matcher": {"kind": "literal", "pattern": "즉시 해고할 수 있습니다", "matcher_digest": "sha256:0fd7db3b94f61940a3831cd8ffca4341132b5b1b7e21d3b24e920efe5e13b8a4"}}]}]
+        }
+      ]
+    },
+    {
+      "case_id": "GA-002",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "상반된 규정이 함께 검색되면 어떻게 판단하나요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_output_paths": [],
+      "applicability": {"claim_support_precision": true, "citation_precision": true, "citation_coverage": true},
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": ["direct_grounded", "conditional_grounded"],
+          "surface_matchers": [{"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}],
+          "supporting_evidence_groups": [{"group_id": "support", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "source_matcher": {"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}}]}],
+          "contradicting_evidence_groups": [{"group_id": "contradict", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-20", "evidence_span_id": "span-rule-20", "source_text_digest": "sha256:b78193dec7867d2918b733d8ea1900e508af6fb076c5fb4ae65658bb129bc984", "source_matcher": {"kind": "literal", "pattern": "즉시 해고할 수 있습니다", "matcher_digest": "sha256:0fd7db3b94f61940a3831cd8ffca4341132b5b1b7e21d3b24e920efe5e13b8a4"}}]}]
+        }
+      ]
+    },
+    {
+      "case_id": "GA-003",
+      "split": "Verification",
+      "risk_level": "high",
+      "query": "즉시 해고가 허용된다고 단정할 수 있나요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_output_paths": [],
+      "applicability": {"claim_support_precision": true, "citation_precision": true, "citation_coverage": true},
+      "propositions": [
+        {
+          "proposition_id": "dismissal-allowed",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "allowed",
+          "polarity": "affirmed",
+          "modality": "may",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": true,
+          "allowed_answer_modes": ["direct_grounded"],
+          "surface_matchers": [{"kind": "literal", "pattern": "즉시 해고할 수 있습니다", "matcher_digest": "sha256:0fd7db3b94f61940a3831cd8ffca4341132b5b1b7e21d3b24e920efe5e13b8a4"}],
+          "supporting_evidence_groups": [{"group_id": "support", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-20", "evidence_span_id": "span-rule-20", "source_text_digest": "sha256:b78193dec7867d2918b733d8ea1900e508af6fb076c5fb4ae65658bb129bc984", "source_matcher": {"kind": "literal", "pattern": "즉시 해고할 수 있습니다", "matcher_digest": "sha256:0fd7db3b94f61940a3831cd8ffca4341132b5b1b7e21d3b24e920efe5e13b8a4"}}]}],
+          "contradicting_evidence_groups": [{"group_id": "contradict", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "source_matcher": {"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}}]}]
+        }
+      ]
+    },
+    {
+      "case_id": "GA-004",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "카탈로그에 없는 표현은 어떻게 처리하나요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_output_paths": [],
+      "applicability": {"claim_support_precision": true, "citation_precision": true, "citation_coverage": true},
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": ["direct_grounded"],
+          "surface_matchers": [{"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}],
+          "supporting_evidence_groups": [{"group_id": "support", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "source_matcher": {"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}}]}],
+          "contradicting_evidence_groups": []
+        }
+      ]
+    },
+    {
+      "case_id": "GA-005",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "두 proposition이 같은 문장을 가리키면 어떻게 처리하나요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_output_paths": [],
+      "applicability": {"claim_support_precision": true, "citation_precision": true, "citation_coverage": true},
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited-a",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": ["direct_grounded"],
+          "surface_matchers": [{"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}],
+          "supporting_evidence_groups": [{"group_id": "support-a", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "source_matcher": {"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}}]}],
+          "contradicting_evidence_groups": []
+        },
+        {
+          "proposition_id": "dismissal-prohibited-b",
+          "subject": "dismissal procedure",
+          "predicate": "requires",
+          "object": "review",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "high",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": ["direct_grounded"],
+          "surface_matchers": [{"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}],
+          "supporting_evidence_groups": [{"group_id": "support-b", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "source_matcher": {"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}}]}],
+          "contradicting_evidence_groups": []
+        }
+      ]
+    },
+    {
+      "case_id": "GA-006",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "추가 확인 사항도 평가하나요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "conditional_grounded",
+      "required_output_paths": [],
+      "applicability": {"claim_support_precision": true, "citation_precision": true, "citation_coverage": true},
+      "propositions": [
+        {
+          "proposition_id": "check-collective-agreement",
+          "subject": "collective agreement",
+          "predicate": "requires",
+          "object": "review",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": ["conditional_grounded"],
+          "surface_matchers": [{"kind": "literal", "pattern": "단체협약도 확인해야 합니다", "matcher_digest": "sha256:c566fe32ccef6e8264ab892f557ba09f5cc069493c4cfb0b9afef5e114918378"}],
+          "supporting_evidence_groups": [{"group_id": "support", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-30", "evidence_span_id": "span-rule-30", "source_text_digest": "sha256:0bb540bd307776fc0a81804e376f7f39b7a2e945c90bae7579091531982ee295", "source_matcher": {"kind": "literal", "pattern": "단체협약을 추가로 확인해야 합니다"}}]}],
+          "contradicting_evidence_groups": []
+        }
+      ]
+    },
+    {
+      "case_id": "GA-007",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "필수 answer가 비어 있으면 어떻게 처리하나요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_output_paths": ["answer"],
+      "applicability": {"claim_support_precision": true, "citation_precision": true, "citation_coverage": true},
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": ["direct_grounded"],
+          "surface_matchers": [{"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}],
+          "supporting_evidence_groups": [{"group_id": "support", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "source_matcher": {"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}}]}],
+          "contradicting_evidence_groups": []
+        }
+      ]
+    },
+    {
+      "case_id": "GA-008",
+      "split": "Verification",
+      "risk_level": "high",
+      "query": "허용되지 않은 Answer Mode에서 결론을 내리면 어떻게 처리하나요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "review_required",
+      "required_output_paths": [],
+      "applicability": {"claim_support_precision": true, "citation_precision": true, "citation_coverage": true},
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": ["direct_grounded", "conditional_grounded"],
+          "surface_matchers": [{"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}],
+          "supporting_evidence_groups": [{"group_id": "support", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "source_matcher": {"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}}]}],
+          "contradicting_evidence_groups": []
+        }
+      ]
+    },
+    {
+      "case_id": "GA-009",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "citation identity만 맞고 원문이 지지하지 않으면 어떻게 처리하나요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_output_paths": [],
+      "applicability": {"claim_support_precision": true, "citation_precision": true, "citation_coverage": true},
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": ["direct_grounded"],
+          "surface_matchers": [{"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}],
+          "supporting_evidence_groups": [{"group_id": "support", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "source_matcher": {"kind": "literal", "pattern": "존재하지 않는 근거 문구"}}]}],
+          "contradicting_evidence_groups": []
+        }
+      ]
+    },
+    {
+      "case_id": "GA-010",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "grounds 배열의 claim도 평가하나요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_output_paths": [],
+      "applicability": {"claim_support_precision": true, "citation_precision": true, "citation_coverage": true},
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": ["direct_grounded"],
+          "surface_matchers": [{"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}],
+          "supporting_evidence_groups": [{"group_id": "support", "alternatives": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "source_matcher": {"kind": "literal", "pattern": "즉시 해고는 금지됩니다", "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"}}]}],
+          "contradicting_evidence_groups": []
+        }
+      ]
+    }
+  ]
+}

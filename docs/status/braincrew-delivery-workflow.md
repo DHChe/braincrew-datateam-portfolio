@@ -48,16 +48,88 @@ research and AX_portfolio context
 - Completed phase: Issue #9 ticket-scoped `code-review`; the separate Standards and Spec axes passed with zero remaining finding after review-driven RED/GREEN repairs.
 - Completed phase: Issue #9 `verification-before-completion`; every required repository gate and the installed 30-case fixture CLI create/replay path passed with fresh evidence.
 - Completed phase: the user approved the Issue #9 Git lifecycle proposal for one Lore commit, committed-state verification, branch push, and review-ready pull-request creation; merge remains excluded.
-- Active canonical phase: Issue #9 Git publication.
-- Active artifact: [Issue #9](https://github.com/DHChe/braincrew-datateam-portfolio/issues/9), labeled `ready-for-agent`, on branch `feat/issue-9-retrieval-quality`.
-- Active completion condition: the Lore commit is cleanly verified, the matching origin branch points to it, and a review-ready pull request targeting `develop` records `Closes #9`, validation evidence, and the live-smoke claim boundary.
-- Entry condition: Issue #8 is closed through merged PR #22, and `origin/develop` points to merge commit `c549c255c55e97639b6261d9414fb0abfa64026e`.
-- Entry condition status: satisfied on 2026-07-19; the dedicated worktree is clean and based exactly on that `origin/develop` commit.
-- Next canonical phase: wait for the pull request's required checks and review evidence.
-- Following phase: propose merge only after required checks pass and no review blocker remains; merge remains separately authorized.
+- Completed phase: PR #23 merged Issue #9 into `develop` as merge commit `b67929a0546d32d6ffafc7b801028c9c53fc2d6a`, and Issue #9 is closed.
+- Completed phase: Issue #10 grounded-claim implementation with `test-driven-development`; every contract, evaluator, run, and CLI behavior was observed RED before its minimal implementation or repair.
+- Completed phase: Issue #10 ticket-scoped `code-review`; separate Standards and Spec axes passed with zero unresolved blocker after review-driven RED/GREEN repairs.
+- Completed phase: Issue #10 `verification-before-completion`; every required repository gate and installed grounded fixture CLI create/replay check passed with fresh evidence.
+- Active canonical phase: Git Lifecycle Proposal Gate for Issue #10. No commit, push, pull request, or merge has been performed.
+- Active artifact: [Issue #10](https://github.com/DHChe/braincrew-datateam-portfolio/issues/10), labeled `ready-for-agent`, on branch `feat/issue-10-grounded-claims` at current `origin/develop`.
+- Active completion condition: present the target branch and remote, included changes, verification evidence, PR/merge strategy, and known risks; wait for explicit authorization before any Git write action.
+- Entry condition: blocker Issues #6 and #7 are closed, PR #23 is merged, and Issue #9 is closed.
+- Entry condition status: satisfied on 2026-07-19; the dedicated worktree starts exactly at `origin/develop@b67929a0546d32d6ffafc7b801028c9c53fc2d6a`.
+- Next canonical phase: after authorization, create one Lore commit and verify the committed state before any separately authorized push or pull request.
 - Blocker: none.
 
 ## Transition history
+
+### 2026-07-19 — Issue #10 TDD implementation completed; code review started
+
+- Completed skill: `test-driven-development`.
+- RED/GREEN evidence: claim normalization and traversal, proposition and observation contracts, source-text resolution, claim/citation metrics, mixed contradiction, unmapped and ambiguous atoms, required-path placeholders, high-risk fail-closed behavior, zero-applicability invalidation, exact metric validation, ten-case macro aggregation, create-only CLI storage, and replay tamper detection were each observed failing for the expected missing or defective behavior before passing.
+- Fixture evidence: ten Verification cases at `braincrew-grounded-answer-initial@1.0.0` produce hand-calculated macro goldens of claim-support precision `1/4`, citation precision `9/20`, and citation coverage `13/20`; `GA-003` and `GA-008` preserve high-risk hard-failure evidence.
+- Compatibility evidence: `grounded-run-artifact-v1` records evaluator `grounded-answer-v1`, adapter `fixture-grounded-sut-v1`, declared AX SUT SHA `c318b2192006bdb36a5bd5b3a2bc403425b45701`, and proposition, traversal, normalizer, source-resolution, and guard versions.
+- Pre-review verification: Issue #10 focused pytest reports `25 passed`; full pytest reports `94 passed`; Ruff format and lint, mypy, and `git diff --check` pass after the final GREEN refactor.
+- Documentation evidence: the implementation lock, rationale, rejected alternatives, trade-offs, failure modes, validation boundary, and likely interview follow-ups are synchronized in the canonical design and interview defense dossier.
+- Active skill: ticket-scoped `code-review` with separate Standards and Spec axes against fixed point `origin/develop@b67929a0546d32d6ffafc7b801028c9c53fc2d6a`.
+- Completion condition: every blocking finding is repaired through a new RED/GREEN cycle and both review axes pass with zero unresolved blocker.
+- Next action: review all tracked and untracked Issue #10 changes without committing, pushing, opening a pull request, or merging.
+
+### 2026-07-19 — Issue #10 code review requested fixes; review-driven TDD repairs completed
+
+- Standards finding: the CLI accepted an SUT SHA that could disagree with the observation batch, allowing contradictory experiment provenance. A failing acceptance test reproduced artifact creation with mismatched SHAs; the command now fails closed before repository capture or artifact creation.
+- Spec findings: the initial proposition schema used non-canonical modality names, required `object`, omitted forbidden Answer Modes and matcher identity; release failure IDs were reversed; source resolution lacked an executable `AxHttpAdapter.source_text()` integration seam; missing-output placeholders could receive citation-coverage credit; and compatibility plus hand-calculated case evidence was incomplete.
+- RED/GREEN repair evidence: focused failures reproduced every behavioral defect before repair. The schema now uses `must`, `may`, `must_not`, `unknown`, and `review_required`; keeps `object` optional; records forbidden modes and matcher digests; emits the exact locked `A-*` identities; resolves unique cited sources through the Issue #7 Adapter seam; excludes placeholders from the coverage numerator; records atomizer/normalizer/matcher/proposition/case digests; and freezes all case fractions plus a zero replay delta.
+- Current focused evidence: Ruff format and lint pass, mypy succeeds across 28 source files, and the Issue #10 contract/unit/acceptance selection reports `30 passed`.
+- Active skill: ticket-scoped `code-review` re-review with separate Standards and Spec axes.
+- Completion condition: both reviewers confirm zero unresolved blocking finding against the repaired complete diff.
+- Next action: run both re-review axes, then transition to `verification-before-completion` only if both pass.
+
+### 2026-07-19 — Issue #10 second specification review repairs completed
+
+- Remaining Spec integrity finding: replay recomputed evaluation and the top-level digest but trusted stored derived compatibility digests. A RED acceptance test proved that an attacker could rewrite a matcher-set digest and then rehash the artifact. Compatibility derivation is now shared by build and replay, and replay rejects any snapshot-derived mismatch.
+- Remaining Spec coverage gap: the existing source-resolution mismatch test was standard-risk only. A focused high-risk characterization test now proves that a conclusive claim with citation identity but unresolved supporting text retains both `A-UNSUPPORTED-CLAIM` and `A-UNSUPPORTED-HIGH-RISK-CONCLUSION` plus its hard-failure atom identity. The implementation already behaved fail-closed; this was a missing regression proof, not a production-code defect.
+- Active skill: ticket-scoped `code-review` final re-review.
+- Completion condition: Standards remains PASS and Spec confirms both remaining MEDIUM findings are closed.
+- Next action: request the final Spec re-review, then start `verification-before-completion` if it returns zero blocker.
+
+### 2026-07-19 — Issue #10 code review completed; final verification started
+
+- Standards result: PASS with zero blocker. The SUT SHA provenance repair and its no-artifact-on-mismatch regression passed; the earlier LOW duplication concern was withdrawn because a shared factory would be speculative beyond the repository's current domain-specific artifact pattern.
+- Spec result: PASS with zero blocker. Final re-review confirmed snapshot-derived compatibility recomputation during replay and the high-risk source-resolution critical identity regression.
+- Active skill: `verification-before-completion`.
+- Completion condition: every required repository gate and an installed `braincrew-eval run-grounded` plus `replay` execution pass from the complete repaired worktree, followed by exact branch/base/status inspection.
+- Next action: run the full verification sequence and record its fresh evidence before presenting the Git lifecycle proposal.
+
+### 2026-07-19 — Issue #10 final verification completed; lifecycle proposal gate reached
+
+- Completed skills: `test-driven-development`, ticket-scoped `code-review`, and `verification-before-completion`.
+- Fresh repository evidence: `uv sync --frozen --all-groups`, `uv run ruff format --check .`, `uv run ruff check .`, `uv run mypy`, `uv run pytest -q`, and `git diff --check` passed; pytest reported `101 passed`.
+- Installed CLI evidence: `braincrew-eval run-grounded` created `grounded-run-artifact-v1` and `braincrew-eval replay` reproduced logical digest `sha256:12950b2c6180eec6e928f3565a98f634bc9d239ef75842be8775960d112c8b1f` with `COMPLETED`. Coverage is ten total and ten Verification cases; claim-support precision is `1/4`, citation precision `9/20`, citation coverage `13/20`, and high-risk cases remain `GA-003` and `GA-008`.
+- Provenance evidence: the artifact records declared non-executed AX SUT SHA `c318b2192006bdb36a5bd5b3a2bc403425b45701`, fixture Adapter `fixture-grounded-sut-v1`, and all locked compatibility versions and digests. This remains fixture evidence, not a live AX answer-quality claim.
+- Branch evidence: after `git fetch --prune origin`, branch HEAD, `origin/develop`, and merge base all equal `b67929a0546d32d6ffafc7b801028c9c53fc2d6a`; Issue #10 remains open with `ready-for-agent`.
+- Active gate: Git Lifecycle Proposal Gate. No commit, push, pull request, or merge has been performed.
+- Next action: present the ticket-scoped Lore commit, committed-state verification, branch push, and review-ready PR proposal; merge remains excluded pending remote checks, review, and separate authorization.
+
+### 2026-07-19 — Issue #10 Git publication authorized
+
+- Authorization: the user approved one ticket-scoped Lore commit, committed-state verification, push to `origin/feat/issue-10-grounded-claims`, and a review-ready pull request targeting `develop` with `Closes #10`.
+- Included scope: grounded proposition/traversal contracts, deterministic evaluator and metrics, bounded dataset and observations, Adapter source-text seam, create-only CLI/result-store/replay path, review-driven regressions, canonical design lock, interview defense, and workflow evidence.
+- Required pre-push evidence: the committed worktree is clean; frozen sync, Ruff format and lint, mypy, all tests, diff checks, and installed grounded CLI create/replay pass with `dirty_worktree=false` and the new Evaluation Plane commit SHA.
+- Active exclusion: merge remains a later Git lifecycle decision after required remote checks and review evidence.
+- Next action: create the Lore commit, verify the clean committed state, then push and open the review-ready pull request only if every gate passes.
+
+### 2026-07-19 — Issue #9 merged; Issue #10 implementation activated
+
+- Upstream evidence: [PR #23](https://github.com/DHChe/braincrew-datateam-portfolio/pull/23) is `MERGED` into `develop` at `2026-07-19T08:09:08Z`; its merge commit is `b67929a0546d32d6ffafc7b801028c9c53fc2d6a`, and fetched `origin/develop` points to that exact commit.
+- Ticket evidence: [Issue #9](https://github.com/DHChe/braincrew-datateam-portfolio/issues/9) is `CLOSED` at `2026-07-19T08:09:41Z`.
+- Dependency evidence: blocker Issues [#6](https://github.com/DHChe/braincrew-datateam-portfolio/issues/6) and [#7](https://github.com/DHChe/braincrew-datateam-portfolio/issues/7) are both `CLOSED`; Issue [#10](https://github.com/DHChe/braincrew-datateam-portfolio/issues/10) now carries `ready-for-agent`.
+- Branch evidence: dedicated worktree `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-10-grounded-claims` was created on `feat/issue-10-grounded-claims` from current `origin/develop` at `b67929a0546d32d6ffafc7b801028c9c53fc2d6a`.
+- Active skill: `test-driven-development`.
+- Expected artifact: versioned `claim-proposition-v1` and `claim-traversal-v1` contracts, deterministic grounded-claim metrics, fail-closed high-risk behavior, bounded golden cases, and fixture CLI/result-store/replay evidence.
+- Completion condition: clean baseline passes before the first RED; then every new behavior is observed failing for the expected missing-contract reason before minimal implementation, followed by ticket-scoped code review and `verification-before-completion`.
+- Clean baseline: `uv sync --frozen --all-groups`, Ruff format and lint, mypy, full pytest (`69 passed`), and `git diff --check` succeeded before the first RED.
+- Scope exclusions: the complete 40-case grounded-answer set, Issue #11 Answer Mode and abstention scope, the full 100-case benchmark, LLM-as-judge scoring, AX product changes, and Agent trajectory evaluation.
+- Next action: inspect the locked Issue #10 contracts and existing evaluator seams, then add and run the first failing claim-proposition contract test before production implementation.
 
 ### 2026-07-19 — Issue #9 Git publication authorized
 
