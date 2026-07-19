@@ -38,10 +38,10 @@ research and AX_portfolio context
 - Completed phase: Issue #7 implementation with `test-driven-development`; controlled HTTP tests and live synthetic smoke cover the pinned Adapter boundary without claiming quality.
 - Completed phase: Issue #7 ticket-scoped code review and `verification-before-completion`; both review axes have zero unresolved blocker and every fresh local gate passed.
 - Completed phase: Lore commit `3aa7264` was pushed to `origin/feat/issue-7-ax-http-contract`; draft PR #21 was opened against `develop`, its first Python quality gate passed, and its remote merge state was `CLEAN` with no review comment or change request.
-- Active canonical phase: Issue #7 pull-request review gate.
+- Active canonical phase: Issue #7 authorized squash-merge transaction and post-merge verification.
 - Active artifact: [PR #21](https://github.com/DHChe/braincrew-datateam-portfolio/pull/21) for [Issue #7](https://github.com/DHChe/braincrew-datateam-portfolio/issues/7) on branch `feat/issue-7-ax-http-contract`.
-- Active completion condition: the latest head commit passes required checks, PR #21 is ready for review, and final review evidence supports a separate merge proposal; merge remains a separately authorized action.
-- Next canonical action: collect final PR review evidence and propose merge only when the latest required checks pass with no unresolved blocker.
+- Active completion condition: PR #21 is squash-merged into `develop`, fetched `origin/develop` contains the returned merge commit, Issue #7 is closed, and the remote feature branch is absent.
+- Next canonical action: publish this authorization record, require the new head's checks to pass, execute the approved squash merge, remove the remote feature branch, and verify each terminal condition.
 - Entry condition: Issue #7 is the only open implementation ticket whose native blockers are all closed; it carries `ready-for-agent`. Issues #8, #9, #10, and #15 still depend on open Issue #7.
 - Entry condition status: satisfied on 2026-07-19 from fetched `origin/develop@230f90fb53df950173896bd6824792e3a70945ae`; the dedicated branch starts at that exact commit and its clean baseline passed.
 - Following phase: after an authorized commit, push, and pull request, wait for required checks and review evidence before proposing merge.
@@ -147,6 +147,13 @@ research and AX_portfolio context
 - Remote evidence: `Python quality gates` completed successfully; GitHub reported `CLEAN`, with zero PR review, issue comment, inline comment, or requested change.
 - Authorization: the user instructed the next step after publication, authorizing the ready-for-review transition but not merge.
 - Active gate: publish this status update, require the new head's Python gate to pass, then mark PR #21 ready for review and stop before merge.
+
+### 2026-07-19 — Issue #7 squash merge authorized
+
+- Ready evidence: PR #21 is not a draft, its latest Python quality gate passed, GitHub reports `CLEAN`, and no review comment, requested change, or unresolved blocker exists.
+- Authorization: the user approved the proposed squash merge into `develop` and removal of the remote `feat/issue-7-ax-http-contract` branch.
+- Exclusion: local worktree cleanup and any Issue #8 implementation remain outside this merge transaction.
+- Completion condition: verify the merged PR state, returned squash commit ancestry in fetched `origin/develop`, automatic Issue #7 closure, and remote branch deletion before reporting completion.
 
 ## Transition record format
 
