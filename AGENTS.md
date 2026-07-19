@@ -48,6 +48,12 @@ The canonical delivery route is the locked Ask Matt flow documented in `docs/dec
 - Treat this project as a guided Matt Pocock skill-learning environment as well as a delivery project. At the moment a Matt Pocock skill becomes appropriate, proactively explain when that skill is generally useful, why it fits the current situation, what the user must decide, what the agent will execute, and which durable artifact it will leave behind.
 - Teach skills in context rather than as a detached tutorial. Do not invoke extra skills merely for practice; propose them only when they advance the portfolio or remove a concrete uncertainty, and explicitly distinguish required canonical steps from optional supporting skills.
 - After completing a Matt Pocock skill for the first time, give the user a short reusable mental model for recognizing the same situation in future work.
+- At every implementation or review handoff, state explicitly whether the next step should continue in the current session or start in a fresh session, and explain why that context choice reduces risk or improves focus.
+- When a fresh session is recommended, provide one copy-ready prompt that includes the exact skill invocation, issue or artifact link, repository and branch, required source documents, in-scope work, explicit exclusions, verification commands, documentation duties, and the Git lifecycle stop condition.
+- After the copy-ready prompt, explain the purpose of its major instructions in plain Korean so the user learns how to construct a similar request instead of treating the prompt as unexplained boilerplate.
+- Distinguish what the user must do manually, such as opening a fresh session or approving a Git action, from the safe work the next agent should execute automatically.
+- Do not require the user to paste the full conversation into a fresh session when durable repository documents and GitHub Issues contain the necessary decisions. Name the minimum sources the next agent must inspect instead.
+- End every handoff with the next step's completion condition and the skill or review stage that follows it, so the user can recognize when to advance the workflow.
 - A Git lifecycle action is not a workflow phase transition. Continue to follow the separate Git Lifecycle Proposal Gate for commits, pushes, pull requests, and merges.
 
 ## Git Lifecycle Proposal Gate
