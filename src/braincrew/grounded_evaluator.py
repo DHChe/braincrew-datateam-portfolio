@@ -206,11 +206,61 @@ def _matched_propositions(
     )
 
 
+def _role_leakage_atom_ids(
+    case: GroundedCase,
+    answer: GroundedStructuredAnswer,
+    atoms: tuple[ClaimAtom, ...],
+) -> tuple[str, ...]:
+    protected_paths = {
+        claim_path
+        for claim_path, value in _generated_values(answer)
+        if any(
+            normalize_claim_text(identifier) in normalize_claim_text(value)
+            for identifier in case.protected_identifiers
+        )
+    }
+    protected_identifier_atom_ids = tuple(
+        atom.stable_identity
+        for atom in atoms
+        if not atom.placeholder and atom.claim_path in protected_paths
+    )
+    forbidden_role_atom_ids = tuple(
+        atom.stable_identity
+        for atom in atoms
+        if any(
+            proposition.proposition_id in case.forbidden_role_proposition_ids
+            for proposition in _matched_propositions(atom, case.propositions)
+        )
+    )
+    return tuple(dict.fromkeys((*protected_identifier_atom_ids, *forbidden_role_atom_ids)))
+
+
 def evaluate_grounded_case(
     case: GroundedCase,
     observation: GroundedObservation,
 ) -> GroundedCaseEvaluation:
-    if observation.case_id != case.case_id or not observation.available:
+    atoms = traverse_claims(
+        observation.structured_answer,
+        required_output_paths=case.required_output_paths,
+    )
+    leaking_atom_ids = _role_leakage_atom_ids(case, observation.structured_answer, atoms)
+    invalid_failure = (
+        "SYS-GROUNDED-ROLE-MISMATCH"
+        if observation.case_id == case.case_id
+        and observation.available
+        and observation.executed_role != case.role
+        else "SYS-GROUNDED-OBSERVATION-INVALID"
+    )
+    if (
+        observation.case_id != case.case_id
+        or not observation.available
+        or observation.executed_role != case.role
+    ):
+        invalid_failures = [invalid_failure]
+        invalid_hard_failure_codes: tuple[str, ...] = ()
+        if leaking_atom_ids:
+            invalid_failures.append("A-ROLE-LEAKAGE")
+            invalid_hard_failure_codes = ("A-ROLE-LEAKAGE",)
         return GroundedCaseEvaluation(
             evaluator_version=GROUNDED_EVALUATOR_VERSION,
             proposition_contract_version=CLAIM_PROPOSITION_VERSION,
@@ -224,17 +274,17 @@ def evaluate_grounded_case(
             claim_support_precision=_metric(0, 0),
             citation_precision=_metric(0, 0),
             citation_coverage=_metric(0, 0),
-            failure_codes=("SYS-GROUNDED-OBSERVATION-INVALID",),
-            hard_failure_atom_ids=(),
+            answer_mode_accuracy=_metric(0, 0),
+            abstention_accuracy=_metric(0, 0),
+            failure_codes=tuple(invalid_failures),
+            hard_failure_atom_ids=leaking_atom_ids,
+            hard_failure_codes=invalid_hard_failure_codes,
         )
 
-    atoms = traverse_claims(
-        observation.structured_answer,
-        required_output_paths=case.required_output_paths,
-    )
     atom_evaluations: list[ClaimAtomEvaluation] = []
     failures: list[str] = []
     hard_failure_atom_ids: list[str] = []
+    hard_failure_codes: list[str] = []
     unique_citations: dict[tuple[str, str, str, str], GroundedCitation] = {}
     for citation in observation.citations:
         identity = _citation_identity(citation)
@@ -317,6 +367,7 @@ def evaluate_grounded_case(
         if high_risk_failure:
             atom_failures.append("A-UNSUPPORTED-HIGH-RISK-CONCLUSION")
             hard_failure_atom_ids.append(atom.stable_identity)
+            hard_failure_codes.append("A-UNSUPPORTED-HIGH-RISK-CONCLUSION")
         for failure in atom_failures:
             if failure not in failures:
                 failures.append(failure)
@@ -358,6 +409,29 @@ def evaluate_grounded_case(
         for path in citation.claim_paths
         if path in generated_paths
     }
+    answer_mode_matches = observation.answer_mode == case.expected_answer_mode
+    if case.applicability.answer_mode_accuracy and not answer_mode_matches:
+        failures.append("A-WRONG-ANSWER-MODE")
+    if leaking_atom_ids:
+        failures.append("A-ROLE-LEAKAGE")
+        hard_failure_atom_ids.extend(leaking_atom_ids)
+        hard_failure_codes.append("A-ROLE-LEAKAGE")
+    forbidden_conclusive_atom_ids = tuple(
+        atom.stable_identity
+        for atom in atoms
+        if any(
+            proposition.proposition_id in case.forbidden_conclusive_proposition_ids
+            for proposition in atom_matches[atom.stable_identity]
+        )
+    )
+    abstention_matches = (
+        observation.answer_mode == case.required_abstention_mode
+        and not forbidden_conclusive_atom_ids
+    )
+    if case.applicability.abstention_accuracy and not abstention_matches:
+        failures.append("A-FAILED-ABSTENTION")
+        hard_failure_atom_ids.extend(forbidden_conclusive_atom_ids)
+        hard_failure_codes.append("A-FAILED-ABSTENTION")
     return GroundedCaseEvaluation(
         evaluator_version=GROUNDED_EVALUATOR_VERSION,
         proposition_contract_version=CLAIM_PROPOSITION_VERSION,
@@ -371,6 +445,17 @@ def evaluate_grounded_case(
         claim_support_precision=_metric(supported_count, len(atoms)),
         citation_precision=_metric(precise_citations, max(1, len(unique_citations))),
         citation_coverage=_metric(len(cited_paths), len(existing_paths)),
+        answer_mode_accuracy=(
+            _metric(int(answer_mode_matches), 1)
+            if case.applicability.answer_mode_accuracy
+            else _metric(0, 0)
+        ),
+        abstention_accuracy=(
+            _metric(int(abstention_matches), 1)
+            if case.applicability.abstention_accuracy
+            else _metric(0, 0)
+        ),
         failure_codes=tuple(failures),
         hard_failure_atom_ids=tuple(dict.fromkeys(hard_failure_atom_ids)),
+        hard_failure_codes=tuple(dict.fromkeys(hard_failure_codes)),
     )

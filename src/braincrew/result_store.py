@@ -85,12 +85,7 @@ def build_run_artifact(
             dirty_worktree=evaluation_state.dirty_worktree,
             executed=True,
         ),
-        sut=SutProvenance(
-            commit_sha=sut_sha,
-            dirty_worktree=None,
-            executed=False,
-            claim="identity placeholder only; live AX was not called",
-        ),
+        sut=_grounded_sut_provenance(sut_sha),
         dataset=DatasetArtifactProvenance(
             **case_document.dataset.model_dump(mode="python"),
             **case_document.provenance.model_dump(mode="python"),
@@ -331,6 +326,38 @@ def _grounded_compatibility(
         ]
     )
     case_catalog_digest = canonical_digest([case.model_dump(mode="json") for case in dataset.cases])
+    answer_mode_contract_digest = canonical_digest(
+        [
+            {
+                "case_id": case.case_id,
+                "expected_answer_mode": case.expected_answer_mode,
+                "applicable": case.applicability.answer_mode_accuracy,
+            }
+            for case in dataset.cases
+        ]
+    )
+    abstention_contract_digest = canonical_digest(
+        [
+            {
+                "case_id": case.case_id,
+                "required_abstention_mode": case.required_abstention_mode,
+                "forbidden_conclusive_proposition_ids": (case.forbidden_conclusive_proposition_ids),
+                "applicable": case.applicability.abstention_accuracy,
+            }
+            for case in dataset.cases
+        ]
+    )
+    visibility_contract_digest = canonical_digest(
+        [
+            {
+                "case_id": case.case_id,
+                "role": case.role,
+                "protected_identifiers": case.protected_identifiers,
+                "forbidden_role_proposition_ids": case.forbidden_role_proposition_ids,
+            }
+            for case in dataset.cases
+        ]
+    )
     return GroundedCompatibilityProvenance(
         evaluator_version=evaluation.evaluator_version,
         proposition_contract_version=evaluation.proposition_contract_version,
@@ -346,6 +373,12 @@ def _grounded_compatibility(
         case_catalog_digest=case_catalog_digest,
         source_resolution_version=evaluation.source_resolution_version,
         guard_version=evaluation.guard_version,
+        answer_mode_contract_version=dataset.answer_mode_contract_version,
+        answer_mode_contract_digest=answer_mode_contract_digest,
+        abstention_contract_version=dataset.abstention_contract_version,
+        abstention_contract_digest=abstention_contract_digest,
+        visibility_contract_version=dataset.visibility_contract_version,
+        visibility_contract_digest=visibility_contract_digest,
     )
 
 
@@ -370,14 +403,7 @@ def build_grounded_run_artifact(
             executed=False,
             claim="identity placeholder only; live AX was not called",
         ),
-        dataset=DatasetArtifactProvenance(
-            id=dataset.dataset_id,
-            version=dataset.dataset_version,
-            corpus_id="synthetic-hr-v1",
-            source_type=dataset.provenance.source_kind,
-            license=dataset.provenance.license,
-            content_digest=canonical_digest(dataset.model_dump(mode="json")),
-        ),
+        dataset=_grounded_dataset_provenance(dataset),
         adapter=GroundedAdapterProvenance(
             version=observations.adapter_version,
             execution_mode="fixture",
@@ -415,6 +441,28 @@ def write_grounded_run_artifact(
     return _write_artifact_document(artifact, output_dir)
 
 
+def _grounded_dataset_provenance(
+    dataset: GroundedDatasetDocument,
+) -> DatasetArtifactProvenance:
+    return DatasetArtifactProvenance(
+        id=dataset.dataset_id,
+        version=dataset.dataset_version,
+        corpus_id="synthetic-hr-v1",
+        source_type=dataset.provenance.source_kind,
+        license=dataset.provenance.license,
+        content_digest=canonical_digest(dataset.model_dump(mode="json")),
+    )
+
+
+def _grounded_sut_provenance(sut_sha: str) -> SutProvenance:
+    return SutProvenance(
+        commit_sha=sut_sha,
+        dirty_worktree=None,
+        executed=False,
+        claim="identity placeholder only; live AX was not called",
+    )
+
+
 def replay_run_artifact(path: Path) -> dict[str, str]:
     raw_artifact: object = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw_artifact, dict):
@@ -435,6 +483,12 @@ def replay_run_artifact(path: Path) -> dict[str, str]:
             recomputed_grounded_result.dataset_snapshot,
             recomputed_grounded_result.evaluation,
         )
+        recomputed_dataset_provenance = _grounded_dataset_provenance(
+            recomputed_grounded_result.dataset_snapshot
+        )
+        recomputed_sut_provenance = _grounded_sut_provenance(
+            recomputed_grounded_result.observation_snapshot.sut_commit_sha
+        )
         recomputed_grounded_digest = canonical_digest(
             {
                 "provenance": grounded_artifact.provenance.model_dump(mode="json"),
@@ -444,6 +498,8 @@ def replay_run_artifact(path: Path) -> dict[str, str]:
         if (
             stored_grounded_result != recomputed_grounded_result
             or grounded_artifact.provenance.compatibility != recomputed_compatibility
+            or grounded_artifact.provenance.dataset != recomputed_dataset_provenance
+            or grounded_artifact.provenance.sut != recomputed_sut_provenance
             or grounded_artifact.logical_digest != recomputed_grounded_digest
         ):
             raise ValueError("artifact logical content does not reproduce its stored digest")

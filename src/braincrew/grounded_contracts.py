@@ -54,6 +54,7 @@ AnswerMode = Literal[
     "direct_grounded",
     "conditional_grounded",
     "insufficient_evidence",
+    "out_of_scope",
     "review_required",
 ]
 ClaimOutcome = Literal[
@@ -65,6 +66,7 @@ ClaimOutcome = Literal[
     "missing_required",
 ]
 RiskLevel = Literal["standard", "high"]
+PrimaryFocus = Literal["grounded_answer", "visibility_abstention"]
 ClaimPolarity = Literal["affirmed", "denied"]
 ClaimModality = Literal[
     "must",
@@ -145,15 +147,22 @@ class GroundedApplicability(StrictGroundedContract):
     claim_support_precision: bool
     citation_precision: bool
     citation_coverage: bool
+    answer_mode_accuracy: bool = False
+    abstention_accuracy: bool = False
 
 
 class GroundedCase(StrictGroundedContract):
-    case_id: str = Field(pattern=r"^GA-[0-9]{3}$")
+    case_id: str = Field(pattern=r"^(GA|VA)-[0-9]{3}$")
+    primary_focus: PrimaryFocus
     split: Literal["Calibration", "Verification"]
     risk_level: RiskLevel
     query: str = Field(min_length=1)
     role: str = Field(min_length=1)
     expected_answer_mode: AnswerMode
+    required_abstention_mode: AnswerMode | None = None
+    forbidden_conclusive_proposition_ids: tuple[str, ...] = ()
+    protected_identifiers: tuple[str, ...] = ()
+    forbidden_role_proposition_ids: tuple[str, ...] = ()
     required_output_paths: tuple[str, ...]
     propositions: tuple[ClaimProposition, ...] = Field(min_length=1)
     applicability: GroundedApplicability
@@ -167,11 +176,32 @@ class GroundedCase(StrictGroundedContract):
             raise ValueError("required_output_paths must contain unique concrete claim paths")
         return paths
 
+    @field_validator("protected_identifiers")
+    @classmethod
+    def validate_protected_identifiers(cls, values: tuple[str, ...]) -> tuple[str, ...]:
+        if len(values) != len(set(values)) or any(not value.strip() for value in values):
+            raise ValueError("protected identifiers must be unique non-empty literals")
+        return values
+
     @model_validator(mode="after")
     def require_unique_proposition_ids(self) -> GroundedCase:
         proposition_ids = [item.proposition_id for item in self.propositions]
         if len(proposition_ids) != len(set(proposition_ids)):
             raise ValueError("proposition identities must be unique within a case")
+        if not set(self.forbidden_conclusive_proposition_ids) <= set(proposition_ids):
+            raise ValueError("forbidden conclusive proposition identities must exist in the case")
+        conclusive_ids = {item.proposition_id for item in self.propositions if item.conclusive}
+        if not set(self.forbidden_conclusive_proposition_ids) <= conclusive_ids:
+            raise ValueError(
+                "forbidden conclusive identity must reference a conclusive proposition"
+            )
+        if not set(self.forbidden_role_proposition_ids) <= set(proposition_ids):
+            raise ValueError("forbidden role proposition identities must exist in the case")
+        if self.applicability.abstention_accuracy:
+            if self.required_abstention_mode not in {"insufficient_evidence", "out_of_scope"}:
+                raise ValueError("applicable abstention requires the supported abstention mode")
+            if self.expected_answer_mode != self.required_abstention_mode:
+                raise ValueError("expected and required abstention modes must match")
         return self
 
 
@@ -190,6 +220,9 @@ class GroundedDatasetDocument(StrictGroundedContract):
     traversal_contract_version: Literal["claim-traversal-v1"]
     normalizer_version: Literal["claim-normalizer-v1"]
     source_resolution_version: Literal["source-text-resolution-v1"]
+    answer_mode_contract_version: Literal["answer-mode-v1"]
+    abstention_contract_version: Literal["abstention-v1"]
+    visibility_contract_version: Literal["answer-visibility-v1"]
     cases: tuple[GroundedCase, ...] = Field(min_length=1)
     provenance: GroundedDatasetProvenance
 
@@ -200,6 +233,19 @@ class GroundedDatasetDocument(StrictGroundedContract):
         case_ids = [case.case_id for case in self.cases]
         if len(case_ids) != len(set(case_ids)):
             raise ValueError("grounded case identities must be unique")
+        if self.dataset_id == "braincrew-answer-quality":
+            allocation: dict[tuple[PrimaryFocus, str], int] = {}
+            for case in self.cases:
+                key = (case.primary_focus, case.split)
+                allocation[key] = allocation.get(key, 0) + 1
+            expected = {
+                ("grounded_answer", "Calibration"): 30,
+                ("grounded_answer", "Verification"): 10,
+                ("visibility_abstention", "Calibration"): 5,
+                ("visibility_abstention", "Verification"): 5,
+            }
+            if allocation != expected:
+                raise ValueError("answer-quality case allocation does not match the frozen split")
         return self
 
 
@@ -226,7 +272,8 @@ class SourceTextResolution(StrictGroundedContract):
 
 
 class GroundedObservation(StrictGroundedContract):
-    case_id: str = Field(pattern=r"^GA-[0-9]{3}$")
+    case_id: str = Field(pattern=r"^(GA|VA)-[0-9]{3}$")
+    executed_role: str = Field(min_length=1)
     available: bool
     error: str | None
     answer_mode: AnswerMode
@@ -307,8 +354,11 @@ class GroundedCaseEvaluation(StrictGroundedContract):
     claim_support_precision: GroundedMetricScore
     citation_precision: GroundedMetricScore
     citation_coverage: GroundedMetricScore
+    answer_mode_accuracy: GroundedMetricScore
+    abstention_accuracy: GroundedMetricScore
     failure_codes: tuple[str, ...]
     hard_failure_atom_ids: tuple[str, ...]
+    hard_failure_codes: tuple[str, ...]
 
 
 class GroundedCoverage(StrictGroundedContract):
@@ -316,6 +366,8 @@ class GroundedCoverage(StrictGroundedContract):
     verification_cases: int = Field(ge=0)
     verification_claim_support_cases: int = Field(ge=0)
     verification_citation_precision_cases: int = Field(ge=0)
+    verification_answer_mode_cases: int = Field(ge=0)
+    verification_abstention_cases: int = Field(ge=0)
 
 
 class GroundedAggregateMetric(StrictGroundedContract):
@@ -329,6 +381,8 @@ class GroundedAggregate(StrictGroundedContract):
     claim_support_precision: GroundedAggregateMetric
     citation_precision: GroundedAggregateMetric
     citation_coverage: GroundedAggregateMetric
+    answer_mode_accuracy: GroundedAggregateMetric
+    abstention_accuracy: GroundedAggregateMetric
 
 
 class GroundedRunEvaluation(StrictGroundedContract):
@@ -366,6 +420,12 @@ class GroundedCompatibilityProvenance(StrictGroundedContract):
     case_catalog_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     source_resolution_version: Literal["source-text-resolution-v1"]
     guard_version: Literal["high-risk-guard-v1"]
+    answer_mode_contract_version: Literal["answer-mode-v1"]
+    answer_mode_contract_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    abstention_contract_version: Literal["abstention-v1"]
+    abstention_contract_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    visibility_contract_version: Literal["answer-visibility-v1"]
+    visibility_contract_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
 
 
 class GroundedArtifactProvenance(StrictGroundedContract):
