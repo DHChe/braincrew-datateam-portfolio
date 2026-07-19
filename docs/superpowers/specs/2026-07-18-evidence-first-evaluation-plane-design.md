@@ -105,6 +105,15 @@ EvidenceSpan offsets are zero-based Unicode code-point offsets over canonical so
 
 Local/test runs use AX role headers; bearer credentials remain environment-only. Only public or synthetic corpora are allowed. Preflight records capabilities and schema digests. Required missing operations or fields fail closed when they violate coverage. Authentication and contract failures are permanent; only timeout, `429`, and `5xx` are retryable.
 
+Issue #7 implementation lock:
+
+- `ax-sut-http-v1` is pinned to AX_portfolio commit `c318b2192006bdb36a5bd5b3a2bc403425b45701`; `ax-http-v1.yaml` is the packaged operation, request/response field-mapping, and exact Pydantic response-schema-digest contract.
+- Preflight checks `/health/ready` and the live OpenAPI path inventory. It records `preflight`, `retrieve`, `answer`, and `source_text` as available only when their frozen methods and paths exist.
+- The pinned AX build has no endpoint that exposes parsed text, sections, tables/lists, and EvidenceSpan offsets. `parse` is therefore unavailable with `AX_PARSE_OBSERVABILITY_UNAVAILABLE`; the Adapter performs no guessed request and the parsing benchmark remains blocked until AX adds its separately reviewed local/test-only observation boundary.
+- The pinned AX build also exposes no verifiable corpus identity. Preflight records the caller-declared public or synthetic corpus with `verified_by_sut=false` and `AX_CORPUS_IDENTITY_NOT_EXPOSED`; this is evidence of a capability gap, not a successful corpus check.
+- Canonical requests preserve run, case, evaluation correlation, UUID tenant, user, roles, timeout, query or record identity, `top_k`, and evidence limit. Live responses preserve AX correlations, retrieval identities, visibility decisions, structured answer fields, citations, provider metadata, source text provenance, latency, and every attempt.
+- timeout, `429`, and `5xx` use at most two retries after the first attempt. Other HTTP failures and response-schema failures are permanent and are never retried. Create-only capability manifests prevent accidental local overwrite.
+
 ### Normalized Observation
 
 Preserves the answer, retrieved evidence, citations, Answer Mode, role context, timing, token and cost information when available, errors, attempt history, and provenance required for evaluation.

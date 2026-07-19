@@ -243,6 +243,28 @@ Likely follow-ups:
 - "Is the result truly immutable?" — It is append-only at the application boundary and replay-verifiable. Strong retention guarantees such as object lock are a later operational concern and are not claimed here.
 - "Why include provenance in the digest?" — A score under a different evaluator or dataset is different evidence even when the displayed number is equal.
 
+Issue #7 implementation decision:
+: Freeze `ax-sut-http-v1` against AX commit `c318b2192006bdb36a5bd5b3a2bc403425b45701`, validate its live path inventory before a run, preserve every HTTP attempt, and fail closed on unavailable parsing or corpus identity.
+
+Why:
+: A nominal endpoint list is not enough to support an evaluation claim. The Adapter must prove which operations and fields the pinned SUT actually exposes, retain request and response provenance, and make missing observation surfaces visible before scoring begins.
+
+Rejected alternatives:
+: Import AX models directly, infer missing parse output from attachment status, or mark the caller's corpus label as SUT-verified. Each would make the Evaluation Plane claim evidence that AX did not return.
+
+Trade-offs and failure modes:
+: The first live preflight intentionally leaves `parse` unavailable and corpus identity unverified, so the locked parsing benchmark cannot run yet. UUID tenant validation rejects bad local configuration before HTTP. Only timeout, `429`, and `5xx` retry, and every attempt remains visible; authentication, contract `4xx`, and schema mismatch fail permanently. A path being present proves interface availability, not retrieval quality or data coverage.
+
+Validation evidence:
+: Fifteen controlled HTTP tests cover preflight, frozen request/response mappings and schema digests, retrieve, answer, source text, explicit parse unavailability, timeout recovery, `429` recovery, exhausted `5xx`, permanent `401`, malformed response, UUID tenant validation, bearer-credential exclusion, and create-only manifest persistence. Review-driven tests also prove that success and failure evidence preserve run, case, query or document identity. A live synthetic smoke against the pinned AX SHA returned ready health, confirmed the four supported operations, recorded the two capability gaps, completed retrieval with zero candidates, and returned an evidence-insufficient answer without generated text or citations.
+
+Likely follow-ups:
+
+- "Why is parsing still blocked?" — AX does not expose parsed text, structure, tables/lists, and EvidenceSpan offsets through a reviewed HTTP boundary. Attachment processing status is not equivalent evidence.
+- "Does an available retrieval endpoint prove search quality?" — No. It proves only that the contract can be called and normalized. The live smoke returned zero candidates and supports no quality claim.
+- "Why preserve failed attempts?" — Retry hides operational instability unless every timeout and transient response remains in the evidence. The final success alone would bias reliability reporting.
+- "Why is corpus identity unverified?" — The current AX response surface has no authoritative corpus identifier or digest. The Adapter records the declared synthetic corpus but refuses to relabel it as SUT-verified.
+
 ### D8. Use Python, DuckDB and Parquet with a static Next.js dashboard
 
 Decision:

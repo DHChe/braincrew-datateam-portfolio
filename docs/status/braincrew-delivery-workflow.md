@@ -34,13 +34,17 @@ research and AX_portfolio context
 - Completed phase: Issue #6 implementation with `test-driven-development`; ten acceptance cases cover CLI execution, deterministic rerun and replay, append-only collision handling, invalid and tampered input, complete artifact-envelope validation, dataset-digest boundaries, path traversal, and commit identity validation.
 - Completed phase: Issue #6 ticket-scoped code review; both the standards and specification axes passed with zero unresolved blockers after review-driven TDD repairs.
 - Completed phase: the user approved the Issue #6 Git lifecycle proposal; Lore commit `b63b2f9` was pushed to `origin/feat/issue-6-cli-immutable-gate`, and PR #20 was opened against `develop`.
-- Active canonical phase: PR #20 verification and review gate.
-- Active artifact: [PR #20](https://github.com/DHChe/braincrew-datateam-portfolio/pull/20), with merge intentionally left pending.
-- Active completion condition: the latest PR head passes required checks with no unresolved review blocker, then the user explicitly authorizes merge.
-- Next canonical phase: present the latest remote check and review evidence through the Git Lifecycle Proposal Gate; merge only after explicit authorization.
-- Entry condition: Issue #6 is the only unblocked implementation ticket and carries `ready-for-agent`; Issues #7 through #17 remain blocked by their recorded dependency edges.
-- Entry condition status: satisfied on 2026-07-19; implementation must start from the latest verified `develop` on a ticket-bounded feature branch.
-- Following phase: after Issue #6 is reviewed and merged into `develop`, remove its frontier role and activate the next dependency-unblocked ticket in a fresh context.
+- Completed phase: PR #20 passed its Python quality check and was merged into `develop` as `230f90f`; Issue #6 was closed and removed from the implementation frontier.
+- Completed phase: Issue #7 implementation with `test-driven-development`; controlled HTTP tests and live synthetic smoke cover the pinned Adapter boundary without claiming quality.
+- Completed phase: Issue #7 ticket-scoped code review and `verification-before-completion`; both review axes have zero unresolved blocker and every fresh local gate passed.
+- Completed phase: Lore commit `3aa7264` was pushed to `origin/feat/issue-7-ax-http-contract`; draft PR #21 was opened against `develop`, its first Python quality gate passed, and its remote merge state was `CLEAN` with no review comment or change request.
+- Active canonical phase: Issue #7 authorized squash-merge transaction and post-merge verification.
+- Active artifact: [PR #21](https://github.com/DHChe/braincrew-datateam-portfolio/pull/21) for [Issue #7](https://github.com/DHChe/braincrew-datateam-portfolio/issues/7) on branch `feat/issue-7-ax-http-contract`.
+- Active completion condition: PR #21 is squash-merged into `develop`, fetched `origin/develop` contains the returned merge commit, Issue #7 is closed, and the remote feature branch is absent.
+- Next canonical action: publish this authorization record, require the new head's checks to pass, execute the approved squash merge, remove the remote feature branch, and verify each terminal condition.
+- Entry condition: Issue #7 is the only open implementation ticket whose native blockers are all closed; it carries `ready-for-agent`. Issues #8, #9, #10, and #15 still depend on open Issue #7.
+- Entry condition status: satisfied on 2026-07-19 from fetched `origin/develop@230f90fb53df950173896bd6824792e3a70945ae`; the dedicated branch starts at that exact commit and its clean baseline passed.
+- Following phase: after an authorized commit, push, and pull request, wait for required checks and review evidence before proposing merge.
 - Blocker: none.
 
 ## Transition history
@@ -91,6 +95,65 @@ research and AX_portfolio context
 - Pre-push verification: the committed branch remained based on `origin/develop` at `2c3540ed37afeb865bde1466ef992af278799700`; Ruff, mypy, ten pytest cases, and diff checks passed.
 - Replay evidence: two clean committed-state CLI runs and replay returned `PASS` with logical digest `sha256:b033d931313f3ae2462ed0068712f900b7cf9f8b8dd1433c961fdc10c6e063dc`.
 - Active gate: wait for the latest PR checks and review evidence, then request explicit merge authorization.
+
+### 2026-07-19 — Issue #6 merged; Issue #7 implementation started
+
+- Merge evidence: PR #20 reports `MERGED` with successful `Python quality gates`; fetched `origin/develop` points to merge commit `230f90fb53df950173896bd6824792e3a70945ae`, and Issue #6 is closed.
+- Frontier evidence: Issue #7 has only Issue #6 as a native blocker; #6 is closed. Issue #7 now carries `ready-for-agent`, while the label was removed from completed Issue #6.
+- Active skill: `test-driven-development`.
+- Expected artifact: a versioned `ax-sut-http-v1` Adapter contract and capability manifest that preserve the pinned AX identity, operation availability, every HTTP attempt, response provenance, timing, and permanent or retryable failure classification without importing AX internals.
+- Completion condition: controlled HTTP tests cover success, timeout, `429`, `5xx`, schema mismatch, and permanent failure; preflight makes missing parsing observations explicit; any available live smoke uses synthetic or publicly releasable input; all repository quality gates and ticket-scoped review pass.
+- Branch evidence: local `develop`, `origin/develop`, and `feat/issue-7-ax-http-contract` started at `230f90fb53df950173896bd6824792e3a70945ae`; `uv sync --frozen --all-groups`, Ruff format and lint, mypy, the full ten-test suite, and the Issue #6 acceptance gate passed before Issue #7 edits.
+- Scope exclusions: AX product implementation, the full parsing/retrieval/answer metric suites, the 100-case dataset, dashboard work, and Agent trajectory evaluation.
+- Next action: add and run the first failing controlled HTTP contract test before implementing the live Adapter.
+
+### 2026-07-19 — Issue #7 implementation completed; code review started
+
+- Completed skill: `test-driven-development`.
+- Controlled evidence: fifteen Issue #7 contract tests cover capability preflight, frozen field mappings and schema digests, create-only manifest persistence, retrieve, answer, source text, explicit parse unavailability, timeout, `429`, `5xx`, permanent `401`, response schema mismatch, invalid tenant configuration, and bearer-credential exclusion.
+- Live evidence: the pinned AX stack reported ready; preflight confirmed four supported operations and explicit parse/corpus-identity gaps. A synthetic retrieval returned zero candidates, and answer generation failed closed as `insufficient_evidence` with zero citations and no generated natural-language answer.
+- Verification evidence: `uv lock --check`, frozen sync, Ruff formatting and lint, mypy, all 23 tests, the ten-case Issue #6 acceptance gate, wheel build, packaged `ax-http-v1.yaml`, and `git diff --check` passed after implementation repairs.
+- Active skill: `code-review`.
+- Expected artifact: separate repository-standards and Issue #7 specification findings with exact file references and no unresolved blocker.
+- Completion condition: blocking findings are repaired through TDD and the full verification sequence passes again.
+- Next action: review the full worktree diff from `origin/develop@230f90fb53df950173896bd6824792e3a70945ae`.
+
+### 2026-07-19 — Issue #7 code review requested fixes; verification started
+
+- Review findings: repository-standards review found that `bearer_token` could enter a serialized configuration; specification review found that failure/preflight evidence lacked the canonical request identity and that `ax-http-v1.yaml` lacked exact field mappings plus literal response-schema digests.
+- Repair evidence: each behavior was first captured by a failing test. `bearer_token` is now excluded from representation and serialization; all HTTP requests send evaluation run, case, and correlation headers; success, failure, and preflight evidence preserve the same canonical request; the packaged contract locks field mappings and validates literal digests against the complete Pydantic response schemas.
+- Review result: separate repository-standards and Issue #7 specification passes report zero unresolved blocker. No AX internal import, copied implementation, expanded benchmark scope, or quality claim was found.
+- Active skill: `verification-before-completion`.
+- Completion condition: the full repository gates, wheel-content check, latest pinned live synthetic smoke, and diff hygiene all pass after the review-driven repairs.
+
+### 2026-07-19 — Issue #7 code review and verification completed
+
+- Completed skills: `test-driven-development`, `code-review`, and `verification-before-completion`.
+- Review evidence: repository-standards and Issue #7 specification reviews both returned `PASS` with zero unresolved blocker after the credential, canonical-request, field-mapping, and schema-digest repairs.
+- Fresh repository evidence: frozen sync, Ruff format and lint, mypy, all 25 tests, the ten-case Issue #6 acceptance gate, wheel build, packaged Adapter code and `ax-http-v1.yaml`, and `git diff --check` passed.
+- Fresh live evidence: the post-review run `issue-7-live-review` against AX commit `c318b2192006bdb36a5bd5b3a2bc403425b45701` reported ready; preserved preflight, retrieval, and answer case identities; confirmed four available operations plus the explicit parse and corpus-identity gaps; and repeated the zero-candidate, `insufficient_evidence`, zero-citation, no-generated-answer result without making a quality claim.
+- Environment cleanup: the temporary alternate-port AX Compose containers and network were removed after the smoke; named data volumes were preserved.
+- Active gate: Git Lifecycle Proposal Gate. No commit, push, pull request, or merge has been performed for Issue #7.
+
+### 2026-07-19 — Issue #7 Git publication authorized
+
+- Authorization: the user approved the proposed single Lore commit, push to `origin/feat/issue-7-ax-http-contract`, and draft pull request to `develop`; merge remains explicitly excluded.
+- Included scope: the reviewed AX HTTP Adapter, packaged contract and dependency lock, controlled tests, live-smoke evidence, locked design decision, interview defense, and delivery-workflow state.
+- Publication completion condition: the remote branch and draft pull request point to the verified Lore commit, after which required checks and review evidence become the active gate.
+
+### 2026-07-19 — Issue #7 draft pull request passed its first remote gate
+
+- Publication evidence: Lore commit `3aa72646c134c13ad261542fd25f9a3c79879cd3` is the head of `origin/feat/issue-7-ax-http-contract`, and draft PR #21 targets `develop` at `230f90fb53df950173896bd6824792e3a70945ae`.
+- Remote evidence: `Python quality gates` completed successfully; GitHub reported `CLEAN`, with zero PR review, issue comment, inline comment, or requested change.
+- Authorization: the user instructed the next step after publication, authorizing the ready-for-review transition but not merge.
+- Active gate: publish this status update, require the new head's Python gate to pass, then mark PR #21 ready for review and stop before merge.
+
+### 2026-07-19 — Issue #7 squash merge authorized
+
+- Ready evidence: PR #21 is not a draft, its latest Python quality gate passed, GitHub reports `CLEAN`, and no review comment, requested change, or unresolved blocker exists.
+- Authorization: the user approved the proposed squash merge into `develop` and removal of the remote `feat/issue-7-ax-http-contract` branch.
+- Exclusion: local worktree cleanup and any Issue #8 implementation remain outside this merge transaction.
+- Completion condition: verify the merged PR state, returned squash commit ancestry in fetched `origin/develop`, automatic Issue #7 closure, and remote branch deletion before reporting completion.
 
 ## Transition record format
 
