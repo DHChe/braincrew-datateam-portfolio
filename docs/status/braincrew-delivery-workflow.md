@@ -1,6 +1,6 @@
 # Braincrew Portfolio Delivery Workflow Status
 
-Last updated: 2026-07-19
+Last updated: 2026-07-20
 
 ## Purpose
 
@@ -60,15 +60,89 @@ research and AX_portfolio context
 - Completed phase: Issue #12 implementation with `test-driven-development`; the strict 100-case registry, dataset card, fail-closed mutation validation, immutable full-fixture artifact, deterministic replay, and existing 20/30/50-case compatibility are implemented and documented.
 - Completed phase: Issue #12 ticket-scoped `code-review`; separate Standards and Spec axes pass with zero unresolved finding after nine review-driven RED/GREEN repairs and two structural consolidations.
 - Completed phase: Issue #12 `verification-before-completion`; every required pre-commit repository gate and installed 100-case fixture create/replay check passes with fresh evidence.
-- Active canonical phase: approved Issue #12 Git publication sequence.
-- Active artifact: [Issue #12](https://github.com/DHChe/braincrew-datateam-portfolio/issues/12), labeled `ready-for-agent`, on branch `feat/issue-12-dataset-freeze` from current `origin/develop`.
-- Active completion condition: exactly 100 cases validate at the locked 20/30/40/10 and 70/30 allocations; invalid dataset mutations fail closed; full fixture create/replay and independent-run logical digests agree; ticket-scoped Standards and Spec review plus `verification-before-completion` pass before the Git Lifecycle Proposal Gate.
-- Entry condition: blocker Issues #8, #9, and #11 are closed and PR #25 is squash-merged into `develop` at the requested commit.
-- Entry condition status: satisfied on 2026-07-19; the dedicated worktree starts exactly at `origin/develop@c6cd5920ed7b46798618734c7c55977b89c9d9af`.
-- Next canonical phase: create one ticket-scoped Lore commit, rerun every repository gate and installed 100-case create/replay from the clean committed state, require the new Evaluation Plane SHA with `dirty_worktree=false`, then push and open the authorized review-ready pull request.
-- Workflow gate: commit, push, and pull-request creation are authorized. Merge remains excluded until required remote checks and review evidence pass and the user separately authorizes it.
+- Completed phase: PR #26 passed its required Python quality check, squash-merged Issue #12 into `develop` as `eb252e4c32d1ea2167f0cc31371423541dc3b315`, and Issue #12 is closed.
+- Completed phase: Issue #13 implementation with `test-driven-development`; comparison contracts, compatibility and confound checks, ordered release gates, JSON/Parquet evidence, DuckDB rebuild, deterministic replay, and PASS/FAIL/INVALID fixture paths are implemented and documented.
+- Completed phase: Issue #13 ticket-scoped `code-review`; separate Standards and Spec axes pass with zero unresolved finding after review-driven storage-boundary repair and fail-closed comparison-contract RED/GREEN cycles.
+- Completed phase: Issue #13 `verification-before-completion`; every required environment, quality, full-regression, installed-CLI comparison/replay, deterministic-digest, Parquet, DuckDB, diff, branch-base, and upstream-state check passes with fresh evidence.
+- Completed phase: the authorized Issue #13 local Lore commit was created and its clean committed state passed every required repository and installed-CLI verification.
+- Active canonical phase: Issue #13 push and pull-request Git Lifecycle Proposal Gate.
+- Active artifact: [Issue #13](https://github.com/DHChe/braincrew-datateam-portfolio/issues/13), labeled `ready-for-agent`, on branch `feat/issue-13-experiment-comparison` from current `origin/develop`.
+- Active completion condition: compatible baseline/candidate fixtures produce canonical JSON/Parquet evidence, a rebuildable DuckDB query cache, case/macro deltas and failure taxonomy, deterministic PASS/FAIL/INVALID three-gate decisions, replay and confound checks; ticket-scoped Standards and Spec review plus `verification-before-completion` pass before the Git Lifecycle Proposal Gate.
+- Entry condition: blocker Issue #12 is closed and PR #26 is squash-merged into `develop` at `eb252e4c32d1ea2167f0cc31371423541dc3b315`.
+- Entry condition status: satisfied on 2026-07-19; fetched `origin/develop` points exactly to the squash merge commit, the commit is an ancestor of the Issue #13 branch, and the clean dedicated worktree baseline reports `159 passed`.
+- Next canonical phase: present the verified commit, target remote branch, `develop` pull-request strategy, required remote checks, and fixture-only claim boundary; push and open the pull request only after separate explicit authorization.
+- Workflow gate: the authorized local Lore commit is complete. Push, pull-request creation or modification, merge, issue closure, and worktree cleanup remain unauthorized.
 
 ## Transition history
+
+### 2026-07-20 — Issue #13 local Lore commit verified; push and PR gate activated
+
+- Commit result: branch `feat/issue-13-experiment-comparison` contains one ticket-scoped Lore commit above `origin/develop@eb252e4c32d1ea2167f0cc31371423541dc3b315`; the dedicated worktree was clean when committed-state verification began.
+- Repository evidence: `uv sync --frozen --all-groups`, Ruff format check, Ruff lint, strict mypy, full pytest, and `git diff --check` pass from the committed tree; pytest reports `187 passed in 9.04s`.
+- Installed-CLI evidence: PASS, FAIL, and INVALID fixtures each produce the same decision and logical digest across two independent comparison IDs, and all six canonical JSON/Parquet pairs replay successfully.
+- Rebuilt-cache evidence: rebuilding DuckDB independently from each Parquet artifact produces 90 rows, one decision, and one logical digest for every PASS, FAIL, and INVALID run.
+- Deterministic digests: PASS is `sha256:8a14166be831f330630580f3934803fcfa11d86763723bdbcebdfdee8bee1cf4`; FAIL is `sha256:400507a8ffd1b6b289cf0f8b3d69e57dc97e8fbc90eb390969fbf18192c9d9b4`; INVALID is `sha256:9e2bbc7e413318e9792939eeab5e77aae2040f9324a4132f8a28369a5ffea9a4`.
+- Verification artifacts: committed-state outputs are under `/tmp/braincrew-issue13-committed.DIvmwx`, outside the repository and excluded from publication.
+- Scope evidence: dashboard, live AX Verification execution, and Agent trajectory evaluation remain unimplemented and unclaimed.
+- Active gate: push and pull-request creation remain unauthorized. Merge, Issue #13 closure, and worktree cleanup remain later independent decisions.
+- Next action: present the push and review-ready pull-request proposal, then wait for explicit authorization before any remote write.
+
+### 2026-07-20 — Issue #13 local Lore commit authorized
+
+- Authorization: the user approved the proposed local Issue #13 Lore commit and clean committed-state verification.
+- Included scope: the reviewed comparison and release-gate contracts, compatibility and confound enforcement, case/macro and failure-taxonomy aggregation, canonical JSON/Parquet result-store path, disposable DuckDB cache, deterministic replay, PASS/FAIL/INVALID Verification fixtures, regression tests, dependency lock, canonical design lock, interview defense, and workflow evidence.
+- Required pre-commit evidence: frozen dependency sync, Ruff format and lint, strict mypy, full pytest, `git diff --check`, branch/base verification, and ticket-scoped status inspection must pass immediately before commit.
+- Required post-commit evidence: the committed worktree is clean; the same repository gates pass; the installed CLI reproduces PASS, FAIL, and INVALID decisions and deterministic digests from committed fixtures; every JSON/Parquet pair replays successfully; DuckDB remains rebuildable from Parquet.
+- Active exclusion: push, pull-request creation or modification, merge, Issue #13 closure, and worktree cleanup remain separate Git lifecycle decisions and are not authorized by this approval.
+- Next action: create one verified Lore commit, complete committed-state verification, then stop at the next Git Lifecycle Proposal Gate.
+
+### 2026-07-19 — Issue #13 final verification completed; Git proposal gate activated
+
+- Completed skill: `verification-before-completion`.
+- Repository evidence: `uv sync --frozen --all-groups`, Ruff format check, Ruff lint, strict mypy, full pytest, and `git diff --check` all pass; the fresh full suite reports `187 passed in 8.88s`.
+- Installed-CLI decisions: `.venv/bin/braincrew-eval compare` produced PASS, FAIL, and INVALID twice each from the 15-case Verification fixtures. The repeated logical digests are respectively `sha256:8a14166be831f330630580f3934803fcfa11d86763723bdbcebdfdee8bee1cf4`, `sha256:400507a8ffd1b6b289cf0f8b3d69e57dc97e8fbc90eb390969fbf18192c9d9b4`, and `sha256:9e2bbc7e413318e9792939eeab5e77aae2040f9324a4132f8a28369a5ffea9a4`.
+- Replay and cache evidence: all six installed-CLI JSON/Parquet pairs replay to the stored decision and digest. Each disposable DuckDB cache and source Parquet contains the same 90 analytical rows with one decision and one logical digest.
+- Base and upstream evidence: after a fresh fetch, both branch `HEAD` and `origin/develop` remain exactly `eb252e4c32d1ea2167f0cc31371423541dc3b315`; PR #26 remains merged with its Python quality check successful, Issue #12 remains closed, and Issue #13 remains open with `ready-for-agent`.
+- Artifact location: ephemeral verification evidence is under `/tmp/braincrew-issue13-verification.zJxX3L`; it is outside the repository and is not proposed for commit.
+- Git state: all Issue #13 changes remain uncommitted in the dedicated worktree. No commit, push, pull request, or merge has been performed.
+- Active gate: Git Lifecycle Proposal Gate.
+- Completion condition: present the target branch and remote, exact included scope, fresh verification evidence, PR/merge strategy, and known risks; wait for explicit authorization before the first Git lifecycle action.
+
+### 2026-07-19 — Issue #13 ticket review completed; final verification started
+
+- Completed skill: ticket-scoped `code-review` against fixed point `origin/develop@eb252e4c32d1ea2167f0cc31371423541dc3b315`.
+- Standards result: PASS with zero unresolved finding. Comparison logic no longer owns artifact storage or DuckDB; the Immutable Result Store owns create-only JSON/Parquet, replay, and cache rebuild. The retrieval configuration field now names only the fixed digest, mutable model defaults use a factory, and required provenance digests are strict canonical SHA-256 values.
+- Spec result: PASS with zero unresolved finding. Review-driven RED/GREEN repairs reject per-case applicability movement, corpus or dirty-state drift, missing retrieval confound evidence, under-covered Verification denominators, missing operational evaluator provenance, severity drift in frozen critical failures, and failure identities that do not reference run evaluator provenance. Failure taxonomy now carries baseline, candidate, and signed delta counts by code and family.
+- Fixture boundary: all PASS/FAIL/INVALID summaries are explicit 15-case Verification inputs that meet the frozen 6/9/10/10/15/5 denominator minima and carry present, unchanged Recall@5, MRR@10, and authority-priority confound evidence.
+- Focused evidence: Ruff format/lint, strict mypy, `git diff --check`, and the comparison unit plus CLI acceptance suite pass; the focused suite reports `28 passed`.
+- Documentation evidence: the canonical design, interview defense, and workflow status now record the same split, minimum-coverage, provenance, taxonomy, storage, replay, gate, and exclusion contracts.
+- Active skill: `verification-before-completion`.
+- Completion condition: every required repository command and installed CLI PASS/FAIL/INVALID compare/replay/digest/cache check passes with fresh evidence; no commit, push, pull request, or merge occurs.
+- Next action: run final verification from the dedicated Issue #13 worktree and record the exact evidence before proposing the Git lifecycle sequence.
+
+### 2026-07-19 — Issue #13 TDD implementation completed; code review started
+
+- Completed skill: `test-driven-development`.
+- RED/GREEN evidence: the missing comparison surface, immutable JSON/Parquet writer, DuckDB cache rebuild, installed CLI compare/replay path, missing required provenance, retrieval confound drift, metric-denominator drift, unordered Gate 3 execution, Parquet tampering, repeating-decimal truncation, and missing taxonomy aggregation were each observed failing for the expected missing behavior or actual defect before minimal GREEN.
+- Fixture decisions: the installed CLI produces PASS for a 3-point claim-support improvement, FAIL for a 16-percent p95 latency regression, and INVALID for model-identity drift.
+- Artifact contract: `experiment-comparison-artifact-v1` stores complete baseline/candidate summaries, case and macro deltas, operational changes, code/family taxonomy, ordered gate traces, decision and reasons, plus a logical digest independent of comparison and input run IDs. JSON and Parquet are create-only canonical evidence; DuckDB is rebuildable cache only.
+- Focused and regression evidence: Ruff format/lint, strict mypy, `git diff --check`, and full pytest all pass; the fresh suite reports `177 passed`.
+- Documentation evidence: the canonical design, interview defense, and workflow status record the same compatibility, confound, gate, storage, replay, validation, and exclusion boundaries.
+- Active skill: ticket-scoped `code-review` against fixed point `origin/develop@eb252e4c32d1ea2167f0cc31371423541dc3b315`.
+- Completion condition: separate Standards and Spec axes report zero unresolved blocker after any review-driven RED/GREEN repair.
+- Next action: review all tracked and untracked Issue #13 changes without committing, pushing, opening a pull request, or merging.
+
+### 2026-07-19 — PR #26 and Issue #12 completed; Issue #13 implementation activated
+
+- Upstream evidence: [PR #26](https://github.com/DHChe/braincrew-datateam-portfolio/pull/26) is `MERGED` into `develop` at `2026-07-19T14:52:55Z`; its squash merge commit is `eb252e4c32d1ea2167f0cc31371423541dc3b315`, fetched `origin/develop` points to that exact commit, and the required `Python quality gates` check completed successfully.
+- Dependency evidence: blocker [Issue #12](https://github.com/DHChe/braincrew-datateam-portfolio/issues/12) is `CLOSED` at `2026-07-19T14:53:22Z`; [Issue #13](https://github.com/DHChe/braincrew-datateam-portfolio/issues/13) is open and now carries `ready-for-agent`.
+- Branch evidence: dedicated worktree `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-13-experiment-comparison` was created on `feat/issue-13-experiment-comparison` from `origin/develop@eb252e4c32d1ea2167f0cc31371423541dc3b315`.
+- Baseline evidence: `uv sync --frozen --all-groups` completed and the unchanged branch baseline reported `159 passed in 7.79s`.
+- Active skill: `test-driven-development`.
+- Expected artifact: compatible fixture baseline/candidate comparison with immutable canonical JSON and Parquet, disposable DuckDB query cache, complete version compatibility and confound evidence, exact case/macro aggregation and failure taxonomy, three ordered release gates, deterministic replay, and fixture PASS/FAIL/INVALID paths.
+- Explicit exclusions: dashboard, live verification experiment, and Agent trajectory evaluation.
+- Completion condition: every new contract and defect is observed RED before minimal GREEN; the canonical design, interview defense, and workflow status agree; Standards and Spec reviews have zero unresolved blocker; every required repository and installed-CLI verification passes before the Git Lifecycle Proposal Gate.
+- Next action: map the frozen gate and compatibility contracts to focused RED tests, then implement the smallest comparison boundary that satisfies them.
 
 ### 2026-07-19 — Issue #12 Git publication authorized
 

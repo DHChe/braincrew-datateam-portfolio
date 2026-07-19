@@ -4,6 +4,9 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+import duckdb
+
+from braincrew.comparison import ComparisonArtifact, compare_runs
 from braincrew.contracts import (
     AdapterProvenance,
     ArtifactProvenance,
@@ -457,11 +460,163 @@ def _grounded_sut_provenance(sut_sha: str) -> SutProvenance:
     )
 
 
+def _comparison_parquet_rows(artifact: ComparisonArtifact) -> list[tuple[object, ...]]:
+    baseline_cases = {case.case_id: case for case in artifact.baseline.cases}
+    candidate_cases = {case.case_id: case for case in artifact.candidate.cases}
+    rows: list[tuple[object, ...]] = []
+    for case_delta in artifact.case_deltas:
+        baseline = baseline_cases[case_delta.case_id]
+        candidate = candidate_cases[case_delta.case_id]
+        for metric in sorted(case_delta.metric_deltas):
+            rows.append(
+                (
+                    artifact.logical_digest,
+                    artifact.decision,
+                    case_delta.case_id,
+                    metric,
+                    baseline.metrics[metric],
+                    candidate.metrics[metric],
+                    case_delta.metric_deltas[metric],
+                    baseline.latency_ms,
+                    candidate.latency_ms,
+                    case_delta.latency_relative_delta,
+                    baseline.cost_usd,
+                    candidate.cost_usd,
+                    case_delta.cost_relative_delta,
+                    json.dumps(
+                        [failure.model_dump(mode="json") for failure in candidate.failures],
+                        ensure_ascii=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                )
+            )
+    return rows
+
+
+def _write_comparison_parquet(artifact: ComparisonArtifact, path: Path) -> None:
+    connection = duckdb.connect(":memory:")
+    try:
+        connection.execute(
+            """
+            CREATE TABLE comparison_cases (
+                logical_digest VARCHAR NOT NULL,
+                decision VARCHAR NOT NULL,
+                case_id VARCHAR NOT NULL,
+                metric_name VARCHAR NOT NULL,
+                baseline_value DECIMAL(38, 28) NOT NULL,
+                candidate_value DECIMAL(38, 28) NOT NULL,
+                delta DECIMAL(38, 28) NOT NULL,
+                baseline_latency_ms DECIMAL(38, 28) NOT NULL,
+                candidate_latency_ms DECIMAL(38, 28) NOT NULL,
+                latency_relative_delta DECIMAL(38, 28) NOT NULL,
+                baseline_cost_usd DECIMAL(38, 28) NOT NULL,
+                candidate_cost_usd DECIMAL(38, 28) NOT NULL,
+                cost_relative_delta DECIMAL(38, 28) NOT NULL,
+                candidate_failures_json VARCHAR NOT NULL
+            )
+            """
+        )
+        connection.executemany(
+            "INSERT INTO comparison_cases VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            _comparison_parquet_rows(artifact),
+        )
+        connection.execute(
+            "COPY comparison_cases TO ? (FORMAT PARQUET, COMPRESSION ZSTD)",
+            [str(path)],
+        )
+    finally:
+        connection.close()
+
+
+def write_comparison_artifact(
+    artifact: ComparisonArtifact,
+    output_dir: Path,
+) -> tuple[Path, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / f"{artifact.comparison_id}.json"
+    parquet_path = output_dir / f"{artifact.comparison_id}.parquet"
+    if json_path.exists() or parquet_path.exists():
+        raise FileExistsError(f"comparison artifact already exists: {artifact.comparison_id}")
+    _write_comparison_parquet(artifact, parquet_path)
+    serialized = json.dumps(
+        artifact.model_dump(mode="json"),
+        ensure_ascii=False,
+        indent=2,
+        sort_keys=True,
+    )
+    with json_path.open("x", encoding="utf-8") as artifact_file:
+        artifact_file.write(serialized + "\n")
+    return json_path, parquet_path
+
+
+def replay_comparison_artifact(path: Path) -> dict[str, str]:
+    raw_artifact: object = json.loads(path.read_text(encoding="utf-8"))
+    stored = ComparisonArtifact.model_validate(raw_artifact)
+    recomputed = compare_runs(
+        stored.baseline,
+        stored.candidate,
+        comparison_id=stored.comparison_id,
+    )
+    if stored != recomputed:
+        raise ValueError("comparison artifact does not reproduce its decision and digest")
+    parquet_path = path.with_suffix(".parquet")
+    if not parquet_path.is_file():
+        raise ValueError("comparison Parquet artifact is missing")
+    connection = duckdb.connect(":memory:")
+    try:
+        parquet_rows = connection.execute(
+            """
+            SELECT
+                logical_digest,
+                decision,
+                case_id,
+                metric_name,
+                baseline_value,
+                candidate_value,
+                delta,
+                baseline_latency_ms,
+                candidate_latency_ms,
+                latency_relative_delta,
+                baseline_cost_usd,
+                candidate_cost_usd,
+                cost_relative_delta,
+                candidate_failures_json
+            FROM read_parquet(?)
+            ORDER BY case_id, metric_name
+            """,
+            [str(parquet_path)],
+        ).fetchall()
+    finally:
+        connection.close()
+    if parquet_rows != _comparison_parquet_rows(recomputed):
+        raise ValueError("comparison Parquet evidence does not reproduce canonical rows")
+    return {
+        "decision": recomputed.decision,
+        "logical_digest": recomputed.logical_digest,
+    }
+
+
+def rebuild_duckdb_cache(parquet_path: Path, cache_path: Path) -> Path:
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    connection = duckdb.connect(str(cache_path))
+    try:
+        connection.execute(
+            "CREATE OR REPLACE TABLE comparison_cases AS SELECT * FROM read_parquet(?)",
+            [str(parquet_path)],
+        )
+    finally:
+        connection.close()
+    return cache_path
+
+
 def replay_run_artifact(path: Path) -> dict[str, str]:
     raw_artifact: object = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw_artifact, dict):
         raise ValueError("artifact must be a JSON object")
     schema_version = raw_artifact.get("schema_version")
+    if schema_version == "experiment-comparison-artifact-v1":
+        return replay_comparison_artifact(path)
     if schema_version == "dataset-run-artifact-v1":
         from braincrew.dataset_run import replay_dataset_run_artifact
 
