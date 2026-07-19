@@ -429,6 +429,8 @@ Non-critical absolute thresholds are calibrated once on the 70-case Calibration 
 
 An LLM judge may be reported as supplementary qualitative evidence. It cannot independently pass, fail, or overturn any release gate.
 
+The comparison result is sealed before its logical digest is exposed. Every nested mapping in the accepted run summaries and derived comparison evidence is recursively normalized to an immutable snapshot, and non-finite decimal inputs are schema-invalid before gate arithmetic. A library caller therefore cannot mutate a returned metric or provenance mapping while leaving stale deltas, gates, or digest attached to the same artifact.
+
 ## 11. Run state, error handling, and reproducibility
 
 Every experiment run follows this state model:

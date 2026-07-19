@@ -66,15 +66,44 @@ research and AX_portfolio context
 - Completed phase: Issue #13 `verification-before-completion`; every required environment, quality, full-regression, installed-CLI comparison/replay, deterministic-digest, Parquet, DuckDB, diff, branch-base, and upstream-state check passes with fresh evidence.
 - Completed phase: the authorized Issue #13 local Lore commit was created and its clean committed state passed every required repository and installed-CLI verification.
 - Completed phase: Lore implementation commit `2ac9508fd3ec39b94ecbecd6c9f03adb41e64ac1` was pushed to `origin/feat/issue-13-experiment-comparison`; review-ready [PR #27](https://github.com/DHChe/braincrew-datateam-portfolio/pull/27) was opened against `develop`, and its first Python quality gate passed with remote merge state `CLEAN` and no review comment or change request.
-- Active canonical phase: PR #27 verification, review, and merge Git Lifecycle Proposal Gate.
+- Completed phase: PR #27 review-driven TDD repair; the confirmed shallow-freeze defect was observed RED and repaired GREEN, while the non-finite-decimal suggestion was disproved against the locked Pydantic behavior and retained as a regression check.
+- Completed phase: PR #27 repair re-review; separate Standards and Spec axes report zero unresolved finding.
+- Completed phase: PR #27 review-repair `verification-before-completion`; every repository gate and installed-CLI PASS/FAIL/INVALID comparison, replay, deterministic-digest, and DuckDB-cache check passes with fresh evidence.
+- Active canonical phase: PR #27 review-repair publication and replacement-head remote verification.
 - Active artifact: review-ready [PR #27](https://github.com/DHChe/braincrew-datateam-portfolio/pull/27), which closes [Issue #13](https://github.com/DHChe/braincrew-datateam-portfolio/issues/13) when merged and contains the compatible-run comparison and release-gate implementation on branch `feat/issue-13-experiment-comparison`.
-- Active completion condition: the latest PR head has a successful required Python quality gate, remote merge state `CLEAN`, and zero unresolved review blocker; then present the squash-merge target, evidence, claim boundary, and risk for separate authorization.
+- Active completion condition: the authorized repair commit is pushed without force; local, remote, and PR heads match; the replacement Python gate passes; both inline review threads carry evidence-backed replies and are resolved; GitHub reports `CLEAN` with zero unresolved blocker before a fresh merge proposal.
 - Entry condition: blocker Issue #12 is closed and PR #26 is squash-merged into `develop` at `eb252e4c32d1ea2167f0cc31371423541dc3b315`.
 - Entry condition status: satisfied on 2026-07-19; fetched `origin/develop` points exactly to the squash merge commit, the commit is an ancestor of the Issue #13 branch, and the clean dedicated worktree baseline reports `159 passed`.
-- Next canonical phase: publish this status-only Lore commit to the existing PR branch, verify the new PR head and required remote check, then present the squash-merge proposal.
-- Workflow gate: the user authorized the status-only commit and push that records PR #27 publication and its first successful remote gate. Merge, Issue #13 closure, branch deletion, and worktree cleanup remain unauthorized independent decisions.
+- Next canonical phase: after replacement-head verification, present a fresh squash-merge proposal for PR #27 and its `Closes #13` effect.
+- Workflow gate: the user authorized one review-repair Lore commit, a normal push to the existing PR branch, and evidence-backed reply and resolution for both inline review threads. Merge, Issue #13 closure, branch deletion, and worktree cleanup remain unauthorized and have not occurred.
 
 ## Transition history
+
+### 2026-07-20 — PR #27 review-repair publication authorized
+
+- Authorization: the user approved one Lore commit for the reviewed repair diff, a force-free push to `origin/feat/issue-13-experiment-comparison`, and evidence-backed reply and resolution for both automated inline review threads.
+- Included scope: recursive sealing for accepted and derived comparison mappings, controlled non-finite-decimal regression coverage, TDD and re-review evidence, and synchronized decision, canonical design, interview defense, and delivery workflow documents.
+- Required publication evidence: frozen sync, Ruff format and lint, strict mypy, full pytest, `git diff --check`, exact six-file staging, and clean Lore commit must pass before push.
+- Required remote evidence: local, remote, and PR heads match; the replacement Python quality gate passes; both review threads are answered and resolved; GitHub reports merge state `CLEAN` with no unresolved blocker.
+- Scope boundary: no gate threshold, fixture decision, logical digest, dashboard, live AX Verification, Agent trajectory evaluation, or unrelated file is included.
+- Active exclusion: merge, Issue #13 closure, branch deletion, and worktree cleanup remain separate decisions.
+- Next action: publish and verify the repair, then stop at a fresh squash-merge Git Lifecycle Proposal Gate.
+
+### 2026-07-20 — PR #27 merge paused for review-driven TDD repair
+
+- Merge preflight: frozen sync, Ruff format and lint, strict mypy, full pytest, `git diff --check`, local/remote head equality, and the required Python quality gate passed for PR head `e9ee64ac21a492b989ad609aad68487fe8818148`; GitHub reported merge state `CLEAN`.
+- Review evidence: the later automated review attached two P2 suggestions to implementation commit `2ac9508fd3ec39b94ecbecd6c9f03adb41e64ac1`. API inspection found both inline comments before merge, so the no-unresolved-review-blocker condition was not satisfied and no merge occurred.
+- Non-finite-decimal finding: not reproduced as a product defect. Under the locked Pydantic version, `NaN`, positive infinity, and negative infinity for primary or retrieval metrics already raise controlled `finite_number` `ValidationError` results before `ExperimentCaseResult.validate_metrics()` or CLI comparison arithmetic.
+- Recursive-mutation finding: confirmed code defect. A frozen Pydantic model still permitted mutation of nested metric, model-parameter, and derived-delta dicts after the digest was computed. The RED regression failed because no `TypeError` was raised.
+- Minimal GREEN: comparison contracts recursively freeze every accepted and derived mapping and nested list-like value. The focused comparison suite reports `34 passed`; Ruff format/lint and strict mypy pass after the repair.
+- Standards re-review: PASS with zero finding. The repair follows the repository's TDD, no-new-dependency, immutable-evidence, documentation, and scope-fence rules; the ticket-local immutable mapping boundary is required to preserve Pydantic's canonical dictionary serialization while preventing ordinary mutation.
+- Spec re-review: PASS with zero finding. The repair strengthens Issue #13's immutable artifact and replay contract without changing compatibility fields, gate order or thresholds, fixture meanings, deterministic digest payload, or explicit exclusions.
+- Scope boundary: the repair changes only comparison artifact sealing and regression evidence. Gate thresholds, deterministic fixture digests, dashboard, live AX Verification, and Agent trajectory evaluation remain unchanged.
+- Repository verification: frozen sync, Ruff format and lint, strict mypy, `git diff --check`, and full pytest pass; the repair suite contains 194 passing tests.
+- Installed-CLI verification: PASS, FAIL, and INVALID fixtures each produce the same decision and logical digest across two independent comparison IDs; all six JSON artifacts replay, and all six disposable DuckDB caches contain 90 rows with one decision and one logical digest. The digests remain `sha256:8a14166be831f330630580f3934803fcfa11d86763723bdbcebdfdee8bee1cf4`, `sha256:400507a8ffd1b6b289cf0f8b3d69e57dc97e8fbc90eb390969fbf18192c9d9b4`, and `sha256:9e2bbc7e413318e9792939eeab5e77aae2040f9324a4132f8a28369a5ffea9a4` respectively.
+- Verification artifacts: ephemeral comparison outputs are under `/tmp/braincrew-issue13-review.s7aBBF`, outside the repository and excluded from publication.
+- Active action: present the exact repair diff, evidence, Lore commit and push strategy, replacement PR check requirement, and risk for explicit authorization.
+- Completion condition: user explicitly authorizes the review-repair commit and push; no merge occurs until the replacement PR head passes remote verification and receives a fresh merge decision.
 
 ### 2026-07-20 — PR #27 published and first remote gate passed
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from decimal import Decimal
 from math import ceil
-from typing import Literal
+from typing import Literal, Never, cast
 
 from pydantic import Field, TypeAdapter, field_validator, model_validator
 
@@ -47,6 +47,33 @@ JSON_OBJECT_ADAPTER = TypeAdapter(dict[str, object])
 SHA256_DIGEST_PATTERN = r"^sha256:[0-9a-f]{64}$"
 
 
+class _ImmutableDict[ValueT](dict[str, ValueT]):
+    def _reject_mutation(self, *args: object, **kwargs: object) -> Never:
+        del args, kwargs
+        raise TypeError("canonical comparison mappings are immutable")
+
+    __setitem__ = _reject_mutation
+    __delitem__ = _reject_mutation
+    __ior__ = _reject_mutation
+    clear = _reject_mutation
+    pop = _reject_mutation
+    popitem = _reject_mutation
+    setdefault = _reject_mutation
+    update = _reject_mutation
+
+
+def _freeze_value(value: object) -> object:
+    if isinstance(value, dict):
+        return _ImmutableDict({key: _freeze_value(item) for key, item in value.items()})
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze_value(item) for item in value)
+    return value
+
+
+def _freeze_mapping[ValueT](values: dict[str, ValueT]) -> dict[str, ValueT]:
+    return cast(dict[str, ValueT], _freeze_value(values))
+
+
 class FailureIdentity(StrictContract):
     code: str
     severity: Literal["critical", "major", "minor", "diagnostic"]
@@ -75,6 +102,11 @@ class ExperimentCaseResult(StrictContract):
     latency_ms: Decimal = Field(ge=0)
     cost_usd: Decimal = Field(ge=0)
     failures: tuple[FailureIdentity, ...]
+
+    @field_validator("metrics", "retrieval_metrics")
+    @classmethod
+    def freeze_metric_maps(cls, values: dict[str, Decimal]) -> dict[str, Decimal]:
+        return _freeze_mapping(values)
 
     @model_validator(mode="after")
     def validate_metrics(self) -> ExperimentCaseResult:
@@ -125,7 +157,12 @@ class ExperimentProvenance(StrictContract):
     def validate_version_map(cls, versions: dict[str, str]) -> dict[str, str]:
         if any(not key or not version for key, version in versions.items()):
             raise ValueError("version maps require non-empty keys and values")
-        return versions
+        return _freeze_mapping(versions)
+
+    @field_validator("model_parameters")
+    @classmethod
+    def freeze_model_parameters(cls, parameters: dict[str, object]) -> dict[str, object]:
+        return _freeze_mapping(parameters)
 
 
 class ExperimentRunSummary(StrictContract):
@@ -161,6 +198,11 @@ class CaseDelta(StrictContract):
     latency_relative_delta: Decimal
     cost_relative_delta: Decimal
 
+    @field_validator("metric_deltas")
+    @classmethod
+    def freeze_metric_deltas(cls, values: dict[str, Decimal]) -> dict[str, Decimal]:
+        return _freeze_mapping(values)
+
 
 class OperationalDelta(StrictContract):
     baseline_p95_latency_ms: Decimal
@@ -184,6 +226,18 @@ class FailureTaxonomyDelta(StrictContract):
     baseline_family_counts: dict[str, int]
     candidate_family_counts: dict[str, int]
     family_count_deltas: dict[str, int]
+
+    @field_validator(
+        "baseline_code_counts",
+        "candidate_code_counts",
+        "code_count_deltas",
+        "baseline_family_counts",
+        "candidate_family_counts",
+        "family_count_deltas",
+    )
+    @classmethod
+    def freeze_count_maps(cls, values: dict[str, int]) -> dict[str, int]:
+        return _freeze_mapping(values)
 
 
 class GateTrace(StrictContract):
@@ -209,6 +263,11 @@ class ComparisonArtifact(StrictContract):
     decision: Literal["PASS", "FAIL", "INVALID"]
     reasons: tuple[str, ...]
     logical_digest: str
+
+    @field_validator("macro_baseline", "macro_candidate", "macro_deltas")
+    @classmethod
+    def freeze_macro_maps(cls, values: dict[str, Decimal]) -> dict[str, Decimal]:
+        return _freeze_mapping(values)
 
 
 def _failure_key(case_id: str, failure: FailureIdentity) -> str:

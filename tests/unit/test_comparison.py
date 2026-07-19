@@ -3,10 +3,11 @@ from __future__ import annotations
 import importlib.util
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import duckdb
 import pytest
+from pydantic import ValidationError
 
 
 def test_comparison_module_is_available() -> None:
@@ -145,6 +146,28 @@ def test_compare_runs_passes_on_compatible_positive_quality_evidence() -> None:
     assert comparison.logical_digest.startswith("sha256:")
 
 
+@pytest.mark.parametrize("non_finite", ["NaN", "Infinity", "-Infinity"])
+@pytest.mark.parametrize(
+    ("field_name", "metric_name"),
+    [
+        ("metrics", "claim_support_precision"),
+        ("retrieval_metrics", "mrr_at_10"),
+    ],
+)
+def test_run_summary_rejects_non_finite_metric_values(
+    field_name: str,
+    metric_name: str,
+    non_finite: str,
+) -> None:
+    from braincrew.comparison import ExperimentRunSummary
+
+    payload = _run_payload(role="baseline", evidence_limit=3)
+    payload["cases"][0][field_name][metric_name] = non_finite
+
+    with pytest.raises(ValidationError, match="finite number"):
+        ExperimentRunSummary.model_validate(payload)
+
+
 def _pass_comparison(comparison_id: str = "pass-comparison") -> Any:
     from braincrew import comparison as comparison_module
 
@@ -160,6 +183,39 @@ def _pass_comparison(comparison_id: str = "pass-comparison") -> Any:
         candidate,
         comparison_id=comparison_id,
     )
+
+
+def test_comparison_artifact_recursively_freezes_canonical_mappings() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _run_payload(role="candidate", evidence_limit=5)
+    for payload in (baseline_payload, candidate_payload):
+        payload["provenance"]["model_parameters"] = {
+            "sampling": {"temperature": "0", "stop": ["END"]}
+        }
+    for case in candidate_payload["cases"]:
+        case["metrics"]["claim_support_precision"] = "0.83"
+    artifact = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="recursively-frozen-comparison",
+    )
+
+    with pytest.raises(TypeError, match="immutable"):
+        artifact.candidate.cases[0].metrics["claim_support_precision"] = Decimal("0")
+    with pytest.raises(TypeError, match="immutable"):
+        artifact.candidate.provenance.model_parameters["temperature"] = Decimal("0")
+    with pytest.raises(TypeError, match="immutable"):
+        artifact.macro_deltas["claim_support_precision"] = Decimal("0")
+    sampling = artifact.candidate.provenance.model_parameters["sampling"]
+    assert isinstance(sampling, dict)
+    with pytest.raises(TypeError, match="immutable"):
+        sampling["temperature"] = "1"
+    stop = sampling["stop"]
+    assert isinstance(stop, tuple)
+    with pytest.raises(AttributeError):
+        cast(Any, stop).append("LATER")
 
 
 def test_comparison_artifacts_replay_and_rebuild_disposable_cache(tmp_path: Path) -> None:
