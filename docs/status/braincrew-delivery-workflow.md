@@ -43,16 +43,92 @@ research and AX_portfolio context
 - Completed phase: Issue #8 ticket-scoped `code-review`; Standards and Spec axes both passed with zero remaining finding after a bounded duplication refactor and re-review.
 - Completed phase: Issue #8 `verification-before-completion`; every required local gate and the installed-console-script fixture run passed with fresh evidence.
 - Completed phase: the user approved the Issue #8 Git lifecycle proposal for one Lore commit, committed-state verification, branch push, and pull-request creation; merge remains excluded.
-- Active canonical phase: Issue #8 pull-request verification and review gate.
-- Active artifact: [Issue #8](https://github.com/DHChe/braincrew-datateam-portfolio/issues/8), labeled `ready-for-agent`, on branch `feat/issue-8-parsing-quality`.
-- Active completion condition: the pushed Issue #8 pull-request head passes required checks with no unresolved review blocker, then merge is proposed separately for explicit authorization.
-- Entry condition: Issues #6 and #7 are closed through merged PRs #20 and #21, and `origin/develop` points to the Issue #7 merge commit `0d137a64b86158e33a14d435caaabf5d42ea20c1`.
+- Completed phase: PR #22 merged Issue #8 into `develop` as merge commit `c549c255c55e97639b6261d9414fb0abfa64026e`, and Issue #8 is closed.
+- Completed phase: Issue #9 implementation with `test-driven-development`; the 30-case dataset, deterministic retrieval evaluator, fixture CLI/result-store path, exact provenance, and pinned-AX synthetic smoke are implemented and documented.
+- Completed phase: Issue #9 ticket-scoped `code-review`; the separate Standards and Spec axes passed with zero remaining finding after review-driven RED/GREEN repairs.
+- Completed phase: Issue #9 `verification-before-completion`; every required repository gate and the installed 30-case fixture CLI create/replay path passed with fresh evidence.
+- Completed phase: the user approved the Issue #9 Git lifecycle proposal for one Lore commit, committed-state verification, branch push, and review-ready pull-request creation; merge remains excluded.
+- Active canonical phase: Issue #9 Git publication.
+- Active artifact: [Issue #9](https://github.com/DHChe/braincrew-datateam-portfolio/issues/9), labeled `ready-for-agent`, on branch `feat/issue-9-retrieval-quality`.
+- Active completion condition: the Lore commit is cleanly verified, the matching origin branch points to it, and a review-ready pull request targeting `develop` records `Closes #9`, validation evidence, and the live-smoke claim boundary.
+- Entry condition: Issue #8 is closed through merged PR #22, and `origin/develop` points to merge commit `c549c255c55e97639b6261d9414fb0abfa64026e`.
 - Entry condition status: satisfied on 2026-07-19; the dedicated worktree is clean and based exactly on that `origin/develop` commit.
-- Next canonical phase: create the authorized Lore commit, verify its clean committed state, push `feat/issue-8-parsing-quality`, and open a `develop` pull request with `Closes #8`; then wait at the remote verification gate.
-- Following phase: after review fixes and full verification, stop at the Git Lifecycle Proposal Gate before any commit, push, pull request, or merge.
+- Next canonical phase: wait for the pull request's required checks and review evidence.
+- Following phase: propose merge only after required checks pass and no review blocker remains; merge remains separately authorized.
 - Blocker: none.
 
 ## Transition history
+
+### 2026-07-19 — Issue #9 Git publication authorized
+
+- Authorization: the user approved the proposed single Lore commit, committed-state verification, push to `origin/feat/issue-9-retrieval-quality`, and review-ready pull request targeting `develop`; merge was not authorized.
+- Included scope: the reviewed Issue #9 retrieval dataset, strict contracts, deterministic evaluator, CLI/result-store/replay path, tests, pinned-AX synthetic smoke evidence, locked design decision, interview defense, and delivery-workflow status.
+- Required pre-push evidence: the committed worktree is clean; frozen sync, Ruff, mypy, full pytest, diff checks, and an installed-console-script retrieval run and replay pass with the new committed Evaluation Plane SHA and `dirty_worktree=false`.
+- Pull-request strategy: use `Closes #9`, expose the 30-case fixture coverage and exact metrics, and state that the pinned live smoke returned zero candidates and therefore makes no positive live retrieval-quality claim.
+- Active exclusion: merge remains a later Git lifecycle decision after required checks and review evidence.
+- Next action: create the Lore commit, run committed-state verification, push the verified branch, and open the review-ready pull request.
+
+### 2026-07-19 — Issue #9 final verification completed; lifecycle proposal gate reached
+
+- Completed skill: `verification-before-completion`.
+- Repository evidence: `uv sync --frozen --all-groups`, Ruff format and lint, mypy, full pytest (`69 passed`), and `git diff --check` all exited successfully from a fresh run.
+- Fixture artifact evidence: installed `braincrew-eval run-retrieval` created and `braincrew-eval replay` recomputed `retrieval-run-artifact-v1` as `COMPLETED` with the same logical digest `sha256:9f00231e8adfbc87230e9391635b26d09de3cf438929138af96cdc81f875afcc`.
+- Coverage and metric evidence: 30 scored cases, 21 Calibration, 9 Verification, Verification Recall@5 denominator 9, 28 authority cases, 30 forbidden-visibility cases, Recall@5 `14/15`, MRR@10 `14/15`, authority `1/1`, forbidden visibility `0/1`, and zero hard-failure case in the fixture.
+- Provenance evidence: dataset `braincrew-retrieval-quality@1.0.0` with digest `sha256:5364cb7d7919304f5ebe78e4b7bd9bf2ed073c5e9f1e84c36f48697c2759fca8`, adapter `fixture-retrieval-sut-v1`, evaluator `retrieval-quality-v1`, and declared non-executed AX SUT `c318b2192006bdb36a5bd5b3a2bc403425b45701` were recorded exactly; the uncommitted Evaluation Plane provenance correctly records `origin/develop@c549c255c55e97639b6261d9414fb0abfa64026e` with `dirty_worktree=true`.
+- GitHub and branch evidence: PR #22 remains merged at `c549c255c55e97639b6261d9414fb0abfa64026e`, Issue #8 remains closed, Issue #9 remains open with `ready-for-agent`, and branch `feat/issue-9-retrieval-quality`, `HEAD`, `origin/develop`, and their merge base all point to that merge commit.
+- Review evidence: independent Spec and Standards reviews report `PASS` with zero remaining finding after all review-driven RED/GREEN repairs.
+- Scope evidence: AX retrieval implementation, grounded-answer scoring, the full 100-case benchmark, and Agent trajectory evaluation were not added or claimed. The pinned live smoke returned zero candidates and therefore proves only the HTTP/Adapter/evaluator boundary, not positive live retrieval quality.
+- Active gate: Git Lifecycle Proposal Gate; no commit, push, pull request, or merge has been performed for Issue #9.
+- Next action: propose one Lore commit on `feat/issue-9-retrieval-quality`, committed-state verification, push to the matching origin branch, and a reviewed pull request targeting `develop`; wait for explicit authorization before executing.
+
+### 2026-07-19 — Issue #9 code review completed; final verification started
+
+- Review result: the independent Spec and Standards axes both report `PASS` with zero remaining finding against fixed point `c549c255c55e97639b6261d9414fb0abfa64026e`.
+- Final review-driven RED evidence: an unavailable observation carrying a forbidden identity lost `R-FORBIDDEN-VISIBILITY` and the run-level `hard_failure_cases` entry; the new regression test failed against that behavior.
+- Final repair evidence: `INVALID` remains the evidence state, while forbidden-source identity is scanned before invalid-return paths and preserves the zero-tolerance failure code and hard-failure entry; the focused evaluator suite reports `14 passed`, with Ruff and mypy clean.
+- Active skill: `verification-before-completion`.
+- Completion condition: frozen sync, Ruff format/lint, mypy, full pytest, `git diff --check`, installed fixture CLI execution, create-only artifact inspection, and artifact replay all succeed with fresh evidence.
+- Next action: run the complete local gate set and installed 30-case retrieval CLI/replay path, then record the exact evidence and stop at the Git Lifecycle Proposal Gate.
+
+### 2026-07-19 — Issue #9 code review requested fixes; TDD repairs completed
+
+- Review findings: Standards reported one HIGH replay gap and two MEDIUM fail-closed contract gaps; Spec reported one HIGH Recall@5 deduplication-boundary error.
+- RED evidence: four focused tests failed for retrieval replay, the fifth unique identity at original rank 6, zero-applicability aggregate handling, and impossible or display-mismatched exact metric values.
+- Repair evidence: retrieval replay now recomputes stored case and aggregate evidence and rejects tampering; Recall@5 slices the deduplicated sequence; a zero aggregate denominator produces explicit `INVALID`; metric contracts validate both fraction bounds and display consistency.
+- Focused GREEN evidence: legacy fixture replay plus Issue #9 unit and acceptance tests reported `28 passed`; Ruff format/lint, mypy, and `git diff --check` passed after the repairs.
+- Active skill: ticket-scoped `code-review` re-review on the unchanged fixed point `c549c255c55e97639b6261d9414fb0abfa64026e`.
+- Completion condition: both Standards and Spec axes clear the repaired worktree with zero unresolved finding before final verification begins.
+- Next action: repeat both independent read-only review axes across all tracked and untracked changes.
+
+### 2026-07-19 — Issue #9 re-review aligned hard failures with canonical run states
+
+- Re-review result: Spec passed with zero finding; Standards cleared the four prior repairs and reported one new HIGH state-semantics conflict.
+- Conflict: the retrieval evaluator used `FAILED` for a fully scored forbidden-source result, while the locked global contract reserves `FAILED` for runtime or infrastructure execution failure.
+- RED evidence: the unit and CLI acceptance tests were changed to require `COMPLETED` plus preserved hard-failure evidence, and both failed against the old state assignment.
+- Repair: a fully scored retrieval run now remains `COMPLETED`; `R-FORBIDDEN-VISIBILITY` and `hard_failure_cases` remain zero-tolerance evidence that a later release gate must reject.
+- Active skill: ticket-scoped Standards re-review.
+- Completion condition: Standards clears the state repair with zero unresolved finding, then final verification begins.
+- Next action: rerun the focused tests and the Standards review axis before changing workflow phase.
+
+### 2026-07-19 — Issue #9 implementation completed; code review started
+
+- Completed skill: `test-driven-development`.
+- Fixture evidence: all 30 cases executed through the installed CLI and create-only result store; the artifact reported `COMPLETED`, a 21/9 split, Verification Recall@5 denominator 9, Recall@5 `14/15`, MRR@10 `14/15`, authority `1/1`, and forbidden visibility `0/1` with exact dataset, evaluator, adapter, and SUT identities.
+- Live boundary evidence: the pinned AX service at `c318b2192006bdb36a5bd5b3a2bc403425b45701` completed the synthetic retrieval request through `ax-sut-http-v1`; it returned zero candidates, so the smoke proves transport and provenance only and explicitly does not claim positive retrieval quality.
+- Implementation evidence: Ruff lint, mypy, full pytest (`63 passed`), and `git diff --check` passed before review.
+- Active skill: ticket-scoped `code-review` with independent Standards and Spec axes against `origin/develop@c549c255c55e97639b6261d9414fb0abfa64026e`.
+- Completion condition: every blocking finding is reproduced with a failing regression test, repaired, and cleared by re-review before final verification starts.
+- Next action: inspect all tracked and untracked Issue #9 changes without committing, pushing, opening a pull request, or merging.
+
+### 2026-07-19 — PR #22 and Issue #8 completed; Issue #9 implementation started
+
+- Merge evidence: PR #22 reports `MERGED` into `develop` with merge commit `c549c255c55e97639b6261d9414fb0abfa64026e`, and Issue #8 reports `CLOSED`.
+- Frontier evidence: Issue #9 is open, its blockers Issues #6 and #7 are closed, and `ready-for-agent` is applied.
+- Active skill: `test-driven-development` in the dedicated `feat/issue-9-retrieval-quality` worktree based exactly on fetched `origin/develop@c549c255c55e97639b6261d9414fb0abfa64026e`.
+- Expected artifact: 30 versioned retrieval cases with a frozen 21/9 split, deterministic Recall@5 and MRR@10, authority and applicability evaluation, zero-tolerance forbidden visibility, explicit unresolved-identity policy, fixture CLI/result-store evidence, and a synthetic live retrieval smoke against the pinned AX service.
+- Clean baseline: frozen dependency sync, Ruff format and lint, mypy, full pytest (`43 passed`), and `git diff --check` succeeded before the first RED.
+- Scope exclusions: AX retrieval implementation changes, grounded-answer scoring, the complete 100-case benchmark, and Agent trajectory evaluation.
+- Next action: add and run the first failing retrieval dataset-contract test before production implementation.
 
 ### 2026-07-19 — Issue #8 lifecycle proposal approved
 

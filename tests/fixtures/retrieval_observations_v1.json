@@ -1,0 +1,604 @@
+{
+  "schema_version": "retrieval-observation-batch-v1",
+  "adapter_version": "fixture-retrieval-sut-v1",
+  "observations": [
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-001",
+      "query": "연차휴가 신청 기한은 언제인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-001",
+          "evidence_span_id": "synthetic-span-001",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-002",
+      "query": "징계위원회 소명 절차는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-002",
+          "evidence_span_id": "synthetic-span-002",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-003",
+      "query": "육아휴직 신청에 필요한 서류는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-003",
+          "evidence_span_id": "synthetic-span-003",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-004",
+      "query": "휴게시간 부여 기준은 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-004",
+          "evidence_span_id": "synthetic-span-004",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-005",
+      "query": "재택근무 승인 절차는 어떻게 되는가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-005",
+          "evidence_span_id": "synthetic-span-005",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        },
+        {
+          "rank": 2,
+          "record_kind": "labor_law",
+          "record_id": "synthetic-law-005",
+          "evidence_span_id": "synthetic-law-span-005",
+          "source_text_digest": null,
+          "authority_level": 2,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-006",
+      "query": "직장 내 괴롭힘 신고 접수 절차는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-006",
+          "evidence_span_id": "synthetic-span-006",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-007",
+      "query": "경조휴가 사용 기준은 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-007",
+          "evidence_span_id": "synthetic-span-007",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-008",
+      "query": "초과근무 사전 승인 기준은 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-008",
+          "evidence_span_id": "synthetic-span-008",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-009",
+      "query": "수습기간 평가 절차는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-009",
+          "evidence_span_id": "synthetic-span-009",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-010",
+      "query": "취업규칙 변경 시 의견 청취 절차는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-010",
+          "evidence_span_id": "synthetic-span-010",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        },
+        {
+          "rank": 2,
+          "record_kind": "labor_law",
+          "record_id": "synthetic-law-010",
+          "evidence_span_id": "synthetic-law-span-010",
+          "source_text_digest": null,
+          "authority_level": 2,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-011",
+      "query": "퇴직금 지급 기한은 언제인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-011",
+          "evidence_span_id": "synthetic-span-011",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-012",
+      "query": "병가 신청과 증빙 기준은 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-012",
+          "evidence_span_id": "synthetic-span-012",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-013",
+      "query": "개인정보 열람 권한은 어떻게 제한되는가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-013",
+          "evidence_span_id": "synthetic-span-013",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-014",
+      "query": "성과평가 이의신청 절차는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-014",
+          "evidence_span_id": "synthetic-span-014",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-015",
+      "query": "배우자 출산휴가 신청 기준은 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-015",
+          "evidence_span_id": "synthetic-span-015",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        },
+        {
+          "rank": 2,
+          "record_kind": "labor_law",
+          "record_id": "synthetic-law-015",
+          "evidence_span_id": "synthetic-law-span-015",
+          "source_text_digest": null,
+          "authority_level": 2,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-016",
+      "query": "대체휴무 부여 기준은 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-016",
+          "evidence_span_id": "synthetic-span-016",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-017",
+      "query": "교육훈련비 지원 조건은 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-017",
+          "evidence_span_id": "synthetic-span-017",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-018",
+      "query": "내부 제보자 보호 절차는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-018",
+          "evidence_span_id": "synthetic-span-018",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-019",
+      "query": "신설 복지제도의 근거 문서는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": []
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-020",
+      "query": "서로 충돌하는 출장 규정 중 어느 것이 유효한가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": []
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-021",
+      "query": "근로계약 갱신 통지 절차는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-021",
+          "evidence_span_id": "synthetic-span-021",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-022",
+      "query": "임금명세서 교부 항목은 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-022",
+          "evidence_span_id": "synthetic-span-022",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-023",
+      "query": "안전보건교육 실시 기준은 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-023",
+          "evidence_span_id": "synthetic-span-023",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-024",
+      "query": "노사협의회 고충 처리 절차는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-024",
+          "evidence_span_id": "synthetic-span-024",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-025",
+      "query": "유연근무제 신청 가능 대상은 누구인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-025",
+          "evidence_span_id": "synthetic-span-025",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        },
+        {
+          "rank": 2,
+          "record_kind": "labor_law",
+          "record_id": "synthetic-law-025",
+          "evidence_span_id": "synthetic-law-span-025",
+          "source_text_digest": null,
+          "authority_level": 2,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-026",
+      "query": "휴일근로 보상 기준은 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-026",
+          "evidence_span_id": "synthetic-span-026",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-027",
+      "query": "채용서류 반환 절차는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-027",
+          "evidence_span_id": "synthetic-span-027",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-028",
+      "query": "비밀유지 의무의 적용 범위는 어디까지인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-028",
+          "evidence_span_id": "synthetic-span-028",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-029",
+      "query": "인사기록 정정 요청 절차는 무엇인가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-029",
+          "evidence_span_id": "synthetic-span-029",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    },
+    {
+      "schema_version": "retrieval-observation-v1",
+      "case_id": "retrieval-030",
+      "query": "퇴직 면담 기록의 열람 권한은 누구에게 있는가",
+      "retrieval_available": true,
+      "failure_code": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "record_kind": "company_rule",
+          "record_id": "synthetic-rule-030",
+          "evidence_span_id": "synthetic-span-030",
+          "source_text_digest": null,
+          "authority_level": 1,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        },
+        {
+          "rank": 2,
+          "record_kind": "labor_law",
+          "record_id": "synthetic-law-030",
+          "evidence_span_id": "synthetic-law-span-030",
+          "source_text_digest": null,
+          "authority_level": 2,
+          "visibility_allowed": true,
+          "visibility_reason": "role_scope_allowed"
+        }
+      ]
+    }
+  ]
+}
