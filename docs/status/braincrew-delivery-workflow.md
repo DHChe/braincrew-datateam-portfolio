@@ -33,10 +33,11 @@ research and AX_portfolio context
 - Completed phase: `to-tickets`; the user approved 12 vertical implementation slices, GitHub Issues #6 through #17 were published as sub-issues of #4, and 22 native dependency edges were recorded.
 - Completed phase: Issue #6 implementation with `test-driven-development`; ten acceptance cases cover CLI execution, deterministic rerun and replay, append-only collision handling, invalid and tampered input, complete artifact-envelope validation, dataset-digest boundaries, path traversal, and commit identity validation.
 - Completed phase: Issue #6 ticket-scoped code review; both the standards and specification axes passed with zero unresolved blockers after review-driven TDD repairs.
-- Active canonical phase: Git Lifecycle Proposal Gate.
-- Active artifact: a commit, push, pull-request, and merge proposal for the verified Issue #6 diff; no Git write or remote lifecycle action has been performed.
-- Active completion condition: the user explicitly authorizes the proposed lifecycle action before the corresponding commit, push, pull request, or merge occurs.
-- Next canonical phase: after authorization, create the local Lore commit, refresh and reverify the remote base, push the ticket branch, open a reviewed pull request to `develop`, and merge only after required checks and approval pass.
+- Completed phase: the user approved the Issue #6 Git lifecycle proposal; Lore commit `b63b2f9` was pushed to `origin/feat/issue-6-cli-immutable-gate`, and PR #20 was opened against `develop`.
+- Active canonical phase: PR #20 verification and review gate.
+- Active artifact: [PR #20](https://github.com/DHChe/braincrew-datateam-portfolio/pull/20), with merge intentionally left pending.
+- Active completion condition: the latest PR head passes required checks with no unresolved review blocker, then the user explicitly authorizes merge.
+- Next canonical phase: present the latest remote check and review evidence through the Git Lifecycle Proposal Gate; merge only after explicit authorization.
 - Entry condition: Issue #6 is the only unblocked implementation ticket and carries `ready-for-agent`; Issues #7 through #17 remain blocked by their recorded dependency edges.
 - Entry condition status: satisfied on 2026-07-19; implementation must start from the latest verified `develop` on a ticket-bounded feature branch.
 - Following phase: after Issue #6 is reviewed and merged into `develop`, remove its frontier role and activate the next dependency-unblocked ticket in a fresh context.
@@ -81,6 +82,15 @@ research and AX_portfolio context
 - Scope evidence: no live AX HTTP connection, full metric suite, 100-case dataset, dashboard, or Agent trajectory evaluation was added or claimed.
 - Active gate: Git Lifecycle Proposal Gate; no commit, push, pull request, or merge has been performed.
 - Next action: present the verified ticket-scoped lifecycle proposal and wait for explicit authorization before executing its first write action.
+
+### 2026-07-19 — Issue #6 lifecycle proposal approved; PR opened
+
+- Authorization: the user approved the proposed commit, push, and pull-request sequence; merge remains a separate evidence-gated action.
+- Commit evidence: Lore commit `b63b2f926e17c549afbfc9037eb3e8e2f92a5df4` contains the reviewed Issue #6 implementation and documentation.
+- Remote evidence: `origin/feat/issue-6-cli-immutable-gate` was created and [PR #20](https://github.com/DHChe/braincrew-datateam-portfolio/pull/20) targets `develop` with `Closes #6`.
+- Pre-push verification: the committed branch remained based on `origin/develop` at `2c3540ed37afeb865bde1466ef992af278799700`; Ruff, mypy, ten pytest cases, and diff checks passed.
+- Replay evidence: two clean committed-state CLI runs and replay returned `PASS` with logical digest `sha256:b033d931313f3ae2462ed0068712f900b7cf9f8b8dd1433c961fdc10c6e063dc`.
+- Active gate: wait for the latest PR checks and review evidence, then request explicit merge authorization.
 
 ## Transition record format
 
