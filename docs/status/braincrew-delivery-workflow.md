@@ -65,15 +65,26 @@ research and AX_portfolio context
 - Completed phase: Issue #13 ticket-scoped `code-review`; separate Standards and Spec axes pass with zero unresolved finding after review-driven storage-boundary repair and fail-closed comparison-contract RED/GREEN cycles.
 - Completed phase: Issue #13 `verification-before-completion`; every required environment, quality, full-regression, installed-CLI comparison/replay, deterministic-digest, Parquet, DuckDB, diff, branch-base, and upstream-state check passes with fresh evidence.
 - Completed phase: the authorized Issue #13 local Lore commit was created and its clean committed state passed every required repository and installed-CLI verification.
-- Active canonical phase: Issue #13 push and pull-request Git Lifecycle Proposal Gate.
-- Active artifact: [Issue #13](https://github.com/DHChe/braincrew-datateam-portfolio/issues/13), labeled `ready-for-agent`, on branch `feat/issue-13-experiment-comparison` from current `origin/develop`.
-- Active completion condition: compatible baseline/candidate fixtures produce canonical JSON/Parquet evidence, a rebuildable DuckDB query cache, case/macro deltas and failure taxonomy, deterministic PASS/FAIL/INVALID three-gate decisions, replay and confound checks; ticket-scoped Standards and Spec review plus `verification-before-completion` pass before the Git Lifecycle Proposal Gate.
+- Completed phase: Lore implementation commit `2ac9508fd3ec39b94ecbecd6c9f03adb41e64ac1` was pushed to `origin/feat/issue-13-experiment-comparison`; review-ready [PR #27](https://github.com/DHChe/braincrew-datateam-portfolio/pull/27) was opened against `develop`, and its first Python quality gate passed with remote merge state `CLEAN` and no review comment or change request.
+- Active canonical phase: PR #27 verification, review, and merge Git Lifecycle Proposal Gate.
+- Active artifact: review-ready [PR #27](https://github.com/DHChe/braincrew-datateam-portfolio/pull/27), which closes [Issue #13](https://github.com/DHChe/braincrew-datateam-portfolio/issues/13) when merged and contains the compatible-run comparison and release-gate implementation on branch `feat/issue-13-experiment-comparison`.
+- Active completion condition: the latest PR head has a successful required Python quality gate, remote merge state `CLEAN`, and zero unresolved review blocker; then present the squash-merge target, evidence, claim boundary, and risk for separate authorization.
 - Entry condition: blocker Issue #12 is closed and PR #26 is squash-merged into `develop` at `eb252e4c32d1ea2167f0cc31371423541dc3b315`.
 - Entry condition status: satisfied on 2026-07-19; fetched `origin/develop` points exactly to the squash merge commit, the commit is an ancestor of the Issue #13 branch, and the clean dedicated worktree baseline reports `159 passed`.
-- Next canonical phase: present the verified commit, target remote branch, `develop` pull-request strategy, required remote checks, and fixture-only claim boundary; push and open the pull request only after separate explicit authorization.
-- Workflow gate: the authorized local Lore commit is complete. Push, pull-request creation or modification, merge, issue closure, and worktree cleanup remain unauthorized.
+- Next canonical phase: publish this status-only Lore commit to the existing PR branch, verify the new PR head and required remote check, then present the squash-merge proposal.
+- Workflow gate: the user authorized the status-only commit and push that records PR #27 publication and its first successful remote gate. Merge, Issue #13 closure, branch deletion, and worktree cleanup remain unauthorized independent decisions.
 
 ## Transition history
+
+### 2026-07-20 — PR #27 published and first remote gate passed
+
+- Authorization: the user approved a status-only durable workflow sync, one Lore commit, and a normal push to the existing Issue #13 branch; merge, Issue #13 closure, branch deletion, and worktree cleanup remain excluded.
+- Publication evidence: implementation commit `2ac9508fd3ec39b94ecbecd6c9f03adb41e64ac1` is present on `origin/feat/issue-13-experiment-comparison`; review-ready [PR #27](https://github.com/DHChe/braincrew-datateam-portfolio/pull/27) is `OPEN` against `develop` and carries `Closes #13`.
+- Remote evidence: the Python quality gate for the implementation commit completed successfully, GitHub reported merge state `CLEAN`, and the PR had no review or comment at the checkpoint.
+- Claim boundary: published evidence covers deterministic fixture comparison and replay only. Dashboard, live AX Verification execution, and Agent trajectory evaluation remain unimplemented and unclaimed.
+- Active action: commit only this workflow-state correction, push it without force to the existing PR branch, and verify the replacement PR head plus its required Python gate.
+- Completion condition: local `HEAD`, the remote branch, and PR #27 head are identical; the new Python quality gate succeeds; the worktree is clean; Issue #13 remains open until an independently authorized merge.
+- Next action: present a squash-merge proposal for PR #27 with current remote evidence and wait for explicit authorization.
 
 ### 2026-07-20 — Issue #13 local Lore commit verified; push and PR gate activated
 
