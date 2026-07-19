@@ -219,6 +219,30 @@ Likely follow-ups:
 - "What exactly is reproducible?" — Artifact replay, metric calculation, aggregation, and gates reproduce canonical logical digests. A live external-model rerun is a new drift measurement, not a promise of identical text.
 - "Why record dirty flags?" — A commit SHA does not describe uncommitted code, so a dirty system cannot support a fully reproducible published result.
 
+Issue #6 implementation decision:
+: `run-artifact-v1` stores a volatile run envelope separately from provenance and the logical result. Its SHA-256 logical digest covers provenance, case snapshot, normalized observation, recomputed exact-answer evaluation, and gate decision, but excludes `run_id`, creation time, and file path.
+
+Why:
+: Independent reruns need the same logical identity even though operational run metadata changes. Keeping provenance inside the digest prevents a different dataset, SUT identity, adapter, evaluator, prompt, or model placeholder from being mistaken for the same evidence.
+
+Provenance capture:
+: The CLI captures the Evaluation Plane repository `HEAD` and dirty-worktree state itself instead of trusting caller input. The fixture SUT remains an explicitly declared, non-executed identity with unknown dirty state. Dataset content identity hashes the dataset, case, and source provenance only; fixture responses and prompt/model placeholders remain separate execution provenance.
+
+Rejected alternatives:
+: Digest the entire JSON artifact, which would make every new run differ because of run ID and time; or digest only the score and gate, which would allow incompatible provenance to collide logically.
+
+Trade-offs and failure modes:
+: Create-only local files prevent accidental overwrite but are not cryptographic remote retention. A user with filesystem write access can still mutate bytes; replay detects logical tampering but this ticket does not provide object-lock storage. A crashed write can also leave an unusable file that must be replaced by a new run ID. Because the run ID becomes a filename, unrestricted input would permit path traversal; the CLI therefore restricts it to a short ASCII identifier and validates the declared SUT commit SHA before creating output. A wheel detached from its Git checkout cannot capture truthful Evaluation Plane provenance and must fail rather than accept a caller-supplied substitute.
+
+Validation evidence:
+: The Issue #6 acceptance test executes the CLI twice with different run IDs and checks equal logical digests, verifies the automatically captured Evaluation Plane SHA and dirty state, replays the stored artifact and checks the same digest and gate, rejects an existing run ID without changing bytes, rejects tampered, incomplete, non-UTF-8, or invalid input without a partial result, blocks output-directory traversal, keeps dataset identity stable across fixture execution changes, and rejects malformed SUT identities. Ruff, mypy, and pytest remain required before review.
+
+Likely follow-ups:
+
+- "Why is the SUT SHA present when AX was not called?" — It is a declared identity placeholder with `executed=false`; `fixture-sut-v1` proves orchestration only and cannot support a live-quality claim.
+- "Is the result truly immutable?" — It is append-only at the application boundary and replay-verifiable. Strong retention guarantees such as object lock are a later operational concern and are not claimed here.
+- "Why include provenance in the digest?" — A score under a different evaluator or dataset is different evidence even when the displayed number is equal.
+
 ### D8. Use Python, DuckDB and Parquet with a static Next.js dashboard
 
 Decision:

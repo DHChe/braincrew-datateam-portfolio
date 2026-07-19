@@ -1,0 +1,31 @@
+{
+  "schema_version": "fixture-case-v1",
+  "dataset": {
+    "id": "issue-6-tracer",
+    "version": "1.0.0",
+    "corpus_id": "synthetic-hr-v1"
+  },
+  "case": {
+    "id": "fixture-001",
+    "split": "fixture",
+    "query": "합성 취업규칙에서 연차 신청 기한은 언제인가요?",
+    "expected_answer": "연차는 사용 예정일 3일 전까지 신청합니다."
+  },
+  "fixture_sut": {
+    "answer": "연차는 사용 예정일 3일 전까지 신청합니다.",
+    "answer_mode": "answer"
+  },
+  "prompt": {
+    "id": "fixture-prompt-not-called",
+    "hash": "sha256:fixture-prompt-v1"
+  },
+  "model": {
+    "provider": "fixture",
+    "name": "not-called",
+    "parameters": {}
+  },
+  "provenance": {
+    "source_type": "synthetic",
+    "license": "CC0-1.0"
+  }
+}

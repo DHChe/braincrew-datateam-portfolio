@@ -2,14 +2,35 @@
 
 ## Operational Commands
 
-This repository is currently documentation-first. Before committing documentation changes, run:
+Install the locked Python 3.12 environment with:
+
+```bash
+uv sync --frozen --all-groups
+```
+
+Run the Python quality gates with:
+
+```bash
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy
+uv run pytest -q
+```
+
+Run the Issue #6 tracer-bullet benchmark and deterministic replay check with:
+
+```bash
+uv run pytest tests/acceptance/test_cli_fixture_gate.py -q
+```
+
+Before committing any change, also run:
 
 ```bash
 git diff --check
 git status --short
 ```
 
-When executable evaluation code is introduced, add its exact install, lint, typecheck, test, benchmark, and reproducibility commands here before calling that work complete.
+The complete 100-case and live AX benchmarks are not introduced by Issue #6 and must not be claimed by these commands.
 
 ## Golden Rules
 
