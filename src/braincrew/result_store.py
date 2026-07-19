@@ -13,6 +13,16 @@ from braincrew.contracts import (
     EvaluatorProvenance,
     FixtureCaseDocument,
     LogicalResult,
+    ModelIdentity,
+    ParsingAdapterProvenance,
+    ParsingArtifactProvenance,
+    ParsingDatasetDocument,
+    ParsingEvaluatorProvenance,
+    ParsingLogicalResult,
+    ParsingObservationBatch,
+    ParsingRunArtifactDocument,
+    ParsingRunEvaluation,
+    PromptIdentity,
     RunArtifactDocument,
     RunEnvelope,
     SutProvenance,
@@ -88,6 +98,13 @@ def write_run_artifact(
     artifact: RunArtifactDocument,
     output_dir: Path,
 ) -> Path:
+    return _write_artifact_document(artifact, output_dir)
+
+
+def _write_artifact_document(
+    artifact: RunArtifactDocument | ParsingRunArtifactDocument,
+    output_dir: Path,
+) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     artifact_path = output_dir / f"{artifact.run.run_id}.json"
     serialized = json.dumps(
@@ -99,6 +116,70 @@ def write_run_artifact(
     with artifact_path.open("x", encoding="utf-8") as artifact_file:
         artifact_file.write(serialized + "\n")
     return artifact_path
+
+
+def build_parsing_run_artifact(
+    *,
+    dataset: ParsingDatasetDocument,
+    observations: ParsingObservationBatch,
+    evaluation: ParsingRunEvaluation,
+    run_id: str,
+    evaluation_state: RepositoryState,
+    sut_sha: str,
+) -> ParsingRunArtifactDocument:
+    provenance = ParsingArtifactProvenance(
+        evaluation_plane=EvaluationPlaneProvenance(
+            commit_sha=evaluation_state.commit_sha,
+            dirty_worktree=evaluation_state.dirty_worktree,
+            executed=True,
+        ),
+        sut=SutProvenance(
+            commit_sha=sut_sha,
+            dirty_worktree=None,
+            executed=False,
+            claim="identity placeholder only; live AX was not called",
+        ),
+        dataset=DatasetArtifactProvenance(
+            **dataset.dataset.model_dump(mode="python"),
+            **dataset.provenance.model_dump(mode="python"),
+            content_digest=canonical_digest(dataset.model_dump(mode="json")),
+        ),
+        adapter=ParsingAdapterProvenance(
+            version=observations.adapter_version,
+            parser_version=observations.parser_version,
+            execution_mode="fixture",
+        ),
+        evaluator=ParsingEvaluatorProvenance(version=evaluation.evaluator_version),
+        prompt=PromptIdentity(id="not-applicable", hash="not-applicable:deterministic-parsing"),
+        model=ModelIdentity(provider="none", name="not-called", parameters={}),
+    )
+    logical_result = ParsingLogicalResult(
+        dataset_snapshot=dataset,
+        observation_snapshot=observations,
+        evaluation=evaluation,
+    )
+    digest_payload = {
+        "provenance": provenance.model_dump(mode="json"),
+        "logical_result": logical_result.model_dump(mode="json"),
+    }
+    return ParsingRunArtifactDocument(
+        schema_version="parsing-run-artifact-v1",
+        run=RunEnvelope(
+            run_id=run_id,
+            execution_mode="fixture",
+            created_at=datetime.now(UTC),
+        ),
+        provenance=provenance,
+        logical_result=logical_result,
+        logical_digest=canonical_digest(digest_payload),
+    )
+
+
+def write_parsing_run_artifact(
+    artifact: ParsingRunArtifactDocument,
+    output_dir: Path,
+) -> Path:
+    return _write_artifact_document(artifact, output_dir)
 
 
 def replay_run_artifact(path: Path) -> tuple[str, str]:
