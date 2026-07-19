@@ -1,0 +1,103 @@
+{
+  "schema_version": "grounded-observation-batch-v1",
+  "adapter_version": "fixture-grounded-sut-v1",
+  "sut_commit_sha": "c318b2192006bdb36a5bd5b3a2bc403425b45701",
+  "observations": [
+    {
+      "case_id": "GA-001",
+      "available": true,
+      "error": null,
+      "answer_mode": "direct_grounded",
+      "structured_answer": {"summary": "즉시 해고는 금지됩니다.", "answer": "", "grounds": [], "review_points": [], "additional_checks": [], "risk_warning": ""},
+      "citations": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "claim_paths": ["summary"]}],
+      "source_texts": [{"record_kind": "company_rule", "record_id": "rule-15", "text": "제15조: 즉시 해고는 금지됩니다.", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"}]
+    },
+    {
+      "case_id": "GA-002",
+      "available": true,
+      "error": null,
+      "answer_mode": "direct_grounded",
+      "structured_answer": {"summary": "즉시 해고는 금지됩니다.", "answer": "", "grounds": [], "review_points": [], "additional_checks": [], "risk_warning": ""},
+      "citations": [
+        {"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "claim_paths": ["summary"]},
+        {"record_kind": "company_rule", "record_id": "rule-20", "evidence_span_id": "span-rule-20", "source_text_digest": "sha256:b78193dec7867d2918b733d8ea1900e508af6fb076c5fb4ae65658bb129bc984", "claim_paths": ["summary"]}
+      ],
+      "source_texts": [
+        {"record_kind": "company_rule", "record_id": "rule-15", "text": "제15조: 즉시 해고는 금지됩니다.", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"},
+        {"record_kind": "company_rule", "record_id": "rule-20", "text": "제20조: 긴급한 경우 즉시 해고할 수 있습니다.", "source_text_digest": "sha256:b78193dec7867d2918b733d8ea1900e508af6fb076c5fb4ae65658bb129bc984"}
+      ]
+    },
+    {
+      "case_id": "GA-003",
+      "available": true,
+      "error": null,
+      "answer_mode": "direct_grounded",
+      "structured_answer": {"summary": "즉시 해고할 수 있습니다.", "answer": "", "grounds": [], "review_points": [], "additional_checks": [], "risk_warning": ""},
+      "citations": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "claim_paths": ["summary"]}],
+      "source_texts": [{"record_kind": "company_rule", "record_id": "rule-15", "text": "제15조: 즉시 해고는 금지됩니다.", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"}]
+    },
+    {
+      "case_id": "GA-004",
+      "available": true,
+      "error": null,
+      "answer_mode": "direct_grounded",
+      "structured_answer": {"summary": "관련 규정을 확인하세요.", "answer": "", "grounds": [], "review_points": [], "additional_checks": [], "risk_warning": ""},
+      "citations": [],
+      "source_texts": []
+    },
+    {
+      "case_id": "GA-005",
+      "available": true,
+      "error": null,
+      "answer_mode": "direct_grounded",
+      "structured_answer": {"summary": "즉시 해고는 금지됩니다.", "answer": "", "grounds": [], "review_points": [], "additional_checks": [], "risk_warning": ""},
+      "citations": [],
+      "source_texts": []
+    },
+    {
+      "case_id": "GA-006",
+      "available": true,
+      "error": null,
+      "answer_mode": "conditional_grounded",
+      "structured_answer": {"summary": "", "answer": "", "grounds": [], "review_points": [], "additional_checks": ["단체협약도 확인해야 합니다."], "risk_warning": ""},
+      "citations": [],
+      "source_texts": []
+    },
+    {
+      "case_id": "GA-007",
+      "available": true,
+      "error": null,
+      "answer_mode": "direct_grounded",
+      "structured_answer": {"summary": "즉시 해고는 금지됩니다.", "answer": "", "grounds": [], "review_points": [], "additional_checks": [], "risk_warning": ""},
+      "citations": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "claim_paths": ["summary"]}],
+      "source_texts": [{"record_kind": "company_rule", "record_id": "rule-15", "text": "제15조: 즉시 해고는 금지됩니다.", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"}]
+    },
+    {
+      "case_id": "GA-008",
+      "available": true,
+      "error": null,
+      "answer_mode": "review_required",
+      "structured_answer": {"summary": "즉시 해고는 금지됩니다.", "answer": "", "grounds": [], "review_points": [], "additional_checks": [], "risk_warning": ""},
+      "citations": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "claim_paths": ["summary"]}],
+      "source_texts": [{"record_kind": "company_rule", "record_id": "rule-15", "text": "제15조: 즉시 해고는 금지됩니다.", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"}]
+    },
+    {
+      "case_id": "GA-009",
+      "available": true,
+      "error": null,
+      "answer_mode": "direct_grounded",
+      "structured_answer": {"summary": "즉시 해고는 금지됩니다.", "answer": "", "grounds": [], "review_points": [], "additional_checks": [], "risk_warning": ""},
+      "citations": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "claim_paths": ["summary"]}],
+      "source_texts": [{"record_kind": "company_rule", "record_id": "rule-15", "text": "제15조: 즉시 해고는 금지됩니다.", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"}]
+    },
+    {
+      "case_id": "GA-010",
+      "available": true,
+      "error": null,
+      "answer_mode": "direct_grounded",
+      "structured_answer": {"summary": "", "answer": "", "grounds": ["즉시 해고는 금지됩니다."], "review_points": [], "additional_checks": [], "risk_warning": ""},
+      "citations": [{"record_kind": "company_rule", "record_id": "rule-15", "evidence_span_id": "span-rule-15", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1", "claim_paths": ["grounds[0]"]}],
+      "source_texts": [{"record_kind": "company_rule", "record_id": "rule-15", "text": "제15조: 즉시 해고는 금지됩니다.", "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"}]
+    }
+  ]
+}

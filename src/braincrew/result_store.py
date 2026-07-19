@@ -37,6 +37,22 @@ from braincrew.contracts import (
 )
 from braincrew.evaluator import evaluate_exact_answer, evaluate_retrieval_run
 from braincrew.gate import decide_fixture_gate
+from braincrew.grounded_contracts import (
+    GroundedAdapterProvenance,
+    GroundedArtifactProvenance,
+    GroundedCompatibilityProvenance,
+    GroundedDatasetDocument,
+    GroundedLogicalResult,
+    GroundedObservationBatch,
+    GroundedRunArtifactDocument,
+    GroundedRunEvaluation,
+)
+from braincrew.grounded_evaluator import (
+    CLAIM_ATOMIZER_VERSION,
+    CLAIM_MATCHER_SET_VERSION,
+    PROPOSITION_CATALOG_VERSION,
+)
+from braincrew.grounded_run import execute_grounded_fixture
 from braincrew.repository import RepositoryState
 
 
@@ -110,7 +126,12 @@ def write_run_artifact(
 
 
 def _write_artifact_document(
-    artifact: RunArtifactDocument | ParsingRunArtifactDocument | RetrievalRunArtifactDocument,
+    artifact: (
+        RunArtifactDocument
+        | ParsingRunArtifactDocument
+        | RetrievalRunArtifactDocument
+        | GroundedRunArtifactDocument
+    ),
     output_dir: Path,
 ) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -253,11 +274,183 @@ def write_retrieval_run_artifact(
     return _write_artifact_document(artifact, output_dir)
 
 
+def _grounded_compatibility(
+    dataset: GroundedDatasetDocument,
+    evaluation: GroundedRunEvaluation,
+) -> GroundedCompatibilityProvenance:
+    atomizer_digest = canonical_digest(
+        {
+            "version": CLAIM_ATOMIZER_VERSION,
+            "paths": [
+                "summary",
+                "answer",
+                "grounds[*]",
+                "review_points[*]",
+                "additional_checks[*]",
+                "risk_warning",
+            ],
+            "boundaries": ["newline", ".", "?", "!", "。", "？", "！"],
+        }
+    )
+    normalizer_digest = canonical_digest(
+        {
+            "version": evaluation.normalizer_version,
+            "unicode": "NFC",
+            "newline": "LF",
+            "trim": True,
+            "collapse_inline_whitespace": True,
+        }
+    )
+    matcher_set_digest = canonical_digest(
+        [
+            {
+                "case_id": case.case_id,
+                "propositions": [
+                    {
+                        "proposition_id": proposition.proposition_id,
+                        "surface_matchers": [
+                            matcher.model_dump(mode="json")
+                            for matcher in proposition.surface_matchers
+                        ],
+                    }
+                    for proposition in case.propositions
+                ],
+            }
+            for case in dataset.cases
+        ]
+    )
+    proposition_catalog_digest = canonical_digest(
+        [
+            {
+                "case_id": case.case_id,
+                "propositions": [
+                    proposition.model_dump(mode="json") for proposition in case.propositions
+                ],
+            }
+            for case in dataset.cases
+        ]
+    )
+    case_catalog_digest = canonical_digest([case.model_dump(mode="json") for case in dataset.cases])
+    return GroundedCompatibilityProvenance(
+        evaluator_version=evaluation.evaluator_version,
+        proposition_contract_version=evaluation.proposition_contract_version,
+        traversal_contract_version=evaluation.traversal_contract_version,
+        atomizer_version=CLAIM_ATOMIZER_VERSION,
+        atomizer_digest=atomizer_digest,
+        normalizer_version=evaluation.normalizer_version,
+        normalizer_digest=normalizer_digest,
+        matcher_set_version=CLAIM_MATCHER_SET_VERSION,
+        matcher_set_digest=matcher_set_digest,
+        proposition_catalog_version=PROPOSITION_CATALOG_VERSION,
+        proposition_catalog_digest=proposition_catalog_digest,
+        case_catalog_digest=case_catalog_digest,
+        source_resolution_version=evaluation.source_resolution_version,
+        guard_version=evaluation.guard_version,
+    )
+
+
+def build_grounded_run_artifact(
+    *,
+    dataset: GroundedDatasetDocument,
+    observations: GroundedObservationBatch,
+    evaluation: GroundedRunEvaluation,
+    run_id: str,
+    evaluation_state: RepositoryState,
+    sut_sha: str,
+) -> GroundedRunArtifactDocument:
+    provenance = GroundedArtifactProvenance(
+        evaluation_plane=EvaluationPlaneProvenance(
+            commit_sha=evaluation_state.commit_sha,
+            dirty_worktree=evaluation_state.dirty_worktree,
+            executed=True,
+        ),
+        sut=SutProvenance(
+            commit_sha=sut_sha,
+            dirty_worktree=None,
+            executed=False,
+            claim="identity placeholder only; live AX was not called",
+        ),
+        dataset=DatasetArtifactProvenance(
+            id=dataset.dataset_id,
+            version=dataset.dataset_version,
+            corpus_id="synthetic-hr-v1",
+            source_type=dataset.provenance.source_kind,
+            license=dataset.provenance.license,
+            content_digest=canonical_digest(dataset.model_dump(mode="json")),
+        ),
+        adapter=GroundedAdapterProvenance(
+            version=observations.adapter_version,
+            execution_mode="fixture",
+        ),
+        compatibility=_grounded_compatibility(dataset, evaluation),
+        prompt=PromptIdentity(id="fixture-recorded-answer", hash="not-applicable:fixture-answer"),
+        model=ModelIdentity(provider="none", name="not-called", parameters={}),
+    )
+    logical_result = GroundedLogicalResult(
+        dataset_snapshot=dataset,
+        observation_snapshot=observations,
+        evaluation=evaluation,
+    )
+    digest_payload = {
+        "provenance": provenance.model_dump(mode="json"),
+        "logical_result": logical_result.model_dump(mode="json"),
+    }
+    return GroundedRunArtifactDocument(
+        schema_version="grounded-run-artifact-v1",
+        run=RunEnvelope(
+            run_id=run_id,
+            execution_mode="fixture",
+            created_at=datetime.now(UTC),
+        ),
+        provenance=provenance,
+        logical_result=logical_result,
+        logical_digest=canonical_digest(digest_payload),
+    )
+
+
+def write_grounded_run_artifact(
+    artifact: GroundedRunArtifactDocument,
+    output_dir: Path,
+) -> Path:
+    return _write_artifact_document(artifact, output_dir)
+
+
 def replay_run_artifact(path: Path) -> dict[str, str]:
     raw_artifact: object = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw_artifact, dict):
         raise ValueError("artifact must be a JSON object")
     schema_version = raw_artifact.get("schema_version")
+    if schema_version == "grounded-run-artifact-v1":
+        grounded_artifact = GroundedRunArtifactDocument.model_validate(raw_artifact)
+        stored_grounded_result = grounded_artifact.logical_result
+        recomputed_grounded_result = GroundedLogicalResult(
+            dataset_snapshot=stored_grounded_result.dataset_snapshot,
+            observation_snapshot=stored_grounded_result.observation_snapshot,
+            evaluation=execute_grounded_fixture(
+                stored_grounded_result.dataset_snapshot,
+                stored_grounded_result.observation_snapshot,
+            ),
+        )
+        recomputed_compatibility = _grounded_compatibility(
+            recomputed_grounded_result.dataset_snapshot,
+            recomputed_grounded_result.evaluation,
+        )
+        recomputed_grounded_digest = canonical_digest(
+            {
+                "provenance": grounded_artifact.provenance.model_dump(mode="json"),
+                "logical_result": recomputed_grounded_result.model_dump(mode="json"),
+            }
+        )
+        if (
+            stored_grounded_result != recomputed_grounded_result
+            or grounded_artifact.provenance.compatibility != recomputed_compatibility
+            or grounded_artifact.logical_digest != recomputed_grounded_digest
+        ):
+            raise ValueError("artifact logical content does not reproduce its stored digest")
+        return {
+            "logical_digest": recomputed_grounded_digest,
+            "run_state": recomputed_grounded_result.evaluation.state,
+        }
     if schema_version == "retrieval-run-artifact-v1":
         retrieval_artifact = RetrievalRunArtifactDocument.model_validate(raw_artifact)
         stored_retrieval_result = retrieval_artifact.logical_result
