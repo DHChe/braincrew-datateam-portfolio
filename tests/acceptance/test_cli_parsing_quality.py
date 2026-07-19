@@ -101,6 +101,22 @@ def test_cli_executes_twenty_parsing_cases_to_an_exactly_versioned_artifact(
     assert artifact["logical_digest"] == command_result["logical_digest"]
 
 
+def test_replay_recomputes_parsing_evaluation_and_logical_digest(tmp_path: Path) -> None:
+    run_result = run_cli(
+        *parsing_command(OBSERVATIONS_PATH, tmp_path / "artifacts", "parsing-replay")
+    )
+    assert run_result.returncode == 0, run_result.stderr
+    run_summary = json.loads(run_result.stdout)
+
+    replay_result = run_cli("replay", "--artifact", run_summary["artifact_path"])
+
+    assert replay_result.returncode == 0, replay_result.stderr
+    replay_summary = json.loads(replay_result.stdout)
+    assert replay_summary["run_state"] == "COMPLETED"
+    assert "gate_decision" not in replay_summary
+    assert replay_summary["logical_digest"] == run_summary["logical_digest"]
+
+
 def test_cli_persists_unobservable_parsing_as_invalid_without_an_aggregate(
     tmp_path: Path,
 ) -> None:

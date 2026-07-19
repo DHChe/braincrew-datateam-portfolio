@@ -56,15 +56,76 @@ research and AX_portfolio context
 - Completed phase: Issue #11 implementation with `test-driven-development`; the 50-case fixture, deterministic mode/abstention/visibility evaluators, hard-failure evidence, immutable artifacts, and replay compatibility checks are implemented and documented.
 - Completed phase: Issue #11 ticket-scoped `code-review`; separate Standards and Spec axes passed with zero unresolved finding after four review-driven RED/GREEN repairs.
 - Completed phase: Issue #11 `verification-before-completion`; every required local gate and installed 50-case fixture create/replay check passed with fresh evidence.
-- Active canonical phase: Git Lifecycle Proposal Gate for Issue #11.
-- Active artifact: [Issue #11](https://github.com/DHChe/braincrew-datateam-portfolio/issues/11), labeled `ready-for-agent`, on branch `feat/issue-11-answer-mode-abstention` from current `origin/develop`.
-- Active completion condition: the user explicitly authorizes the proposed commit and any requested publication action; committed-state `dirty_worktree=false` evidence must pass before any push or pull request.
-- Entry condition: blocker Issue #10 is closed and PR #24 is merged into `develop` at the requested squash commit.
-- Entry condition status: satisfied on 2026-07-19; the dedicated worktree starts exactly at `origin/develop@c4ae62f1d1dfa905f34a02dbb5fa647affe8076c`.
-- Next canonical phase: after authorization, create one Lore commit, rerun the complete committed-state verification, then perform only the separately authorized push or pull-request actions. Merge remains excluded.
-- Blocker: none.
+- Completed phase: PR #25 passed its required Python quality check, squash-merged Issue #11 into `develop` as `c6cd5920ed7b46798618734c7c55977b89c9d9af`, and Issue #11 is closed.
+- Completed phase: Issue #12 implementation with `test-driven-development`; the strict 100-case registry, dataset card, fail-closed mutation validation, immutable full-fixture artifact, deterministic replay, and existing 20/30/50-case compatibility are implemented and documented.
+- Completed phase: Issue #12 ticket-scoped `code-review`; separate Standards and Spec axes pass with zero unresolved finding after nine review-driven RED/GREEN repairs and two structural consolidations.
+- Completed phase: Issue #12 `verification-before-completion`; every required pre-commit repository gate and installed 100-case fixture create/replay check passes with fresh evidence.
+- Active canonical phase: approved Issue #12 Git publication sequence.
+- Active artifact: [Issue #12](https://github.com/DHChe/braincrew-datateam-portfolio/issues/12), labeled `ready-for-agent`, on branch `feat/issue-12-dataset-freeze` from current `origin/develop`.
+- Active completion condition: exactly 100 cases validate at the locked 20/30/40/10 and 70/30 allocations; invalid dataset mutations fail closed; full fixture create/replay and independent-run logical digests agree; ticket-scoped Standards and Spec review plus `verification-before-completion` pass before the Git Lifecycle Proposal Gate.
+- Entry condition: blocker Issues #8, #9, and #11 are closed and PR #25 is squash-merged into `develop` at the requested commit.
+- Entry condition status: satisfied on 2026-07-19; the dedicated worktree starts exactly at `origin/develop@c6cd5920ed7b46798618734c7c55977b89c9d9af`.
+- Next canonical phase: create one ticket-scoped Lore commit, rerun every repository gate and installed 100-case create/replay from the clean committed state, require the new Evaluation Plane SHA with `dirty_worktree=false`, then push and open the authorized review-ready pull request.
+- Workflow gate: commit, push, and pull-request creation are authorized. Merge remains excluded until required remote checks and review evidence pass and the user separately authorizes it.
 
 ## Transition history
+
+### 2026-07-19 — Issue #12 Git publication authorized
+
+- Authorization: the user approved one ticket-scoped Lore commit, committed-state verification, push to `origin/feat/issue-12-dataset-freeze`, and a review-ready pull request targeting `develop` with `Closes #12`.
+- Included scope: the reviewed 100-case dataset registry and card, allocation/split/identity/schema/provenance/license/risk/applicability/leakage validation, scoring-content digests, immutable fixture artifact and deterministic replay, parsing replay repair, regression tests, canonical design lock, interview defense, and delivery-workflow evidence.
+- Required pre-push evidence: the committed worktree is clean; frozen sync, Ruff format and lint, strict mypy, all tests, and diff checks pass; two installed 100-case create/replay runs share one logical digest and record the new Evaluation Plane commit SHA with `dirty_worktree=false`.
+- Active exclusion: merge remains a later Git lifecycle decision after required remote checks and review evidence. Issue #13 comparison/release gates, live baseline/candidate execution, dashboard, LLM judge, AX product changes, and Agent trajectory evaluation remain out of scope.
+- Next action: create the approved Lore commit, verify the clean committed state, then push and open the review-ready pull request only if every gate passes.
+
+### 2026-07-19 — Issue #12 final verification completed; lifecycle proposal gate reached
+
+- Completed skills: `test-driven-development`, ticket-scoped `code-review`, and `verification-before-completion`.
+- Repository evidence: `uv sync --frozen --all-groups`, Ruff format and lint, strict mypy, full pytest (`159 passed`), and `git diff --check` all exited successfully from the complete reviewed worktree.
+- Installed CLI evidence: two independent `.venv/bin/braincrew-eval run-dataset` executions created `dataset-run-artifact-v1` artifacts with different run IDs; both stored and replayed `COMPLETED`, 100 total/scored cases, component states `COMPLETED`, and identical logical digest `sha256:6eb713bf0707f8c4baf3f6afe8446af3b306cea472020494c72b1587029b4896`.
+- Dataset evidence: the artifacts reproduce 20 parsing / 30 retrieval / 40 grounded-answer / 10 visibility-abstention, 70 Calibration / 30 Verification, minimum Verification denominators 6/9/10/10/15/5, and dataset digest `sha256:7fb0b58c5ad7c242696bcaef13773eb5dc6358e8127219fa7dc65c19c7a5d71b`.
+- Replay evidence: snapshot, provenance, component evaluations, and logical digest were recomputed successfully for both artifacts. Existing 20/30/50-case create/replay compatibility remains covered by the fresh full regression suite and final dual-axis review.
+- Provenance evidence: pre-commit artifacts correctly record Evaluation Plane base commit `c6cd5920ed7b46798618734c7c55977b89c9d9af` with `dirty_worktree=true`; the declared non-executed AX SUT remains `c318b2192006bdb36a5bd5b3a2bc403425b45701` with unknown dirty state.
+- Committed-state gate: the required Issue #12 commit SHA and `dirty_worktree=false` artifact cannot exist before commit authorization. It is a mandatory post-commit, pre-push verification, not a passed pre-commit claim.
+- Scope evidence: no Issue #13 comparison/release gate, live baseline/candidate run, dashboard, LLM judge, AX product change, or Agent trajectory evaluation was implemented or claimed.
+- Active gate: Git Lifecycle Proposal Gate. No Issue #12 commit, push, pull request, or merge has been performed.
+- Next action: present the exact Lore commit intent, target branch/remote, included changes, verification evidence, PR/merge strategy, known risks, and post-commit clean-state check for explicit authorization.
+
+### 2026-07-19 — Issue #12 code review completed; final verification started
+
+- Standards result: PASS with zero remaining finding. Bundle path escape, duplicate canonical-digest implementations, duplicated bundle/snapshot invariants, and misleading focus-applicability naming/detail were repaired; digest logic is shared and bundle load delegates semantic invariants to the replay validator.
+- Spec result: PASS with zero remaining finding and no scope creep. Review-driven RED/GREEN repairs cover expected grounded-answer literals embedded in queries, zero and focus-specific applicability drift, unreviewed provenance, rehashed dataset-level license drift, rehashed snapshot path escape, and manifest/component/case source-type disagreement.
+- Replay boundary: rehashed adversarial snapshots now fail closed for answer leakage, applicability, provenance review state, focus applicability, dataset-level license, component path, and source-type drift even when component, integrated, and top-level logical digests are recomputed.
+- Focused evidence after review: the Issue #12 contract/unit/acceptance suites plus existing fixture, parsing, retrieval, and grounded acceptance regressions report `64 passed`; Ruff lint and strict mypy pass.
+- Documentation evidence: the canonical design, interview defense dossier, and workflow status now state the same bundle/replay path, license, provenance-source, answer-leakage, and focus-specific applicability contracts.
+- Active skill: `verification-before-completion`.
+- Completion condition: frozen sync, Ruff format/lint, mypy, full pytest, `git diff --check`, installed 100-case fixture create/replay twice, logical-digest comparison, artifact/provenance inspection, and final Git state checks all pass with fresh evidence.
+- Next action: execute the full verification sequence, then stop before any commit, push, pull request, or merge at the Git Lifecycle Proposal Gate.
+
+### 2026-07-19 — Issue #12 TDD implementation completed; code review started
+
+- Completed skill: `test-driven-development`.
+- Frozen contract: `braincrew-evaluation-dataset@1.0.0` composes exactly 100 cases at 20 parsing / 30 retrieval / 40 grounded-answer / 10 visibility-abstention and 70 Calibration / 30 Verification. The integrated scoring-content digest is `sha256:7fb0b58c5ad7c242696bcaef13773eb5dc6358e8127219fa7dc65c19c7a5d71b`.
+- RED/GREEN evidence: missing registry/card/CLI surfaces; allocation and split contracts; stable and duplicate identity/content checks; component schema declaration and payload validation; provenance, license, risk, metric applicability, cross-split leakage, answer leakage, component and integrated digest invalidation; full 100-case aggregation; replay tamper rejection; and parsing replay compatibility were each observed failing for the expected missing contract or actual defect before minimal GREEN.
+- Defect classification: parsing artifacts were not supported by the shared replay dispatcher; a false manifest component schema declaration produced only a digest mismatch; and a missing declared dataset card was accepted. These actual contract defects were reproduced as RED and repaired. Missing/duplicate observation, append-only collision, and selected invalid-run tests passed on first addition and are recorded as coverage gaps, not newly discovered production defects.
+- Execution contract: `run-dataset` combines the existing parsing, retrieval, and grounded fixtures into immutable case-level and aggregate results. Independent run envelopes share a logical digest, while replay revalidates dataset snapshots and recomputes component evaluations. Existing 20/30/50-case commands and replays remain compatible.
+- Focused evidence before review: the new contract, unit, and acceptance suites plus existing fixture, parsing, retrieval, and grounded acceptance regressions report `55 passed`; mypy passes across 33 source files.
+- Documentation evidence: rationale, rejected alternatives, trade-offs, failure modes, validation evidence, exclusions, and likely interview follow-ups are synchronized in the canonical design, interview defense dossier, and this workflow checkpoint.
+- Active skill: ticket-scoped `code-review` against fixed point `origin/develop@c6cd5920ed7b46798618734c7c55977b89c9d9af`.
+- Completion condition: separate Standards and Spec reviewers return PASS with zero unresolved blocker; every behavioral finding must enter a new RED/GREEN cycle before re-review.
+- Next action: review all tracked and untracked Issue #12 changes without committing, pushing, opening a pull request, or merging.
+
+### 2026-07-19 — PR #25 and Issue #11 completed; Issue #12 implementation activated
+
+- Upstream evidence: [PR #25](https://github.com/DHChe/braincrew-datateam-portfolio/pull/25) is `MERGED` into `develop` at `2026-07-19T10:05:39Z`; its squash merge commit is `c6cd5920ed7b46798618734c7c55977b89c9d9af`, fetched `origin/develop` points to that exact commit, and the commit is an ancestor of the Issue #12 branch. The required `Python quality gates` check completed successfully.
+- Dependency evidence: blocker Issues [#8](https://github.com/DHChe/braincrew-datateam-portfolio/issues/8), [#9](https://github.com/DHChe/braincrew-datateam-portfolio/issues/9), and [#11](https://github.com/DHChe/braincrew-datateam-portfolio/issues/11) are all `CLOSED`; [Issue #12](https://github.com/DHChe/braincrew-datateam-portfolio/issues/12) is open and now carries `ready-for-agent`.
+- Branch evidence: dedicated worktree `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-12-dataset-freeze` was created on `feat/issue-12-dataset-freeze` from current `origin/develop@c6cd5920ed7b46798618734c7c55977b89c9d9af`.
+- Active skill: `test-driven-development`.
+- Expected artifact: one strict, versioned 100-case dataset registry that composes the frozen parsing, retrieval, grounded-answer, and visibility/abstention cases; validates identity, allocation, split, provenance, license, risk, applicability, and leakage invariants; records a scoring-content digest and dataset card; and executes all fixture observations into immutable case-level and aggregate results with deterministic replay.
+- Completion condition: every new validation and mutation is observed RED for the expected missing contract or actual defect before minimal GREEN; the existing 20/30/50-case fixture and replay paths remain compatible; the installed full 100-case fixture create/replay path, independent logical-digest comparison, repository gates, ticket-scoped Standards and Spec review, and `verification-before-completion` all pass before the Git Lifecycle Proposal Gate.
+- Clean baseline: `uv sync --frozen --all-groups`, Ruff format and lint, mypy, full pytest (`122 passed`), `git diff --check`, and clean status succeeded before the first RED.
+- Scope exclusions: Issue #13 baseline/candidate comparison and release gates, live baseline/candidate execution, dashboard implementation, LLM-as-judge scoring, AX product changes, and Agent trajectory evaluation.
+- Next action: add and run the first failing integrated dataset-contract test before production implementation.
 
 ### 2026-07-19 — Issue #11 Git publication authorized
 
