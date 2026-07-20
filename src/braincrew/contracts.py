@@ -10,6 +10,17 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 CommitSha = Annotated[str, Field(pattern=r"^[0-9a-f]{40}$")]
 LogicalDigest = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
 RunId = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")]
+AxAuthorizationRole = Literal["Executive", "HRAdmin", "HRPractitioner", "Employee"]
+EvaluationPersona = Literal[
+    "executive",
+    "hr_manager",
+    "recruiter",
+    "investigator",
+    "employee",
+    "manager",
+    "interviewer",
+    "it_admin",
+]
 
 
 class StrictContract(BaseModel):
@@ -147,6 +158,50 @@ class ParsingDatasetDocument(StrictContract):
         return self
 
 
+class ParsingCaseV2(StrictContract):
+    id: str
+    split: Literal["calibration", "verification"]
+    primary_focus: Literal["parsing"]
+    tags: list[str]
+    authorization_role: AxAuthorizationRole
+    persona: EvaluationPersona
+    document: ParsingDocument
+    expected: ParsingExpected
+    provenance: FixtureProvenance
+    review: ParsingReview
+
+    @model_validator(mode="after")
+    def validate_evidence_span_coordinates(self) -> ParsingCaseV2:
+        canonical_text = self.document.canonical_text
+        source_digest = f"sha256:{hashlib.sha256(canonical_text.encode('utf-8')).hexdigest()}"
+        for span in self.expected.evidence_spans:
+            if canonical_text[span.start_char : span.end_char] != span.text:
+                raise ValueError("EvidenceSpan text and Unicode offsets must match source text")
+            if span.source_text_digest != source_digest:
+                raise ValueError("EvidenceSpan source digest must match canonical source text")
+        return self
+
+
+class ParsingDatasetDocumentV2(StrictContract):
+    schema_version: Literal["parsing-dataset-v2"]
+    dataset: DatasetIdentity
+    provenance: FixtureProvenance
+    cases: list[ParsingCaseV2]
+
+    @model_validator(mode="after")
+    def validate_case_set(self) -> ParsingDatasetDocumentV2:
+        if self.dataset.version != "2.0.0":
+            raise ValueError("parsing-dataset-v2 requires dataset version 2.0.0")
+        case_ids = [case.id for case in self.cases]
+        if len(case_ids) != len(set(case_ids)):
+            raise ValueError("case IDs must be unique")
+        calibration_count = sum(case.split == "calibration" for case in self.cases)
+        verification_count = sum(case.split == "verification" for case in self.cases)
+        if len(self.cases) != 20 or calibration_count != 14 or verification_count != 6:
+            raise ValueError("parsing dataset must contain 14 calibration and 6 verification cases")
+        return self
+
+
 class RetrievalCorpusIdentity(StrictContract):
     id: str
     version: str
@@ -243,6 +298,63 @@ class RetrievalDatasetDocument(StrictContract):
 
     @model_validator(mode="after")
     def validate_case_set(self) -> RetrievalDatasetDocument:
+        case_ids = [case.id for case in self.cases]
+        if len(case_ids) != len(set(case_ids)):
+            raise ValueError("case IDs must be unique")
+        calibration_count = sum(case.split == "calibration" for case in self.cases)
+        verification_cases = [case for case in self.cases if case.split == "verification"]
+        if len(self.cases) != 30 or calibration_count != 21 or len(verification_cases) != 9:
+            raise ValueError(
+                "retrieval dataset must contain 21 calibration and 9 verification cases"
+            )
+        if any(
+            case.expected.source_identity_status != "resolved" or not case.applicability.recall_at_5
+            for case in verification_cases
+        ):
+            raise ValueError("all 9 verification cases must have resolved Recall@5 ground truth")
+        return self
+
+
+class RetrievalCaseV2(StrictContract):
+    id: str
+    split: Literal["calibration", "verification"]
+    primary_focus: Literal["retrieval"]
+    tags: list[str]
+    authorization_role: AxAuthorizationRole
+    persona: EvaluationPersona
+    query: str = Field(min_length=1)
+    corpus: RetrievalCorpusIdentity
+    expected: RetrievalExpected
+    applicability: RetrievalApplicability
+    difficulty: Literal["standard", "adversarial"]
+    provenance: FixtureProvenance
+    review: RetrievalReview
+
+    @model_validator(mode="after")
+    def validate_metric_applicability(self) -> RetrievalCaseV2:
+        if (
+            self.applicability.authority_ordering
+            and self.expected.preferred_authority_level is None
+        ):
+            raise ValueError("authority ordering requires a preferred authority level")
+        if (
+            self.expected.source_identity_status != "resolved"
+            and self.applicability.authority_ordering
+        ):
+            raise ValueError("unresolved expected source identity cannot score authority ordering")
+        return self
+
+
+class RetrievalDatasetDocumentV2(StrictContract):
+    schema_version: Literal["retrieval-dataset-v2"]
+    dataset: DatasetIdentity
+    provenance: FixtureProvenance
+    cases: list[RetrievalCaseV2]
+
+    @model_validator(mode="after")
+    def validate_case_set(self) -> RetrievalDatasetDocumentV2:
+        if self.dataset.version != "2.0.0":
+            raise ValueError("retrieval-dataset-v2 requires dataset version 2.0.0")
         case_ids = [case.id for case in self.cases]
         if len(case_ids) != len(set(case_ids)):
             raise ValueError("case IDs must be unique")

@@ -9,7 +9,9 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from braincrew.contracts import (
+    AxAuthorizationRole,
     DatasetArtifactProvenance,
+    EvaluationPersona,
     EvaluationPlaneProvenance,
     LogicalDigest,
     ModelIdentity,
@@ -228,6 +230,99 @@ class GroundedDatasetDocument(StrictGroundedContract):
 
     @model_validator(mode="after")
     def validate_case_set(self) -> GroundedDatasetDocument:
+        if self.case_count != len(self.cases):
+            raise ValueError("case_count must equal the number of grounded cases")
+        case_ids = [case.case_id for case in self.cases]
+        if len(case_ids) != len(set(case_ids)):
+            raise ValueError("grounded case identities must be unique")
+        if self.dataset_id == "braincrew-answer-quality":
+            allocation: dict[tuple[PrimaryFocus, str], int] = {}
+            for case in self.cases:
+                key = (case.primary_focus, case.split)
+                allocation[key] = allocation.get(key, 0) + 1
+            expected = {
+                ("grounded_answer", "Calibration"): 30,
+                ("grounded_answer", "Verification"): 10,
+                ("visibility_abstention", "Calibration"): 5,
+                ("visibility_abstention", "Verification"): 5,
+            }
+            if allocation != expected:
+                raise ValueError("answer-quality case allocation does not match the frozen split")
+        return self
+
+
+class GroundedCaseV2(StrictGroundedContract):
+    case_id: str = Field(pattern=r"^(GA|VA)-[0-9]{3}$")
+    primary_focus: PrimaryFocus
+    split: Literal["Calibration", "Verification"]
+    risk_level: RiskLevel
+    query: str = Field(min_length=1)
+    authorization_role: AxAuthorizationRole
+    persona: EvaluationPersona
+    expected_answer_mode: AnswerMode
+    required_abstention_mode: AnswerMode | None = None
+    forbidden_conclusive_proposition_ids: tuple[str, ...] = ()
+    protected_identifiers: tuple[str, ...] = ()
+    forbidden_role_proposition_ids: tuple[str, ...] = ()
+    required_output_paths: tuple[str, ...]
+    propositions: tuple[ClaimProposition, ...] = Field(min_length=1)
+    applicability: GroundedApplicability
+
+    @field_validator("required_output_paths")
+    @classmethod
+    def validate_required_output_paths(cls, paths: tuple[str, ...]) -> tuple[str, ...]:
+        if len(paths) != len(set(paths)) or any(
+            _REQUIRED_PATH_PATTERN.fullmatch(path) is None for path in paths
+        ):
+            raise ValueError("required_output_paths must contain unique concrete claim paths")
+        return paths
+
+    @field_validator("protected_identifiers")
+    @classmethod
+    def validate_protected_identifiers(cls, values: tuple[str, ...]) -> tuple[str, ...]:
+        if len(values) != len(set(values)) or any(not value.strip() for value in values):
+            raise ValueError("protected identifiers must be unique non-empty literals")
+        return values
+
+    @model_validator(mode="after")
+    def require_unique_proposition_ids(self) -> GroundedCaseV2:
+        proposition_ids = [item.proposition_id for item in self.propositions]
+        if len(proposition_ids) != len(set(proposition_ids)):
+            raise ValueError("proposition identities must be unique within a case")
+        if not set(self.forbidden_conclusive_proposition_ids) <= set(proposition_ids):
+            raise ValueError("forbidden conclusive proposition identities must exist in the case")
+        conclusive_ids = {item.proposition_id for item in self.propositions if item.conclusive}
+        if not set(self.forbidden_conclusive_proposition_ids) <= conclusive_ids:
+            raise ValueError(
+                "forbidden conclusive identity must reference a conclusive proposition"
+            )
+        if not set(self.forbidden_role_proposition_ids) <= set(proposition_ids):
+            raise ValueError("forbidden role proposition identities must exist in the case")
+        if self.applicability.abstention_accuracy:
+            if self.required_abstention_mode not in {"insufficient_evidence", "out_of_scope"}:
+                raise ValueError("applicable abstention requires the supported abstention mode")
+            if self.expected_answer_mode != self.required_abstention_mode:
+                raise ValueError("expected and required abstention modes must match")
+        return self
+
+
+class GroundedDatasetDocumentV2(StrictGroundedContract):
+    schema_version: Literal["grounded-dataset-v2"]
+    dataset_id: str = Field(min_length=1)
+    dataset_version: Literal["2.0.0"]
+    case_count: int = Field(ge=1)
+    proposition_contract_version: Literal["claim-proposition-v1"]
+    traversal_contract_version: Literal["claim-traversal-v1"]
+    normalizer_version: Literal["claim-normalizer-v1"]
+    source_resolution_version: Literal["source-text-resolution-v1"]
+    answer_mode_contract_version: Literal["answer-mode-v1"]
+    abstention_contract_version: Literal["abstention-v1"]
+    visibility_contract_version: Literal["answer-visibility-v1"]
+    cases: tuple[GroundedCaseV2, ...] = Field(min_length=1)
+    provenance: GroundedDatasetProvenance
+
+    @model_validator(mode="after")
+    def validate_case_set(self) -> GroundedDatasetDocumentV2:
         if self.case_count != len(self.cases):
             raise ValueError("case_count must equal the number of grounded cases")
         case_ids = [case.case_id for case in self.cases]

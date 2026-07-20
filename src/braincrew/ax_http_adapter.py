@@ -235,6 +235,44 @@ class ParseObservationResponse(StrictModel):
     list: ParseListObservation | None
     unavailable_fields: builtins.list[str]
 
+    @model_validator(mode="after")
+    def validate_parse_state_and_evidence(self) -> ParseObservationResponse:
+        if self.parse_available:
+            if (
+                self.parser_name is None
+                or self.parser_version is None
+                or self.extracted_text is None
+                or self.extracted_text_digest is None
+                or self.failure_code is not None
+            ):
+                raise ValueError(
+                    "available parse observations require parser identity, extracted text, "
+                    "its digest, and no failure code"
+                )
+        elif (
+            self.failure_code is None
+            or self.extracted_text is not None
+            or self.extracted_text_digest is not None
+            or self.evidence_spans
+            or self.headings
+            or self.table is not None
+            or self.list is not None
+        ):
+            raise ValueError(
+                "unavailable parse observations require a failure code and no extracted evidence"
+            )
+        if self.extracted_text is None or self.extracted_text_digest is None:
+            return self
+        actual_digest = "sha256:" + hashlib.sha256(self.extracted_text.encode("utf-8")).hexdigest()
+        if self.extracted_text_digest != actual_digest:
+            raise ValueError("extracted text digest must match the returned text")
+        for span in self.evidence_spans:
+            if span.source_text_digest != actual_digest:
+                raise ValueError("parse evidence span digest must match the returned text")
+            if self.extracted_text[span.start_char : span.end_char] != span.text:
+                raise ValueError("parse evidence span offsets must match the returned text")
+        return self
+
 
 class ParseObservation(StrictModel):
     context: AxRequestContext

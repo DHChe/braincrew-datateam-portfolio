@@ -1,0 +1,1060 @@
+{
+  "schema_version": "parsing-dataset-v2",
+  "dataset": {
+    "id": "braincrew-parsing-quality",
+    "version": "2.0.0",
+    "corpus_id": "synthetic-hr-v1"
+  },
+  "provenance": {
+    "source_type": "synthetic",
+    "license": "CC0-1.0"
+  },
+  "cases": [
+    {
+      "id": "parsing-001",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "synthetic-rule-001",
+        "version": "1.0.0",
+        "canonical_text": "제1조 목적\n이 규정은 연차휴가 신청 절차를 정한다."
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-001",
+            "text": "연차휴가 신청 절차",
+            "start_char": 13,
+            "end_char": 23,
+            "source_text_digest": "sha256:204b9b6d0a621bdf0f5cc62f4ee5bb313080a74a49be693e53197efa835ff90e"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "제1조 목적"
+          ]
+        },
+        "metadata": {
+          "document_type": "취업규칙",
+          "department": "인사"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-002",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "table",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "synthetic-rule-002",
+        "version": "1.0.0",
+        "canonical_text": "휴가 종류 | 신청 기한\n연차 | 3일 전\n경조 | 1일 전"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-002",
+            "text": "연차 | 3일 전",
+            "start_char": 14,
+            "end_char": 23,
+            "source_text_digest": "sha256:a20ec73193e73cbf33a78745f58aad1bcf42c68d48ced20646e660e7ba82deda"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "휴가 종류 | 신청 기한"
+          ]
+        },
+        "metadata": {
+          "document_type": "휴가표",
+          "department": "인사"
+        },
+        "table": {
+          "columns": [
+            "휴가 종류",
+            "신청 기한"
+          ],
+          "rows": [
+            [
+              "연차",
+              "3일 전"
+            ],
+            [
+              "경조",
+              "1일 전"
+            ]
+          ]
+        },
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-003",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "list",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "synthetic-rule-003",
+        "version": "1.0.0",
+        "canonical_text": "신청 서류\n- 신청서\n- 진단서\n- 승인서"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-003",
+            "text": "진단서",
+            "start_char": 14,
+            "end_char": 17,
+            "source_text_digest": "sha256:0421d6b33fc18dbf1c58a99c97df1d0c4825b2c18d87f3b687d1aabbbd4fce57"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "신청 서류"
+          ]
+        },
+        "metadata": {
+          "document_type": "신청안내",
+          "department": "복리후생"
+        },
+        "table": null,
+        "list": {
+          "items": [
+            "신청서",
+            "진단서",
+            "승인서"
+          ],
+          "ordered": false
+        }
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-004",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "nested-heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "synthetic-rule-004",
+        "version": "1.0.0",
+        "canonical_text": "제2장 근무\n제3조 근무시간\n기본 근무시간은 09시부터 18시까지이다."
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-004",
+            "text": "09시부터 18시까지",
+            "start_char": 25,
+            "end_char": 36,
+            "source_text_digest": "sha256:c6313e1a9df13a9cfdc434151bbcfb1599038d3a4e8d3057db8598a46b23c0e4"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "제2장 근무",
+            "제3조 근무시간"
+          ]
+        },
+        "metadata": {
+          "document_type": "취업규칙",
+          "department": "인사"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-005",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "metadata",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "synthetic-rule-005",
+        "version": "1.0.0",
+        "canonical_text": "문서명: 재택근무 지침\n시행일: 2026-07-01\n주 2회 재택근무를 신청할 수 있다."
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-005",
+            "text": "주 2회 재택근무",
+            "start_char": 29,
+            "end_char": 38,
+            "source_text_digest": "sha256:b85b34247f85dee8eeecc68a3b08662f120ff1c4bc0e2cd14c6a9b6a6896fd48"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "문서명: 재택근무 지침"
+          ]
+        },
+        "metadata": {
+          "document_type": "지침",
+          "effective_date": "2026-07-01"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-006",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "multiple-spans"
+      ],
+      "document": {
+        "id": "synthetic-rule-006",
+        "version": "1.0.0",
+        "canonical_text": "제4조 휴게\n오전 휴게는 10분이다. 오후 휴게는 15분이다."
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-006-a",
+            "text": "오전 휴게는 10분",
+            "start_char": 7,
+            "end_char": 17,
+            "source_text_digest": "sha256:1132d6c83d3081fabd205d80e6d23f4e59d9d372581ab9f214a464196078bb81"
+          },
+          {
+            "id": "span-006-b",
+            "text": "오후 휴게는 15분",
+            "start_char": 21,
+            "end_char": 31,
+            "source_text_digest": "sha256:1132d6c83d3081fabd205d80e6d23f4e59d9d372581ab9f214a464196078bb81"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "제4조 휴게"
+          ]
+        },
+        "metadata": {
+          "document_type": "근무규정",
+          "department": "운영"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-007",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "table",
+        "currency"
+      ],
+      "document": {
+        "id": "synthetic-rule-007",
+        "version": "1.0.0",
+        "canonical_text": "직급 | 식대 한도\n사원 | 12000원\n팀장 | 15000원"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-007",
+            "text": "팀장 | 15000원",
+            "start_char": 23,
+            "end_char": 34,
+            "source_text_digest": "sha256:8febe6a955e9d3e11f2a67a226091deca1836559ee3e4f9344fd38b0a0dc7227"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "직급 | 식대 한도"
+          ]
+        },
+        "metadata": {
+          "document_type": "비용기준",
+          "department": "재무"
+        },
+        "table": {
+          "columns": [
+            "직급",
+            "식대 한도"
+          ],
+          "rows": [
+            [
+              "사원",
+              "12000원"
+            ],
+            [
+              "팀장",
+              "15000원"
+            ]
+          ]
+        },
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-008",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "ordered-list"
+      ],
+      "document": {
+        "id": "synthetic-rule-008",
+        "version": "1.0.0",
+        "canonical_text": "징계 절차\n1. 사실 확인\n2. 소명 통지\n3. 위원회 심의"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-008",
+            "text": "소명 통지",
+            "start_char": 18,
+            "end_char": 23,
+            "source_text_digest": "sha256:5ff8231238f31894c0644adfe2a7a0526626e09215fc1f58e01feff63490f8c7"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "징계 절차"
+          ]
+        },
+        "metadata": {
+          "document_type": "징계규정",
+          "department": "인사"
+        },
+        "table": null,
+        "list": {
+          "items": [
+            "사실 확인",
+            "소명 통지",
+            "위원회 심의"
+          ],
+          "ordered": true
+        }
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-009",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "multi-section"
+      ],
+      "document": {
+        "id": "synthetic-rule-009",
+        "version": "1.0.0",
+        "canonical_text": "제1절 채용\n수습기간은 3개월이다.\n제2절 평가\n평가는 반기마다 실시한다."
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-009",
+            "text": "평가는 반기마다",
+            "start_char": 27,
+            "end_char": 35,
+            "source_text_digest": "sha256:8f12d026d3a049137c6ab5224f75dd1a2ad5de01836072c648bff507158e34a3"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "제1절 채용",
+            "제2절 평가"
+          ]
+        },
+        "metadata": {
+          "document_type": "인사규정",
+          "department": "인사"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-010",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "metadata",
+        "revision"
+      ],
+      "document": {
+        "id": "synthetic-rule-010",
+        "version": "1.0.0",
+        "canonical_text": "보안교육 지침\n개정: 2026-06-15\n전 직원은 분기별 교육을 이수한다."
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-010",
+            "text": "분기별 교육",
+            "start_char": 29,
+            "end_char": 35,
+            "source_text_digest": "sha256:79d9843e9a13a6e7c6b0ed0bf183026e7e5b50a21b4994c8f8035cb5b68048d0"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "보안교육 지침"
+          ]
+        },
+        "metadata": {
+          "document_type": "교육지침",
+          "revision_date": "2026-06-15"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-011",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "table",
+        "duration"
+      ],
+      "document": {
+        "id": "synthetic-rule-011",
+        "version": "1.0.0",
+        "canonical_text": "구분 | 보존 기간\n근로계약서 | 3년\n급여대장 | 5년"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-011",
+            "text": "급여대장 | 5년",
+            "start_char": 22,
+            "end_char": 31,
+            "source_text_digest": "sha256:84d095de78ee6044060f76ef8ca9da63dfdef8682b7886d376e7e108d8b4ece0"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "구분 | 보존 기간"
+          ]
+        },
+        "metadata": {
+          "document_type": "보존정책",
+          "department": "인사"
+        },
+        "table": {
+          "columns": [
+            "구분",
+            "보존 기간"
+          ],
+          "rows": [
+            [
+              "근로계약서",
+              "3년"
+            ],
+            [
+              "급여대장",
+              "5년"
+            ]
+          ]
+        },
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-012",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "list",
+        "safety"
+      ],
+      "document": {
+        "id": "synthetic-rule-012",
+        "version": "1.0.0",
+        "canonical_text": "사고 보고 항목\n- 발생 시각\n- 발생 장소\n- 부상 여부"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-012",
+            "text": "부상 여부",
+            "start_char": 27,
+            "end_char": 32,
+            "source_text_digest": "sha256:4f9ace2ca238b5d3e7aed7197c5b8c9b0567458cda1df026d4e741e4a072cb6c"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "사고 보고 항목"
+          ]
+        },
+        "metadata": {
+          "document_type": "안전지침",
+          "department": "안전"
+        },
+        "table": null,
+        "list": {
+          "items": [
+            "발생 시각",
+            "발생 장소",
+            "부상 여부"
+          ],
+          "ordered": false
+        }
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-013",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "unicode",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "synthetic-rule-013",
+        "version": "1.0.0",
+        "canonical_text": "포상 기준\n‘탁월’ 등급은 특별휴가 2일을 부여한다."
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-013",
+            "text": "특별휴가 2일",
+            "start_char": 15,
+            "end_char": 22,
+            "source_text_digest": "sha256:bba04e395a16c74a00d1f1c1136bbdc11a8087a29390c6d7c8590f66bd1df16e"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "포상 기준"
+          ]
+        },
+        "metadata": {
+          "document_type": "포상규정",
+          "department": "인사"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-014",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "nested-heading",
+        "metadata"
+      ],
+      "document": {
+        "id": "synthetic-rule-014",
+        "version": "1.0.0",
+        "canonical_text": "제3장 복무\n제8조 출장\n국내 출장은 사전 승인을 받아야 한다."
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-014",
+            "text": "사전 승인을 받아야",
+            "start_char": 21,
+            "end_char": 31,
+            "source_text_digest": "sha256:fa8d9a6ce1f95ca719f49112d2058ab46d7f15e89443c42d848810054122d8e8"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "제3장 복무",
+            "제8조 출장"
+          ]
+        },
+        "metadata": {
+          "document_type": "복무규정",
+          "department": "총무"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-015",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "table",
+        "verification"
+      ],
+      "document": {
+        "id": "synthetic-rule-015",
+        "version": "1.0.0",
+        "canonical_text": "근속 연수 | 휴가 일수\n1년 | 15일\n3년 | 16일"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-015",
+            "text": "3년 | 16일",
+            "start_char": 23,
+            "end_char": 31,
+            "source_text_digest": "sha256:6e418e4be8e4de344d6b3e0162d00177668483c21e864b477fae6b1b044bf7a2"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "근속 연수 | 휴가 일수"
+          ]
+        },
+        "metadata": {
+          "document_type": "휴가기준",
+          "department": "인사"
+        },
+        "table": {
+          "columns": [
+            "근속 연수",
+            "휴가 일수"
+          ],
+          "rows": [
+            [
+              "1년",
+              "15일"
+            ],
+            [
+              "3년",
+              "16일"
+            ]
+          ]
+        },
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-016",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "list",
+        "verification"
+      ],
+      "document": {
+        "id": "synthetic-rule-016",
+        "version": "1.0.0",
+        "canonical_text": "퇴직 절차\n1. 퇴직 의사 제출\n2. 인수인계\n3. 자산 반납"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-016",
+            "text": "인수인계",
+            "start_char": 21,
+            "end_char": 25,
+            "source_text_digest": "sha256:620ad58790745f5d1852c3e97a36ce40ca74d8b6dd6e010469ea44b2ec4b3a75"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "퇴직 절차"
+          ]
+        },
+        "metadata": {
+          "document_type": "퇴직안내",
+          "department": "인사"
+        },
+        "table": null,
+        "list": {
+          "items": [
+            "퇴직 의사 제출",
+            "인수인계",
+            "자산 반납"
+          ],
+          "ordered": true
+        }
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-017",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "metadata",
+        "verification"
+      ],
+      "document": {
+        "id": "synthetic-rule-017",
+        "version": "1.0.0",
+        "canonical_text": "문서명: 육아휴직 안내\n담당: 피플팀\n육아휴직은 최대 1년이다."
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-017",
+            "text": "최대 1년",
+            "start_char": 27,
+            "end_char": 32,
+            "source_text_digest": "sha256:3982c372a75d30b3b1699a58a9d567ad0072fb088f3a10ab929dcbb6096319c6"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "문서명: 육아휴직 안내"
+          ]
+        },
+        "metadata": {
+          "document_type": "휴직안내",
+          "department": "피플팀"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-018",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "multiple-spans",
+        "verification"
+      ],
+      "document": {
+        "id": "synthetic-rule-018",
+        "version": "1.0.0",
+        "canonical_text": "제5조 초과근무\n평일 한도는 2시간이다. 주간 한도는 12시간이다."
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-018-a",
+            "text": "평일 한도는 2시간",
+            "start_char": 9,
+            "end_char": 19,
+            "source_text_digest": "sha256:9070d1c9cab7d54d7836d1ef28369f2ab9a4968a23208e10a9e66585ecca8d1f"
+          },
+          {
+            "id": "span-018-b",
+            "text": "주간 한도는 12시간",
+            "start_char": 23,
+            "end_char": 34,
+            "source_text_digest": "sha256:9070d1c9cab7d54d7836d1ef28369f2ab9a4968a23208e10a9e66585ecca8d1f"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "제5조 초과근무"
+          ]
+        },
+        "metadata": {
+          "document_type": "근무규정",
+          "department": "인사"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-019",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "multi-section",
+        "verification"
+      ],
+      "document": {
+        "id": "synthetic-rule-019",
+        "version": "1.0.0",
+        "canonical_text": "제1절 신고\n괴롭힘 신고는 익명으로 가능하다.\n제2절 보호\n신고자에게 불이익을 주어서는 안 된다."
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-019",
+            "text": "신고자에게 불이익을 주어서는 안 된다",
+            "start_char": 33,
+            "end_char": 53,
+            "source_text_digest": "sha256:0937ba63f9fde634c13bea38c3974e0226b083fb299bfdd5a111789c190d0042"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "제1절 신고",
+            "제2절 보호"
+          ]
+        },
+        "metadata": {
+          "document_type": "괴롭힘예방규정",
+          "department": "컴플라이언스"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    },
+    {
+      "id": "parsing-020",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "table",
+        "list",
+        "verification"
+      ],
+      "document": {
+        "id": "synthetic-rule-020",
+        "version": "1.0.0",
+        "canonical_text": "교육 과정 | 시간\n윤리 | 2시간\n안전 | 3시간\n이수 방법\n- 온라인\n- 집합"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "span-020",
+            "text": "안전 | 3시간",
+            "start_char": 20,
+            "end_char": 28,
+            "source_text_digest": "sha256:333a023c2e477249aa2b16718826c897f4efed6c4358bd86fe4f6d9cc386a23d"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "교육 과정 | 시간",
+            "이수 방법"
+          ]
+        },
+        "metadata": {
+          "document_type": "교육계획",
+          "department": "인재개발"
+        },
+        "table": {
+          "columns": [
+            "교육 과정",
+            "시간"
+          ],
+          "rows": [
+            [
+              "윤리",
+              "2시간"
+            ],
+            [
+              "안전",
+              "3시간"
+            ]
+          ]
+        },
+        "list": {
+          "items": [
+            "온라인",
+            "집합"
+          ],
+          "ordered": false
+        }
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "dataset-author-v1"
+      },
+      "authorization_role": "HRPractitioner",
+      "persona": "hr_manager"
+    }
+  ]
+}

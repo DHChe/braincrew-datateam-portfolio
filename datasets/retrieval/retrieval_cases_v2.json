@@ -1,0 +1,1828 @@
+{
+  "schema_version": "retrieval-dataset-v2",
+  "dataset": {
+    "id": "braincrew-retrieval-quality",
+    "version": "2.0.0",
+    "corpus_id": "synthetic-hr-v1"
+  },
+  "provenance": {
+    "source_type": "synthetic",
+    "license": "CC0-1.0"
+  },
+  "cases": [
+    {
+      "id": "retrieval-001",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "연차휴가 신청 기한은 언제인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-001-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-001",
+                "evidence_span_id": "synthetic-span-001",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-001",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-002",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "징계위원회 소명 절차는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-002-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-002",
+                "evidence_span_id": "synthetic-span-002",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-002",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-003",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "육아휴직 신청에 필요한 서류는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-003-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-003",
+                "evidence_span_id": "synthetic-span-003",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-003",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-004",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "휴게시간 부여 기준은 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-004-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-004",
+                "evidence_span_id": "synthetic-span-004",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-004",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-005",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "재택근무 승인 절차는 어떻게 되는가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-005-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-005",
+                "evidence_span_id": "synthetic-span-005",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          },
+          {
+            "id": "required-005-secondary",
+            "alternatives": [
+              {
+                "record_kind": "labor_law",
+                "record_id": "synthetic-law-005",
+                "evidence_span_id": "synthetic-law-span-005",
+                "source_text_digest": null,
+                "authority_level": 2
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-005",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-006",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "직장 내 괴롭힘 신고 접수 절차는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-006-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-006",
+                "evidence_span_id": "synthetic-span-006",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-006",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-007",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "경조휴가 사용 기준은 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-007-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-007",
+                "evidence_span_id": "synthetic-span-007",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-007",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-008",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "초과근무 사전 승인 기준은 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-008-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-008",
+                "evidence_span_id": "synthetic-span-008",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-008",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-009",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "수습기간 평가 절차는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-009-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-009",
+                "evidence_span_id": "synthetic-span-009",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-009",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-010",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "취업규칙 변경 시 의견 청취 절차는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-010-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-010",
+                "evidence_span_id": "synthetic-span-010",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          },
+          {
+            "id": "required-010-secondary",
+            "alternatives": [
+              {
+                "record_kind": "labor_law",
+                "record_id": "synthetic-law-010",
+                "evidence_span_id": "synthetic-law-span-010",
+                "source_text_digest": null,
+                "authority_level": 2
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-010",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-011",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "퇴직금 지급 기한은 언제인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-011-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-011",
+                "evidence_span_id": "synthetic-span-011",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-011",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-012",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "병가 신청과 증빙 기준은 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-012-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-012",
+                "evidence_span_id": "synthetic-span-012",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-012",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-013",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "개인정보 열람 권한은 어떻게 제한되는가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-013-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-013",
+                "evidence_span_id": "synthetic-span-013",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-013",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-014",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "성과평가 이의신청 절차는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-014-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-014",
+                "evidence_span_id": "synthetic-span-014",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-014",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-015",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "배우자 출산휴가 신청 기준은 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-015-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-015",
+                "evidence_span_id": "synthetic-span-015",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          },
+          {
+            "id": "required-015-secondary",
+            "alternatives": [
+              {
+                "record_kind": "labor_law",
+                "record_id": "synthetic-law-015",
+                "evidence_span_id": "synthetic-law-span-015",
+                "source_text_digest": null,
+                "authority_level": 2
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-015",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-016",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "대체휴무 부여 기준은 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-016-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-016",
+                "evidence_span_id": "synthetic-span-016",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-016",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-017",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "교육훈련비 지원 조건은 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-017-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-017",
+                "evidence_span_id": "synthetic-span-017",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-017",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-018",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "내부 제보자 보호 절차는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-018-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-018",
+                "evidence_span_id": "synthetic-span-018",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-018",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-019",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "unresolved-expected-identity",
+        "visibility-boundary"
+      ],
+      "query": "신설 복지제도의 근거 문서는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "missing",
+        "unresolved_identity_policy": "denominator_zero",
+        "evidence_groups": [
+          {
+            "id": "required-019-primary",
+            "alternatives": []
+          }
+        ],
+        "preferred_authority_level": null,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-019",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": false,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-020",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "unresolved-expected-identity",
+        "visibility-boundary"
+      ],
+      "query": "서로 충돌하는 출장 규정 중 어느 것이 유효한가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "ambiguous",
+        "unresolved_identity_policy": "denominator_zero",
+        "evidence_groups": [
+          {
+            "id": "required-020-primary",
+            "alternatives": []
+          }
+        ],
+        "preferred_authority_level": null,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-020",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": false,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-021",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "근로계약 갱신 통지 절차는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-021-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-021",
+                "evidence_span_id": "synthetic-span-021",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-021",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-022",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "임금명세서 교부 항목은 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-022-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-022",
+                "evidence_span_id": "synthetic-span-022",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-022",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-023",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "안전보건교육 실시 기준은 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-023-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-023",
+                "evidence_span_id": "synthetic-span-023",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-023",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-024",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "노사협의회 고충 처리 절차는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-024-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-024",
+                "evidence_span_id": "synthetic-span-024",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-024",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-025",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "유연근무제 신청 가능 대상은 누구인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-025-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-025",
+                "evidence_span_id": "synthetic-span-025",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          },
+          {
+            "id": "required-025-secondary",
+            "alternatives": [
+              {
+                "record_kind": "labor_law",
+                "record_id": "synthetic-law-025",
+                "evidence_span_id": "synthetic-law-span-025",
+                "source_text_digest": null,
+                "authority_level": 2
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-025",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-026",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "휴일근로 보상 기준은 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-026-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-026",
+                "evidence_span_id": "synthetic-span-026",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-026",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-027",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "채용서류 반환 절차는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-027-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-027",
+                "evidence_span_id": "synthetic-span-027",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-027",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-028",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "비밀유지 의무의 적용 범위는 어디까지인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-028-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-028",
+                "evidence_span_id": "synthetic-span-028",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-028",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    },
+    {
+      "id": "retrieval-029",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "인사기록 정정 요청 절차는 무엇인가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-029-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-029",
+                "evidence_span_id": "synthetic-span-029",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-029",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "executive",
+      "authorization_role": "Executive"
+    },
+    {
+      "id": "retrieval-030",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "query": "퇴직 면담 기록의 열람 권한은 누구에게 있는가",
+      "corpus": {
+        "id": "synthetic-hr-v1",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-030-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "synthetic-rule-030",
+                "evidence_span_id": "synthetic-span-030",
+                "source_text_digest": null,
+                "authority_level": 1
+              }
+            ]
+          },
+          {
+            "id": "required-030-secondary",
+            "alternatives": [
+              {
+                "record_kind": "labor_law",
+                "record_id": "synthetic-law-030",
+                "evidence_span_id": "synthetic-law-span-030",
+                "source_text_digest": null,
+                "authority_level": 2
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "private_hr_record",
+            "record_id": "forbidden-private-030",
+            "evidence_span_id": null,
+            "source_text_digest": null,
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "portfolio-author"
+      },
+      "persona": "hr_manager",
+      "authorization_role": "HRPractitioner"
+    }
+  ]
+}

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import httpx
 import pytest
@@ -428,7 +430,8 @@ def test_parse_validates_and_preserves_ax_parse_observation() -> None:
                 "parser_version": "1.0.0",
                 "failure_code": None,
                 "extracted_text": "취업규칙 제1조",
-                "extracted_text_digest": "sha256:" + "a" * 64,
+                "extracted_text_digest": "sha256:"
+                + hashlib.sha256("취업규칙 제1조".encode()).hexdigest(),
                 "text_truncated": False,
                 "evidence_spans": [
                     {
@@ -436,7 +439,8 @@ def test_parse_validates_and_preserves_ax_parse_observation() -> None:
                         "text": "취업규칙",
                         "start_char": 0,
                         "end_char": 4,
-                        "source_text_digest": "sha256:" + "a" * 64,
+                        "source_text_digest": "sha256:"
+                        + hashlib.sha256("취업규칙 제1조".encode()).hexdigest(),
                     }
                 ],
                 "headings": ["제1장 총칙"],
@@ -467,6 +471,63 @@ def test_parse_validates_and_preserves_ax_parse_observation() -> None:
     assert [attempt.outcome for attempt in observation.attempts] == ["success"]
 
 
+@pytest.mark.parametrize(
+    "failure_mode",
+    ("available_without_content", "unavailable_with_content", "span_coordinates"),
+)
+def test_parse_rejects_state_or_evidence_contradictions(failure_mode: str) -> None:
+    extracted_text = "취업규칙 제1조"
+    digest = "sha256:" + hashlib.sha256(extracted_text.encode("utf-8")).hexdigest()
+    payload: dict[str, Any] = {
+        "schema_version": "ax-parse-observation-v1",
+        "attachment_id": "attachment-1",
+        "lifecycle_state": "materialized",
+        "parse_state": "succeeded",
+        "materialization_state": "materialized",
+        "parse_available": True,
+        "parser_name": "ax-docx-parser",
+        "parser_version": "1.0.0",
+        "failure_code": None,
+        "extracted_text": extracted_text,
+        "extracted_text_digest": digest,
+        "text_truncated": False,
+        "evidence_spans": [
+            {
+                "id": "span-1",
+                "text": "취업규칙",
+                "start_char": 0,
+                "end_char": 4,
+                "source_text_digest": digest,
+            }
+        ],
+        "headings": [],
+        "metadata": {},
+        "table": None,
+        "list": None,
+        "unavailable_fields": ["headings", "table", "list", "metadata"],
+    }
+    if failure_mode == "available_without_content":
+        payload["extracted_text"] = None
+    elif failure_mode == "unavailable_with_content":
+        payload["parse_available"] = False
+        payload["failure_code"] = "AX_PARSE_PENDING"
+    else:
+        payload["evidence_spans"][0]["end_char"] = 3
+
+    with pytest.raises(AxHttpFailure) as caught:
+        _adapter(lambda request: httpx.Response(200, json=payload)).parse(
+            context=AxRequestContext(
+                run_id="run-7",
+                case_id=f"parse-{failure_mode}",
+                eval_correlation_id=f"eval-7-parse-{failure_mode}",
+            ),
+            document_id="attachment-1",
+        )
+
+    assert caught.value.failure_code == "AX_RESPONSE_SCHEMA_MISMATCH"
+    assert [attempt.outcome for attempt in caught.value.attempts] == ["schema_error"]
+
+
 def test_parse_rejects_a_ragged_ax_table_without_retrying() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
@@ -482,7 +543,8 @@ def test_parse_rejects_a_ragged_ax_table_without_retrying() -> None:
                 "parser_version": "1.0.0",
                 "failure_code": None,
                 "extracted_text": "취업규칙 제1조",
-                "extracted_text_digest": "sha256:" + "a" * 64,
+                "extracted_text_digest": "sha256:"
+                + hashlib.sha256("취업규칙 제1조".encode()).hexdigest(),
                 "text_truncated": False,
                 "evidence_spans": [],
                 "headings": [],

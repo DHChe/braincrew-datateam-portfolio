@@ -7,11 +7,16 @@ import re
 from pathlib import Path
 from typing import Literal, cast
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from braincrew.contracts import ParsingDatasetDocument, RetrievalDatasetDocument
+from braincrew.contracts import (
+    ParsingDatasetDocument,
+    ParsingDatasetDocumentV2,
+    RetrievalDatasetDocument,
+    RetrievalDatasetDocumentV2,
+)
 from braincrew.digest import canonical_digest
-from braincrew.grounded_contracts import GroundedDatasetDocument
+from braincrew.grounded_contracts import GroundedDatasetDocument, GroundedDatasetDocumentV2
 
 Digest = str
 PrimaryFocus = Literal[
@@ -20,6 +25,9 @@ PrimaryFocus = Literal[
     "grounded_answer",
     "visibility_abstention",
 ]
+ParsingDataset = ParsingDatasetDocument | ParsingDatasetDocumentV2
+RetrievalDataset = RetrievalDatasetDocument | RetrievalDatasetDocumentV2
+GroundedDataset = GroundedDatasetDocument | GroundedDatasetDocumentV2
 
 
 class StrictDatasetContract(BaseModel):
@@ -101,7 +109,7 @@ class DatasetLeakagePolicy(StrictDatasetContract):
 
 
 class DatasetManifest(StrictDatasetContract):
-    schema_version: Literal["dataset-manifest-v1"]
+    schema_version: Literal["dataset-manifest-v1", "dataset-manifest-v2"]
     dataset_id: Literal["braincrew-evaluation-dataset"]
     dataset_version: str = Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+$")
     case_count: Literal[100]
@@ -114,6 +122,16 @@ class DatasetManifest(StrictDatasetContract):
     risk_policy: DatasetRiskPolicy
     leakage_policy: DatasetLeakagePolicy
     content_digest: Digest = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def validate_versioned_schema(self) -> DatasetManifest:
+        expected_version = {
+            "dataset-manifest-v1": "1.0.0",
+            "dataset-manifest-v2": "2.0.0",
+        }[self.schema_version]
+        if self.dataset_version != expected_version:
+            raise ValueError(f"{self.schema_version} requires dataset version {expected_version}")
+        return self
 
 
 class DatasetCaseRecord(StrictDatasetContract):
@@ -128,9 +146,9 @@ class DatasetCaseRecord(StrictDatasetContract):
 
 class DatasetBundleSnapshot(StrictDatasetContract):
     manifest: DatasetManifest
-    parsing_dataset: ParsingDatasetDocument
-    retrieval_dataset: RetrievalDatasetDocument
-    grounded_dataset: GroundedDatasetDocument
+    parsing_dataset: ParsingDataset
+    retrieval_dataset: RetrievalDataset
+    grounded_dataset: GroundedDataset
     case_records: tuple[DatasetCaseRecord, ...]
     component_digests: dict[str, Digest]
     verification_denominators: VerificationDenominators
@@ -179,9 +197,9 @@ def _case_scoring_digest(case_payload: dict[str, object]) -> Digest:
 
 
 def _build_case_records(
-    parsing: ParsingDatasetDocument,
-    retrieval: RetrievalDatasetDocument,
-    grounded: GroundedDatasetDocument,
+    parsing: ParsingDataset,
+    retrieval: RetrievalDataset,
+    grounded: GroundedDataset,
 ) -> tuple[DatasetCaseRecord, ...]:
     records: list[DatasetCaseRecord] = []
     for parsing_case in parsing.cases:
@@ -230,9 +248,9 @@ def _build_case_records(
 
 
 def _verification_denominators(
-    parsing: ParsingDatasetDocument,
-    retrieval: RetrievalDatasetDocument,
-    grounded: GroundedDatasetDocument,
+    parsing: ParsingDataset,
+    retrieval: RetrievalDataset,
+    grounded: GroundedDataset,
 ) -> VerificationDenominators:
     parsing_cases = [case for case in parsing.cases if case.split == "verification"]
     retrieval_cases = [case for case in retrieval.cases if case.split == "verification"]
@@ -256,9 +274,9 @@ def _verification_denominators(
 
 def _dataset_digest_payload(
     manifest: DatasetManifest,
-    parsing: ParsingDatasetDocument,
-    retrieval: RetrievalDatasetDocument,
-    grounded: GroundedDatasetDocument,
+    parsing: ParsingDataset,
+    retrieval: RetrievalDataset,
+    grounded: GroundedDataset,
 ) -> dict[str, object]:
     manifest_payload = manifest.model_dump(mode="json")
     manifest_payload.pop("content_digest")
@@ -333,7 +351,7 @@ def _normalized_leakage_text(value: str) -> str:
     return " ".join(value.casefold().split())
 
 
-def _grounded_answer_is_leaked(grounded: GroundedDatasetDocument) -> bool:
+def _grounded_answer_is_leaked(grounded: GroundedDataset) -> bool:
     for case in grounded.cases:
         normalized_query = _normalized_leakage_text(case.query)
         for proposition in case.propositions:
@@ -347,8 +365,8 @@ def _grounded_answer_is_leaked(grounded: GroundedDatasetDocument) -> bool:
 
 
 def _all_cases_have_required_focus_applicability(
-    retrieval: RetrievalDatasetDocument,
-    grounded: GroundedDatasetDocument,
+    retrieval: RetrievalDataset,
+    grounded: GroundedDataset,
 ) -> bool:
     retrieval_cases_are_applicable = all(
         case.applicability.recall_at_5 and case.applicability.mrr_at_10 for case in retrieval.cases
@@ -472,11 +490,19 @@ def validate_dataset_snapshot(snapshot: DatasetBundleSnapshot) -> DatasetValidat
         "grounded": manifest.components.grounded.content_digest,
     }
     violations: list[DatasetViolation] = []
-    expected_schema_versions = {
-        "parsing": "parsing-dataset-v1",
-        "retrieval": "retrieval-dataset-v1",
-        "grounded": "grounded-dataset-v1",
-    }
+    expected_schema_versions = (
+        {
+            "parsing": "parsing-dataset-v2",
+            "retrieval": "retrieval-dataset-v2",
+            "grounded": "grounded-dataset-v2",
+        }
+        if manifest.schema_version == "dataset-manifest-v2"
+        else {
+            "parsing": "parsing-dataset-v1",
+            "retrieval": "retrieval-dataset-v1",
+            "grounded": "grounded-dataset-v1",
+        }
+    )
     references = {
         "parsing": manifest.components.parsing,
         "retrieval": manifest.components.retrieval,
@@ -651,9 +677,21 @@ def validate_dataset_bundle(manifest_path: Path) -> DatasetValidationReport:
         "grounded": manifest.components.grounded,
     }
     model_types: dict[str, type[BaseModel]] = {
-        "parsing": ParsingDatasetDocument,
-        "retrieval": RetrievalDatasetDocument,
-        "grounded": GroundedDatasetDocument,
+        "parsing": (
+            ParsingDatasetDocumentV2
+            if manifest.components.parsing.schema_version == "parsing-dataset-v2"
+            else ParsingDatasetDocument
+        ),
+        "retrieval": (
+            RetrievalDatasetDocumentV2
+            if manifest.components.retrieval.schema_version == "retrieval-dataset-v2"
+            else RetrievalDatasetDocument
+        ),
+        "grounded": (
+            GroundedDatasetDocumentV2
+            if manifest.components.grounded.schema_version == "grounded-dataset-v2"
+            else GroundedDatasetDocument
+        ),
     }
     for name, reference in references.items():
         try:
@@ -675,9 +713,9 @@ def validate_dataset_bundle(manifest_path: Path) -> DatasetValidationReport:
     if len(component_models) != 3:
         return _invalid_report(violations)
 
-    parsing = cast(ParsingDatasetDocument, component_models["parsing"])
-    retrieval = cast(RetrievalDatasetDocument, component_models["retrieval"])
-    grounded = cast(GroundedDatasetDocument, component_models["grounded"])
+    parsing = cast(ParsingDataset, component_models["parsing"])
+    retrieval = cast(RetrievalDataset, component_models["retrieval"])
+    grounded = cast(GroundedDataset, component_models["grounded"])
     normalized_components = {
         "parsing": parsing.model_dump(mode="json"),
         "retrieval": retrieval.model_dump(mode="json"),

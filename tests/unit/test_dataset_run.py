@@ -9,6 +9,7 @@ import pytest
 from braincrew.dataset_registry import validate_dataset_bundle
 
 MANIFEST_PATH = Path("datasets/dataset_manifest_v1.json")
+V2_MANIFEST_PATH = Path("datasets/dataset_manifest_v2.json")
 PARSING_OBSERVATIONS = Path("tests/fixtures/parsing_observations_v1.json")
 RETRIEVAL_OBSERVATIONS = Path("tests/fixtures/retrieval_observations_v1.json")
 GROUNDED_OBSERVATIONS = Path("tests/fixtures/grounded_observations_v1.json")
@@ -52,6 +53,23 @@ def test_full_fixture_executes_all_one_hundred_cases_with_component_aggregates()
     assert result.grounded.coverage.verification_citation_precision_cases == 10
     assert result.grounded.coverage.verification_answer_mode_cases == 15
     assert result.grounded.coverage.verification_abstention_cases == 5
+
+
+def test_v2_authorization_dataset_cannot_be_scored_with_v1_fixture_observations() -> None:
+    dataset_run = importlib.import_module("braincrew.dataset_run")
+    validation = validate_dataset_bundle(V2_MANIFEST_PATH)
+    observations = dataset_run.load_dataset_observations(
+        parsing_path=PARSING_OBSERVATIONS,
+        retrieval_path=RETRIEVAL_OBSERVATIONS,
+        grounded_path=GROUNDED_OBSERVATIONS,
+    )
+
+    result = dataset_run.execute_dataset_fixture(validation, observations)
+
+    assert result.state == "INVALID"
+    assert result.invalid_reasons == ("DATASET_FIXTURE_SCHEMA_UNSUPPORTED",)
+    assert result.total_cases == 100
+    assert result.scored_cases == 0
 
 
 @pytest.mark.parametrize("component", ["parsing", "retrieval", "grounded"])

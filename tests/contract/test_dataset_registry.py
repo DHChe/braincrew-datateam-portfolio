@@ -11,9 +11,8 @@ from typing import cast
 import pytest
 
 from braincrew import dataset_registry
-from braincrew.contracts import ParsingDatasetDocument, RetrievalDatasetDocument
+from braincrew.contracts import ParsingDatasetDocument
 from braincrew.digest import canonical_digest
-from braincrew.grounded_contracts import GroundedDatasetDocument
 
 MANIFEST_PATH = Path(__file__).parents[2] / "datasets" / "dataset_manifest_v1.json"
 
@@ -38,14 +37,14 @@ def rehash_snapshot(
     snapshot: dataset_registry.DatasetBundleSnapshot,
     *,
     manifest: dataset_registry.DatasetManifest | None = None,
-    parsing: ParsingDatasetDocument | None = None,
-    retrieval: RetrievalDatasetDocument | None = None,
-    grounded: GroundedDatasetDocument | None = None,
+    parsing: dataset_registry.ParsingDataset | None = None,
+    retrieval: dataset_registry.RetrievalDataset | None = None,
+    grounded: dataset_registry.GroundedDataset | None = None,
 ) -> dataset_registry.DatasetBundleSnapshot:
-    parsing = parsing or snapshot.parsing_dataset
-    retrieval = retrieval or snapshot.retrieval_dataset
-    grounded = grounded or snapshot.grounded_dataset
-    manifest = manifest or snapshot.manifest
+    parsing = parsing if parsing is not None else snapshot.parsing_dataset
+    retrieval = retrieval if retrieval is not None else snapshot.retrieval_dataset
+    grounded = grounded if grounded is not None else snapshot.grounded_dataset
+    manifest = manifest if manifest is not None else snapshot.manifest
     component_digests = {
         "parsing": canonical_digest(parsing.model_dump(mode="json")),
         "retrieval": canonical_digest(retrieval.model_dump(mode="json")),
@@ -436,6 +435,7 @@ def test_rehashed_snapshot_rejects_case_source_type_drift() -> None:
     valid = dataset_registry.validate_dataset_bundle(MANIFEST_PATH)
     assert valid.snapshot is not None
     snapshot = valid.snapshot
+    assert isinstance(snapshot.parsing_dataset, ParsingDatasetDocument)
     parsing_cases = list(snapshot.parsing_dataset.cases)
     parsing_cases[0] = parsing_cases[0].model_copy(
         update={

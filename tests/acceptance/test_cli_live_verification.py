@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 
 from braincrew.cli import app
 
-MANIFEST = Path("datasets/dataset_manifest_v1.json")
+MANIFEST = Path("datasets/dataset_manifest_v2.json")
 
 
 def _set_complete_live_environment(monkeypatch: MonkeyPatch, *, repository: Path) -> None:
@@ -17,10 +17,29 @@ def _set_complete_live_environment(monkeypatch: MonkeyPatch, *, repository: Path
         "AX_REPOSITORY": str(repository),
         "AX_TENANT_ID": "00000000-0000-4000-8000-000000000015",
         "AX_USER_ID": "evaluation-plane",
-        "AX_ROLES": "Executive",
-        "AX_CORPUS_ID": "ax-visible-retrieval:00000000-0000-4000-8000-000000000015",
-        "AX_CORPUS_VERSION": "retrieval-inventory-v1",
-        "AX_CORPUS_DIGEST": "sha256:" + "a" * 64,
+        "AX_ROLES": "Employee,Executive,HRPractitioner",
+        "AX_CORPUS_IDENTITIES_JSON": json.dumps(
+            {
+                role: {
+                    "id": "ax-visible-retrieval:00000000-0000-4000-8000-000000000015",
+                    "version": "retrieval-inventory-v1",
+                    "digest": f"sha256:{digit * 64}",
+                }
+                for role, digit in (
+                    ("Employee", "a"),
+                    ("Executive", "b"),
+                    ("HRPractitioner", "c"),
+                )
+            },
+            sort_keys=True,
+        ),
+        "AX_PARSING_ATTACHMENT_MAP_JSON": json.dumps(
+            {
+                f"synthetic-rule-{case_number:03d}": (f"00000000-0000-4000-8000-{case_number:012d}")
+                for case_number in range(15, 21)
+            },
+            sort_keys=True,
+        ),
         "AX_PROMPT_ID": "ax-answer-prompt-v1",
         "AX_PROMPT_HASH": "sha256:" + "b" * 64,
         "AX_MODEL_PROVIDER": "openai",
@@ -41,10 +60,9 @@ def test_live_preflight_persists_and_replays_exact_missing_authority_blockers(
         "AX_TENANT_ID",
         "AX_USER_ID",
         "AX_ROLES",
+        "AX_PARSING_ATTACHMENT_MAP_JSON",
         "AX_BEARER_TOKEN",
-        "AX_CORPUS_ID",
-        "AX_CORPUS_VERSION",
-        "AX_CORPUS_DIGEST",
+        "AX_CORPUS_IDENTITIES_JSON",
         "AX_PROMPT_ID",
         "AX_PROMPT_HASH",
         "AX_MODEL_PROVIDER",
@@ -72,9 +90,9 @@ def test_live_preflight_persists_and_replays_exact_missing_authority_blockers(
     assert summary["preflight_state"] == "BLOCKED"
     artifact_path = Path(summary["artifact_path"])
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
-    assert artifact["schema_version"] == "live-verification-preflight-artifact-v1"
+    assert artifact["schema_version"] == "live-verification-preflight-artifact-v2"
     assert artifact["dataset"]["id"] == "braincrew-evaluation-dataset"
-    assert artifact["dataset"]["version"] == "1.0.0"
+    assert artifact["dataset"]["version"] == "2.0.0"
     assert artifact["dataset"]["verification_case_count"] == 30
     assert artifact["plan"]["baseline"] == {"evidence_limit": 3, "top_k": 5}
     assert artifact["plan"]["candidate"] == {"evidence_limit": 5, "top_k": 5}
@@ -87,9 +105,8 @@ def test_live_preflight_persists_and_replays_exact_missing_authority_blockers(
         "LIVE_TENANT_ID_MISSING",
         "LIVE_USER_ID_MISSING",
         "LIVE_ROLES_MISSING",
-        "LIVE_CORPUS_ID_MISSING",
-        "LIVE_CORPUS_VERSION_MISSING",
-        "LIVE_CORPUS_DIGEST_MISSING",
+        "LIVE_PARSING_ATTACHMENT_MAPPING_MISSING",
+        "LIVE_CORPUS_IDENTITIES_MISSING",
         "LIVE_PROMPT_ID_MISSING",
         "LIVE_PROMPT_HASH_MISSING",
         "LIVE_MODEL_PROVIDER_MISSING",
@@ -148,9 +165,8 @@ def test_live_preflight_artifact_is_create_only_and_replay_rejects_tampering(
         "AX_TENANT_ID",
         "AX_USER_ID",
         "AX_ROLES",
-        "AX_CORPUS_ID",
-        "AX_CORPUS_VERSION",
-        "AX_CORPUS_DIGEST",
+        "AX_PARSING_ATTACHMENT_MAP_JSON",
+        "AX_CORPUS_IDENTITIES_JSON",
         "AX_PROMPT_ID",
         "AX_PROMPT_HASH",
         "AX_MODEL_PROVIDER",

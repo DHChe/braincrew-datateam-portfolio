@@ -10,9 +10,11 @@ from typing import Literal
 from braincrew.contracts import (
     EvaluationPlaneProvenance,
     ModelIdentity,
+    ParsingDatasetDocument,
     ParsingObservationBatch,
     ParsingRunEvaluation,
     PromptIdentity,
+    RetrievalDatasetDocument,
     RetrievalObservationBatch,
     RetrievalRunEvaluation,
     RunEnvelope,
@@ -26,7 +28,11 @@ from braincrew.dataset_registry import (
     validate_dataset_snapshot,
 )
 from braincrew.digest import canonical_digest
-from braincrew.grounded_contracts import GroundedObservationBatch, GroundedRunEvaluation
+from braincrew.grounded_contracts import (
+    GroundedDatasetDocument,
+    GroundedObservationBatch,
+    GroundedRunEvaluation,
+)
 from braincrew.grounded_run import (
     execute_grounded_fixture,
     load_grounded_observations,
@@ -132,6 +138,21 @@ def execute_dataset_fixture(
             grounded=None,
         )
     snapshot = validation.snapshot
+    if (
+        not isinstance(snapshot.parsing_dataset, ParsingDatasetDocument)
+        or not isinstance(snapshot.retrieval_dataset, RetrievalDatasetDocument)
+        or not isinstance(snapshot.grounded_dataset, GroundedDatasetDocument)
+    ):
+        return DatasetRunEvaluation(
+            schema_version="dataset-run-evaluation-v1",
+            state="INVALID",
+            invalid_reasons=("DATASET_FIXTURE_SCHEMA_UNSUPPORTED",),
+            total_cases=len(snapshot.case_records),
+            scored_cases=0,
+            parsing=None,
+            retrieval=None,
+            grounded=None,
+        )
     parsing = execute_parsing_fixture(snapshot.parsing_dataset, observations.parsing)
     retrieval = execute_retrieval_fixture(snapshot.retrieval_dataset, observations.retrieval)
     grounded = execute_grounded_fixture(snapshot.grounded_dataset, observations.grounded)
