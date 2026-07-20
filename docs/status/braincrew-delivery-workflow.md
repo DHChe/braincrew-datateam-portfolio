@@ -73,15 +73,26 @@ research and AX_portfolio context
 - Completed phase: PR #27 expanded six-thread review-driven TDD repair; all four additional confirmed defects and the single-axis overflow preservation defect were observed RED before minimal GREEN.
 - Completed phase: PR #27 expanded repair re-review; separate Standards and Spec axes report zero unresolved finding.
 - Completed phase: PR #27 expanded repair `verification-before-completion`; every required repository gate and installed-CLI PASS/FAIL/INVALID comparison, replay, deterministic-digest, and DuckDB-cache check passes with fresh evidence.
-- Active canonical phase: PR #27 expanded review-repair Git Lifecycle Proposal Gate.
+- Completed phase: expanded review-repair Lore commit `f802bf815b758557d84fbcc240af21b6ab38ed0d` was pushed without force; local, remote, and PR heads match; its replacement Python quality gate passed; all six review threads have evidence-backed replies and are resolved; GitHub reports merge state `CLEAN`.
+- Active canonical phase: PR #27 post-review workflow-status synchronization Git Lifecycle Proposal Gate.
 - Active artifact: review-ready [PR #27](https://github.com/DHChe/braincrew-datateam-portfolio/pull/27), which closes [Issue #13](https://github.com/DHChe/braincrew-datateam-portfolio/issues/13) when merged and contains the compatible-run comparison and release-gate implementation on branch `feat/issue-13-experiment-comparison`.
-- Active completion condition: present the exact target branch, seven-file repair scope, fresh verification evidence, Lore commit strategy, force-free push plan, six-thread response plan, and known risks; wait for explicit authorization before changing Git or GitHub state.
+- Active completion condition: present the one-file workflow-status commit and force-free push proposal; wait for explicit authorization before publishing it.
 - Entry condition: blocker Issue #12 is closed and PR #26 is squash-merged into `develop` at `eb252e4c32d1ea2167f0cc31371423541dc3b315`.
 - Entry condition status: satisfied on 2026-07-19; fetched `origin/develop` points exactly to the squash merge commit, the commit is an ancestor of the Issue #13 branch, and the clean dedicated worktree baseline reports `159 passed`.
-- Next canonical phase after authorization: create and verify one expanded review-repair Lore commit, push it without force, require the replacement Python quality gate to pass, reply to and resolve all six review threads with evidence, and verify GitHub reports no unresolved blocker before requesting a fresh squash-merge decision.
-- Workflow gate: the authorization for commit `0bd3dc1` and the two initially visible threads is exhausted. A full GraphQL audit found six unresolved threads, including four additional confirmed defects. Their new repair commit, push, replies, and resolution remain unauthorized; merge, Issue #13 closure, branch deletion, and worktree cleanup have not occurred.
+- Next canonical phase after authorization: publish the status-only commit, verify the replacement head and Python gate, then present a fresh squash-merge proposal for explicit authorization.
+- Workflow gate: the expanded repair commit, push, and six-thread resolution authorization is fully executed. The new status-only commit and push remain unauthorized; merge, Issue #13 closure, branch deletion, and worktree cleanup have not occurred.
 
 ## Transition history
+
+### 2026-07-20 — Expanded PR #27 review repair published and cleared
+
+- Authorization executed: one seven-file Lore repair commit, a force-free push to `origin/feat/issue-13-experiment-comparison`, and evidence-backed replies and resolution for all six review threads.
+- Commit evidence: `f802bf815b758557d84fbcc240af21b6ab38ed0d`; its committed state passed frozen sync, Ruff format and lint, strict mypy, `200 passed in 9.89s`, `git diff --check`, and a clean Git status before push.
+- Installed-CLI evidence: `/tmp/braincrew-issue13-commit.rduK6X` contains six comparisons and six successful replays; every DuckDB cache contains 90 rows, one decision, and one distinct digest; PASS, FAIL, and INVALID repeat digests match the locked values.
+- Remote evidence: local, remote, and PR heads match `f802bf815b758557d84fbcc240af21b6ab38ed0d`; the replacement Python quality gate passed in 41 seconds; all six review threads contain a response and report resolved; GitHub reports `CLEAN`.
+- Ticket evidence: Issue #13 remains open with `ready-for-agent`, as required before the separate merge decision.
+- Active action: synchronize this completed transition in one status-only commit, then verify its replacement PR head before the squash-merge proposal.
+- Completion condition: obtain explicit authorization for one Lore status commit and force-free push; merge remains a separate approval after the new head is verified.
 
 ### 2026-07-20 — Full six-thread audit expanded PR #27 repair scope
 
