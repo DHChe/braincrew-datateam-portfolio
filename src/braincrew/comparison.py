@@ -9,7 +9,7 @@ from typing import Literal, Never, cast
 
 from pydantic import Field, TypeAdapter, field_validator, model_validator
 
-from braincrew.contracts import StrictContract
+from braincrew.contracts import RunId, StrictContract
 from braincrew.digest import canonical_digest
 
 PRIMARY_METRICS = (
@@ -45,6 +45,7 @@ COST_REGRESSION_LIMIT = Decimal("0.20")
 COST_IMPROVEMENT_MINIMUM = Decimal("0.20")
 JSON_OBJECT_ADAPTER = TypeAdapter(dict[str, object])
 SHA256_DIGEST_PATTERN = r"^sha256:[0-9a-f]{64}$"
+DECIMAL_RANGE_VIOLATION = "SYS-COMPARISON-DECIMAL-RANGE"
 
 
 class _ImmutableDict[ValueT](dict[str, ValueT]):
@@ -72,6 +73,21 @@ def _freeze_value(value: object) -> object:
 
 def _freeze_mapping[ValueT](values: dict[str, ValueT]) -> dict[str, ValueT]:
     return cast(dict[str, ValueT], _freeze_value(values))
+
+
+def _fits_parquet_decimal(value: Decimal) -> bool:
+    if not value.is_finite():
+        return False
+    if value == 0:
+        return True
+    _, raw_digits, raw_exponent = value.as_tuple()
+    digits = list(raw_digits)
+    exponent = cast(int, raw_exponent)
+    while digits[-1] == 0:
+        digits.pop()
+        exponent += 1
+    adjusted = len(digits) + exponent - 1
+    return adjusted <= 9 and exponent >= -28
 
 
 class FailureIdentity(StrictContract):
@@ -108,11 +124,20 @@ class ExperimentCaseResult(StrictContract):
     def freeze_metric_maps(cls, values: dict[str, Decimal]) -> dict[str, Decimal]:
         return _freeze_mapping(values)
 
+    @field_validator("latency_ms", "cost_usd")
+    @classmethod
+    def validate_operational_decimal(cls, value: Decimal) -> Decimal:
+        if not _fits_parquet_decimal(value):
+            raise ValueError("operational values must fit DECIMAL(38, 28) exactly")
+        return value
+
     @model_validator(mode="after")
     def validate_metrics(self) -> ExperimentCaseResult:
         unknown = set(self.metrics) - set(PRIMARY_METRICS)
         if unknown:
             raise ValueError(f"unknown primary metrics: {sorted(unknown)}")
+        if any(not _fits_parquet_decimal(value) for value in self.metrics.values()):
+            raise ValueError("metric values must fit DECIMAL(38, 28) exactly")
         if any(value < 0 or value > 1 for value in self.metrics.values()):
             raise ValueError("primary metric values must be within [0, 1]")
         unknown_retrieval = set(self.retrieval_metrics) - {
@@ -121,6 +146,8 @@ class ExperimentCaseResult(StrictContract):
         }
         if unknown_retrieval:
             raise ValueError(f"unknown retrieval metrics: {sorted(unknown_retrieval)}")
+        if any(not _fits_parquet_decimal(value) for value in self.retrieval_metrics.values()):
+            raise ValueError("retrieval metric values must fit DECIMAL(38, 28) exactly")
         if any(value < 0 or value > 1 for value in self.retrieval_metrics.values()):
             raise ValueError("retrieval metric values must be within [0, 1]")
         return self
@@ -195,8 +222,8 @@ class ExperimentRunSummary(StrictContract):
 class CaseDelta(StrictContract):
     case_id: str
     metric_deltas: dict[str, Decimal]
-    latency_relative_delta: Decimal
-    cost_relative_delta: Decimal
+    latency_relative_delta: Decimal | None
+    cost_relative_delta: Decimal | None
 
     @field_validator("metric_deltas")
     @classmethod
@@ -248,7 +275,7 @@ class GateTrace(StrictContract):
 
 class ComparisonArtifact(StrictContract):
     schema_version: Literal["experiment-comparison-artifact-v1"]
-    comparison_id: str
+    comparison_id: RunId
     baseline: ExperimentRunSummary
     candidate: ExperimentRunSummary
     compatibility_violations: tuple[str, ...]
@@ -371,12 +398,28 @@ def _case_pairs(
     )
 
 
-def _relative_delta(baseline: Decimal, candidate: Decimal) -> Decimal:
+def _relative_delta(baseline: Decimal, candidate: Decimal) -> Decimal | None:
     if baseline == 0:
         if candidate == 0:
             return Decimal(0)
-        raise ValueError("relative delta requires a non-zero baseline")
+        return None
     return (candidate - baseline) / baseline
+
+
+def _parquet_relative_delta(baseline: Decimal, candidate: Decimal) -> Decimal | None:
+    delta = _relative_delta(baseline, candidate)
+    if delta is None:
+        return None
+    if not _fits_parquet_decimal(delta):
+        raise OverflowError("relative delta does not fit DECIMAL(38, 28)")
+    return delta
+
+
+def _required_relative_delta(baseline: Decimal, candidate: Decimal) -> Decimal:
+    delta = _relative_delta(baseline, candidate)
+    if delta is None:
+        raise ZeroDivisionError("aggregate relative delta requires a non-zero baseline")
+    return delta
 
 
 def _macro(cases: tuple[ExperimentCaseResult, ...]) -> dict[str, Decimal]:
@@ -496,8 +539,18 @@ def compare_runs(
         for left, right in pairs
         if set(left.metrics) != set(right.metrics)
     ]
-    try:
-        case_deltas = [
+    for left, right in pairs:
+        try:
+            latency_relative_delta = _parquet_relative_delta(left.latency_ms, right.latency_ms)
+        except OverflowError:
+            latency_relative_delta = None
+            delta_errors.append(DECIMAL_RANGE_VIOLATION)
+        try:
+            cost_relative_delta = _parquet_relative_delta(left.cost_usd, right.cost_usd)
+        except OverflowError:
+            cost_relative_delta = None
+            delta_errors.append(DECIMAL_RANGE_VIOLATION)
+        case_deltas.append(
             CaseDelta(
                 case_id=left.case_id,
                 metric_deltas={
@@ -505,11 +558,11 @@ def compare_runs(
                     for metric, value in left.metrics.items()
                     if metric in right.metrics
                 },
-                latency_relative_delta=_relative_delta(left.latency_ms, right.latency_ms),
-                cost_relative_delta=_relative_delta(left.cost_usd, right.cost_usd),
+                latency_relative_delta=latency_relative_delta,
+                cost_relative_delta=cost_relative_delta,
             )
-            for left, right in pairs
-        ]
+        )
+    try:
         baseline_p95 = _p95(tuple(case.latency_ms for case in baseline.cases))
         candidate_p95 = _p95(tuple(case.latency_ms for case in candidate.cases))
         baseline_cost = sum((case.cost_usd for case in baseline.cases), start=Decimal(0)) / Decimal(
@@ -521,12 +574,14 @@ def compare_runs(
         operational = OperationalDelta(
             baseline_p95_latency_ms=baseline_p95,
             candidate_p95_latency_ms=candidate_p95,
-            p95_latency_relative_delta=_relative_delta(baseline_p95, candidate_p95),
+            p95_latency_relative_delta=_required_relative_delta(baseline_p95, candidate_p95),
             baseline_mean_cost_usd=baseline_cost,
             candidate_mean_cost_usd=candidate_cost,
-            mean_cost_relative_delta=_relative_delta(baseline_cost, candidate_cost),
+            mean_cost_relative_delta=_required_relative_delta(baseline_cost, candidate_cost),
         )
-    except ValueError:
+    except OverflowError:
+        delta_errors.append(DECIMAL_RANGE_VIOLATION)
+    except ZeroDivisionError:
         delta_errors.append("SYS-COMPARISON-OPERATIONAL-BASELINE-ZERO")
 
     missing_metrics = set(PRIMARY_METRICS) - set(macro_deltas)

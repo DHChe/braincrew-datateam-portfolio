@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import duckdb
 
@@ -509,10 +511,10 @@ def _write_comparison_parquet(artifact: ComparisonArtifact, path: Path) -> None:
                 delta DECIMAL(38, 28) NOT NULL,
                 baseline_latency_ms DECIMAL(38, 28) NOT NULL,
                 candidate_latency_ms DECIMAL(38, 28) NOT NULL,
-                latency_relative_delta DECIMAL(38, 28) NOT NULL,
+                latency_relative_delta DECIMAL(38, 28),
                 baseline_cost_usd DECIMAL(38, 28) NOT NULL,
                 candidate_cost_usd DECIMAL(38, 28) NOT NULL,
-                cost_relative_delta DECIMAL(38, 28) NOT NULL,
+                cost_relative_delta DECIMAL(38, 28),
                 candidate_failures_json VARCHAR NOT NULL
             )
             """
@@ -538,15 +540,30 @@ def write_comparison_artifact(
     parquet_path = output_dir / f"{artifact.comparison_id}.parquet"
     if json_path.exists() or parquet_path.exists():
         raise FileExistsError(f"comparison artifact already exists: {artifact.comparison_id}")
-    _write_comparison_parquet(artifact, parquet_path)
     serialized = json.dumps(
         artifact.model_dump(mode="json"),
         ensure_ascii=False,
         indent=2,
         sort_keys=True,
     )
-    with json_path.open("x", encoding="utf-8") as artifact_file:
-        artifact_file.write(serialized + "\n")
+    with TemporaryDirectory(prefix=".comparison-", dir=output_dir) as temporary_dir:
+        temporary_root = Path(temporary_dir)
+        temporary_json = temporary_root / json_path.name
+        temporary_parquet = temporary_root / parquet_path.name
+        _write_comparison_parquet(artifact, temporary_parquet)
+        temporary_json.write_text(serialized + "\n", encoding="utf-8")
+        published: list[Path] = []
+        try:
+            for temporary_path, final_path in (
+                (temporary_parquet, parquet_path),
+                (temporary_json, json_path),
+            ):
+                os.link(temporary_path, final_path)
+                published.append(final_path)
+        except OSError:
+            for published_path in published:
+                published_path.unlink()
+            raise
     return json_path, parquet_path
 
 

@@ -69,15 +69,35 @@ research and AX_portfolio context
 - Completed phase: PR #27 review-driven TDD repair; the confirmed shallow-freeze defect was observed RED and repaired GREEN, while the non-finite-decimal suggestion was disproved against the locked Pydantic behavior and retained as a regression check.
 - Completed phase: PR #27 repair re-review; separate Standards and Spec axes report zero unresolved finding.
 - Completed phase: PR #27 review-repair `verification-before-completion`; every repository gate and installed-CLI PASS/FAIL/INVALID comparison, replay, deterministic-digest, and DuckDB-cache check passes with fresh evidence.
-- Active canonical phase: PR #27 review-repair publication and replacement-head remote verification.
+- Completed phase: review-repair commit `0bd3dc1dd067aa162342a65641a14341db237228` was pushed without force and its replacement Python quality gate passed.
+- Completed phase: PR #27 expanded six-thread review-driven TDD repair; all four additional confirmed defects and the single-axis overflow preservation defect were observed RED before minimal GREEN.
+- Completed phase: PR #27 expanded repair re-review; separate Standards and Spec axes report zero unresolved finding.
+- Completed phase: PR #27 expanded repair `verification-before-completion`; every required repository gate and installed-CLI PASS/FAIL/INVALID comparison, replay, deterministic-digest, and DuckDB-cache check passes with fresh evidence.
+- Active canonical phase: PR #27 expanded review-repair Git Lifecycle Proposal Gate.
 - Active artifact: review-ready [PR #27](https://github.com/DHChe/braincrew-datateam-portfolio/pull/27), which closes [Issue #13](https://github.com/DHChe/braincrew-datateam-portfolio/issues/13) when merged and contains the compatible-run comparison and release-gate implementation on branch `feat/issue-13-experiment-comparison`.
-- Active completion condition: the authorized repair commit is pushed without force; local, remote, and PR heads match; the replacement Python gate passes; both inline review threads carry evidence-backed replies and are resolved; GitHub reports `CLEAN` with zero unresolved blocker before a fresh merge proposal.
+- Active completion condition: present the exact target branch, seven-file repair scope, fresh verification evidence, Lore commit strategy, force-free push plan, six-thread response plan, and known risks; wait for explicit authorization before changing Git or GitHub state.
 - Entry condition: blocker Issue #12 is closed and PR #26 is squash-merged into `develop` at `eb252e4c32d1ea2167f0cc31371423541dc3b315`.
 - Entry condition status: satisfied on 2026-07-19; fetched `origin/develop` points exactly to the squash merge commit, the commit is an ancestor of the Issue #13 branch, and the clean dedicated worktree baseline reports `159 passed`.
-- Next canonical phase: after replacement-head verification, present a fresh squash-merge proposal for PR #27 and its `Closes #13` effect.
-- Workflow gate: the user authorized one review-repair Lore commit, a normal push to the existing PR branch, and evidence-backed reply and resolution for both inline review threads. Merge, Issue #13 closure, branch deletion, and worktree cleanup remain unauthorized and have not occurred.
+- Next canonical phase after authorization: create and verify one expanded review-repair Lore commit, push it without force, require the replacement Python quality gate to pass, reply to and resolve all six review threads with evidence, and verify GitHub reports no unresolved blocker before requesting a fresh squash-merge decision.
+- Workflow gate: the authorization for commit `0bd3dc1` and the two initially visible threads is exhausted. A full GraphQL audit found six unresolved threads, including four additional confirmed defects. Their new repair commit, push, replies, and resolution remain unauthorized; merge, Issue #13 closure, branch deletion, and worktree cleanup have not occurred.
 
 ## Transition history
+
+### 2026-07-20 — Full six-thread audit expanded PR #27 repair scope
+
+- Discovery: after `0bd3dc1dd067aa162342a65641a14341db237228` passed its replacement Python gate, a GraphQL review-thread query showed six unresolved inline threads. The earlier REST response had been truncated, so the prior two-thread assumption was an unverified workflow error rather than a code result.
+- Previously handled threads: non-finite metric decimals already fail with controlled Pydantic `ValidationError`; recursive nested mapping mutation was reproduced RED and repaired by commit `0bd3dc1`.
+- Additional confirmed defects: one zero-baseline case discarded computable run-level operational aggregates; accepted decimals could be rounded or overflowed by Parquet `DECIMAL(38, 28)`; a JSON publication failure could leave a blocking Parquet orphan; and library callers could use traversal comparison IDs outside the CLI guard.
+- RED evidence: six focused tests failed for the expected missing contracts: failure-safe pair rollback, model-level safe ID, two exact Decimal constraints, zero-case aggregate preservation, and replayable derived-overflow invalidation.
+- Minimal GREEN: `RunId` now guards comparison IDs; source decimals must fit Parquet exactly; case-relative deltas are nullable and independent from aggregate calculations; unrepresentable derived case deltas fail closed; Parquet relative columns accept null; JSON and Parquet stage in one temporary directory and publish via create-only links with synchronous rollback.
+- Focused evidence: Ruff format/lint, strict mypy, `git diff --check`, and the comparison unit suite pass; the focused suite reports `40 passed`.
+- Full repository evidence: `uv sync --frozen --all-groups`, Ruff format and lint, strict mypy, `git diff --check`, and the full suite pass; the suite reports `200 passed in 9.36s`.
+- Installed-CLI evidence: from `/tmp/braincrew-issue13-expanded-review.hshjTh`, PASS, FAIL, and INVALID were each compared twice and replayed twice; all six JSON artifacts replayed, all six DuckDB caches contained 90 rows with one decision and one distinct digest, and repeated decisions retained identical digests: PASS `sha256:8a14166be831f330630580f3934803fcfa11d86763723bdbcebdfdee8bee1cf4`, FAIL `sha256:400507a8ffd1b6b289cf0f8b3d69e57dc97e8fbc90eb390969fbf18192c9d9b4`, INVALID `sha256:9e2bbc7e413318e9792939eeab5e77aae2040f9324a4132f8a28369a5ffea9a4`.
+- Standards re-review: PASS with zero finding. The repair uses only standard-library temporary-directory and hard-link primitives, preserves create-only/no-overwrite behavior, reuses `RunId`, keeps changes ticket-local, and introduces no dependency or speculative service.
+- Spec re-review: PASS with zero finding. Zero-case evidence no longer suppresses computable aggregates, canonical Parquet never silently rounds accepted source values, derived overflow fails closed and remains replayable, publication races preserve competing bytes, and all entry points enforce the safe identifier boundary without changing gate policy or fixture meaning.
+- Scope boundary: no threshold, compatibility dimension, ordinary fixture decision/digest meaning, dashboard, live AX Verification, or Agent trajectory evaluation is added or changed.
+- Active action: present the exact expanded repair publication proposal and stop before another commit, push, review reply, thread resolution, or merge.
+- Completion condition: explicit authorization covers one Lore repair commit, a force-free push to the existing PR branch, and evidence-backed replies and resolution for all six review threads; merge remains a later, fresh decision after the replacement head and review state are verified.
 
 ### 2026-07-20 — PR #27 review-repair publication authorized
 

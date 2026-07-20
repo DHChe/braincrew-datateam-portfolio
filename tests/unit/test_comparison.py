@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, cast
@@ -242,6 +243,131 @@ def test_comparison_artifacts_replay_and_rebuild_disposable_cache(tmp_path: Path
     assert cache_path.is_file()
     with pytest.raises(FileExistsError):
         result_store.write_comparison_artifact(artifact, tmp_path)
+
+
+def test_comparison_artifact_pair_rolls_back_new_file_on_publish_race(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from braincrew import result_store
+
+    artifact = _pass_comparison(comparison_id="publish-race")
+    json_path = tmp_path / "publish-race.json"
+    parquet_path = tmp_path / "publish-race.parquet"
+    original_link = os.link
+
+    def race_json_publish(source: str | Path, destination: str | Path) -> None:
+        if Path(destination) == json_path:
+            json_path.write_bytes(b"pre-existing-json")
+        original_link(source, destination)
+
+    monkeypatch.setattr(os, "link", race_json_publish)
+
+    with pytest.raises(FileExistsError):
+        result_store.write_comparison_artifact(artifact, tmp_path)
+
+    assert json_path.read_bytes() == b"pre-existing-json"
+    assert not parquet_path.exists()
+
+
+def test_comparison_id_rejects_path_traversal_before_storage() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline = comparison_module.ExperimentRunSummary.model_validate(
+        _run_payload(role="baseline", evidence_limit=3)
+    )
+    candidate = comparison_module.ExperimentRunSummary.model_validate(
+        _run_payload(role="candidate", evidence_limit=5)
+    )
+
+    with pytest.raises(ValidationError, match="comparison_id"):
+        comparison_module.compare_runs(
+            baseline,
+            candidate,
+            comparison_id="../../escaped",
+        )
+
+
+@pytest.mark.parametrize(
+    ("field_name", "value"),
+    [
+        ("metric", "0.12345678901234567890123456789"),
+        ("latency_ms", "12345678901"),
+    ],
+)
+def test_run_summary_rejects_decimals_not_exactly_representable_in_parquet(
+    field_name: str,
+    value: str,
+) -> None:
+    from braincrew.comparison import ExperimentRunSummary
+
+    payload = _run_payload(role="baseline", evidence_limit=3)
+    if field_name == "metric":
+        payload["cases"][0]["metrics"]["claim_support_precision"] = value
+    else:
+        payload["cases"][0][field_name] = value
+
+    with pytest.raises(ValidationError, match=r"DECIMAL\(38, 28\)"):
+        ExperimentRunSummary.model_validate(payload)
+
+
+def test_zero_case_baseline_keeps_computable_operational_aggregate() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _run_payload(role="candidate", evidence_limit=5)
+    baseline_payload["cases"][0]["latency_ms"] = "0"
+    baseline_payload["cases"][0]["cost_usd"] = "0"
+    candidate_payload["cases"][0]["latency_ms"] = "1"
+    candidate_payload["cases"][0]["cost_usd"] = "0.001"
+    for case in candidate_payload["cases"]:
+        case["metrics"]["claim_support_precision"] = "0.83"
+
+    comparison = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="zero-case-baseline",
+    )
+
+    assert comparison.decision == "PASS"
+    assert comparison.case_deltas[0].latency_relative_delta is None
+    assert comparison.case_deltas[0].cost_relative_delta is None
+    assert comparison.operational_delta is not None
+
+
+def test_unrepresentable_relative_deltas_fail_closed_but_remain_replayable(
+    tmp_path: Path,
+) -> None:
+    from braincrew import comparison as comparison_module
+    from braincrew import result_store
+
+    baseline_payload = _run_payload(
+        role="baseline",
+        evidence_limit=3,
+        latency_ms="0.0000000000000000000000000001",
+        cost_usd="0.01",
+    )
+    candidate_payload = _run_payload(
+        role="candidate",
+        evidence_limit=5,
+        latency_ms="9999999999",
+        cost_usd="0.01",
+    )
+    artifact = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="relative-delta-overflow",
+    )
+
+    assert artifact.decision == "INVALID"
+    assert "SYS-COMPARISON-DECIMAL-RANGE" in artifact.reasons
+    assert artifact.case_deltas[0].latency_relative_delta is None
+    assert artifact.case_deltas[0].cost_relative_delta == Decimal(0)
+    json_path, _ = result_store.write_comparison_artifact(artifact, tmp_path)
+    assert result_store.replay_comparison_artifact(json_path) == {
+        "decision": "INVALID",
+        "logical_digest": artifact.logical_digest,
+    }
 
 
 def test_comparison_is_invalid_when_required_version_provenance_is_missing() -> None:
