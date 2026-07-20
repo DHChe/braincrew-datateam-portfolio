@@ -519,12 +519,20 @@ The Evaluation Plane uses a Python evaluation core, DuckDB over Parquet and JSON
 
 ### Recruiter-facing dashboard
 
-- Next.js with TypeScript;
+- root-managed `npm@11.12.1` with committed `package-lock.json` lockfile v3; `npm ci` is the only frozen frontend install path and requires no additional global package manager;
+- Next.js `16.2.10`, React and React DOM `19.2.7`, and TypeScript `5.9.3` on Node.js `>=20.19.0`;
+- Prettier `3.9.5` for format checking and ESLint `9.39.5` with `eslint-config-next@16.2.10` for linting; npm overrides transitive PostCSS to `8.5.10` so the frozen install contains no known npm-audit vulnerability;
+- Vitest `4.1.10` for deterministic TypeScript export/view-model contract tests;
+- Playwright `1.61.1` with its pinned Chromium binary for a browser smoke test against the completed static export;
 - static export with no required server runtime;
 - reads only validated, sanitized JSON exports generated from canonical experiment artifacts;
 - supports client-side comparison, filtering, sorting, charts, gate traces, and representative failure drill-down;
 - cannot start experiments, change scores, or mutate evidence;
 - changing experiment results requires generating a new export and rebuilding the site.
+
+The locked frontend command contract is `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`, and `npm run test:e2e`. `npm run build` must produce `dashboard/out` through `output: "export"`; `npm run test:e2e` installs the package-pinned Chromium binary when absent, serves only that completed directory, and checks the golden decision and totals in a real browser.
+
+Rejected package-manager alternatives are pnpm, Yarn, and Bun. They offer workspace or installation-performance benefits, but this repository has no existing frontend workspace, manifest, lockfile, or package-manager convention that justifies another bootstrap dependency. Rejected test alternatives are Jest, which duplicates Vitest's contract-test role with more configuration, and Cypress, which adds a second browser-test ecosystem when Playwright already provides a package-pinned browser and static-server orchestration. The accepted trade-off is a larger `package-lock.json` and a first-run Chromium download in exchange for a frozen, globally tool-free install and a browser check that exercises the actual static output.
 
 ### Reproduction and continuous integration
 

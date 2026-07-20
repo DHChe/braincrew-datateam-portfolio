@@ -1,4 +1,4 @@
-name: Python quality gates
+name: Quality gates
 
 on:
   pull_request:
@@ -39,3 +39,39 @@ jobs:
 
       - name: Test and replay fixture artifact
         run: uv run pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20.19.0
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test -- --run
+
+      - name: Build static dashboard
+        run: npm run build
+
+      - name: Install browser dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser smoke test
+        run: npm run test:e2e

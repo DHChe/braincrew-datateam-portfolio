@@ -1,0 +1,773 @@
+{
+  "baseline": {
+    "evaluation_plane_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "evidence_limit": 3,
+    "execution_mode": "fixture",
+    "role": "baseline",
+    "sut_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "candidate": {
+    "evaluation_plane_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "evidence_limit": 5,
+    "execution_mode": "fixture",
+    "role": "candidate",
+    "sut_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "cases": [
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-001",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-002",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-003",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-004",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-005",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-006",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-007",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-008",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-009",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-010",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-011",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-012",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-013",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-014",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    },
+    {
+      "candidate_failures": [],
+      "case_id": "CASE-015",
+      "cost_relative_delta": "0",
+      "latency_relative_delta": "0",
+      "metrics": [
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "abstention_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "answer_mode_accuracy"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "citation_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.83",
+          "delta": "0.03",
+          "name": "claim_support_precision"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "evidence_span_recovery"
+        },
+        {
+          "baseline": "0.80",
+          "candidate": "0.80",
+          "delta": "0.00",
+          "name": "recall_at_5"
+        }
+      ]
+    }
+  ],
+  "comparison_id": "dashboard-golden",
+  "dataset": {
+    "content_digest": "sha256:7fb0b58c5ad7c242696bcaef13773eb5dc6358e8127219fa7dc65c19c7a5d71b",
+    "id": "braincrew-evaluation-dataset",
+    "license": "CC0-1.0",
+    "source_type": "synthetic",
+    "version": "1.0.0"
+  },
+  "decision": "PASS",
+  "failure_taxonomy": {
+    "baseline_code_counts": {},
+    "baseline_codes": [],
+    "baseline_critical": [],
+    "baseline_family_counts": {},
+    "candidate_code_counts": {},
+    "candidate_codes": [],
+    "candidate_critical": [],
+    "candidate_family_counts": {},
+    "code_count_deltas": {},
+    "family_count_deltas": {},
+    "new_critical": [],
+    "removed_critical": []
+  },
+  "gates": [
+    {
+      "decision": "PASS",
+      "gate": "gate-1",
+      "reasons": []
+    },
+    {
+      "decision": "PASS",
+      "gate": "gate-2",
+      "reasons": []
+    },
+    {
+      "decision": "PASS",
+      "gate": "gate-3",
+      "reasons": []
+    }
+  ],
+  "logical_digest": "sha256:f8630e70892f976ee120ac497ef63ce6cc64add8aa1d71989a576891b5ae7bbe",
+  "metrics": [
+    {
+      "baseline": "0.80",
+      "candidate": "0.80",
+      "delta": "0.00",
+      "name": "abstention_accuracy"
+    },
+    {
+      "baseline": "0.80",
+      "candidate": "0.80",
+      "delta": "0.00",
+      "name": "answer_mode_accuracy"
+    },
+    {
+      "baseline": "0.80",
+      "candidate": "0.80",
+      "delta": "0.00",
+      "name": "citation_precision"
+    },
+    {
+      "baseline": "0.80",
+      "candidate": "0.83",
+      "delta": "0.03",
+      "name": "claim_support_precision"
+    },
+    {
+      "baseline": "0.80",
+      "candidate": "0.80",
+      "delta": "0.00",
+      "name": "evidence_span_recovery"
+    },
+    {
+      "baseline": "0.80",
+      "candidate": "0.80",
+      "delta": "0.00",
+      "name": "recall_at_5"
+    }
+  ],
+  "operational_delta": {
+    "baseline_mean_cost_usd": "0.010",
+    "baseline_p95_latency_ms": "100",
+    "candidate_mean_cost_usd": "0.010",
+    "candidate_p95_latency_ms": "100",
+    "mean_cost_relative_delta": "0",
+    "p95_latency_relative_delta": "0"
+  },
+  "reasons": [],
+  "schema_version": "dashboard-export-v1",
+  "source_schema_version": "experiment-comparison-artifact-v1",
+  "totals": {
+    "case_count": 15,
+    "gate_count": 3,
+    "metric_count": 6
+  }
+}

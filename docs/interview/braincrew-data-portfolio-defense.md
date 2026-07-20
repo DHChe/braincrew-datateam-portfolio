@@ -443,6 +443,29 @@ Likely follow-ups:
 - "Does static mean non-interactive?" — No. Filtering and charts run client-side; static means data is frozen at build time and no server is required.
 - "When would you migrate to PostgreSQL?" — When multiple users or workers need concurrent writes, live run control, authentication, or continuously updated operational monitoring.
 
+Issue #14 implementation decision:
+: Export only a replay-validated `experiment-comparison-artifact-v1` JSON/Parquet pair into a strict `dashboard-export-v1`, then render that frozen projection with Next.js static export. The exporter copies canonical scores, deltas, failure counts, logical digest, ordered gate trace, and decision; neither Python projection code nor React recalculates Issue #13 semantics.
+
+Frontend toolchain decision:
+: Use root-managed `npm@11.12.1` with committed `package-lock.json` lockfile v3, Node.js `>=20.19.0`, Next.js `16.2.10`, React `19.2.7`, TypeScript `5.9.3`, ESLint `9.39.5`, Vitest `4.1.10`, and Playwright `1.61.1` with package-pinned Chromium. The lockfile pins patched transitive PostCSS `8.5.10`; clean install and audit report no known vulnerability. The full contract is `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`, and `npm run test:e2e`.
+
+Why this toolchain:
+: The repository had no frontend manifest, lockfile, workspace, or existing package-manager convention. npm ships with Node and `npm ci` fails when the manifest and lock disagree, so it adds no global bootstrap dependency. Vitest is sufficient for the readonly export/view-model contracts, while Playwright checks the actual `dashboard/out` files in Chromium rather than a mutable development server.
+
+Rejected alternatives:
+: pnpm, Yarn, and Bun add a second package-manager bootstrap without repository evidence that their workspace or speed advantages are needed. ESLint 10 was rejected after its plugin peer ranges conflicted with `eslint-config-next@16.2.10`; the latest compatible ESLint 9 line avoids overriding the linter ecosystem. Jest duplicates the TypeScript contract-test role with more configuration. Cypress adds another browser-test ecosystem when Playwright already pins browser compatibility. A dynamic Next.js server, API route, PostgreSQL connection, or DuckDB-in-browser query was rejected because it would turn frozen presentation into a mutable runtime.
+
+Trade-offs and failure modes:
+: The lockfile is large, Python and TypeScript remain separate toolchains, and the first browser smoke downloads Chromium. The critical risks are schema drift, accidentally publishing credentials or private strings, recalculating canonical values in React, and testing a dev server instead of the static export. Replay-before-export, strict publishability validation, readonly TypeScript contracts, golden total/decision equality, `output: "export"`, and a Playwright smoke against `dashboard/out` are the required controls.
+
+Likely follow-ups:
+
+- "Can the dashboard change a release decision?" — No. It receives the canonical decision and ordered gate reasons as data and has no evaluator or gate implementation.
+- "What case evidence is safe to publish?" — Stable public case labels, canonical metric/delta values, operational deltas, and deterministic failure identities. Raw source text, prompts, headers, credentials, private document content, and database rows are excluded.
+- "Why install a browser during the smoke command?" — Playwright versions require matching browser binaries. The package-local pretest step makes a clean `npm ci` checkout self-contained without assuming a global Chrome installation.
+- "Does this dashboard prove live AX quality?" — No. The Issue #14 golden is fixture-authoritative presentation evidence. A separately pinned live Verification comparison is still required before a live product-quality claim.
+- "How does the screen prevent that confusion?" — The export copies `execution_mode`, Evaluation Plane SHA, and SUT SHA from the immutable run summaries, and the golden screen labels itself “Fixture evidence — not a live AX verification.” React does not infer or upgrade that status.
+
 ### D9. Use layered verification and an evidence-driven ten-day sequence
 
 Decision:

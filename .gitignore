@@ -17,6 +17,10 @@ __pycache__/
 .ruff_cache/
 node_modules/
 .next/
+out/
+*.tsbuildinfo
+playwright-report/
+test-results/
 dist/
 coverage/
 

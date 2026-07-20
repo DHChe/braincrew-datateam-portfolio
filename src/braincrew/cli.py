@@ -13,6 +13,7 @@ from braincrew.comparison import (
     ExperimentRunSummary,
     compare_runs,
 )
+from braincrew.dashboard_export import export_dashboard_artifact
 from braincrew.dataset_registry import validate_dataset_bundle
 from braincrew.dataset_run import (
     build_dataset_run_artifact,
@@ -423,6 +424,42 @@ def replay_fixture(
             {
                 "artifact_path": str(artifact_path),
                 **replay_summary,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+@app.command("export-dashboard")
+def export_dashboard(
+    comparison_path: Annotated[
+        Path,
+        typer.Option("--comparison", exists=True, dir_okay=False, readable=True),
+    ],
+    dataset_manifest_path: Annotated[
+        Path,
+        typer.Option("--dataset-manifest", exists=True, dir_okay=False, readable=True),
+    ],
+    output_path: Annotated[Path, typer.Option("--output")],
+) -> None:
+    """Project replay-validated comparison evidence into publishable dashboard JSON."""
+    try:
+        document = export_dashboard_artifact(
+            comparison_path,
+            output_path,
+            dataset_manifest_path=dataset_manifest_path,
+        )
+    except (FileExistsError, UnicodeError, ValueError) as error:
+        typer.echo(f"Invalid dashboard export: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    typer.echo(
+        json.dumps(
+            {
+                "comparison_id": document.comparison_id,
+                "decision": document.decision,
+                "logical_digest": document.logical_digest,
+                "output_path": str(output_path),
             },
             ensure_ascii=False,
             sort_keys=True,
