@@ -1,0 +1,40 @@
+{
+  "name": "braincrew-evaluation-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@11.12.1",
+  "engines": {
+    "node": ">=20.19.0",
+    "npm": ">=11.0.0"
+  },
+  "scripts": {
+    "format:check": "prettier --check package.json dashboard tests/frontend eslint.config.mjs playwright.config.ts tsconfig.json vitest.config.ts",
+    "lint": "eslint dashboard tests/frontend eslint.config.mjs playwright.config.ts vitest.config.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "build": "next build dashboard",
+    "serve:static": "serve -s dashboard/out -l 4173",
+    "pretest:e2e": "playwright install chromium",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "next": "16.2.10",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.2.10",
+    "prettier": "3.9.5",
+    "serve": "14.2.6",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  },
+  "overrides": {
+    "postcss": "8.5.10"
+  }
+}
