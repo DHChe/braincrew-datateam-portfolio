@@ -632,6 +632,10 @@ def replay_run_artifact(path: Path) -> dict[str, str]:
     if not isinstance(raw_artifact, dict):
         raise ValueError("artifact must be a JSON object")
     schema_version = raw_artifact.get("schema_version")
+    if schema_version == "live-verification-preflight-artifact-v1":
+        from braincrew.live_verification import replay_live_preflight_artifact
+
+        return replay_live_preflight_artifact(raw_artifact)
     if schema_version == "experiment-comparison-artifact-v1":
         return replay_comparison_artifact(path)
     if schema_version == "dataset-run-artifact-v1":

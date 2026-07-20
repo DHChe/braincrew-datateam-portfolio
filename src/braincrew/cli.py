@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -26,6 +27,10 @@ from braincrew.grounded_run import (
     execute_grounded_fixture,
     load_grounded_dataset,
     load_grounded_observations,
+)
+from braincrew.live_verification import (
+    execute_live_preflight,
+    write_live_preflight_artifact,
 )
 from braincrew.parsing_run import (
     execute_parsing_fixture,
@@ -352,6 +357,48 @@ def run_dataset_fixture(
             sort_keys=True,
         )
     )
+
+
+@app.command("preflight-live")
+def preflight_live_verification(
+    manifest_path: Annotated[
+        Path,
+        typer.Option("--manifest", exists=True, dir_okay=False, readable=True),
+    ],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    preflight_id: Annotated[str, typer.Option("--preflight-id")],
+) -> None:
+    """Record whether the pinned 30-case live Verification may start."""
+    _validate_artifact_id(preflight_id, label="preflight ID")
+    validation = validate_dataset_bundle(manifest_path)
+    if validation.state != "VALID":
+        codes = ",".join(item.code for item in validation.violations)
+        typer.echo(f"Invalid dataset: {codes}", err=True)
+        raise typer.Exit(code=2)
+    artifact = execute_live_preflight(
+        preflight_id=preflight_id,
+        validation=validation,
+        evaluation_state=_capture_repository_state(),
+        environment=os.environ,
+    )
+    try:
+        artifact_path = write_live_preflight_artifact(artifact, output_dir)
+    except FileExistsError as error:
+        typer.echo(f"Artifact already exists: {output_dir / f'{preflight_id}.json'}", err=True)
+        raise typer.Exit(code=2) from error
+    typer.echo(
+        json.dumps(
+            {
+                "artifact_path": str(artifact_path),
+                "preflight_state": artifact.state,
+                "logical_digest": artifact.logical_digest,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+    if artifact.state == "BLOCKED":
+        raise typer.Exit(code=2)
 
 
 @app.command("compare")

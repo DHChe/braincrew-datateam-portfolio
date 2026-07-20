@@ -505,6 +505,25 @@ Likely follow-ups:
 - "Why does Day 8 not pin a new candidate SHA?" — The frozen first comparison changes only `evidence_limit`; both runs must record the same AX SHA. A code-change candidate requires a new candidate-plan version and a separate comparison.
 - "How do two engineers get the same metric?" — Metric contract v2 freezes case-level formulas, the claim-proposition catalog, exact alternative matching, macro aggregation, duplicate and rank rules, zero-denominator behavior, and unrounded gate comparison, with hand-calculated goldens for every primary metric.
 
+Issue #15 preflight decision:
+: Require one create-only, replayable `live-verification-preflight-artifact-v1` before either baseline or candidate starts. It freezes the 30-case dataset, clean Evaluation Plane and AX SHAs, corpus, prompt, model, evaluator and Adapter identities, `top_k=5`, and only the intended `evidence_limit=3` to `5` change. Nested identity and capability mappings are sealed before digest publication. Missing authority, malformed or non-finite identities, dirty or mismatched provenance, unreachable AX, unavailable or undeclared required operations, an SUT-unverified corpus, a create-only collision, or replay tampering fails closed; no run result is estimated.
+
+Current evidence and limitation:
+: The 2026-07-20 artifact verified the dataset digest, clean pinned AX SHA `c318b2192006bdb36a5bd5b3a2bc403425b45701`, and fixed comparison plan, then replayed exactly with logical digest `sha256:9d78a9c4713fca610588b6477ec4031dcdfdab5262361ec8a578fd01c02486d1`. The live base URL, synthetic tenant/user/roles, frozen corpus and prompt identities, frozen model identity/parameters, and clean committed Evaluation Plane producer were unavailable. Network capability discovery and both 30-case runs therefore did not start.
+
+Why credentials are not the only blocker:
+: Earlier pinned live Adapter evidence reports `AX_PARSE_OBSERVABILITY_UNAVAILABLE` and `AX_CORPUS_IDENTITY_NOT_EXPOSED`. Issue #15 contract tests preserve these as explicit preflight blockers if capability discovery reaches the service. A separately reviewed AX observability and corpus-verification contract is required before the full Verification denominator can execute; changing AX during the A/B run would create a confound and remains excluded.
+
+Rejected alternative:
+: Fill missing corpus, prompt, model, latency, token, cost, or case results from local defaults, fixtures, or the earlier smoke. Those sources cannot prove the authorized current live identity or complete 30-case evidence and would turn missing provenance into a false comparison.
+
+Likely follow-ups:
+
+- "Did Issue #15 prove the candidate is better?" — No. It proved the preflight fails closed and identified exact prerequisites. There are no baseline, candidate, or comparison results.
+- "Why not run while the Evaluation Plane is dirty?" — The comparison requires both runs to name the same immutable producer SHA. Uncommitted code cannot be reproduced or honestly pinned.
+- "Is `BLOCKED` a product failure?" — No. It is a workflow and capability state that prevents measurement. A product-quality failure requires an authorized completed observation and evaluator result.
+- "Can the fixture dashboard stand in for the live run?" — No. Fixture and live execution modes are incompatible, and Issue #14 explicitly labels its evidence as not a live AX verification.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.
