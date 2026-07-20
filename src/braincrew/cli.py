@@ -9,6 +9,10 @@ from typing import Annotated
 import typer
 from pydantic import ValidationError
 
+from braincrew.comparison import (
+    ExperimentRunSummary,
+    compare_runs,
+)
 from braincrew.dataset_registry import validate_dataset_bundle
 from braincrew.dataset_run import (
     build_dataset_run_artifact,
@@ -33,7 +37,9 @@ from braincrew.result_store import (
     build_parsing_run_artifact,
     build_retrieval_run_artifact,
     build_run_artifact,
+    rebuild_duckdb_cache,
     replay_run_artifact,
+    write_comparison_artifact,
     write_grounded_run_artifact,
     write_parsing_run_artifact,
     write_retrieval_run_artifact,
@@ -50,13 +56,17 @@ RUN_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}\Z")
 COMMIT_SHA_PATTERN = re.compile(r"[0-9a-f]{40}\Z")
 
 
-def _validate_run_identity(run_id: str, sut_sha: str) -> None:
-    if RUN_ID_PATTERN.fullmatch(run_id) is None:
+def _validate_artifact_id(artifact_id: str, *, label: str) -> None:
+    if RUN_ID_PATTERN.fullmatch(artifact_id) is None:
         typer.echo(
-            "Invalid run ID: use 1-64 ASCII letters, digits, dots, underscores, or hyphens",
+            f"Invalid {label}: use 1-64 ASCII letters, digits, dots, underscores, or hyphens",
             err=True,
         )
         raise typer.Exit(code=2)
+
+
+def _validate_run_identity(run_id: str, sut_sha: str) -> None:
+    _validate_artifact_id(run_id, label="run ID")
     if COMMIT_SHA_PATTERN.fullmatch(sut_sha) is None:
         typer.echo("Invalid commit SHA: expected 40 lowercase hexadecimal characters", err=True)
         raise typer.Exit(code=2)
@@ -336,6 +346,58 @@ def run_dataset_fixture(
                 "artifact_path": str(artifact_path),
                 "run_state": artifact.logical_result.evaluation.state,
                 "logical_digest": artifact.logical_digest,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+@app.command("compare")
+def compare_experiment_runs(
+    baseline_path: Annotated[
+        Path,
+        typer.Option("--baseline", exists=True, dir_okay=False, readable=True),
+    ],
+    candidate_path: Annotated[
+        Path,
+        typer.Option("--candidate", exists=True, dir_okay=False, readable=True),
+    ],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    comparison_id: Annotated[str, typer.Option("--comparison-id")],
+) -> None:
+    """Compare compatible baseline and candidate summaries through three release gates."""
+    _validate_artifact_id(comparison_id, label="comparison ID")
+    try:
+        baseline = ExperimentRunSummary.model_validate_json(
+            baseline_path.read_text(encoding="utf-8")
+        )
+        candidate = ExperimentRunSummary.model_validate_json(
+            candidate_path.read_text(encoding="utf-8")
+        )
+    except (UnicodeError, ValidationError) as error:
+        typer.echo(f"Invalid comparison run summary: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    artifact = compare_runs(
+        baseline,
+        candidate,
+        comparison_id=comparison_id,
+    )
+    try:
+        json_path, parquet_path = write_comparison_artifact(artifact, output_dir)
+    except FileExistsError as error:
+        typer.echo(f"Comparison artifact already exists: {comparison_id}", err=True)
+        raise typer.Exit(code=2) from error
+    cache_path = rebuild_duckdb_cache(parquet_path, output_dir / f"{comparison_id}.duckdb")
+    typer.echo(
+        json.dumps(
+            {
+                "comparison_id": comparison_id,
+                "decision": artifact.decision,
+                "logical_digest": artifact.logical_digest,
+                "json_artifact_path": str(json_path),
+                "parquet_artifact_path": str(parquet_path),
+                "duckdb_cache_path": str(cache_path),
             },
             ensure_ascii=False,
             sort_keys=True,

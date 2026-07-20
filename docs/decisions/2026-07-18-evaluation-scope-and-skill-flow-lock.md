@@ -429,6 +429,10 @@ Non-critical absolute thresholds are calibrated once on the 70-case Calibration 
 
 An LLM judge may be reported as supplementary qualitative evidence. It cannot independently pass, fail, or overturn any release gate.
 
+The comparison result is sealed before its logical digest is exposed. Every nested mapping in the accepted run summaries and derived comparison evidence is recursively normalized to an immutable snapshot, and non-finite decimal inputs are schema-invalid before gate arithmetic. A library caller therefore cannot mutate a returned metric or provenance mapping while leaving stale deltas, gates, or digest attached to the same artifact.
+
+Every comparison ID uses the same short safe identifier contract at the model and CLI boundaries, so a library caller cannot escape the selected output directory. Source metric, latency, and cost decimals must be exactly representable as `DECIMAL(38, 28)` before comparison. A zero per-case baseline with a positive candidate records that case-relative delta as unavailable without discarding a separately computable p95 or mean aggregate; a derived case-relative value outside the canonical Parquet range makes the comparison `INVALID` instead of rounding or overflowing. JSON and Parquet are first completed in a temporary directory, then published with create-only links as one application-level pair; if the second publication fails, the first newly published file is removed without touching pre-existing bytes.
+
 ## 11. Run state, error handling, and reproducibility
 
 Every experiment run follows this state model:

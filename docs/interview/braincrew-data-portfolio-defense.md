@@ -251,6 +251,35 @@ Likely follow-ups:
 - "How is a high-risk unsupported conclusion detected reproducibly?" — The case declares high risk and a versioned proposition catalog. The evaluator automatically inspects every generated structured-answer path, so a dataset author cannot omit a path. Unsupported or contradicted matched conclusions and every ambiguous or unmapped high-risk atom fail closed and emit the deterministic critical identity.
 - "Does this understand every possible Korean sentence?" — No. It is a closed-world regression contract for the frozen dataset. Unknown wording receives no credit and high-risk unknown conclusions fail closed; an LLM judge may assist review but never changes the gate.
 
+Issue #13 implementation decision:
+: Compare only strict `experiment-run-summary-v1` inputs and publish one replayable `experiment-comparison-artifact-v1` with ordered Gate 1/2/3 traces, case and macro deltas, operational deltas, and deterministic failure-taxonomy evidence.
+
+Compatibility and confound boundary:
+: Both inputs are explicit Verification summaries. Evaluation Plane and SUT SHAs plus clean dirty flags, dataset and corpus IDs/versions/digests, parsing/retrieval/grounded/operational evaluator versions, prompt ID/hash, model provider/name/parameters, retrieval `top_k` and `fixed_retrieval_config_digest`, Adapter versions, threshold version/digest, dependency-lock and runtime-environment digests, execution mode, case identities, per-case applicability, and metric denominators must match. Denominators must also meet the frozen 6/9/10/10/15/5 Verification minima. `candidate-plan-v1` permits only `evidence_limit=3` to `5`; Recall@5, MRR@10, and authority-priority must be present and identical or the comparison is `INVALID`.
+
+Storage and replay:
+: The Immutable Result Store, not the gate logic, writes create-only JSON and Parquet canonical evidence. Source metric, latency, and cost values must fit Parquet `DECIMAL(38, 28)` exactly; an out-of-range derived case-relative value makes the comparison `INVALID` and is stored as null rather than rounded. A zero case baseline makes only that case-relative delta unavailable while p95 and mean aggregates remain independently computable. JSON and Parquet are completed under a temporary directory, then published with create-only links; a reported second-link failure removes only the first newly published file and preserves competing bytes. `comparison_id` is path-safe in the model as well as the CLI. DuckDB is rebuilt from Parquet and can be deleted without losing evidence. Before the logical digest is exposed, accepted input and derived mappings are recursively frozen so a caller cannot mutate a returned metric, model parameter, delta, or taxonomy count while retaining stale gates and digest. Non-finite decimal inputs fail Pydantic validation before arithmetic. Replay recomputes compatibility, confounds, aggregation, taxonomy, gates, decision, logical digest, and every Parquet row.
+
+Rejected alternatives:
+: Use a weighted composite score, store only DuckDB, compare only top-level aggregates, or let Gate 3 pass after Gate 1 or 2 fails. These would let favorable metrics mask safety evidence, make applicability drift invisible, or turn a cache into mutable authority.
+
+Trade-offs and failure modes:
+: Strict compatibility and exact decimal constraints create more `INVALID` results, and JSON/Parquet duplicate some logical content. That cost is intentional. Create-only pair publication handles reported failures and races but is not a crash-atomic filesystem transaction. The local store is auditable but not remote object lock; a forged upstream summary can still lie about execution, so live publication later requires a pinned producer path and clean committed provenance.
+
+Validation evidence:
+: Fifteen-case installed-CLI Verification fixtures meet every locked denominator and produce PASS for a 3-point claim-support improvement, FAIL for a 16-percent p95 latency regression, and INVALID for model-version drift. Focused RED/GREEN tests cover missing and malformed provenance, operational evaluator provenance, each locked version dimension, missing and changed retrieval confounds, applicability and denominator drift, minimum coverage, frozen critical severity, failure-to-evaluator provenance, baseline/candidate taxonomy deltas, ordered gates, recursive mapping immutability, safe comparison IDs, zero-case aggregate preservation, exact Decimal range and scale, derived overflow invalidation, failure-safe pair publication, append-only collision, Parquet tampering, exact repeating-decimal replay, deterministic decision digests, and disposable DuckDB rebuild. Review verification also confirms `NaN` and positive or negative infinity already produce a controlled `ValidationError` under the locked Pydantic version.
+
+Likely follow-ups:
+
+- "Why is DuckDB disposable?" — The portable JSON and Parquet files are the evidence. DuckDB is only a local acceleration structure reconstructed from Parquet.
+- "Why does the logical digest ignore comparison and run IDs?" — Those are volatile envelope identities. The digest includes every provenance, input, metric, failure, and gate field that can change the logical conclusion.
+- "Can a caller mutate the in-memory artifact after the digest is computed?" — No. Frozen Pydantic models alone are shallow, so the comparison contract additionally freezes every nested mapping and nested list-like value before returning the artifact.
+- "Does one free or instant case invalidate the operational aggregate?" — No. Its per-case relative delta is unavailable when the baseline is zero, but p95 latency and mean cost are computed independently from the full compatible pair. Only an aggregate zero baseline prevents aggregate-relative comparison.
+- "Can canonical Parquet silently round a valid Decimal?" — No. Source values must fit `DECIMAL(38, 28)` exactly, and an unrepresentable derived case delta fails closed instead of being coerced.
+- "Are JSON and Parquet transactionally atomic?" — They are staged together and application failures roll back the first newly published link, but a local filesystem process crash between links is still a documented failure mode rather than a transactional guarantee.
+- "Does PASS prove the AX candidate is better?" — No. These fixtures prove the deterministic comparison engine. A compatible complete live Verification pair is still required for a live quality claim.
+- "Why invalidate retrieval movement?" — The frozen candidate changes evidence packaging only. Retrieval movement would introduce an uncontrolled variable and prevent attributing the outcome to `evidence_limit`.
+
 ### D7. Fail closed and preserve a complete run manifest
 
 Decision:
