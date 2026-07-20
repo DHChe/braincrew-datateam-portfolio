@@ -19,11 +19,11 @@ from braincrew.ax_http_adapter import (
     write_capability_manifest,
 )
 
-PINNED_AX_SHA = "c318b2192006bdb36a5bd5b3a2bc403425b45701"
+PINNED_AX_SHA = "a5391ae8aa2b0d1342809f3599283b7759d6e4e3"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
 
 
-def test_preflight_records_supported_operations_and_the_parse_observability_gap() -> None:
+def test_preflight_records_parse_and_sut_verified_corpus_identity() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/health/ready":
             return httpx.Response(
@@ -47,10 +47,32 @@ def test_preflight_records_supported_operations_and_the_parse_observability_gap(
                     "openapi": "3.1.0",
                     "info": {"title": "AX Portfolio HR/Labor Engine", "version": "0.1.0"},
                     "paths": {
+                        "/v1/evaluation/attachments/{attachment_id}/parse-observation": {"get": {}},
+                        "/v1/evaluation/corpus-identity": {"get": {}},
                         "/v1/retrieval/search": {"post": {}},
                         "/v1/answers/generate": {"post": {}},
                         "/v1/retrieval/source-text/{record_kind}/{record_id}": {"get": {}},
                     },
+                },
+            )
+        if request.url.path == "/v1/evaluation/corpus-identity":
+            return httpx.Response(
+                200,
+                json={
+                    "schema_version": "ax-corpus-identity-v1",
+                    "corpus_id": f"ax-visible-retrieval:{TENANT_ID}",
+                    "corpus_version": "retrieval-inventory-v1",
+                    "corpus_digest": "sha256:" + "b" * 64,
+                    "principal_roles": ["Executive"],
+                    "inventory_count": 30,
+                    "counts": {
+                        "record_kind": {"seed": 30},
+                        "corpus_mode": {"synthetic": 30},
+                        "embedding_status": {"embedded": 30},
+                        "embedding_model": {"text-embedding-3-small": 30},
+                    },
+                    "contributing_versions": ["braincrew-public-v1"],
+                    "generated_at": "2026-07-20T06:30:00Z",
                 },
             )
         raise AssertionError(f"unexpected request: {request.method} {request.url}")
@@ -72,8 +94,8 @@ def test_preflight_records_supported_operations_and_the_parse_observability_gap(
             case_id="preflight",
             eval_correlation_id="eval-7-preflight",
         ),
-        corpus_id="synthetic-hr-v1",
-        corpus_version="1.0.0",
+        corpus_id=f"ax-visible-retrieval:{TENANT_ID}",
+        corpus_version="retrieval-inventory-v1",
     )
 
     assert manifest.schema_version == "ax-capability-manifest-v1"
@@ -82,24 +104,32 @@ def test_preflight_records_supported_operations_and_the_parse_observability_gap(
     assert manifest.sut_repository == "https://github.com/DHChe/AX_portfolio"
     assert manifest.request.run_id == "run-7"
     assert manifest.request.case_id == "preflight"
-    assert manifest.request.corpus_id == "synthetic-hr-v1"
-    assert manifest.request.corpus_version == "1.0.0"
+    assert manifest.request.corpus_id == f"ax-visible-retrieval:{TENANT_ID}"
+    assert manifest.request.corpus_version == "retrieval-inventory-v1"
     assert manifest.readiness_status == "ready"
-    assert manifest.corpus.id == "synthetic-hr-v1"
-    assert manifest.corpus.version == "1.0.0"
-    assert manifest.corpus.verified_by_sut is False
+    assert manifest.corpus.id == f"ax-visible-retrieval:{TENANT_ID}"
+    assert manifest.corpus.version == "retrieval-inventory-v1"
+    assert manifest.corpus.digest == "sha256:" + "b" * 64
+    assert manifest.corpus.principal_roles == ["Executive"]
+    assert manifest.corpus.inventory_count == 30
+    assert manifest.corpus.verified_by_sut is True
     assert manifest.operations["preflight"].available is True
+    assert manifest.operations["corpus_identity"].available is True
     assert manifest.operations["retrieve"].available is True
     assert manifest.operations["answer"].available is True
     assert manifest.operations["source_text"].available is True
-    assert manifest.operations["parse"].available is False
-    assert manifest.operations["parse"].reason == "AX_PARSE_OBSERVABILITY_UNAVAILABLE"
-    assert [attempt.operation for attempt in manifest.attempts] == ["preflight", "preflight"]
+    assert manifest.operations["parse"].available is True
+    assert [attempt.operation for attempt in manifest.attempts] == [
+        "preflight",
+        "preflight",
+        "corpus_identity",
+    ]
     assert all(attempt.outcome == "success" for attempt in manifest.attempts)
 
 
 def test_packaged_contract_locks_field_mappings_and_response_schema_digests() -> None:
     contract = load_ax_http_contract()
+    assert contract.sut_commit_sha == PINNED_AX_SHA
 
     retrieve = contract.operations["retrieve"]
     assert retrieve.request_mapping["query"] == "body.query"
@@ -111,9 +141,21 @@ def test_packaged_contract_locks_field_mappings_and_response_schema_digests() ->
     )
 
     parse = contract.operations["parse"]
-    assert parse.request_mapping["document_id"] == "unavailable.no_ax_mapping"
-    assert parse.response_mapping == {}
-    assert parse.expected_schema_digest is None
+    assert parse.path == "/v1/evaluation/attachments/{attachment_id}/parse-observation"
+    assert parse.request_mapping["document_id"] == "path.attachment_id"
+    assert parse.response_mapping["evidence_spans"] == "body.evidence_spans"
+    assert (
+        parse.expected_schema_digest
+        == "sha256:988f71991c9075a1be7bb411742dfde11b6537cd8f7433cecf76afd679627810"
+    )
+
+    corpus_identity = contract.operations["corpus_identity"]
+    assert corpus_identity.path == "/v1/evaluation/corpus-identity"
+    assert corpus_identity.response_mapping["corpus_digest"] == "body.corpus_digest"
+    assert (
+        corpus_identity.expected_schema_digest
+        == "sha256:3203d2d6358152e93e2396e76ceb619d3a83a0443bfd95d42b743ffdd65abed5"
+    )
 
 
 def test_preflight_uses_the_same_bounded_retry_policy_as_live_operations() -> None:
@@ -369,30 +411,100 @@ def test_retrieve_rejects_a_schema_mismatch_without_retrying() -> None:
     assert caught.value.attempts[0].outcome == "schema_error"
 
 
-def test_parse_fails_explicitly_before_http_when_ax_observability_is_unavailable() -> None:
-    request_count = 0
-
+def test_parse_validates_and_preserves_ax_parse_observation() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal request_count
-        request_count += 1
-        raise AssertionError(f"parse must not call an unfrozen endpoint: {request.url}")
+        assert request.method == "GET"
+        assert request.url.path == "/v1/evaluation/attachments/attachment-1/parse-observation"
+        return httpx.Response(
+            200,
+            json={
+                "schema_version": "ax-parse-observation-v1",
+                "attachment_id": "attachment-1",
+                "lifecycle_state": "materialized",
+                "parse_state": "succeeded",
+                "materialization_state": "materialized",
+                "parse_available": True,
+                "parser_name": "ax-docx-parser",
+                "parser_version": "1.0.0",
+                "failure_code": None,
+                "extracted_text": "취업규칙 제1조",
+                "extracted_text_digest": "sha256:" + "a" * 64,
+                "text_truncated": False,
+                "evidence_spans": [
+                    {
+                        "id": "span-1",
+                        "text": "취업규칙",
+                        "start_char": 0,
+                        "end_char": 4,
+                        "source_text_digest": "sha256:" + "a" * 64,
+                    }
+                ],
+                "headings": ["제1장 총칙"],
+                "metadata": {"language": "ko"},
+                "table": {"columns": ["항목"], "rows": [["값"]]},
+                "list": {"items": ["첫째"], "ordered": True},
+                "unavailable_fields": [],
+            },
+        )
+
+    observation = _adapter(handler).parse(
+        context=AxRequestContext(
+            run_id="run-7",
+            case_id="parse-1",
+            eval_correlation_id="eval-7-parse-1",
+        ),
+        document_id="attachment-1",
+    )
+
+    assert observation.request.run_id == "run-7"
+    assert observation.request.case_id == "parse-1"
+    assert observation.request.document_id == "attachment-1"
+    assert observation.response.schema_version == "ax-parse-observation-v1"
+    assert observation.response.parse_available is True
+    assert observation.response.evidence_spans[0].id == "span-1"
+    assert observation.response.table is not None
+    assert observation.response.table.rows == [["값"]]
+    assert [attempt.outcome for attempt in observation.attempts] == ["success"]
+
+
+def test_parse_rejects_a_ragged_ax_table_without_retrying() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "schema_version": "ax-parse-observation-v1",
+                "attachment_id": "attachment-1",
+                "lifecycle_state": "materialized",
+                "parse_state": "succeeded",
+                "materialization_state": "materialized",
+                "parse_available": True,
+                "parser_name": "ax-docx-parser",
+                "parser_version": "1.0.0",
+                "failure_code": None,
+                "extracted_text": "취업규칙 제1조",
+                "extracted_text_digest": "sha256:" + "a" * 64,
+                "text_truncated": False,
+                "evidence_spans": [],
+                "headings": [],
+                "metadata": {},
+                "table": {"columns": ["항목", "값"], "rows": [["항목만"]]},
+                "list": None,
+                "unavailable_fields": ["evidence_spans", "headings", "list", "metadata"],
+            },
+        )
 
     with pytest.raises(AxHttpFailure) as caught:
         _adapter(handler).parse(
             context=AxRequestContext(
                 run_id="run-7",
-                case_id="parse-1",
-                eval_correlation_id="eval-7-parse-1",
+                case_id="parse-ragged-table",
+                eval_correlation_id="eval-7-parse-ragged-table",
             ),
             document_id="attachment-1",
         )
 
-    assert request_count == 0
-    assert caught.value.failure_code == "AX_PARSE_OBSERVABILITY_UNAVAILABLE"
-    assert caught.value.request.run_id == "run-7"
-    assert caught.value.request.case_id == "parse-1"
-    assert caught.value.request.document_id == "attachment-1"
-    assert caught.value.attempts == ()
+    assert caught.value.failure_code == "AX_RESPONSE_SCHEMA_MISMATCH"
+    assert [attempt.outcome for attempt in caught.value.attempts] == ["schema_error"]
 
 
 def test_answer_preserves_structured_claims_citations_and_provider_metadata() -> None:

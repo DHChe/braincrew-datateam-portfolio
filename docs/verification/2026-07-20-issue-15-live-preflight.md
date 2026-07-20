@@ -2,16 +2,18 @@
 
 Date: 2026-07-20
 
-## Scope
+## Scope and current result
 
-This is a fail-closed preflight result for the pinned 30-case live Verification experiment. It is not a baseline run, candidate run, comparison result, product-quality failure, or live quality claim.
+This is fail-closed evidence for the pinned 30-case live Verification experiment. The current create-only preflight is `BLOCKED`; neither baseline nor candidate started. This is a provenance and workflow gate, not a product-quality failure or live quality claim.
 
-## Verified identities
+## Verified repository and experiment identities
 
-- Evaluation Plane base commit: `e33de765dc54ac76159f249525456d5ab4e63667`
-- Evaluation Plane state: dirty and uncommitted during preflight implementation; not publishable live provenance
-- AX repository commit: `c318b2192006bdb36a5bd5b3a2bc403425b45701`
-- AX repository state: clean and exact match with the pinned `ax-sut-http-v1` contract
+- Evaluation Plane branch: `feat/issue-15-live-verification`
+- Evaluation Plane HEAD before the next authorized commit: `c4e5d900fa645025763e74f23204cfb6e3bb988a`
+- Evaluation Plane state: dirty with the reviewed AX boundary adaptation; not yet an immutable producer SHA
+- AX repository: `/Users/astralpig/portfolio/AX_portfolio`
+- AX commit: `a5391ae8aa2b0d1342809f3599283b7759d6e4e3`
+- AX state: clean, exact match with merged PR #31
 - dataset: `braincrew-evaluation-dataset@1.0.0`
 - dataset digest: `sha256:7fb0b58c5ad7c242696bcaef13773eb5dc6358e8127219fa7dc65c19c7a5d71b`
 - Verification cases: exactly `30`
@@ -19,85 +21,100 @@ This is a fail-closed preflight result for the pinned 30-case live Verification 
 - baseline: `top_k=5`, `evidence_limit=3`
 - candidate: `top_k=5`, `evidence_limit=5`
 
-## Current-environment preflight
+## AX local/test environment
 
-The installed CLI command was executed with only the local pinned AX repository path supplied:
+AX was started from the exact pinned commit in isolated local Docker services. PostgreSQL, Redis, Neo4j, ClamAV, the worker, and the API all reported ready. Only the repository's official synthetic B-prime seed was installed; no private document, credential value, bearer token, or raw secret was written to a Braincrew artifact. Embeddings used the deterministic local fake provider. The configured OpenAI answer credential was present, but its value was neither printed nor persisted.
+
+The direct Adapter capability check against `http://127.0.0.1:18000` succeeded for:
+
+- `GET /health/ready`;
+- `GET /openapi.json`;
+- `GET /v1/evaluation/corpus-identity`;
+- `GET /v1/evaluation/attachments/{attachment_id}/parse-observation` path discovery;
+- the existing retrieval, answer, and source-text operations.
+
+The updated `ax-sut-http-v1` contract mirrors the strict AX response schemas for parse observation and corpus identity. Contract tests reject unknown fields, malformed digests, and ragged tables without retrying. No actual parse observation was claimed because the seeded corpus does not contain a reviewed attachment mapping for the six Verification parsing cases.
+
+## SUT-verified corpus and execution configuration
+
+Under local/test role `HRPractitioner`, AX returned:
+
+- corpus ID: `ax-visible-retrieval:11111111-1111-1111-1111-111111111111`
+- corpus version: `retrieval-inventory-v1`
+- corpus digest: `sha256:e1d2c986edb048a8afd893fea7bc5eb31bdd9f56257cc36e3bd2e60be66fde9b`
+- visible inventory: `119` records
+- contributing version: `bprime-2026-07-04`
+- record kinds: `44` evidence spans, `31` operational summaries, and `44` source chunks
+
+The frozen answer configuration was derived from the executable pinned AX code, not guessed:
+
+- prompt ID: `ax-answer-instructions-v1`
+- prompt digest: `sha256:fb2b7b41b4fc6730c9a4c58912e23f69198d05c947e4579b3f7f134174840fd6`
+- prompt digest input: canonical JSON containing both outputs of `AnswerGenerationRuntime._instructions(reference_only=False|True)`
+- model provider/name: `openai` / `gpt-5.4-mini`
+- model parameters: `{"store": false}`
+
+## Create-only preflight and replay
+
+The installed CLI ran with the exact repository, authority, corpus, prompt, and model identities above:
 
 ```bash
-AX_REPOSITORY=/Users/astralpig/portfolio/AX_portfolio \
-  uv run braincrew-eval preflight-live \
+uv run braincrew-eval preflight-live \
   --manifest datasets/dataset_manifest_v1.json \
-  --output-dir /tmp/braincrew-issue15-final.bI45ot \
-  --preflight-id issue-15-final-environment
+  --output-dir /tmp/braincrew-issue15-final-preflight.7OhjQJ \
+  --preflight-id issue-15-a5391ae8-final-precommit-20260720
 ```
 
-The command returned exit `2` and wrote a create-only `BLOCKED` artifact. Replay returned the same state and logical digest:
+It returned exit `2`, wrote a create-only `BLOCKED` artifact, and replay returned exit `0` with the same logical digest:
 
 ```text
-sha256:9d78a9c4713fca610588b6477ec4031dcdfdab5262361ec8a578fd01c02486d1
+sha256:75c1a31a6c81b3840f8244e1e68131e932d01670227b431451cf91059d11386e
 ```
 
-The artifact contains no bearer token or inferred credential value.
+The formal artifact contains one blocker because preflight intentionally stops before HTTP capability discovery when its own producer is dirty:
 
-A second create attempt returned exit `2` and preserved the original artifact bytes at file SHA-256 `03046a60fc929dbd4828e3d295a656daba093be6c974382d8772edd9b406d8dd`.
+```text
+LIVE_EVALUATION_PLANE_DIRTY
+```
 
-## Exact blockers
+Required action: commit the reviewed Issue #15 implementation so baseline and candidate can name the same immutable Evaluation Plane SHA.
 
-Current live authority and fixed execution identity were unavailable for:
+## Corpus provenance blocker discovered by direct capability review
 
-- `AX_BASE_URL`
-- `AX_TENANT_ID`
-- `AX_USER_ID`
-- `AX_ROLES`
-- `AX_CORPUS_ID`
-- `AX_CORPUS_VERSION`
-- `AX_CORPUS_DIGEST`
-- `AX_PROMPT_ID`
-- `AX_PROMPT_HASH`
-- `AX_MODEL_PROVIDER`
-- `AX_MODEL_NAME`
-- `AX_MODEL_PARAMETERS_JSON`
+The AX endpoint proves the B-prime corpus identity, but it does not prove that corpus is the frozen 30-case Verification corpus. The dataset expects reviewed `synthetic-rule-*`, EvidenceSpan, retrieval identity, grounded proposition, and parsing attachment mappings. AX reports only `bprime-2026-07-04` as a contributing version, and the isolated seed has no reviewed attachment mapping for the six parsing Verification cases.
 
-The Evaluation Plane worktree was also dirty because the reviewed Issue #15 preflight implementation had not crossed the Git Lifecycle Proposal Gate. A clean committed Evaluation Plane SHA is required to make both live runs reproducible.
-
-Because those blockers are evaluated before network access, this preflight did not probe current AX readiness or OpenAPI. It makes no current endpoint-availability claim.
-
-## Known capability boundary
-
-The earlier live smoke against the same pinned AX SHA recorded:
-
-- `parse`: unavailable with `AX_PARSE_OBSERVABILITY_UNAVAILABLE`
-- corpus identity: not verified by the SUT with `AX_CORPUS_IDENTITY_NOT_EXPOSED`
-
-Controlled Issue #15 tests prove that a capability manifest with those values yields `LIVE_REQUIRED_OPERATION_UNAVAILABLE` and `LIVE_CORPUS_IDENTITY_UNVERIFIED`. These are separate from credentials: a complete 30-case run still requires a separately reviewed AX observability and corpus-verification boundary. No AX behavior was changed during this work.
-
-Ticket review also proved that nested model/evaluator/Adapter/capability mappings cannot be mutated after the digest is returned, non-finite model parameters are invalid, missing operations and capability-manifest SUT SHA drift fail closed, create-only collisions preserve the first artifact bytes, and modified artifact content cannot replay under the stored digest.
+The preflight contract therefore adds typed blocker `LIVE_CORPUS_DATASET_PROVENANCE_MISMATCH`. After the Evaluation Plane becomes clean and HTTP discovery runs, the current AX seed must remain `BLOCKED` until a reviewed public or synthetic AX-visible corpus is mapped to `braincrew-evaluation-dataset@1.0.0`. Results must not be inferred from the B-prime corpus or fixture observations.
 
 ## No-claim boundary
 
-Neither the baseline nor candidate began. Therefore there are no case-level live artifacts, quality or safety scores, latency/token/cost measurements, failure analysis, comparison-gate result, or manual critical-failure/provenance approval. Fixture evidence and the Issue #14 dashboard do not substitute for this missing live evidence.
+The 30-case baseline, candidate, artifact replay, comparison gates, critical-failure review, and provenance approval were not executed because preflight is not `READY`. No latency, token, cost, score, failure, comparison, or candidate-superiority claim exists. Calibration, dashboard behavior, Issue #13 gate meaning, AX product behavior, and Agent trajectory evaluation remain unchanged.
 
 ## Resume conditions
 
-Before either live run starts:
+1. finish ticket-level Standards and Spec review plus repository verification;
+2. cross the Git Lifecycle Proposal Gate and create the reviewed local commit;
+3. provision and review an AX-visible public or synthetic corpus mapped to every frozen Verification case, including parsing attachment identities;
+4. rerun a new create-only preflight from clean Evaluation Plane and AX commits and require `READY`;
+5. only then run and replay baseline and candidate, compare them, and manually review critical failures and provenance.
 
-1. review and commit the Evaluation Plane preflight implementation;
-2. supply an authorized live AX endpoint and synthetic tenant/user/role authority;
-3. freeze the exact corpus, prompt, and model identities and parameters;
-4. provide required parse observability and SUT-verifiable corpus identity without changing AX during the comparison;
-5. execute a new create-only preflight and require state `READY`.
+Issue #15 remains open until those conditions and the full live evidence path are complete.
 
-Only then may the 30-case baseline execute, followed by the compatible candidate, artifact replay, Issue #13 comparison gates, and manual critical-failure/provenance review.
+## Ticket review and final local verification
 
-## Final local verification
+Standards review found no unresolved code blocker. The change reuses the existing pinned Adapter, strict Pydantic models, bounded retry policy, create-only result store, repository-state capture, and replay path; it adds no dependency and changes no AX behavior. Review-driven TDD additionally sealed the new nested corpus evidence before digest publication.
 
-The reviewed preflight slice passed the required fresh local gates:
+Spec review found one intentional external blocker, not a code defect: the current B-prime seed has no reviewed mapping to the 30-case dataset. The new typed blocker prevents a false READY result. The complete Issue #15 live acceptance criteria remain incomplete until a dataset-aligned corpus is provisioned and the full pair runs.
 
-- `uv sync --frozen --all-groups`
-- `uv run ruff format --check .` — 43 files formatted
-- `uv run ruff check .`
-- `uv run mypy` — 43 source files
-- `uv run pytest -q` — `218 passed in 10.77s`
-- `git diff --check`
+Fresh local evidence:
 
-The 30-case baseline, candidate, comparison gate, and manual critical-failure/provenance review were not executed because the mandatory preflight is `BLOCKED`. This is an explicit verification gap, not a passing or failing live result.
+- `uv sync --frozen --all-groups` — 29 packages checked;
+- `uv run ruff format --check .` — 43 files already formatted;
+- `uv run ruff check .` — all checks passed;
+- `uv run mypy` — no issues in 43 source files;
+- `uv run pytest -q` — `220 passed in 11.56s`;
+- `git diff --check` — passed;
+- targeted Adapter/live-preflight/CLI suites — `28 passed`;
+- create-only preflight exit `2`, replay exit `0`, identical logical digest;
+- direct capability review — all six operations available, prospective blockers exactly `LIVE_CORPUS_DATASET_PROVENANCE_MISMATCH` and `LIVE_EVALUATION_PLANE_DIRTY`.
+
+GitHub remains unchanged: Issue #15 is open; draft PR #29 is open, mergeable, and `CLEAN` at remote head `c4e5d900fa645025763e74f23204cfb6e3bb988a`. Its description still names the superseded AX SHA and old endpoint blockers, so any later PR edit must cross the separate Git Lifecycle Proposal Gate.

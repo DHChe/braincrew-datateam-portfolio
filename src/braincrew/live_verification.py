@@ -81,10 +81,31 @@ class _ImmutableLiveDict[ValueT](dict[str, ValueT]):
     update = _reject_mutation
 
 
+class _ImmutableLiveList[ValueT](list[ValueT]):
+    def _reject_mutation(self, *args: object, **kwargs: object) -> Never:
+        del args, kwargs
+        raise TypeError("live preflight sequences are immutable")
+
+    __setitem__ = _reject_mutation
+    __delitem__ = _reject_mutation
+    __iadd__ = _reject_mutation
+    __imul__ = _reject_mutation
+    append = _reject_mutation
+    clear = _reject_mutation
+    extend = _reject_mutation
+    insert = _reject_mutation
+    pop = _reject_mutation
+    remove = _reject_mutation
+    reverse = _reject_mutation
+    sort = _reject_mutation
+
+
 def _freeze_live_value(value: object) -> object:
     if isinstance(value, dict):
         return _ImmutableLiveDict({key: _freeze_live_value(item) for key, item in value.items()})
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list):
+        return _ImmutableLiveList(_freeze_live_value(item) for item in value)
+    if isinstance(value, tuple):
         return tuple(_freeze_live_value(item) for item in value)
     return value
 
@@ -126,6 +147,17 @@ class LiveCapabilityEvidence(StrictLiveContract):
     corpus: CorpusCapability
     operations: dict[OperationName, OperationCapability]
     attempts: tuple[HttpAttempt, ...]
+
+    @field_validator("corpus")
+    @classmethod
+    def freeze_corpus_evidence(cls, corpus: CorpusCapability) -> CorpusCapability:
+        return corpus.model_copy(
+            update={
+                "principal_roles": _freeze_live_value(corpus.principal_roles),
+                "counts": _freeze_live_value(corpus.counts),
+                "contributing_versions": _freeze_live_value(corpus.contributing_versions),
+            }
+        )
 
     @field_validator("dependencies", "operations")
     @classmethod
@@ -376,7 +408,14 @@ def build_live_preflight_artifact(
                     required_action="regenerate capabilities from the exact pinned AX checkout",
                 )
             )
-        for operation_name in ("preflight", "parse", "retrieve", "answer", "source_text"):
+        for operation_name in (
+            "preflight",
+            "corpus_identity",
+            "parse",
+            "retrieve",
+            "answer",
+            "source_text",
+        ):
             operation = capability_evidence.operations.get(operation_name)
             if operation is None or not operation.available:
                 unavailable_reason = (
@@ -407,6 +446,43 @@ def build_live_preflight_artifact(
                     required_action=(
                         "provide a pinned AX boundary that verifies the frozen public "
                         "corpus identity"
+                    ),
+                )
+            )
+        elif (
+            execution_identity is not None
+            and capability_evidence.corpus.digest != execution_identity.corpus.digest
+        ):
+            blocker_list.append(
+                LivePreflightBlocker(
+                    code="LIVE_CORPUS_DIGEST_MISMATCH",
+                    category="capability",
+                    detail=(
+                        "the AX-visible corpus digest does not match the pinned execution identity"
+                    ),
+                    required_action=(
+                        "pin AX_CORPUS_DIGEST to the exact authorized AX-visible corpus digest"
+                    ),
+                )
+            )
+        dataset_provenance_version = (
+            f"{snapshot.manifest.dataset_id}@{snapshot.manifest.dataset_version}"
+        )
+        if (
+            capability_evidence.corpus.verified_by_sut
+            and dataset_provenance_version not in capability_evidence.corpus.contributing_versions
+        ):
+            blocker_list.append(
+                LivePreflightBlocker(
+                    code="LIVE_CORPUS_DATASET_PROVENANCE_MISMATCH",
+                    category="provenance",
+                    detail=(
+                        "the AX-visible corpus contributing versions do not prove the frozen "
+                        f"Verification dataset: {dataset_provenance_version}"
+                    ),
+                    required_action=(
+                        "provision and review an AX-visible public or synthetic corpus mapped to "
+                        f"{dataset_provenance_version}"
                     ),
                 )
             )
