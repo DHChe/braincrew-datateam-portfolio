@@ -99,7 +99,7 @@ def test_delivery_status_records_the_published_review_repair_and_new_frontier() 
     assert "Issue #46" in current_checkpoint
     assert "Issue #47" in current_checkpoint
     assert "Issue #36 is `BLOCKED`" in current_checkpoint
-    assert "307 passed" in current_checkpoint
+    assert "308 passed" in current_checkpoint
 
     assert "8,531-byte brief" not in current_checkpoint
     assert "only the clean-commit" not in current_checkpoint.casefold()
