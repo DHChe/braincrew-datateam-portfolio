@@ -89,6 +89,44 @@ def test_sealing_preserves_an_immutable_sidecar_and_replay_revalidates_it(
     assert "CORPUS_PROVENANCE_SIDECAR_DIGEST_MISMATCH" in tampered_replay.stderr
 
 
+def test_sealing_rejects_a_self_reviewed_provenance_sidecar(tmp_path: Path) -> None:
+    staging_dir = tmp_path / "staging"
+    manifest = stage_valid_pack(staging_dir)
+    payload = provenance_sidecar(manifest)
+    payload["reviews"][0]["reviewer_identity"] = payload["reviews"][0]["authoring_owner"]
+    payload["provenance_digest"] = sha256_digest(
+        canonical_json_bytes(
+            {key: value for key, value in payload.items() if key != "provenance_digest"}
+        )
+    )
+    sidecar_path = tmp_path / "review" / "provenance-review.json"
+    write_sidecar(sidecar_path, payload)
+
+    result = seal(staging_dir, tmp_path / "sealed", sidecar_path)
+
+    assert result.returncode == 2
+    assert "CORPUS_PROVENANCE_SIDECAR_REVIEWER_NOT_INDEPENDENT" in result.stderr
+
+
+def test_replay_uses_sealed_sidecar_bytes_after_permission_normalization(
+    tmp_path: Path,
+) -> None:
+    staging_dir = tmp_path / "staging"
+    manifest = stage_valid_pack(staging_dir)
+    sidecar_path = tmp_path / "review" / "provenance-review.json"
+    write_sidecar(sidecar_path, provenance_sidecar(manifest))
+
+    result = seal(staging_dir, tmp_path / "sealed", sidecar_path)
+
+    assert result.returncode == 0, result.stderr
+    receipt_path = Path(json.loads(result.stdout)["receipt_path"])
+    (receipt_path.parent / "provenance-review.json").chmod(0o644)
+
+    replay = run_cli("replay", "--artifact", str(receipt_path))
+
+    assert replay.returncode == 0, replay.stderr
+
+
 @pytest.mark.parametrize(
     ("mutate", "immutable", "expected_code"),
     [

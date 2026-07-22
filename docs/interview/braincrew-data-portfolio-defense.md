@@ -829,9 +829,11 @@ Trade-offs and failure modes:
   The strict staged pack cannot contain an undeclared receipt. Issue #47 therefore requires an
   external, read-only, create-only provenance sidecar that binds the sealed digest, per-source
   identities and digests, synthetic origin, author, CC0 assignment, reviewer/date/timezone,
-  decision, and its own digest. `corpus-sealing-receipt-v2` binds the validated sidecar digest;
-  replay revalidates the sealed sidecar and fails on missing, pending, mismatched, mutable, or
-  tampered evidence. Historical v1 receipt replay remains supported, while new seals require v2.
+  decision, and its own digest; reviewer identity must differ from the authoring owner.
+  `corpus-sealing-receipt-v2` binds the validated sidecar digest. The external sealing input must
+  be read-only; replay validates canonical bytes and digest independent of normalized filesystem
+  write bits and fails on missing, pending, mismatched, or tampered evidence. Historical v1 receipt
+  replay remains supported, while new seals require v2.
 
 Validation evidence:
 : The first TDD run failed twice because the brief was absent. Review-driven cycles then failed
@@ -855,6 +857,14 @@ Validation evidence:
   commit's post-commit byte equality is **PASS**. Issue #46 is now closed after PR #48. Issue #47
   has local TDD GREEN but must be merged and verified, and the separate data-creation proposal
   gate must still pass, so Issue #36 remains blocked.
+
+  PR #49 review then found three contract gaps before merge: self-review was accepted, replay
+  depended on preserved read-only filesystem bits, and the canonical design still described the
+  older v1/pack-schema boundary. Each received a focused RED/GREEN repair: reviewer identity must
+  differ from authoring owner, sealing enforces read-only only on the external input while replay
+  uses canonical bytes and digest independent of normalized filesystem write bits, and the
+  canonical design now records the v2/content-schema contract. This is local deterministic test
+  evidence only; fresh PR review and CI remain required before any merge claim.
 
 Likely follow-ups:
 

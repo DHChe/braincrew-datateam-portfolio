@@ -5,6 +5,9 @@ DESIGN_PATH = (
     PROJECT_ROOT
     / "docs/superpowers/specs/2026-07-20-independent-evaluation-corpus-provisioning-design.md"
 )
+CANONICAL_DESIGN_PATH = (
+    PROJECT_ROOT / "docs/superpowers/specs/2026-07-18-evidence-first-evaluation-plane-design.md"
+)
 ISSUE_DRAFT_PATH = (
     PROJECT_ROOT
     / "docs/superpowers/specs/2026-07-21-independent-evaluation-corpus-provisioning-issue-draft.md"
@@ -103,6 +106,39 @@ def test_issue_36_stays_blocked_on_authoring_contract_repairs() -> None:
     )
     assert "in a fresh restricted context, run Braincrew #36" not in execution_order
     assert "qualification feedback" in execution_order
+
+
+def test_canonical_design_records_the_issue_47_sealing_and_authoring_boundary() -> None:
+    design = CANONICAL_DESIGN_PATH.read_text(encoding="utf-8")
+    normalized_design = " ".join(design.split())
+
+    assert "corpus-sealing-receipt-v2" in design
+    assert "provenance-review.json" in design
+    assert "corpus-sealing-receipt-v1" in design
+    assert "emits a create-only `corpus-sealing-receipt-v1`" not in design
+    assert "Historical Historical" not in normalized_design
+    assert "ax-synthetic-seed-content-v1.schema.json" in design
+    assert "The later `ax-synthetic-seed-pack-v1.schema.json` is not mounted" in normalized_design
+    assert (
+        "requires a clean Braincrew Git source, one committed approved brief, the Issue #31 "
+        "digest-pinned AX pack schema"
+    ) not in normalized_design
+
+
+def test_issue_47_documents_independent_review_and_portable_replay() -> None:
+    documents = (
+        CANONICAL_DESIGN_PATH.read_text(encoding="utf-8"),
+        INTERVIEW_PATH.read_text(encoding="utf-8"),
+        STATUS_PATH.read_text(encoding="utf-8"),
+    )
+
+    for document in documents:
+        normalized_document = " ".join(document.split()).casefold()
+        assert "reviewer identity must differ from the authoring owner" in normalized_document
+        assert (
+            "replay validates canonical bytes and digest independent of normalized filesystem "
+            "write bits"
+        ) in normalized_document
 
 
 def test_issue_46_locks_source_first_freeze_and_successor_version_boundary() -> None:

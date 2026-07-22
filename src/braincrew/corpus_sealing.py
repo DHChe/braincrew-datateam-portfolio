@@ -334,6 +334,7 @@ def replay_sealing_receipt(receipt_path: Path) -> dict[str, str]:
         provenance_sidecar = _load_provenance_sidecar(
             sealed_directory / PROVENANCE_SIDECAR_NAME,
             validated.manifest,
+            require_read_only=False,
         )
         expected: LegacySealingReceipt | SealingReceipt = _build_receipt(
             validated,
@@ -547,7 +548,7 @@ def _validate_provenance_sidecar(
         staging=staging,
         output=output,
     )
-    return _load_provenance_sidecar(resolved, manifest)
+    return _load_provenance_sidecar(resolved, manifest, require_read_only=True)
 
 
 def _validate_provenance_sidecar_location(
@@ -579,6 +580,8 @@ def _validate_provenance_sidecar_location(
 def _load_provenance_sidecar(
     sidecar_path: Path,
     manifest: CorpusManifest,
+    *,
+    require_read_only: bool,
 ) -> ValidatedProvenanceSidecar:
     try:
         sidecar_stat = sidecar_path.stat()
@@ -596,10 +599,10 @@ def _load_provenance_sidecar(
             "CORPUS_PROVENANCE_SIDECAR_PATH_INVALID",
             "provenance sidecar must be one regular non-linked file",
         )
-    if sidecar_stat.st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH):
+    if require_read_only and sidecar_stat.st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH):
         raise CorpusPackError(
             "CORPUS_PROVENANCE_SIDECAR_MUTABLE",
-            "provenance sidecar must be read-only before sealing or replay",
+            "provenance sidecar must be read-only before sealing",
         )
     raw_bytes, sidecar_text = _read_utf8_bytes(
         sidecar_path,
@@ -648,6 +651,11 @@ def _load_provenance_sidecar(
     expected_sources = {source.source_id: source.content_sha256 for source in manifest.sources}
     reviewed_sources: dict[str, str] = {}
     for review in sidecar.reviews:
+        if review.authoring_owner == review.reviewer_identity:
+            raise CorpusPackError(
+                "CORPUS_PROVENANCE_SIDECAR_REVIEWER_NOT_INDEPENDENT",
+                "provenance sidecar reviewer must differ from the authoring owner",
+            )
         if review.decision != "approved":
             raise CorpusPackError(
                 "CORPUS_PROVENANCE_SIDECAR_INVALID",
