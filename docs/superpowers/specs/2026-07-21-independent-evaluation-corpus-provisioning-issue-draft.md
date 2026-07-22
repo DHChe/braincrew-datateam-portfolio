@@ -3,7 +3,7 @@
 Date: 2026-07-21
 Status: published as [Braincrew Issue #30](https://github.com/DHChe/braincrew-datateam-portfolio/issues/30) on 2026-07-21; local source retained
 Implementation tickets: [#31](https://github.com/DHChe/braincrew-datateam-portfolio/issues/31) through [#38](https://github.com/DHChe/braincrew-datateam-portfolio/issues/38)
-Implementation checkpoint: Braincrew #31 merged; Braincrew #32 locally verified at its Git gate on 2026-07-22
+Implementation checkpoint: Braincrew #31/#32 merged; Braincrew #33 locally verified at its Git gate on 2026-07-22
 Proposed title: Provision an independently authored corpus for pinned live Verification
 Tracker relationship: new Braincrew prerequisite that blocks Issue #15
 Approved design: `2026-07-20-independent-evaluation-corpus-provisioning-design.md`
@@ -77,6 +77,7 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - The content-authoring process and post-seal validator are separate processes and contexts. The authoring process has no repository, dataset, fixture, database, or network access.
 - Authoring is not part of the initial code implementation slice. It remains a later child ticket that begins from a reviewed clean commit in a fresh restricted context.
 - The pack uses two manifests. The sealed content manifest contains source identity and bytes but no `seed_version`; the post-qualification import manifest binds the unchanged content digest to the dataset version and qualification receipt.
+- The generic AX identifier grammar excludes `@`; the import manifest therefore uses schema-valid `seed_version = braincrew-evaluation-dataset-2.0.0`, while the qualification receipt binds exact ID `braincrew-evaluation-dataset`, version `2.0.0`, integrated digest, component digests, and 100-case count.
 - Canonical identity rejects rather than normalizes invalid bytes. Accepted source bytes are UTF-8 without BOM, NFC, and LF-only. Canonical JSON uses sorted object keys, compact separators, preserved array order, materialized defaults, no floats, and NFC strings without carriage returns.
 - The pack covers the complete 100-case required source-identity surface and contains non-empty distractor coverage. It is not required to contain one document per case.
 - Every source is synthetic/demo, licensed `CC0-1.0`, and explicitly provenance-reviewed. Private/customer content and mixed public-source labeling are excluded from this version.
@@ -122,4 +123,4 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - AX #33 has published the reviewed generic schema and no-write dry-run, AX #34 has published typed evaluation-principal validation, and AX #35 has published the atomic apply path. Braincrew #31 may now vendor and digest-pin the exact schema; AX #36 and every data/operational gate remain incomplete.
 - The current clean preflight artifact remains `BLOCKED`; neither this draft nor later ticket publication changes that measured state.
 - `to-tickets` published Braincrew #31-#38 with the approved dependencies. Braincrew #31 is the selected next fresh-context ticket; the independent authoring run remains the later restricted-context Braincrew #36 ticket.
-- Braincrew #31 is now merged and closed. Braincrew #32 implements only the capability-restricted launcher and sanitized independence receipt; actual brief approval remains #35 and the independent authoring/sealing run remains #36.
+- Braincrew #31 and #32 are merged and closed. Braincrew #33 implements the read-only qualifier, exact dataset-v2 replay bundle, sanitized receipt, and bound import manifest; it does not execute a real corpus qualification. Actual brief approval remains #35, independent authoring/sealing remains #36, and real qualification remains #37.

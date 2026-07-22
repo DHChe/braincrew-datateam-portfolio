@@ -565,6 +565,51 @@ Likely follow-ups:
 - "What happens without a supported sandbox?" — `AUTHORING_SANDBOX_UNAVAILABLE`; there is no
   unrestricted fallback.
 
+### D8.3 Qualify only immutable corpus bytes against the exact dataset identity
+
+Decision:
+: Run `braincrew-eval qualify-corpus` only after Issue #31 sealing. Reproduce schema, manifest,
+  per-source, sealed-content, sealing-receipt, and exact dataset-v2 identities before checking the
+  100-case source, digest, role, provenance, and distractor contracts. Publish sanitized receipt and
+  import bytes only on complete success.
+
+Why:
+: A matching corpus label does not prove that the bytes cover the benchmark or respect role
+  visibility. The validator must connect two independently frozen identities without giving the
+  authoring process access to expected evidence or permission to repair a mismatch.
+
+Rejected alternatives:
+: Trusting source IDs without content hashes, checking only sources cited by successful answers,
+  allowing qualification to edit either input, creating an import manifest before complete
+  validation, and passing raw source/query/answer material into the receipt. Each alternative can
+  hide content drift, leakage, missing distractors, or a benchmark-authored corpus.
+
+Trade-offs and failure modes:
+: The exact v2 digest means any scoring-relevant dataset change requires a new qualification
+  version. The reviewed AX schema does not accept `@` in `seed_version`, so the import envelope uses
+  `braincrew-evaluation-dataset-2.0.0`; exact ID `braincrew-evaluation-dataset`, semantic version
+  `2.0.0`, integrated/component digests, and 100-case count remain explicit in the qualification
+  receipt. Missing resources in an installed wheel, stale dataset-card metadata, output-pair I/O
+  failure, source tampering, or visibility drift must all fail closed.
+
+Validation evidence:
+: Thirteen tests first failed because dataset v2 and `qualify-corpus` did not exist. Minimal GREEN
+  covered all approved blockers, wrong dataset identity, sanitized success, create-only behavior,
+  replay, and tamper rejection. Review-driven RED/GREEN added a dedicated v2 card, the exact wheel
+  replay bundle, and rollback-safe two-file publication. All 15 focused qualification tests and all
+  254 repository tests pass; Ruff format/lint, strict mypy, wheel inspection, and Git whitespace
+  validation also pass.
+
+Likely follow-ups:
+
+- "Did Issue #33 qualify a real authored corpus?" — No. It implements and verifies the read-only
+  mechanism. Brief approval is #35, authoring/sealing is #36, and the actual qualification is #37.
+- "Why is the import seed string not written with `@`?" — The exact AX schema forbids that
+  character. The schema-safe string is only an envelope identifier; the receipt holds the exact
+  dataset ID, version, and digests.
+- "Can qualification repair a missing source?" — No. It returns
+  `CORPUS_REQUIRED_SOURCE_MISSING` and emits neither qualification nor import output.
+
 ### D9. Use layered verification and an evidence-driven ten-day sequence
 
 Decision:

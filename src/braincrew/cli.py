@@ -14,6 +14,11 @@ from braincrew.comparison import (
     compare_runs,
 )
 from braincrew.corpus_authoring import AuthoringBoundaryError, launch_authoring_process
+from braincrew.corpus_qualification import (
+    CorpusQualificationError,
+    qualify_corpus_pack,
+    replay_qualification_receipt,
+)
 from braincrew.corpus_sealing import (
     CorpusPackError,
     replay_sealing_receipt,
@@ -492,6 +497,52 @@ def launch_authoring(
         raise typer.Exit(code=result.receipt.exit_state.exit_code)
 
 
+@app.command("qualify-corpus")
+def qualify_corpus(
+    sealed_dir: Annotated[
+        Path,
+        typer.Option("--sealed-dir", exists=True, file_okay=False, readable=True),
+    ],
+    dataset_manifest_path: Annotated[
+        Path,
+        typer.Option(
+            "--dataset-manifest",
+            exists=True,
+            dir_okay=False,
+            readable=True,
+        ),
+    ],
+    tenant_slug: Annotated[str, typer.Option("--tenant-slug")],
+    demo_company_id: Annotated[str, typer.Option("--demo-company-id")],
+) -> None:
+    """Read-only qualify one sealed corpus against the exact dataset v2 identity."""
+    try:
+        result = qualify_corpus_pack(
+            sealed_dir=sealed_dir,
+            dataset_manifest_path=dataset_manifest_path,
+            tenant_slug=tenant_slug,
+            demo_company_id=demo_company_id,
+        )
+    except (CorpusQualificationError, OSError) as error:
+        typer.echo(f"Corpus qualification rejected: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    typer.echo(
+        json.dumps(
+            {
+                "receipt_path": str(result.receipt_path),
+                "import_manifest_path": str(result.import_manifest_path),
+                "receipt_digest": result.receipt.receipt_digest,
+                "qualification_receipt_digest": result.qualification_receipt_digest,
+                "import_digest": result.import_manifest.import_digest,
+                "sealed_content_digest": result.receipt.corpus.sealed_content_digest,
+                "dataset_content_digest": result.receipt.dataset.content_digest,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
 @app.command("replay")
 def replay_fixture(
     artifact_path: Annotated[
@@ -506,6 +557,10 @@ def replay_fixture(
             "corpus-sealing-receipt-v1"
         ):
             replay_summary = replay_sealing_receipt(artifact_path)
+        elif isinstance(payload, dict) and payload.get("schema_version") == (
+            "corpus-qualification-receipt-v1"
+        ):
+            replay_summary = replay_qualification_receipt(artifact_path)
         else:
             replay_summary = replay_run_artifact(artifact_path)
     except (UnicodeError, ValueError) as error:

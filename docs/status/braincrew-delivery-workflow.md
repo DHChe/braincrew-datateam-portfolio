@@ -79,21 +79,34 @@ research and AX_portfolio context
 - Completed phase: Issue #14 passed review and verification, and PR #28 merged into `develop` as `e33de765dc54ac76159f249525456d5ab4e63667`.
 - Completed prerequisite: AX Issue #33 is `CLOSED/COMPLETED`; AX PR #39 merged the reviewed generic seed-pack dry-run and exact schema bytes as `47673b83a9fb431f2bad550781db18c7bee8b67e`.
 - Completed predecessor: Braincrew PR #39 merged Issue #31 into `develop` as `df5891378732a653511e7fa37aae53ac56883672`; Issue #31 is `CLOSED/COMPLETED`.
-- Active canonical phase: Braincrew Issue #32 is implemented, documented, reviewed, and verified locally; work is stopped at the Git Lifecycle Proposal Gate.
-- Frontier evidence: Issue #32's only native blocker is closed Issue #31; #32 is open with `ready-for-agent`, #33 is open without it, and draft PR #29 remains untouched at exact head `b14653c7f2b6e7aad9a36c41c7141a9ccb3ce674`.
-- Branch evidence: `feat/issue-32-authoring-boundary` and `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-32-authoring-boundary` start from exact fetched `origin/develop@df5891378732a653511e7fa37aae53ac56883672`.
-- Clean baseline evidence: before the first RED, frozen sync, Ruff format/lint, strict mypy, full pytest (`232 passed`), `git diff --check`, and clean branch status all succeeded.
-- TDD evidence: five acceptance/contract tests failed because `launch-authoring` did not exist. Minimal GREEN passed all five. Review-driven RED/GREEN then closed non-Braincrew source identity, undeclared metadata visibility, invalid tool-label traceback, and system-keychain exposure defects; all seven authoring-boundary tests now pass.
-- Locked artifact: installed `braincrew-eval launch-authoring`, deny-by-default OS sandbox execution, and create-only `corpus-authoring-independence-receipt-v1` with clean-source, tool/input, denied-capability, opaque staging, timing, exit, and path-redacted output digest evidence.
-- Denial evidence: the real macOS sandbox probe sees exactly four declared read-only inputs and one writable staging directory while Braincrew/AX repositories, dataset, fixture, prior artifact, database, inherited credential, private document, undeclared filesystem, network, and post-seal feedback attempts all return denied.
-- Scope fence: no Issue #33 qualification, #34 principal/attachment mapping, #35 real brief approval, #36 source authoring or sealing run, dataset-v2 read/comparison, AX importer/provider/database/service change, Issue #15 preflight update, experiment execution, PR #29 modification, dependency addition, or Agent trajectory evaluation is included.
-- Review evidence: separate Standards and Spec passes report zero unresolved finding after the four review defects were reproduced and repaired through RED/GREEN.
-- Verification evidence: frozen sync checks 29 packages; Ruff format checks 51 files; Ruff lint and strict mypy over 51 source files pass; full pytest reports `239 passed`; the combined Issue #31 sealing and Issue #32 authoring subset reports `32 passed`; and installed `braincrew-eval launch-authoring --help` succeeds.
-- Completion condition status: satisfied locally. The declared input/staging boundary, real denial probes, sanitized create-only receipt, post-seal separation, reused sealing contract, canonical documentation, review blocker 0, and full repository gates are evidenced.
-- Active next action: present the Issue #32 Git lifecycle proposal and wait for explicit authorization before commit, push, pull-request creation/modification, or merge.
+- Completed predecessor: Braincrew PR #40 merged Issue #32 into `develop` as `9502f21e10ece832cd2c1bc369d2b5d0f9f1fb94`; Issue #32 is `CLOSED/COMPLETED`, cleanup is complete, and it no longer carries `ready-for-agent`.
+- Active canonical phase: Braincrew Issue #33 is implemented, documented, reviewed, and verified locally; work is stopped at the Git Lifecycle Proposal Gate.
+- Frontier evidence: Issue #33's native blocker #31 is `CLOSED/COMPLETED`; #33 is open and now carries `ready-for-agent`; draft PR #29 remains untouched, draft/open, and at exact head `b14653c7f2b6e7aad9a36c41c7141a9ccb3ce674`.
+- Branch evidence: `feat/issue-33-corpus-qualification` and `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-33-corpus-qualification` start from exact fetched `origin/develop@9502f21e10ece832cd2c1bc369d2b5d0f9f1fb94`.
+- Clean baseline evidence: before the first RED, frozen sync, Ruff format/lint, strict mypy, full pytest (`239 passed`), `git diff --check`, and clean branch status all succeeded.
+- TDD evidence: 13 acceptance/contract tests first failed on the absent v2 manifest and `qualify-corpus` command. Minimal GREEN passed all 13. Review then reproduced the v2-card identity, wheel replay-resource, and two-output publication defects before repair; all 15 qualification tests now pass.
+- Locked artifact: `braincrew-eval qualify-corpus`, exact `braincrew-evaluation-dataset@2.0.0` digest `sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a`, create-only `corpus-qualification-receipt-v1`, and strict `ax-synthetic-seed-pack-v1` import manifest.
+- Identity evidence: dataset v2 reuses the exact v1 20/30/50 case components while its dedicated card and manifest bind the qualification boundary. The AX schema-safe `seed_version` is `braincrew-evaluation-dataset-2.0.0`; the receipt separately binds exact dataset ID, semantic version, integrated digest, component digests, and 100-case count.
+- Scope fence: no Issue #34 principal/attachment preflight, #35 brief, #36 authoring/sealing execution, #37 real qualification run, #38 preflight update, corpus/dataset repair, AX apply/provider/database/service work, baseline/candidate/comparison run, PR #29 change, dependency, or Agent trajectory evaluation is included.
+- Review evidence: separate Standards and Spec checks report zero unresolved finding after the three review defects were reproduced and repaired through RED/GREEN.
+- Verification evidence: Ruff format/lint and strict mypy over 55 source/test files pass; full pytest reports `254 passed`; the focused qualification suite reports `15 passed`; wheel contents include the exact replay bundle; and import tampering plus publication failure are rejected without source or partial-output mutation.
+- Completion condition status: satisfied locally. Exact pack/dataset identity, 100-case source/digest/role closure, provenance, distractor, approved blockers, sanitized bound artifacts, replay/tamper behavior, documentation, review blocker 0, and full repository regressions are evidenced.
+- Active next action: present the Issue #33 Git lifecycle proposal and wait for explicit authorization before commit, push, pull-request creation/modification, or merge.
 - Workflow gate: no commit, push, pull-request creation/modification, or merge is authorized by this implementation request.
 
 ## Transition history
+
+### 2026-07-22 — Issue #33 sealed-corpus qualification reached the Git Lifecycle Proposal Gate
+
+- Entry evidence: fetched `origin/develop` equals Issue #32 merge `9502f21e10ece832cd2c1bc369d2b5d0f9f1fb94`; PR #40 is merged; Issues #31 and #32 are `CLOSED/COMPLETED`; #32 has no `ready-for-agent`; #33 received it only after native blocker verification; and draft PR #29 remains untouched at `b14653c7f2b6e7aad9a36c41c7141a9ccb3ce674`.
+- Clean baseline: frozen sync, Ruff format/lint, strict mypy, all `239` pre-change tests, `git diff --check`, and clean branch status passed before the first RED.
+- RED/GREEN evidence: the initial 13 tests failed on the absent v2 manifest and qualification CLI. Minimal implementation passed them. Review-driven tests then failed on a stale v1 card reference, missing wheel replay resources, and non-atomic output-pair failure before all three repairs reached GREEN.
+- Contract evidence: qualification replays Issue #31 schema, manifest, per-source and sealed digests; validates the exact 100-case dataset v2 digest; projects required/frozen/forbidden identities and roles; requires synthetic reviewed CC0 provenance and a distractor; and emits only the approved `CORPUS_*` blocker family.
+- Artifact evidence: success alone publishes canonical create-only receipt/import bytes through create-only links. The receipt contains bounded identities, expected/observed digests, and roles but no raw content or private path. The import manifest binds tenant/demo target, sealed digest, qualification receipt, and AX normalization/chunking contracts.
+- Review evidence: Standards and Spec axes have zero unresolved finding after the dedicated v2 card, packaged replay bundle, and rollback-safe pair publication fixes.
+- Verification evidence: all `254` repository tests and all `15` focused qualification tests pass; Ruff format/lint, strict mypy, wheel-content validation, replay, tamper rejection, and Git whitespace checks pass.
+- Scope fence: Issues #34-#38 execution, repair, AX apply or service changes, experiments, PR #29, dependencies, and trajectory evaluation remain excluded.
+- Completion condition: satisfied locally; work is stopped at the Git Lifecycle Proposal Gate.
 
 ### 2026-07-22 — Issue #32 authoring-boundary implementation and review reached GREEN
 

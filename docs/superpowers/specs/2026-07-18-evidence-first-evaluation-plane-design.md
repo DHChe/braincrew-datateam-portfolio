@@ -486,6 +486,26 @@ private paths, query/answer/expected-evidence material, scores, and split labels
 not invoke sealing or qualification, so later validator success or failure has no feedback edge
 into authoring.
 
+### 14.3 Read-only sealed-corpus qualification boundary
+
+Issue #33 adds `braincrew-eval qualify-corpus` after sealing. It reuses the Issue #31 validator and
+receipt replay before comparing semantics, accepts only the exact 100-case dataset v2 digest
+`sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a`, and preserves the
+v1 component bytes. The v2 manifest and dedicated card introduce only the qualification identity.
+
+Every dataset case contributes required or forbidden source identities, frozen full-source digests
+where present, and an authorization role projection. Qualification requires complete closure,
+required `Employee`/`Executive`/`HRPractitioner` visibility, zero forbidden exposure, reviewed
+synthetic `CC0-1.0` provenance, and non-empty distractor coverage. Failure returns an approved
+`CORPUS_*` blocker and publishes no receipt, import manifest, or repaired bytes.
+
+Success publishes a rollback-safe create-only `corpus-qualification-receipt-v1` and strict
+`ax-synthetic-seed-pack-v1` import manifest. Because AX's generic identifier grammar excludes `@`,
+the import `seed_version` is `braincrew-evaluation-dataset-2.0.0`; the receipt separately binds the
+exact dataset ID, `2.0.0` semantic version, integrated/component digests, and case count. Replay
+revalidates the current pack, packaged dataset bundle, receipt, and import bytes and rejects
+tampering. This boundary does not run authoring, sealing, AX import, preflight, or experiments.
+
 ## 15. Testing strategy
 
 Required layers are schema tests, hand-calculated metric goldens, claim atomization and proposition-matcher tests, relevant property tests, Adapter HTTP contracts, state and storage invariants, fixture-mode E2E, live AX smoke and Verification, dashboard export and browser checks, and clean Docker reproduction.
