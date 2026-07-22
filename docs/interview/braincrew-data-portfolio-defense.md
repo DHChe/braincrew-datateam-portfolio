@@ -797,9 +797,9 @@ Issue #46 source-order decision:
 
   Qualification remains read-only and cannot return feedback, identifiers, or digests to authoring.
 
-  This defers case freezing and qualification to later tickets: Issue #36 stays blocked until
-  Issue #47 is merged and verified and a separate data-creation proposal gate authorizes the
-  selected order.
+  PR #49 has merged and verified Issue #47, and Issue #47 is closed. This still defers case
+  freezing and qualification to later tickets: Issue #36 stays blocked until a separate
+  data-creation proposal gate authorizes the selected order.
 
 Rejected alternatives:
 : Prompt-only confidentiality instructions, guessed lowercase role aliases, public-source
@@ -854,17 +854,19 @@ Validation evidence:
   A fresh independent `code-reviewer` inspected only sanitized, allowlisted policy inputs; all
   tests, prior digests, prior review evidence, and downstream documents were denied. The reviewer
   found zero material issues and independently reproduced the exact digest above. The fixed repair
-  commit's post-commit byte equality is **PASS**. Issue #46 is now closed after PR #48. Issue #47
-  has local TDD GREEN but must be merged and verified, and the separate data-creation proposal
-  gate must still pass, so Issue #36 remains blocked.
+  commit's post-commit byte equality is **PASS**. Issue #46 is closed after PR #48. PR #49 merged
+  Issue #47 into `develop` as `4d80b9b8950f4d7356a9aa9806f492ae79126dab`; its Python and frontend
+  checks succeeded, and Issue #47 is closed. The separate data-creation proposal gate must still
+  pass, so Issue #36 remains blocked.
 
   PR #49 review then found three contract gaps before merge: self-review was accepted, replay
   depended on preserved read-only filesystem bits, and the canonical design still described the
   older v1/pack-schema boundary. Each received a focused RED/GREEN repair: reviewer identity must
   differ from authoring owner, sealing enforces read-only only on the external input while replay
   uses canonical bytes and digest independent of normalized filesystem write bits, and the
-  canonical design now records the v2/content-schema contract. This is local deterministic test
-  evidence only; fresh PR review and CI remain required before any merge claim.
+  canonical design now records the v2/content-schema contract. PR #49 subsequently received
+  successful Python and frontend checks and merged into `develop`; that merge is the verification
+  evidence for the closed Issue #47 dependency.
 
 Likely follow-ups:
 
@@ -874,9 +876,9 @@ Likely follow-ups:
 - "Why are the AX roles capitalized?" — They are exact case-sensitive values from the external
   seed-pack `VisibilityRole` validator, not UI labels or guessed aliases.
 - "Does APPROVE mean Issue #36 can run now?" — No. APPROVE covers the generic brief and its exact
-  bytes, not the missing execution architecture. Issue #36 remains blocked until Issue #47 is
-  merged and verified, the separate data-creation proposal gate approves Issue #46's selected
-  source-first order, and the committed brief reproduces the approved digest.
+  bytes, not the separate execution authorization. Issue #47 is merged, verified, and closed, but
+  Issue #36 remains blocked until the data-creation proposal gate approves Issue #46's selected
+  source-first order and the committed brief reproduces the approved digest.
 - "Did Issue #35 create a corpus or manifest?" — No. It created only the generic brief, its
   digest declaration, contract tests, and leakage-review evidence.
 

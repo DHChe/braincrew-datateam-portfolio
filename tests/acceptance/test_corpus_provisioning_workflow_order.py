@@ -18,7 +18,7 @@ STATUS_PATH = PROJECT_ROOT / "docs/status/braincrew-delivery-workflow.md"
 CONTENT_SCHEMA_DIGEST = "372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb"
 PACK_SCHEMA_DIGEST = "4ddc71d7408324bfed6e7a25024899a7f689431f5f024fb2329f3f844352bffa"
 APPROVED_BRIEF_DIGEST = "121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3"
-INTEGRATION_COMMIT = "49a8c2a6228418757c34d8f4bfa0f384d3f0ff52"
+ISSUE_47_MERGE_COMMIT = "4d80b9b8950f4d7356a9aa9806f492ae79126dab"
 
 
 def _section(document: str, heading: str, next_heading: str) -> str:
@@ -79,17 +79,16 @@ def test_issue_36_stays_blocked_on_authoring_contract_repairs() -> None:
     normalized_interview = " ".join(interview.split())
     assert "post-commit byte equality is **PASS**" in normalized_interview
     assert (
-        "Issue #46 is now closed after PR #48. Issue #47 has local TDD GREEN but must be "
-        "merged and verified"
-    ) in normalized_interview
-    assert "the separate data-creation proposal gate must still pass" in normalized_interview
+        "PR #49 merged Issue #47 into `develop` as `4d80b9b8950f4d7356a9aa9806f492ae79126dab`"
+        in normalized_interview
+    )
+    assert "checks succeeded, and Issue #47 is closed" in normalized_interview
+    assert "The separate data-creation proposal gate must still pass" in normalized_interview
     assert "remains blocked until post-commit byte equality passes" not in normalized_interview
 
-    assert (
-        "Issue #47 now repairs staged authoring to expose the content schema" in normalized_design
-    )
+    assert "Issue #47 repaired staged authoring to expose the content schema" in normalized_design
     assert "The merged launcher still requires Issue #47 repair" not in normalized_design
-    assert "Issue #47 is merged and verified" in normalized_design
+    assert "PR #49 merged and verified Issue #47" in normalized_design
     normalized_issue_draft = " ".join(issue_draft.split())
     assert "Issue #47 is merged and verified" in normalized_issue_draft
     assert "Issue #36 remains blocked until sealer support can accept" not in normalized_issue_draft
@@ -201,12 +200,12 @@ def test_issue_46_locks_source_first_freeze_and_successor_version_boundary() -> 
     )
 
     current_checkpoint = _section(documents[3], "## Current checkpoint", "## Transition history")
-    assert "Active canonical phase: Issue #47 implementation" in current_checkpoint
-    assert "Issue #46 is `CLOSED` after PR #48 merged" in current_checkpoint
-    assert "Issue #36 is `BLOCKED`" in current_checkpoint
+    assert "Completed predecessor: PR #49 merged Issue #47" in current_checkpoint
+    assert "Issue #46 is `CLOSED` after PR #48" in current_checkpoint
+    assert "Issue #36 remains `BLOCKED`" in current_checkpoint
     assert "Issue #47" in current_checkpoint
     assert "separate data-creation proposal gate" in current_checkpoint
-    assert "Issue #36 is `BLOCKED`, has no `ready-for-agent` label" in current_checkpoint
+    assert "Issue #36 remains `BLOCKED`, has no `ready-for-agent` label" in current_checkpoint
 
 
 def test_issue_46_removes_dataset_v2_from_the_future_seal_to_qualification_path() -> None:
@@ -240,7 +239,7 @@ def test_delivery_status_records_the_published_review_repair_and_new_frontier() 
     current_checkpoint = _section(status, "## Current checkpoint", "## Transition history")
 
     assert "Last updated: 2026-07-23" in status
-    assert INTEGRATION_COMMIT in current_checkpoint
+    assert ISSUE_47_MERGE_COMMIT in current_checkpoint
     assert APPROVED_BRIEF_DIGEST in current_checkpoint
     assert "10,680-byte brief" in current_checkpoint
     assert "`/root/sanitized_blind_reviewer`" in current_checkpoint
@@ -248,7 +247,7 @@ def test_delivery_status_records_the_published_review_repair_and_new_frontier() 
     assert "PR #48" in current_checkpoint
     assert "Issue #46" in current_checkpoint
     assert "Issue #47" in current_checkpoint
-    assert "Issue #36 is `BLOCKED`" in current_checkpoint
+    assert "Issue #36 remains `BLOCKED`" in current_checkpoint
     assert "7 passed" in current_checkpoint
     assert "publish this status-only commit" not in current_checkpoint
 
