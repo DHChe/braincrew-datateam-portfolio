@@ -1,8 +1,8 @@
 # Braincrew Evaluation Corpus v2 Authoring Brief Leakage Review
 
 This file records the independent evaluation-leakage review of the repaired Issue #35 authoring
-brief. It does not authorize corpus authoring, clear either Issue #36 blocker, or satisfy the
-separate clean-commit and post-commit byte-equality gate.
+brief. It does not authorize corpus authoring or clear either Issue #36 blocker. The separate
+clean-commit and post-commit byte-equality gate is recorded below.
 
 - Reviewer identity: `/root/fresh_blind_final_review`
 - Reviewer role: `code-reviewer`
@@ -77,12 +77,21 @@ sidecar evidence is separately implemented and tested.
 
 This exact-byte approval clears neither Issue #36 blocker.
 
-## Pending post-commit gate
+## Completed post-commit gate
 
-Approval applies only to the reviewed brief bytes. Repaired-brief clean commit: **pending**.
-Post-commit byte-equality verification: **pending**. Corpus authoring remains blocked until the
-brief reaches a clean committed Braincrew SHA and the committed brief bytes match the approved
-digest.
+Approval applies only to the reviewed brief bytes.
+
+- Repaired-brief clean commit: `0d4c0ae8876ad13d37acaa3bca81e2870c1d85d9`.
+- Post-commit verification operator: `/root` delivery agent.
+- Post-commit verification date: `2026-07-23` in `Asia/Seoul`.
+- Post-commit byte-equality verification: **PASS**.
+- Verified committed brief digest:
+  `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`.
+- Verified committed brief size: `10680 bytes`.
+
+The committed brief bytes at the repaired-brief clean commit match the reviewed digest and size.
+Corpus authoring remains blocked by Issue #46, Issue #47, and a separate data-creation proposal
+gate.
 
 No corpus source bytes, import manifest, AX operation, or evaluation run is authorized or
 created by this review evidence.

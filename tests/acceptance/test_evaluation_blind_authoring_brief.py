@@ -12,6 +12,7 @@ REVIEW_EVIDENCE_PATH = (
 APPROVED_BRIEF_DIGEST = "sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3"
 APPROVED_BRIEF_SIZE_BYTES = 10680
 REVIEW_BASE_HEAD = "2013da04509f2f23c340467fbe4f8f770b17be69"
+REPAIR_COMMIT = "0d4c0ae8876ad13d37acaa3bca81e2870c1d85d9"
 CONTENT_SCHEMA_PATH = "schemas/ax-synthetic-seed-content-v1.schema.json"
 CONTENT_SCHEMA_DIGEST = "sha256:372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb"
 PACK_SCHEMA_PATH = "schemas/ax-synthetic-seed-pack-v1.schema.json"
@@ -277,7 +278,7 @@ def test_brief_defers_exact_byte_approval_state_to_the_separate_review_record() 
     assert "Any change to these brief bytes requires a new exact-byte review." in opening
 
 
-def test_independent_review_evidence_records_the_blind_boundary_and_pending_gate() -> None:
+def test_independent_review_evidence_records_the_blind_boundary_and_completed_gate() -> None:
     assert REVIEW_EVIDENCE_PATH.is_file(), (
         f"independent review evidence is missing: {REVIEW_EVIDENCE_PATH}"
     )
@@ -391,21 +392,27 @@ def test_independent_review_evidence_records_the_blind_boundary_and_pending_gate
         f"review evidence omits Issue #36 blockers: {missing_issue_36_blockers}"
     )
 
-    pending_gate = " ".join(_section_body(review, "## Pending post-commit gate").split())
+    completed_gate = " ".join(_section_body(review, "## Completed post-commit gate").split())
     required_gate_statements = (
         "Approval applies only to the reviewed brief bytes.",
-        "Repaired-brief clean commit: **pending**.",
-        "Post-commit byte-equality verification: **pending**.",
+        f"Repaired-brief clean commit: `{REPAIR_COMMIT}`.",
+        "Post-commit byte-equality verification: **PASS**.",
+        f"Verified committed brief digest: `{APPROVED_BRIEF_DIGEST}`.",
+        f"Verified committed brief size: `{APPROVED_BRIEF_SIZE_BYTES} bytes`.",
         (
-            "Corpus authoring remains blocked until the brief reaches a clean committed "
-            "Braincrew SHA and the committed brief bytes match the approved digest."
+            "The committed brief bytes at the repaired-brief clean commit match the reviewed "
+            "digest and size."
+        ),
+        (
+            "Corpus authoring remains blocked by Issue #46, Issue #47, and a separate "
+            "data-creation proposal gate."
         ),
     )
     missing_gate_statements = [
-        statement for statement in required_gate_statements if statement not in pending_gate
+        statement for statement in required_gate_statements if statement not in completed_gate
     ]
     assert not missing_gate_statements, (
-        f"review evidence omits the pending post-commit gate: {missing_gate_statements}"
+        f"review evidence omits the completed post-commit gate: {missing_gate_statements}"
     )
 
 
