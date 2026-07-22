@@ -159,6 +159,28 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
 
     payload = cast(dict[str, Any], json.loads(retained))
     parse_observations = cast(list[dict[str, Any]], payload["parse_observations"])
+    first_response = cast(dict[str, Any], parse_observations[0]["response"])
+    first_spans = cast(list[dict[str, Any]], first_response["evidence_spans"])
+    first_spans[0]["id"] = "unsafe span id"
+    parse_observations[0]["response_digest"] = canonical_digest(first_response)
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    unsafe_span_id_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert unsafe_span_id_replay.returncode == 2
+    assert "Invalid artifact" in unsafe_span_id_replay.stderr
+
+    payload = cast(dict[str, Any], json.loads(retained))
+    parse_observations = cast(list[dict[str, Any]], payload["parse_observations"])
     second_request = cast(dict[str, Any], parse_observations[1]["request"])
     second_request["tenant_id"] = "33333333-3333-3333-3333-333333333333"
     payload["logical_digest"] = canonical_digest(
@@ -176,6 +198,26 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
 
     assert inconsistent_tenant_replay.returncode == 2
     assert "Invalid artifact" in inconsistent_tenant_replay.stderr
+
+    payload = cast(dict[str, Any], json.loads(retained))
+    parse_observations = cast(list[dict[str, Any]], payload["parse_observations"])
+    first_request = cast(dict[str, Any], parse_observations[0]["request"])
+    first_request["query"] = "employee salary details"
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    non_parse_payload_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert non_parse_payload_replay.returncode == 2
+    assert "Invalid artifact" in non_parse_payload_replay.stderr
 
     payload = cast(dict[str, Any], json.loads(retained))
     parse_observations = cast(list[dict[str, Any]], payload["parse_observations"])
@@ -282,12 +324,36 @@ def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_iden
     assert artifact.capture_contract == "principal-attachment-preflight-v1"
     assert artifact.dataset_identity is not None
     assert [blocker.code for blocker in artifact.blockers] == ["LIVE_PARSE_OBSERVATION_UNREACHABLE"]
+    assert artifact.blockers[0].request is not None
+    assert artifact.blockers[0].request.tenant_id == TENANT_ID
+    assert artifact.blockers[0].request.user_id == OWNER_USER_ID
+    assert artifact.blockers[0].request.roles == ("HRPractitioner",)
 
     artifact_path = live_preflight.write_live_preflight_artifact(
         artifact,
         tmp_path / "issue-34-blocked-live-preflight-evidence.json",
     )
     retained = artifact_path.read_text(encoding="utf-8")
+    payload = cast(dict[str, Any], json.loads(retained))
+    blockers = cast(list[dict[str, Any]], payload["blockers"])
+    blocker_request = cast(dict[str, Any], blockers[0]["request"])
+    blocker_request["user_id"] = "33333333-3333-3333-3333-333333333333"
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    inconsistent_principal_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert inconsistent_principal_replay.returncode == 2
+    assert "Invalid artifact" in inconsistent_principal_replay.stderr
+
     payload = cast(dict[str, Any], json.loads(retained))
     blockers = cast(list[dict[str, Any]], payload["blockers"])
     attempts = cast(list[dict[str, Any]], blockers[0]["attempts"])

@@ -37,6 +37,7 @@ PINNED_AX_SHA = "72805930d9addd8ea41743d1922acf8de621c3f8"
 ACTIVE_OWNER_USER_ID = "22222222-2222-2222-2222-222222222222"
 PARSING_AUTHORIZATION_ROLE = "HRPractitioner"
 EXPECTED_PARSER_IDENTITY = ("utf8-text", "stdlib-1")
+PRINCIPAL_PARSE_TIMEOUT_SECONDS = 10.0
 PRINCIPAL_ATTACHMENT_CAPTURE_CONTRACT: Literal["principal-attachment-preflight-v1"] = (
     "principal-attachment-preflight-v1"
 )
@@ -99,6 +100,7 @@ class LivePreflightBlocker(StrictModel):
     code: str = Field(pattern=SAFE_DETAIL_PATTERN)
     operation: OperationName | None = None
     case_id: str | None = Field(default=None, pattern=SAFE_ID_PATTERN)
+    request: AxCanonicalRequest | None = None
     detail: str | None = Field(default=None, pattern=SAFE_DETAIL_PATTERN)
     attempts: tuple[HttpAttempt, ...] = ()
 
@@ -238,8 +240,11 @@ class LivePreflightArtifact(StrictModel):
             if self.dataset_identity is None:
                 raise ValueError("principal attachment capture requires frozen dataset identity")
             _validate_principal_attachment_capture(self)
-        elif self.capture_contract is not None:
-            raise ValueError("generic live preflight schema cannot declare a capture contract")
+        else:
+            if self.capture_contract is not None:
+                raise ValueError("generic live preflight schema cannot declare a capture contract")
+            if any(blocker.request is not None for blocker in self.blockers):
+                raise ValueError("generic live preflight blocker cannot retain a request")
         if _contains_private_path(self.model_dump(mode="json")):
             raise ValueError("live preflight artifact cannot retain a private path")
         return self
@@ -351,6 +356,7 @@ def capture_principal_attachment_preflight(
             tenant_id=tenant_id,
             user_id=user_id,
             roles=(PARSING_AUTHORIZATION_ROLE,),
+            timeout_seconds=PRINCIPAL_PARSE_TIMEOUT_SECONDS,
         ),
         transport=transport,
     )
@@ -366,21 +372,13 @@ def capture_principal_attachment_preflight(
                 ),
                 attachment_id=attachment_id,
             )
-        except httpx.HTTPError:
-            return blocked(
-                _parse_blocker(
-                    code="LIVE_PARSE_OBSERVATION_UNREACHABLE",
-                    document_id=document_id,
-                    detail="parse_endpoint_unreachable",
-                ),
-                tuple(observations),
-            )
         except AxHttpFailure as error:
             code, detail = _classify_parse_failure(error)
             return blocked(
                 _parse_blocker(
                     code=code,
                     document_id=document_id,
+                    request=error.request,
                     detail=detail,
                     attempts=error.attempts,
                 ),
@@ -392,6 +390,7 @@ def capture_principal_attachment_preflight(
                 _parse_blocker(
                     code="PARSE_ATTACHMENT_MAPPING_INVALID",
                     document_id=document_id,
+                    request=observation.request,
                     detail="attachment_identity_mismatch",
                     attempts=tuple(observation.attempts),
                 ),
@@ -407,6 +406,7 @@ def capture_principal_attachment_preflight(
                 _parse_blocker(
                     code=code,
                     document_id=document_id,
+                    request=observation.request,
                     detail=detail,
                     attempts=tuple(observation.attempts),
                 ),
@@ -568,6 +568,7 @@ def _parse_blocker(
     *,
     code: str,
     document_id: str,
+    request: AxCanonicalRequest,
     detail: str,
     attempts: tuple[HttpAttempt, ...] = (),
 ) -> LivePreflightBlocker:
@@ -575,6 +576,7 @@ def _parse_blocker(
         code=code,
         operation="parse",
         case_id=document_id,
+        request=request,
         detail=detail,
         attempts=attempts,
     )
@@ -607,19 +609,14 @@ def _validate_principal_attachment_capture(artifact: LivePreflightArtifact) -> N
         strict=False,
     ):
         request = observation.request
-        if (
-            request.operation != "parse"
-            or request.case_id != document_id
-            or request.attachment_id != attachment_id
-            or observation.response.attachment_id != attachment_id
-        ):
+        _validate_principal_parse_request(
+            request,
+            artifact_run_id=artifact.run_id,
+            document_id=document_id,
+            attachment_id=attachment_id,
+        )
+        if observation.response.attachment_id != attachment_id:
             raise ValueError("principal attachment capture must use the reviewed probe mapping")
-        if request.user_id != ACTIVE_OWNER_USER_ID or request.roles != (
-            PARSING_AUTHORIZATION_ROLE,
-        ):
-            raise ValueError("principal attachment capture must use the reviewed owner role")
-        if not _is_canonical_uuid(request.tenant_id):
-            raise ValueError("principal attachment capture must use a canonical tenant UUID")
         tenant_ids.add(request.tenant_id)
 
         source_digest, source_text = REVIEWED_PARSING_SOURCE_EVIDENCE[document_id]
@@ -632,7 +629,8 @@ def _validate_principal_attachment_capture(artifact: LivePreflightArtifact) -> N
         ):
             raise ValueError("principal attachment capture has invalid strict parse evidence")
         if any(
-            span.source_text_digest != source_digest
+            re.fullmatch(SAFE_ID_PATTERN, span.id) is None
+            or span.source_text_digest != source_digest
             or span.end_char > len(source_text)
             or span.text_digest != _text_digest(source_text[span.start_char : span.end_char])
             for span in response.evidence_spans
@@ -644,12 +642,11 @@ def _validate_principal_attachment_capture(artifact: LivePreflightArtifact) -> N
             require_success=True,
         )
 
-    if len(tenant_ids) > 1:
-        raise ValueError("principal attachment capture must use one tenant identity")
-
     if not artifact.blockers:
         if len(artifact.parse_observations) != len(expected_probes):
             raise ValueError("unblocked principal attachment capture requires all six probes")
+        if len(tenant_ids) != 1:
+            raise ValueError("principal attachment capture must use one tenant identity")
         return
 
     if len(artifact.blockers) != 1:
@@ -663,6 +660,8 @@ def _validate_principal_attachment_capture(artifact: LivePreflightArtifact) -> N
             artifact.parse_observations
             or blocker.case_id is not None
             or blocker.code != "PARSE_ATTACHMENT_MAPPING_INVALID"
+            or blocker.request is not None
+            or blocker.detail != "mapping_missing_malformed_or_unreviewed"
             or blocker.attempts
         ):
             raise ValueError("pre-probe principal attachment blocker is inconsistent")
@@ -671,36 +670,94 @@ def _validate_principal_attachment_capture(artifact: LivePreflightArtifact) -> N
     expected_case_id = expected_probes[len(artifact.parse_observations)][0]
     if blocker.operation != "parse" or blocker.case_id != expected_case_id:
         raise ValueError("partial principal attachment capture requires its next probe blocker")
-    if blocker.code not in {
-        "EVALUATION_PRINCIPAL_ID_INVALID",
-        "EVALUATION_PRINCIPAL_SUBJECT_INVALID",
-        "PARSE_ATTACHMENT_MAPPING_INVALID",
-        "LIVE_PARSE_OBSERVATION_UNAVAILABLE",
-        "LIVE_PARSE_OBSERVATION_UNREACHABLE",
-        "LIVE_PARSE_OBSERVATION_FAILED",
-    }:
-        raise ValueError("principal attachment capture has an unsupported parse blocker")
+    expected_attachment_id = expected_probes[len(artifact.parse_observations)][1]
+    if blocker.request is None:
+        raise ValueError("principal attachment operation blocker requires its canonical request")
+    _validate_principal_parse_request(
+        blocker.request,
+        artifact_run_id=artifact.run_id,
+        document_id=expected_case_id,
+        attachment_id=expected_attachment_id,
+    )
+    tenant_ids.add(blocker.request.tenant_id)
+    if len(tenant_ids) != 1:
+        raise ValueError("principal attachment capture must use one tenant identity")
     _validate_principal_parse_attempts(
         blocker.attempts,
-        attachment_id=expected_probes[len(artifact.parse_observations)][1],
+        attachment_id=expected_attachment_id,
         require_success=False,
     )
+    if blocker.detail is None:
+        raise ValueError("principal attachment blocker requires a typed detail")
+    blocker_identity = (blocker.code, blocker.detail)
     allowed_terminal_outcomes = {
-        "EVALUATION_PRINCIPAL_ID_INVALID": {"permanent_http"},
-        "EVALUATION_PRINCIPAL_SUBJECT_INVALID": {"permanent_http"},
-        "PARSE_ATTACHMENT_MAPPING_INVALID": {"permanent_http", "success"},
-        "LIVE_PARSE_OBSERVATION_UNAVAILABLE": {"success"},
-        "LIVE_PARSE_OBSERVATION_UNREACHABLE": {"request_error"},
-        "LIVE_PARSE_OBSERVATION_FAILED": {
-            "success",
+        ("EVALUATION_PRINCIPAL_ID_INVALID", "principal_rejected_by_ax"): {"permanent_http"},
+        ("EVALUATION_PRINCIPAL_SUBJECT_INVALID", "subject_unknown_or_inactive"): {"permanent_http"},
+        ("PARSE_ATTACHMENT_MAPPING_INVALID", "attachment_not_found"): {"permanent_http"},
+        ("PARSE_ATTACHMENT_MAPPING_INVALID", "attachment_identity_mismatch"): {"success"},
+        ("LIVE_PARSE_OBSERVATION_UNAVAILABLE", "parse_unavailable"): {"success"},
+        ("LIVE_PARSE_OBSERVATION_UNREACHABLE", "parse_endpoint_unreachable"): {"request_error"},
+        ("LIVE_PARSE_OBSERVATION_FAILED", "AX_TRANSIENT_RETRIES_EXHAUSTED"): {
             "timeout",
             "retryable_http",
-            "permanent_http",
-            "schema_error",
         },
+        ("LIVE_PARSE_OBSERVATION_FAILED", "AX_PERMANENT_HTTP_FAILURE"): {"permanent_http"},
+        ("LIVE_PARSE_OBSERVATION_FAILED", "AX_RESPONSE_SCHEMA_MISMATCH"): {"schema_error"},
+        ("LIVE_PARSE_OBSERVATION_FAILED", "parse_failure_code_present"): {"success"},
+        ("LIVE_PARSE_OBSERVATION_FAILED", "parser_identity_missing"): {"success"},
+        ("LIVE_PARSE_OBSERVATION_FAILED", "parser_identity_mismatch"): {"success"},
+        ("LIVE_PARSE_OBSERVATION_FAILED", "source_text_digest_mismatch"): {"success"},
+        ("LIVE_PARSE_OBSERVATION_FAILED", "evidence_span_invalid"): {"success"},
     }
-    if blocker.attempts[-1].outcome not in allowed_terminal_outcomes[blocker.code]:
+    terminal_attempt = blocker.attempts[-1]
+    if terminal_attempt.outcome not in allowed_terminal_outcomes.get(
+        blocker_identity,
+        set(),
+    ):
         raise ValueError("principal attachment blocker contradicts its terminal attempt")
+    expected_status = {
+        ("EVALUATION_PRINCIPAL_ID_INVALID", "principal_rejected_by_ax"): 400,
+        ("EVALUATION_PRINCIPAL_SUBJECT_INVALID", "subject_unknown_or_inactive"): 401,
+        ("PARSE_ATTACHMENT_MAPPING_INVALID", "attachment_not_found"): 404,
+    }.get(blocker_identity)
+    if expected_status is not None and terminal_attempt.status_code != expected_status:
+        raise ValueError("principal attachment blocker contradicts its terminal attempt")
+
+
+def _validate_principal_parse_request(
+    request: AxCanonicalRequest,
+    *,
+    artifact_run_id: str,
+    document_id: str,
+    attachment_id: str,
+) -> None:
+    if (
+        request.operation != "parse"
+        or request.run_id != artifact_run_id
+        or request.case_id != document_id
+        or request.eval_correlation_id != f"{artifact_run_id}-{document_id}-parse"
+        or request.attachment_id != attachment_id
+    ):
+        raise ValueError("principal attachment capture must use the reviewed probe mapping")
+    if request.user_id != ACTIVE_OWNER_USER_ID or request.roles != (PARSING_AUTHORIZATION_ROLE,):
+        raise ValueError("principal attachment capture must use the reviewed owner role")
+    if not _is_canonical_uuid(request.tenant_id):
+        raise ValueError("principal attachment capture must use a canonical tenant UUID")
+    if request.timeout_seconds != PRINCIPAL_PARSE_TIMEOUT_SECONDS:
+        raise ValueError("principal attachment capture must use the frozen parse timeout")
+    if any(
+        value is not None
+        for value in (
+            request.corpus_id,
+            request.corpus_version,
+            request.query,
+            request.record_kind,
+            request.record_id,
+            request.top_k,
+            request.evidence_limit,
+        )
+    ):
+        raise ValueError("principal attachment parse request cannot contain unrelated payload")
 
 
 def _validate_principal_parse_attempts(
@@ -730,6 +787,14 @@ def _validate_principal_parse_attempts(
             is None
         ):
             raise ValueError("principal attachment attempt correlation must be digest-only")
+        if (
+            attempt.outcome in {"timeout", "request_error"}
+            and attempt.response_correlation_id is not None
+        ):
+            raise ValueError(
+                "principal attachment attempt without a response cannot declare "
+                "a response correlation"
+            )
         if attempt.outcome == "success" and not (
             attempt.status_code is not None and 200 <= attempt.status_code < 300
         ):
@@ -847,7 +912,8 @@ def _parse_evidence_failure(
     ):
         return "LIVE_PARSE_OBSERVATION_FAILED", "source_text_digest_mismatch"
     if any(
-        span.source_text_digest != expected_source_digest
+        re.fullmatch(SAFE_ID_PATTERN, span.id) is None
+        or span.source_text_digest != expected_source_digest
         or span.end_char > len(parsed.extracted_text)
         or parsed.extracted_text[span.start_char : span.end_char] != span.text
         for span in parsed.evidence_spans

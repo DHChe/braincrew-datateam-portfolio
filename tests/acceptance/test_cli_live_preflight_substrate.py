@@ -154,6 +154,74 @@ def test_live_preflight_replay_preserves_legacy_v1_omitted_defaults(
     assert replay_summary["logical_digest"] == payload["logical_digest"]
 
 
+def test_generic_live_preflight_rejects_new_blocker_request_payload() -> None:
+    observation = _adapter().parse(
+        context=_context("synthetic-rule-015"),
+        attachment_id=ATTACHMENT_ID,
+    )
+    blocker_request = observation.request.model_copy(
+        update={"query": "private employee salary query"}
+    )
+
+    with pytest.raises(ValueError, match="generic live preflight blocker cannot retain a request"):
+        build_live_preflight_artifact(
+            run_id="run-live-substrate",
+            captured_at=datetime(2026, 7, 22, tzinfo=UTC),
+            evaluation_plane_sha=EVALUATION_SHA,
+            sut_commit_sha=PINNED_AX_SHA,
+            corpus_observations=(),
+            parse_observations=(),
+            blockers=(
+                LivePreflightBlocker(
+                    code="AX_PERMANENT_HTTP_FAILURE",
+                    operation="parse",
+                    case_id="synthetic-rule-015",
+                    request=blocker_request,
+                    detail="not_found",
+                ),
+            ),
+        )
+
+
+def test_generic_live_preflight_replays_legacy_non_safe_span_id(
+    tmp_path: Path,
+) -> None:
+    adapter = _adapter()
+    artifact = build_live_preflight_artifact(
+        run_id="run-live-substrate-legacy-span",
+        captured_at=datetime(2026, 7, 22, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        corpus_observations=(),
+        parse_observations=(
+            adapter.parse(
+                context=_context(
+                    "synthetic-rule-015",
+                    run_id="run-live-substrate-legacy-span",
+                ),
+                attachment_id=ATTACHMENT_ID,
+            ),
+        ),
+        blockers=(),
+    )
+    payload = artifact.model_dump(mode="json")
+    observation = cast(list[dict[str, Any]], payload["parse_observations"])[0]
+    response = cast(dict[str, Any], observation["response"])
+    spans = cast(list[dict[str, Any]], response["evidence_spans"])
+    spans[0]["id"] = "legacy span id"
+    observation["response_digest"] = canonical_digest(response)
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path = tmp_path / "legacy-span-live-preflight-evidence.json"
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    replay = _run_cli("replay", "--artifact", str(artifact_path))
+
+    assert replay.returncode == 0, replay.stderr
+    assert json.loads(replay.stdout)["logical_digest"] == payload["logical_digest"]
+
+
 def test_live_preflight_replay_preserves_legacy_generic_reviewed_attachment(
     tmp_path: Path,
 ) -> None:

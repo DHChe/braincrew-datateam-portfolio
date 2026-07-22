@@ -556,9 +556,12 @@ observation/blocker compatibility. Replay returns the schema version so an Issue
 require the principal-attachment schema rather than treating a generic v1 artifact as qualified
 policy evidence. The logical digest proves internal replay consistency, not artifact origin or
 authenticity. Replay of the Issue #34 schema also revalidates the exact ordered six-case attachment
-map, reviewed owner, and sole `HRPractitioner` role. An unblocked artifact must contain all six
-probes; an incomplete artifact must contain one terminal blocker for the next expected probe, or
-the pre-probe mapping blocker when no request was eligible to run.
+map, reviewed owner, sole `HRPractitioner` role, fixed timeout, run/case/correlation identity, and
+parse-only request shape. Query, corpus, record, retrieval-limit, and evidence-limit fields must be
+absent. An unblocked artifact must contain all six probes; an incomplete artifact must contain one
+terminal blocker for the next expected probe, or the pre-probe mapping blocker when no request was
+eligible to run. An operation blocker retains the same canonical request, so even a first-probe
+connection or authorization failure proves which tenant, subject, role, and attachment were tried.
 
 A successful capture requires all six responses to bind the requested attachment, exact pinned
 AX parser identity `utf8-text`/`stdlib-1`, canonical source-text digest, and valid span
@@ -579,7 +582,11 @@ Issue #38 alone owns an actual renewed preflight and READY publication.
 A non-timeout HTTP request failure such as a connection error remains non-retryable under the
 existing policy, but it is no longer evidence-free. The Adapter records one `request_error` attempt
 with operation, ordinal, method, path, and elapsed time and the collector preserves it on the
-existing `LIVE_PARSE_OBSERVATION_UNREACHABLE` blocker.
+existing `LIVE_PARSE_OBSERVATION_UNREACHABLE` blocker. Attempts with no response cannot carry a
+response-correlation digest. Blocker code, detail, terminal outcome, and the fixed principal or
+not-found HTTP status must agree; replay rejects relabeling one failure as another after rehashing.
+Server-controlled span identifiers must match the bounded safe-ID grammar before sanitization or
+the response becomes `LIVE_PARSE_OBSERVATION_FAILED` without retaining the unsafe value.
 
 The clean Issue #34 baseline passed all 264 pre-change tests before RED. The first 15 new
 contract/acceptance tests failed on the absent policy collector and canonical user UUID contract;
@@ -603,8 +610,17 @@ validator now rechecks strict response/source/span and attempt evidence while pr
 existing `LIVE_PARSE_OBSERVATION_*` family. A final adversarial pass additionally bound each span's
 digest to its frozen canonical substring, required one tenant across retained observations, and
 required each blocker code to agree with its terminal attempt outcome. A terminal timeout or
-retryable HTTP failure must retain the Adapter's full three-attempt exhaustion history. The five focused
-preflight/adapter files report 50 passes and all 289 repository tests pass. No AX
+retryable HTTP failure must retain the Adapter's full three-attempt exhaustion history. A fourth
+Codex review then reproduced five more replay gaps: first-probe blockers without principal request
+evidence, code/detail taxonomy relabeling, parse requests carrying unrelated payload, response
+correlations on response-less attempts, and unsafe span identifiers. Six focused tests first
+failed across those contracts; canonical blocker requests, exact request/taxonomy validation,
+response-aware correlation rules, and safe span-ID rejection then reached GREEN. The five focused
+preflight/adapter files first reported 52 passes. Independent Standards/Spec review then reproduced
+generic-v1 span-ID rejection, and Standards also reproduced raw query retention through the new
+generic blocker request field. Both became RED before shared span compatibility was restored,
+generic blocker requests were forbidden, and safe span IDs remained principal-schema-only. The
+five focused files now report 54 passes and all 293 repository tests pass. No AX
 operation, corpus mutation, experiment run, READY artifact, or PR #29 modification occurred.
 
 ## 12. Rejected alternatives and consequences

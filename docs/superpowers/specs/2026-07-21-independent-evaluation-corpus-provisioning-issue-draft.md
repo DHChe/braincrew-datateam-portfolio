@@ -145,9 +145,11 @@ Issue #34 implementation checkpoint:
   caller-supplied observations and `LIVE_PARSE_*` blockers. Replay exposes the schema version and
   Issue #34 consumers must require the principal-attachment schema; the logical digest proves
   internal consistency rather than origin authenticity. The Issue #34 replay validator additionally
-  requires the exact ordered six-case attachment map, reviewed owner, and sole `HRPractitioner`
-  role. A blocker-free artifact requires all six probes; an incomplete artifact requires the one
-  terminal blocker that explains the next probe, or the pre-probe mapping blocker.
+  requires the exact ordered six-case attachment map, reviewed owner, sole `HRPractitioner` role,
+  fixed timeout, correlation identity, and parse-only request shape. A blocker-free artifact
+  requires all six probes; an incomplete artifact requires the one terminal blocker that explains
+  the next probe, or the pre-probe mapping blocker. Every operation blocker retains its canonical
+  request so the first failed probe still proves the tenant, subject, role, and attachment.
   Untrusted response correlation values are digest-only at the retention boundary. An
   available response with a failure code is blocked, while an available response with zero spans
   remains a downstream quality observation. Successful transport is retained only as six
@@ -170,5 +172,12 @@ Issue #34 implementation checkpoint:
   replaying without attempts. A final adversarial pass also bound span digests to frozen source
   substrings, one tenant to the retained probe set, and blocker codes to their terminal attempt
   outcomes. Terminal timeout/retryable failures must also retain all three exhausted attempts.
-  Those paths are repaired while preserving generic v1. Focused preflight/adapter
-  coverage reports 50 passes and all 289 repository tests pass.
+  A fourth Codex review then reproduced missing first-blocker principal evidence, taxonomy
+  relabeling, unrelated parse-request payload, impossible response correlation, and unsafe span-ID
+  retention. Six tests first failed before canonical blocker requests, exact request and
+  code/detail/outcome/status validation, response-aware correlation, and bounded span identifiers
+  reached GREEN. Those paths are repaired while preserving generic v1. Focused preflight/adapter
+  coverage first reported 52 passes. Independent review then reproduced a generic-v1 legacy span
+  ID rejection and raw query retention through a generic blocker request. Shared span compatibility
+  is restored, generic blocker requests are forbidden, and safe span-ID checks remain confined to
+  Issue #34; focused coverage reports 54 passes and all 293 repository tests pass.

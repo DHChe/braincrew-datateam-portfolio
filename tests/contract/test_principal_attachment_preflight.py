@@ -228,6 +228,7 @@ def test_nonfrozen_dataset_component_digest_blocks_before_http(
 
 def test_nonexistent_attachment_is_a_mapping_blocker_without_retry(
     dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
 ) -> None:
     request_count = 0
 
@@ -241,6 +242,20 @@ def test_nonexistent_attachment_is_a_mapping_blocker_without_retry(
     assert request_count == 1
     assert [blocker.code for blocker in artifact.blockers] == ["PARSE_ATTACHMENT_MAPPING_INVALID"]
     assert artifact.blockers[0].detail == "attachment_not_found"
+
+    artifact_path = live_preflight.write_live_preflight_artifact(
+        artifact,
+        tmp_path / "nonexistent-attachment-evidence.json",
+    )
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    payload["blockers"][0]["code"] = "EVALUATION_PRINCIPAL_SUBJECT_INVALID"
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="contradicts its terminal attempt"):
+        live_preflight.replay_live_preflight_artifact(artifact_path)
 
 
 def test_inaccessible_attachment_preserves_the_live_operation_blocker(
@@ -261,6 +276,33 @@ def test_inaccessible_attachment_preserves_the_live_operation_blocker(
     )
     assert artifact.blockers[0].attempts[0].outcome == "request_error"
     assert artifact.blockers[0].attempts[0].status_code is None
+    assert artifact.blockers[0].request is not None
+    assert artifact.blockers[0].request.tenant_id == TENANT_ID
+    assert artifact.blockers[0].request.user_id == OWNER_USER_ID
+    assert artifact.blockers[0].request.roles == ("HRPractitioner",)
+
+
+def test_request_error_attempt_cannot_claim_a_response_correlation(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("synthetic endpoint unavailable", request=request)
+
+    artifact = _capture(dataset_validation, transport=httpx.MockTransport(handler))
+    artifact_path = live_preflight.write_live_preflight_artifact(
+        artifact,
+        tmp_path / "request-error-evidence.json",
+    )
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    payload["blockers"][0]["attempts"][0]["response_correlation_id"] = "sha256:" + "0" * 64
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="cannot declare a response correlation"):
+        live_preflight.replay_live_preflight_artifact(artifact_path)
 
 
 def test_unavailable_parse_preserves_the_existing_typed_live_blocker(
@@ -351,6 +393,26 @@ def test_successful_transport_with_invalid_strict_evidence_remains_blocked(
     assert [blocker.code for blocker in artifact.blockers] == ["LIVE_PARSE_OBSERVATION_FAILED"]
     assert artifact.blockers[0].detail == detail
     assert artifact.parse_observations == ()
+
+
+def test_unsafe_span_identifier_is_blocked_without_retaining_it(
+    dataset_validation: DatasetValidationReport,
+) -> None:
+    cases = _verification_cases(dataset_validation)
+    unsafe_span_id = "Bearer secret-material"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested = _requested_attachment(request)
+        document_id = _attachment_documents()[requested]
+        payload = _parse_response(cases[document_id], attachment_id=requested)
+        payload["evidence_spans"][0]["id"] = unsafe_span_id
+        return httpx.Response(200, json=payload)
+
+    artifact = _capture(dataset_validation, transport=httpx.MockTransport(handler))
+
+    assert [blocker.code for blocker in artifact.blockers] == ["LIVE_PARSE_OBSERVATION_FAILED"]
+    assert artifact.blockers[0].detail == "evidence_span_invalid"
+    assert unsafe_span_id not in artifact.model_dump_json()
 
 
 def test_available_parse_with_empty_spans_remains_measureable(

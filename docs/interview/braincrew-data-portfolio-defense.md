@@ -707,7 +707,11 @@ Trade-offs and failure modes:
   retries recover to an HTTP success whose evidence is then rejected, that blocker still retains
   the complete retry-plus-success attempt sequence. A non-timeout connection failure is
   non-retryable but retains a `request_error` attempt with method, path, ordinal, and timing on
-  `LIVE_PARSE_OBSERVATION_UNREACHABLE`.
+  `LIVE_PARSE_OBSERVATION_UNREACHABLE`. Every operation blocker also retains its canonical request,
+  so a failure on the first probe still proves the tenant, owner, role, and attachment. Replay
+  requires the fixed parse-only request shape and rejects query/corpus/retrieval fields, impossible
+  correlations on attempts without a response, mismatched code/detail/outcome/status taxonomy, and
+  server-controlled span IDs outside the bounded safe grammar.
 
 Validation evidence:
 : A clean baseline passed frozen sync, Ruff, strict mypy, and all 264 pre-change tests before the
@@ -730,8 +734,13 @@ Validation evidence:
   focused preflight/adapter files report 50 passes. A final adversarial pass bound span digests to
   the frozen substrings, one tenant to all retained observations, and blocker codes to terminal
   attempt outcomes, then rejected shortening a terminal retryable failure below its three-attempt
-  exhaustion history. All 289 repository tests pass. No real preflight or READY
-  artifact was produced.
+  exhaustion history. A fourth Codex review then produced six RED failures covering five gaps:
+  first-probe principal evidence, blocker taxonomy binding, parse-only requests, response-less
+  correlation, and safe span IDs. Independent review then caught a generic-v1 span compatibility
+  regression and raw query retention through generic blocker requests. Both were RED before the
+  safe-ID check was confined to Issue #34 and generic blocker requests were rejected. The focused
+  five-file suite reports 54 passes after repair, and all 293 repository tests pass. No real
+  preflight or READY artifact was produced.
 
 Likely follow-ups:
 
