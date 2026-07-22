@@ -3,7 +3,7 @@
 Date: 2026-07-21
 Status: published as [Braincrew Issue #30](https://github.com/DHChe/braincrew-datateam-portfolio/issues/30) on 2026-07-21; local source retained
 Implementation tickets: [#31](https://github.com/DHChe/braincrew-datateam-portfolio/issues/31) through [#38](https://github.com/DHChe/braincrew-datateam-portfolio/issues/38)
-Implementation checkpoint: AX #33-#35 closed; Braincrew #31 selected next on 2026-07-22
+Implementation checkpoint: Braincrew #31 merged; Braincrew #32 locally verified at its Git gate on 2026-07-22
 Proposed title: Provision an independently authored corpus for pinned live Verification
 Tracker relationship: new Braincrew prerequisite that blocks Issue #15
 Approved design: `2026-07-20-independent-evaluation-corpus-provisioning-design.md`
@@ -122,3 +122,4 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - AX #33 has published the reviewed generic schema and no-write dry-run, AX #34 has published typed evaluation-principal validation, and AX #35 has published the atomic apply path. Braincrew #31 may now vendor and digest-pin the exact schema; AX #36 and every data/operational gate remain incomplete.
 - The current clean preflight artifact remains `BLOCKED`; neither this draft nor later ticket publication changes that measured state.
 - `to-tickets` published Braincrew #31-#38 with the approved dependencies. Braincrew #31 is the selected next fresh-context ticket; the independent authoring run remains the later restricted-context Braincrew #36 ticket.
+- Braincrew #31 is now merged and closed. Braincrew #32 implements only the capability-restricted launcher and sanitized independence receipt; actual brief approval remains #35 and the independent authoring/sealing run remains #36.

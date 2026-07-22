@@ -463,6 +463,29 @@ and digests only. Replay recomputes the receipt, manifest, ordered content diges
 digest; a single-byte mutation fails closed. No dataset, fixture, AX implementation, provider,
 database, service, import manifest, or experiment execution enters this boundary.
 
+### 14.2 Evaluation-blind corpus authoring boundary
+
+Issue #32 adds `braincrew-eval launch-authoring` as a separate pre-seal capability boundary. It
+requires a clean Braincrew Git source, one committed approved brief, the Issue #31 digest-pinned AX
+pack schema and declaration, one empty writable staging directory outside the repository, and one
+digest-identified executable tool. The child process receives a cleared environment and exactly
+four read-only input files: the brief, pack schema, schema digest declaration, and canonical input
+digest inventory.
+
+The verified macOS backend is a deny-by-default `sandbox-exec` profile; a Linux Bubblewrap backend
+is used only when already installed, and every unsupported environment fails closed without an
+unrestricted fallback. Braincrew/AX repositories, datasets, fixtures, prior artifacts, databases,
+credentials, private documents, undeclared filesystem content, network, and post-seal feedback are
+denied capability classes. A real acceptance probe observes each denial while preserving declared
+input reads and staging writes.
+
+The create-only `corpus-authoring-independence-receipt-v1` stores only the clean commit, tool and
+input digests, denied classes, sandbox identity, opaque staging identity, timing, exit state, and
+path-redacted output digests. It excludes stdout/stderr, prompt transcript, source text, secret or
+private paths, query/answer/expected-evidence material, scores, and split labels. The launcher does
+not invoke sealing or qualification, so later validator success or failure has no feedback edge
+into authoring.
+
 ## 15. Testing strategy
 
 Required layers are schema tests, hand-calculated metric goldens, claim atomization and proposition-matcher tests, relevant property tests, Adapter HTTP contracts, state and storage invariants, fixture-mode E2E, live AX smoke and Verification, dashboard export and browser checks, and clean Docker reproduction.

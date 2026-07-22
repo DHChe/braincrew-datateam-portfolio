@@ -412,6 +412,50 @@ seal/replay, sanitized-receipt scanning, and wheel schema inclusion also pass. S
 and Spec review axes have zero unresolved finding. Publication remains stopped at the repository
 Git Lifecycle Proposal Gate.
 
+### Issue #32 authoring-boundary implementation lock
+
+`braincrew-eval launch-authoring` accepts a clean Git worktree, one committed repository-relative
+brief, one empty staging directory outside that worktree, one create-only receipt path, and one
+executable authoring tool outside both source and staging. The launcher reuses the Issue #31 fixed
+`ax-synthetic-seed-pack-v1.schema.json` digest and its committed declaration. It copies only the
+brief, pack schema, schema digest declaration, and a generated canonical digest inventory into a
+temporary read-only input directory. The authoring tool receives only that input directory and the
+empty writable staging directory through a cleared environment.
+
+Filesystem and network independence are operating-system capabilities, not prompt claims. On the
+verified macOS path the launcher uses the built-in `sandbox-exec` deny-by-default profile; on Linux
+it can use a preinstalled Bubblewrap backend and otherwise fails closed as
+`AUTHORING_SANDBOX_UNAVAILABLE`. Neither path adds a repository package dependency. The sandbox
+denies the Braincrew and AX repositories, evaluation datasets, test fixtures, prior artifacts,
+database paths or sockets, inherited credential environment, private documents, undeclared
+filesystem content, network access, and post-seal validator feedback. Unsupported or missing
+sandbox support never falls back to an unrestricted process.
+
+The create-only `corpus-authoring-independence-receipt-v1` binds the clean Braincrew commit, tool
+name/version and executable/invocation digests, all input digests, the fixed denied-capability
+classes, sandbox backend, opaque staging run identity, UTC start/end time, duration, exit status,
+and path-redacted output file/tree digests. It records neither process stdout/stderr nor raw paths
+or content. Prompt transcripts, source text, secret values, query/answer/expected-evidence material,
+scores, and split labels therefore do not enter the retained receipt.
+
+The authoring launcher never imports or invokes the Issue #31 sealer or any future qualification
+validator. Its only output lane is the isolated staging directory plus the external sanitized
+receipt. A post-seal result is an explicitly denied capability class, so a qualification failure
+cannot become a new prompt, input mount, or mutation command in this process.
+
+The first RED was five tests failing because `launch-authoring` did not exist. Minimal GREEN passed
+those five. Review-driven RED/GREEN then rejected non-Braincrew source remotes, narrowed metadata
+visibility to declared/runtime path ancestors, converted invalid tool labels into a typed error, and
+removed broad `/Library` reads that exposed the system keychain. All seven authoring tests now pass,
+including a real macOS sandbox probe that can read the four declared inputs and write staging while
+repository, dataset, fixture, artifact, AX, database, credential, private-document,
+undeclared-filesystem, system-keychain, network, and validator-feedback attempts all observe
+denial. Actual brief approval, corpus text authoring, sealing execution, dataset-v2 qualification,
+principal mapping, AX operation, and experiment execution remain later tickets. Final verification
+reports `239 passed` across the repository and `32 passed` across the combined authoring/sealing
+boundary, with frozen sync, Ruff format/lint, strict mypy, installed CLI help, and Git whitespace
+validation also passing.
+
 ## 12. Rejected alternatives and consequences
 
 - Reverse-generating the corpus from expected evidence was rejected because the evaluator would
@@ -445,7 +489,8 @@ No baseline, candidate, comparison, or live quality claim is part of this comple
 ## 14. Implementation progress checkpoint
 
 As of 2026-07-22, the `to-spec` parents and `to-tickets` graph are published. AX #33, #34, and
-#35 are merged; AX #36 remains open. Braincrew #31 and #34 now have their external AX prerequisites
-closed, while Braincrew #31 is the selected next implementation ticket because it opens both the
-authoring-boundary and qualification branches. No Braincrew pack, operator snapshot, target load,
-renewed preflight, baseline, candidate, comparison, or live quality claim exists.
+#35 are merged; AX #36 remains open. Braincrew #31 is merged and closed, which opened both the
+authoring-boundary and qualification branches. Braincrew #32 is the current implementation ticket;
+#33 remains open without `ready-for-agent`. No approved authoring brief, authored or sealed Braincrew
+pack, qualification receipt, operator snapshot, target load, renewed preflight, baseline, candidate,
+comparison, or live quality claim exists.
