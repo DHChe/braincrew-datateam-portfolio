@@ -664,6 +664,53 @@ Likely follow-ups:
   response-summary, attempt, and digest integrity only. Evaluators and Issue #38's READY decision
   remain downstream.
 
+### D8.5 Separate principal, mapping, and live-operation failures
+
+Decision:
+: Implement Issue #34 on merged Issue #42 only. Reject noncanonical tenant/user UUIDs before HTTP,
+  require active owner `22222222-2222-2222-2222-222222222222`, apply exactly
+  `HRPractitioner`, and freeze the six reviewed parsing attachment UUIDs. Retain successful probes
+  only through the create-only `live-preflight-evidence-v1` artifact.
+
+Why:
+: The earlier placeholder user could reach AX as a malformed subject and make an authorization
+  problem look like service failure. A document label could also point to a nonexistent or wrong
+  attachment. Separating configuration, subject, mapping, and operation failures makes the
+  evidence actionable without weakening fail-closed behavior.
+
+Rejected alternatives:
+: Normalize malformed IDs, retry unknown subjects, accept a partial or caller-invented mapping,
+  infer authorization from persona text, or turn six HTTP 200 responses into a parsing-quality
+  pass. Each hides a different failure cause or claims more than the probe measured.
+
+Trade-offs and failure modes:
+: The reviewed owner and attachment UUIDs are environment-specific contract data, so a legitimate
+  corpus re-import requires an explicit reviewed mapping update rather than automatic repair.
+  Missing/nonexistent/mismatched attachment identity becomes `PARSE_ATTACHMENT_MAPPING_INVALID`;
+  malformed principals become `EVALUATION_PRINCIPAL_ID_INVALID`; unknown/inactive subjects become
+  `EVALUATION_PRINCIPAL_SUBJECT_INVALID`; inaccessible or unstable live operations retain the
+  existing `LIVE_PARSE_OBSERVATION_*` family and retry history.
+
+Validation evidence:
+: A clean baseline passed frozen sync, Ruff, strict mypy, and all 264 pre-change tests before the
+  first RED. Fifteen new acceptance/contract tests then failed on the absent policy. Minimal GREEN
+  covers pre-HTTP rejection, owner/role projection, exact mapping, typed AX errors, digest/span
+  checks including exact `utf8-text`/`stdlib-1` parser identity, retry retention, six sanitized
+  probes, create-only publication, and replay. Review first reproduced acceptance of a non-matching
+  parser, then the exact pinned parser repair reached 16 focused and 52 affected regression passes;
+  both review axes have zero unresolved finding. Final frozen sync, Ruff format/lint, strict mypy,
+  all 280 repository tests, and Git whitespace validation pass. No real preflight or READY artifact
+  was produced.
+
+Likely follow-ups:
+
+- "Why is an HTTP 200 not enough?" — It proves transport and schema only. Source digest and span
+  integrity must also match, while headings, metadata, tables, and lists remain later quality data.
+- "Why hard-code the six UUIDs?" — They are reviewed attachment identities for the pinned local
+  corpus. Accepting arbitrary caller input would make the evidence non-reproducible.
+- "Did Issue #34 make the system READY?" — No. It implements and tests the policy collector. Issue
+  #38 alone may perform the actual renewed preflight and publish READY.
+
 ### D9. Use layered verification and an evidence-driven ten-day sequence
 
 Decision:

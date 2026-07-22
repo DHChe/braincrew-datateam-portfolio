@@ -9,9 +9,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 OperationName = Literal[
     "preflight",
@@ -53,13 +61,22 @@ class AxHttpContract(StrictModel):
 class AxHttpAdapterConfig(StrictModel):
     base_url: str
     sut_commit_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
-    tenant_id: str = Field(
-        pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-    )
+    tenant_id: str
     user_id: str
     roles: tuple[str, ...]
     bearer_token: str | None = Field(default=None, repr=False, exclude=True)
     timeout_seconds: float = Field(default=10.0, gt=0)
+
+    @field_validator("tenant_id", "user_id")
+    @classmethod
+    def require_canonical_uuid(cls, value: str) -> str:
+        try:
+            parsed = UUID(value)
+        except (AttributeError, ValueError) as error:
+            raise ValueError("principal identifiers must be canonical UUIDs") from error
+        if str(parsed) != value:
+            raise ValueError("principal identifiers must be canonical UUIDs")
+        return value
 
     @model_validator(mode="after")
     def require_roles(self) -> AxHttpAdapterConfig:

@@ -529,6 +529,40 @@ ambiguous attachment naming, mixed run identity, and the stale grounded Adapter 
 focused tests including that grounded regression and all 264 repository tests pass after repair,
 with Ruff format/lint, strict mypy, and Git whitespace validation also green.
 
+### Issue #34 principal and attachment preflight implementation lock
+
+Issue #34 consumes the merged Issue #42 seam without importing Issue #15. `AxHttpAdapterConfig`
+now rejects any tenant or user value that is not the canonical lowercase UUID spelling before an
+HTTP request can be constructed. The policy collector additionally requires the reviewed active
+owner `22222222-2222-2222-2222-222222222222` and applies only `HRPractitioner`. A malformed
+identifier yields non-retryable `EVALUATION_PRINCIPAL_ID_INVALID`; a well-formed unknown or
+inactive AX subject yields non-retryable `EVALUATION_PRINCIPAL_SUBJECT_INVALID`.
+
+Dataset `braincrew-evaluation-dataset@2.0.0` intentionally reuses the v1 parsing component bytes.
+Its six Verification documents `synthetic-rule-015` through `synthetic-rule-020` must match the
+reviewed immutable attachment map in section 8 exactly. Missing, malformed, extra, unreviewed,
+nonexistent, or response-mismatched attachment identities yield
+`PARSE_ATTACHMENT_MAPPING_INVALID`. Inaccessible or otherwise failed operations retain the
+existing `LIVE_PARSE_OBSERVATION_*` family and the Adapter's timeout, `429`, and `5xx` retry
+history.
+
+A successful capture requires all six responses to bind the requested attachment, exact pinned
+AX parser identity `utf8-text`/`stdlib-1`, canonical source-text digest, and valid span
+offsets/text digests. The retained
+artifact records exact request role, structure counts, attempts, and sanitized response digests,
+but no raw extracted or span text. It remains `live-preflight-evidence-v1` with
+`capture_state="captured"`; transport success creates neither parsing-quality output nor READY.
+Issue #38 alone owns an actual renewed preflight and READY publication.
+
+The clean Issue #34 baseline passed all 264 pre-change tests before RED. The first 15 new
+contract/acceptance tests failed on the absent policy collector and canonical user UUID contract;
+minimal GREEN passed those 15. Ticket review then reproduced acceptance of a non-matching parser
+as `1 failed, 14 passed` before the exact pinned parser repair reached 16 focused passes. The
+affected regression set reports 52 passing tests and both Standards and Spec review axes have zero
+unresolved finding. Final frozen sync, Ruff format/lint, strict mypy, all 280 repository tests, and
+Git whitespace validation pass. No AX operation, corpus mutation, experiment run, READY artifact,
+or PR #29 modification occurred.
+
 ## 12. Rejected alternatives and consequences
 
 - Reverse-generating the corpus from expected evidence was rejected because the evaluator would
@@ -563,9 +597,11 @@ No baseline, candidate, comparison, or live quality claim is part of this comple
 
 As of 2026-07-22, the `to-spec` parents and `to-tickets` graph are published. AX #33, #34, and
 #35 are merged; AX #36 remains open. Braincrew PR #41 merged #33 as
-`fdbb732ee05a9de5270c91a82f0930da0413107b`; #33 is closed and cleaned up. The user approved
-Issue #42 as the minimum substrate extraction after Issue #34 stopped before RED on the missing
-merged seam. #42 is open with `ready-for-agent`, is a native child of #30, and natively blocks #34;
-#34 remains open without `ready-for-agent`. No approved authoring brief, actually authored or
-sealed Braincrew pack, real qualification receipt, operator snapshot, target load, renewed
-preflight, baseline, candidate, comparison, or live quality claim exists.
+`fdbb732ee05a9de5270c91a82f0930da0413107b`; #33 is closed and cleaned up. Braincrew PR #43
+merged the minimum Issue #42 substrate as `93c8e8dabab855b7f2f700df73cd04ce38995f29` and #42 is
+closed, though its clean local/remote branch and dedicated worktree still await cleanup. Issue #34
+is active from that exact merge with `ready-for-agent`; its principal/mapping policy is implemented,
+reviewed, and fully verified locally at the Git Lifecycle Proposal Gate. No approved authoring brief, actually
+authored or sealed Braincrew pack, real qualification receipt, operator snapshot, target load,
+renewed Issue #38 preflight, READY artifact, baseline, candidate, comparison, or live quality
+claim exists.

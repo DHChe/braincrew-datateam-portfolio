@@ -17,6 +17,7 @@ from braincrew.ax_http_adapter import (
 
 PINNED_AX_SHA = "72805930d9addd8ea41743d1922acf8de621c3f8"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
+USER_ID = "22222222-2222-2222-2222-222222222222"
 TEXT_DIGEST = "sha256:" + "1" * 64
 CORPUS_DIGEST = "sha256:" + "2" * 64
 
@@ -138,7 +139,7 @@ def _adapter(handler: Callable[[httpx.Request], httpx.Response]) -> AxHttpAdapte
             base_url="https://ax.example.test",
             sut_commit_sha=PINNED_AX_SHA,
             tenant_id=TENANT_ID,
-            user_id="evaluation-plane",
+            user_id=USER_ID,
             roles=("HRPractitioner",),
         ),
         transport=httpx.MockTransport(handler),

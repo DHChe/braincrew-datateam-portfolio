@@ -3,7 +3,7 @@
 Date: 2026-07-21
 Status: published as [Braincrew Issue #30](https://github.com/DHChe/braincrew-datateam-portfolio/issues/30) on 2026-07-21; local source retained
 Implementation tickets: [#31](https://github.com/DHChe/braincrew-datateam-portfolio/issues/31) through [#38](https://github.com/DHChe/braincrew-datateam-portfolio/issues/38)
-Implementation checkpoint: Braincrew #31/#32 merged; Braincrew #33 locally verified at its Git gate on 2026-07-22
+Implementation checkpoint: Braincrew #31/#32/#33/#42 merged; Braincrew #34 reviewed and fully verified locally at its Git gate on 2026-07-22
 Proposed title: Provision an independently authored corpus for pinned live Verification
 Tracker relationship: new Braincrew prerequisite that blocks Issue #15
 Approved design: `2026-07-20-independent-evaluation-corpus-provisioning-design.md`
@@ -125,4 +125,16 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - AX #33 has published the reviewed generic schema and no-write dry-run, AX #34 has published typed evaluation-principal validation, and AX #35 has published the atomic apply path. Braincrew #31 may now vendor and digest-pin the exact schema; AX #36 and every data/operational gate remain incomplete.
 - The current clean preflight artifact remains `BLOCKED`; neither this draft nor later ticket publication changes that measured state.
 - `to-tickets` published Braincrew #31-#38 with the approved dependencies. #42 was later added as the minimum extraction required to keep #34 independent of unmerged Issue #15 work; #42 is a native child of #30 and native blocker of #34.
-- Braincrew #31, #32, and #33 are merged and closed; PR #41 merged #33 as `fdbb732ee05a9de5270c91a82f0930da0413107b`. #42 is open with `ready-for-agent`, and #34 is open without that label until #42 merges. Actual brief approval remains #35, independent authoring/sealing remains #36, real qualification remains #37, and actual preflight renewal remains #38.
+- Braincrew #31, #32, #33, and #42 are merged and closed. PR #43 merged #42 as `93c8e8dabab855b7f2f700df73cd04ce38995f29`; its clean local/remote branch and dedicated worktree still await cleanup. #34 is now open with `ready-for-agent` and implements its policy independently on that merged base. Actual brief approval remains #35, independent authoring/sealing remains #36, real qualification remains #37, and actual preflight renewal remains #38.
+
+Issue #34 implementation checkpoint:
+: The collector rejects noncanonical tenant/user UUIDs before HTTP, requires reviewed owner
+  `22222222-2222-2222-2222-222222222222`, sends exactly `HRPractitioner`, and requires the six
+  approved parsing attachment UUIDs. It maps malformed principals, unknown/inactive subjects, and
+  attachment mapping failures to distinct non-retryable blockers while preserving existing live
+  retry/failure blockers. Successful transport is retained only as six sanitized strict parse
+  observations in the Issue #42 create-only artifact; it emits no parsing-quality result or READY.
+  A 264-test clean baseline preceded the first 15-test RED. Ticket review separately reproduced a
+  non-matching parser defect before repair; focused coverage now reports 16 passes, the affected
+  regression set reports 52 passes, and both review axes have zero unresolved finding. Final frozen
+  sync, Ruff format/lint, strict mypy, all 280 repository tests, and Git whitespace validation pass.

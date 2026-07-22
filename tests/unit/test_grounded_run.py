@@ -281,7 +281,7 @@ def test_grounded_source_text_resolution_uses_the_ax_sut_adapter() -> None:
             base_url="https://ax.example.test",
             sut_commit_sha=PINNED_AX_SHA,
             tenant_id="11111111-1111-1111-1111-111111111111",
-            user_id="evaluation-plane",
+            user_id="22222222-2222-2222-2222-222222222222",
             roles=("Executive",),
         ),
         transport=httpx.MockTransport(handler),
