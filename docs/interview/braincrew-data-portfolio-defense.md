@@ -758,6 +758,95 @@ Likely follow-ups:
 - "Did Issue #34 make the system READY?" — No. It implements and tests the policy collector. Issue
   #38 alone may perform the actual renewed preflight and publish READY.
 
+### D8.6 Approve exact evaluation-blind authoring guidance before corpus bytes exist
+
+Decision:
+: Freeze `docs/corpus/braincrew-evaluation-corpus-v2-authoring-brief.md` before Issue #36. Bind
+  its exact 10,680 bytes to
+  `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`, an adjacent digest
+  declaration, and a separate independent leakage-review record. Keep authoring blocked until a
+  clean committed Braincrew SHA reproduces that digest and the provenance-evidence plus
+  source-order prerequisites are resolved.
+
+Why:
+: A filesystem sandbox proves which inputs an authoring process can read, but it does not prove
+  that the allowed brief is generic, accurate, or free of hidden benchmark hints. Reviewing and
+  digest-locking the brief before any corpus byte exists closes that semantic gap and prevents a
+  later wording edit from inheriting an earlier approval.
+
+  PR #45 review also proved that isolation alone cannot make an impossible contract satisfiable.
+  A blind author cannot reproduce source identities and digests hidden inside an already-frozen
+  evaluation dataset, and a literal `provenance_status=reviewed` cannot prove who reviewed which
+  bytes. The workflow therefore requires a source-first evaluation freeze or pre-existing
+  evaluation-independent exact source contract, plus durable review evidence, before authoring.
+
+Rejected alternatives:
+: Prompt-only confidentiality instructions, guessed lowercase role aliases, public-source
+  ingestion or adaptation under a pack-wide synthetic label, approval without an exact byte
+  digest, opening evaluation design or result material during authoring, and feeding qualification
+  mismatches back into authoring. Those paths make
+  independence unverifiable, can produce AX-invalid visibility/provenance metadata, or allow a
+  changed brief to masquerade as reviewed.
+
+Trade-offs and failure modes:
+: Exact-byte approval makes even a harmless wording change require a fresh evaluation-blind
+  authoring and review cycle. The brief must also track external AX contracts without importing
+  AX code. Staged authoring is pinned to
+  `schemas/ax-synthetic-seed-content-v1.schema.json` at
+  `sha256:372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb`; the later
+  `schemas/ax-synthetic-seed-pack-v1.schema.json` at
+  `sha256:4ddc71d7408324bfed6e7a25024899a7f689431f5f024fb2329f3f844352bffa` governs only the
+  post-qualification import manifest. The current Issue #32 launcher still exposes the pack
+  schema, so a separate prerequisite must repair and test that production boundary before Issue
+  #36; Issue #35 does not silently reopen the closed ticket. To keep the role pin narrow, the brief records AX merge
+  `47673b83a9fb431f2bad550781db18c7bee8b67e`, content version
+  `ax-synthetic-seed-content-v1`, canonical `pack_contract.py` digest
+  `09fe230ca2e976bec156d72987b5cf1f39419c34829e323222d11bef35e1fc2a`, and exact roles
+  `Executive`, `HRAdmin`, `HRPractitioner`, and `Employee`. Post-review drift, incorrect aliases,
+  non-CC0 licensing, BOM/Unicode/line-ending drift, and unsafe paths all fail closed.
+
+  The strict staged pack cannot contain an undeclared receipt. A future create-only provenance
+  sidecar must therefore remain outside the pack while binding the sealed digest, per-source
+  identities and digests, synthetic origin, author, CC0 assignment, reviewer/date/timezone,
+  decision, and its own digest. Issue #36 remains blocked until the sealer can accept, preserve,
+  and replay that sidecar.
+
+Validation evidence:
+: The first TDD run failed twice because the brief was absent. Review-driven cycles then failed
+  four tests for the unpinned role authority and missing reviewed-to-committed byte binding, two
+  tests for overbroad licensing and incomplete byte/path rules, and two tests for missing digest
+  and review artifacts. Standards later caught stale gate-state wording inside the brief; a fresh
+  evaluation-blind repair invalidated the first approval, and two exact-byte tests failed against
+  the stale artifacts before reapproval and relocking. Spec review then caught a remaining
+  contradiction that excluded the brief's own digest lock; another fresh evaluation-blind RED/GREEN
+  repair and exact-byte reapproval restored ten passes. Final Spec review then found that external
+  CC0 adaptation contradicted the synthetic-only pack contract; another fresh blind RED/GREEN cycle
+  required every source to be newly authored, `CC0-1.0`, and reviewed, prohibited public-source
+  ingestion/adaptation, and rebound the ten-pass suite. PR #45 review then produced targeted RED
+  failures for the wrong authoring schema and stale exact-byte artifacts. A new evaluation-blind
+  author amended only the brief contract, a separate blind reviewer approved it with zero material
+  findings, and the focused suite passed with the content/import schema split, provenance sidecar
+  blocker, source-order blocker, and exact digest above.
+  A fresh independent `code-reviewer` inspected only sanitized, allowlisted policy inputs; all
+  tests, prior digests, prior review evidence, and downstream documents were denied. The reviewer
+  found zero material issues and independently reproduced the exact digest above. The fixed repair
+  commit's post-commit byte equality is **PASS**. Issue #46, Issue #47, and the separate
+  data-creation proposal gate remain, so Issue #36 is still blocked.
+
+Likely follow-ups:
+
+- "Did the reviewer see the benchmark cases?" — No. The authoring and leakage-review contexts
+  excluded datasets, fixtures, queries, expected answers/evidence, scores, splits, prior results,
+  PR #29, and its branch.
+- "Why are the AX roles capitalized?" — They are exact case-sensitive values from the external
+  seed-pack `VisibilityRole` validator, not UI labels or guessed aliases.
+- "Does APPROVE mean Issue #36 can run now?" — No. APPROVE covers the generic brief and its exact
+  bytes, not the missing execution architecture. Issue #36 remains blocked until the provenance
+  sidecar is supported, a source-first evaluation freeze or pre-existing independent source
+  contract is approved, and the committed brief reproduces the approved digest.
+- "Did Issue #35 create a corpus or manifest?" — No. It created only the generic brief, its
+  digest declaration, contract tests, and leakage-review evidence.
+
 ### D9. Use layered verification and an evidence-driven ten-day sequence
 
 Decision:
