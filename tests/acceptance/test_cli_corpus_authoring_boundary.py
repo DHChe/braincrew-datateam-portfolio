@@ -48,8 +48,8 @@ staging = Path(os.environ["BRAINCREW_AUTHORING_STAGING_DIR"])
 braincrew_root = Path({str(source_root)!r})
 expected_inputs = {{
     "authoring-brief.md",
-    "ax-synthetic-seed-pack-v1.schema.json",
-    "ax-synthetic-seed-pack-v1.schema.sha256",
+    "ax-synthetic-seed-content-v1.schema.json",
+    "ax-synthetic-seed-content-v1.schema.sha256",
     "input-digests.json",
 }}
 results = {{"allowed_inputs": sorted(path.name for path in inputs.iterdir())}}
@@ -117,8 +117,8 @@ results["input_set_exact"] = set(results["allowed_inputs"]) == expected_inputs
     probe = json.loads((staging_dir / "capability-probe.json").read_text(encoding="utf-8"))
     assert probe.pop("allowed_inputs") == [
         "authoring-brief.md",
-        "ax-synthetic-seed-pack-v1.schema.json",
-        "ax-synthetic-seed-pack-v1.schema.sha256",
+        "ax-synthetic-seed-content-v1.schema.json",
+        "ax-synthetic-seed-content-v1.schema.sha256",
         "input-digests.json",
     ]
     assert probe.pop("input_set_exact") is True

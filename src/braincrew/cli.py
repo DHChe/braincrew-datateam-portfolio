@@ -426,10 +426,14 @@ def seal_corpus(
         typer.Option("--staging-dir", exists=True, file_okay=False, readable=True),
     ],
     output_root: Annotated[Path, typer.Option("--output-root")],
+    provenance_sidecar: Annotated[
+        Path | None,
+        typer.Option("--provenance-sidecar", exists=True, dir_okay=False, readable=True),
+    ] = None,
 ) -> None:
-    """Validate and create one immutable synthetic corpus version."""
+    """Validate and create one immutable synthetic corpus version with provenance evidence."""
     try:
-        result = seal_corpus_pack(staging_dir, output_root)
+        result = seal_corpus_pack(staging_dir, output_root, provenance_sidecar)
     except CorpusPackError as error:
         typer.echo(f"Invalid corpus pack: {error}", err=True)
         raise typer.Exit(code=2) from error
@@ -439,6 +443,7 @@ def seal_corpus(
                 "receipt_path": str(result.receipt_path),
                 "receipt_digest": result.receipt.receipt_digest,
                 "sealed_content_digest": result.receipt.sealed_content_digest,
+                "provenance_digest": result.receipt.provenance_digest,
                 "corpus_id": result.receipt.corpus_id,
                 "corpus_version": result.receipt.corpus_version,
                 "source_count": result.receipt.source_count,
@@ -556,9 +561,10 @@ def replay_fixture(
     replay_summary: Mapping[str, object]
     try:
         payload = json.loads(artifact_path.read_text(encoding="utf-8"))
-        if isinstance(payload, dict) and payload.get("schema_version") == (
-            "corpus-sealing-receipt-v1"
-        ):
+        if isinstance(payload, dict) and payload.get("schema_version") in {
+            "corpus-sealing-receipt-v1",
+            "corpus-sealing-receipt-v2",
+        }:
             replay_summary = replay_sealing_receipt(artifact_path)
         elif isinstance(payload, dict) and payload.get("schema_version") == (
             "corpus-qualification-receipt-v1"

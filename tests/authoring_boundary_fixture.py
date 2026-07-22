@@ -9,8 +9,8 @@ from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 BRIEF_RELATIVE_PATH = Path("docs/corpus/braincrew-evaluation-corpus-v2-authoring-brief.md")
-PACK_SCHEMA_RELATIVE_PATH = Path("schemas/ax-synthetic-seed-pack-v1.schema.json")
-PACK_DIGEST_RELATIVE_PATH = Path("schemas/ax-synthetic-seed-pack-v1.schema.sha256")
+CONTENT_SCHEMA_RELATIVE_PATH = Path("schemas/ax-synthetic-seed-content-v1.schema.json")
+CONTENT_DIGEST_RELATIVE_PATH = Path("schemas/ax-synthetic-seed-content-v1.schema.sha256")
 EXPECTED_BRAINCREW_REMOTE = "https://github.com/DHChe/braincrew-datateam-portfolio.git"
 
 
@@ -42,10 +42,12 @@ def create_clean_braincrew_source(tmp_path: Path) -> Path:
     schema_dir = source_root / "schemas"
     schema_dir.mkdir()
     shutil.copyfile(
-        REPOSITORY_ROOT / PACK_SCHEMA_RELATIVE_PATH, schema_dir / PACK_SCHEMA_RELATIVE_PATH.name
+        REPOSITORY_ROOT / CONTENT_SCHEMA_RELATIVE_PATH,
+        schema_dir / CONTENT_SCHEMA_RELATIVE_PATH.name,
     )
     shutil.copyfile(
-        REPOSITORY_ROOT / PACK_DIGEST_RELATIVE_PATH, schema_dir / PACK_DIGEST_RELATIVE_PATH.name
+        REPOSITORY_ROOT / CONTENT_DIGEST_RELATIVE_PATH,
+        schema_dir / CONTENT_DIGEST_RELATIVE_PATH.name,
     )
 
     protected_files = {

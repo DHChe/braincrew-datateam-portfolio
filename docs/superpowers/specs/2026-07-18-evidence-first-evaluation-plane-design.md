@@ -466,20 +466,31 @@ sealing path accepts only an isolated staging directory containing canonical
 recursive evaluation-derived fields, floats, unsafe paths, invalid UTF-8, BOM, CR/CRLF, non-NFC,
 digest drift, undeclared files, and any source that is not synthetic/demo, `CC0-1.0`, and reviewed.
 
-Successful sealing creates one new `<corpus-id>/<corpus-version>` directory, copies the exact
-validated bytes, and emits a create-only `corpus-sealing-receipt-v1` containing bounded identities
-and digests only. Replay recomputes the receipt, manifest, ordered content digest, and every source
-digest; a single-byte mutation fails closed. No dataset, fixture, AX implementation, provider,
-database, service, import manifest, or experiment execution enters this boundary.
+Successful sealing requires one external canonical `provenance-review.json` sidecar. Each review
+binds the sealed content digest and one source identity/digest to synthetic origin, authoring
+owner, `CC0-1.0` assignment, review date/timezone, and an approved decision. Reviewer identity
+must differ from the authoring owner. The input sidecar must be a single read-only regular file
+outside staging and the output; missing, self-reviewed, pending, mismatched, mutable, tampered, symlinked, or
+staging-contained evidence fails closed. Successful sealing creates one new
+`<corpus-id>/<corpus-version>` directory, copies only validated canonical bytes, preserves the
+sidecar beside the pack, and emits a create-only `corpus-sealing-receipt-v2` containing bounded
+identities and digests only, including the provenance digest. Replay recomputes the receipt,
+manifest, ordered content digest, every source digest, and the v2 sidecar binding; replay validates
+canonical bytes and digest independent of normalized filesystem write bits. Historical
+`corpus-sealing-receipt-v1` replay remains supported. No dataset, fixture, AX
+implementation, provider, database, service, import manifest, or experiment execution enters this
+boundary.
 
 ### 14.2 Evaluation-blind corpus authoring boundary
 
 Issue #32 adds `braincrew-eval launch-authoring` as a separate pre-seal capability boundary. It
-requires a clean Braincrew Git source, one committed approved brief, the Issue #31 digest-pinned AX
-pack schema and declaration, one empty writable staging directory outside the repository, and one
-digest-identified executable tool. The child process receives a cleared environment and exactly
-four read-only input files: the brief, pack schema, schema digest declaration, and canonical input
-digest inventory.
+requires a clean Braincrew Git source, one committed approved brief, the fixed Issue #31
+digest-pinned `ax-synthetic-seed-content-v1.schema.json` content schema and declaration, one empty
+writable staging directory outside the repository, and one digest-identified executable tool. The
+child process receives a cleared environment and exactly four read-only input files: the brief,
+content schema, schema digest declaration, and canonical input digest inventory. The later
+`ax-synthetic-seed-pack-v1.schema.json` is not mounted because it governs post-qualification import
+only.
 
 The verified macOS backend is a deny-by-default `sandbox-exec` profile; a Linux Bubblewrap backend
 is used only when already installed, and every unsupported environment fails closed without an

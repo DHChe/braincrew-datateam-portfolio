@@ -798,7 +798,8 @@ Issue #46 source-order decision:
   Qualification remains read-only and cannot return feedback, identifiers, or digests to authoring.
 
   This defers case freezing and qualification to later tickets: Issue #36 stays blocked until
-  Issue #47 is complete and a separate data-creation proposal gate authorizes the selected order.
+  Issue #47 is merged and verified and a separate data-creation proposal gate authorizes the
+  selected order.
 
 Rejected alternatives:
 : Prompt-only confidentiality instructions, guessed lowercase role aliases, public-source
@@ -816,20 +817,23 @@ Trade-offs and failure modes:
   `sha256:372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb`; the later
   `schemas/ax-synthetic-seed-pack-v1.schema.json` at
   `sha256:4ddc71d7408324bfed6e7a25024899a7f689431f5f024fb2329f3f844352bffa` governs only the
-  post-qualification import manifest. The current Issue #32 launcher still exposes the pack
-  schema, so a separate prerequisite must repair and test that production boundary before Issue
-  #36; Issue #35 does not silently reopen the closed ticket. To keep the role pin narrow, the brief records AX merge
+  post-qualification import manifest. Issue #47 repairs and tests the production boundary: the
+  restricted sandbox mounts the content schema and its pinned digest, never the pack schema. To
+  keep the role pin narrow, the brief records AX merge
   `47673b83a9fb431f2bad550781db18c7bee8b67e`, content version
   `ax-synthetic-seed-content-v1`, canonical `pack_contract.py` digest
   `09fe230ca2e976bec156d72987b5cf1f39419c34829e323222d11bef35e1fc2a`, and exact roles
   `Executive`, `HRAdmin`, `HRPractitioner`, and `Employee`. Post-review drift, incorrect aliases,
   non-CC0 licensing, BOM/Unicode/line-ending drift, and unsafe paths all fail closed.
 
-  The strict staged pack cannot contain an undeclared receipt. A future create-only provenance
-  sidecar must therefore remain outside the pack while binding the sealed digest, per-source
+  The strict staged pack cannot contain an undeclared receipt. Issue #47 therefore requires an
+  external, read-only, create-only provenance sidecar that binds the sealed digest, per-source
   identities and digests, synthetic origin, author, CC0 assignment, reviewer/date/timezone,
-  decision, and its own digest. Issue #36 remains blocked until the sealer can accept, preserve,
-  and replay that sidecar.
+  decision, and its own digest; reviewer identity must differ from the authoring owner.
+  `corpus-sealing-receipt-v2` binds the validated sidecar digest. The external sealing input must
+  be read-only; replay validates canonical bytes and digest independent of normalized filesystem
+  write bits and fails on missing, pending, mismatched, or tampered evidence. Historical v1 receipt
+  replay remains supported, while new seals require v2.
 
 Validation evidence:
 : The first TDD run failed twice because the brief was absent. Review-driven cycles then failed
@@ -850,8 +854,17 @@ Validation evidence:
   A fresh independent `code-reviewer` inspected only sanitized, allowlisted policy inputs; all
   tests, prior digests, prior review evidence, and downstream documents were denied. The reviewer
   found zero material issues and independently reproduced the exact digest above. The fixed repair
-  commit's post-commit byte equality is **PASS**. Issue #46, Issue #47, and the separate
-  data-creation proposal gate remain, so Issue #36 is still blocked.
+  commit's post-commit byte equality is **PASS**. Issue #46 is now closed after PR #48. Issue #47
+  has local TDD GREEN but must be merged and verified, and the separate data-creation proposal
+  gate must still pass, so Issue #36 remains blocked.
+
+  PR #49 review then found three contract gaps before merge: self-review was accepted, replay
+  depended on preserved read-only filesystem bits, and the canonical design still described the
+  older v1/pack-schema boundary. Each received a focused RED/GREEN repair: reviewer identity must
+  differ from authoring owner, sealing enforces read-only only on the external input while replay
+  uses canonical bytes and digest independent of normalized filesystem write bits, and the
+  canonical design now records the v2/content-schema contract. This is local deterministic test
+  evidence only; fresh PR review and CI remain required before any merge claim.
 
 Likely follow-ups:
 
@@ -861,9 +874,9 @@ Likely follow-ups:
 - "Why are the AX roles capitalized?" — They are exact case-sensitive values from the external
   seed-pack `VisibilityRole` validator, not UI labels or guessed aliases.
 - "Does APPROVE mean Issue #36 can run now?" — No. APPROVE covers the generic brief and its exact
-  bytes, not the missing execution architecture. Issue #36 remains blocked until the provenance
-  sidecar is supported, Issue #46's selected source-first order passes the separate data-creation
-  proposal gate, and the committed brief reproduces the approved digest.
+  bytes, not the missing execution architecture. Issue #36 remains blocked until Issue #47 is
+  merged and verified, the separate data-creation proposal gate approves Issue #46's selected
+  source-first order, and the committed brief reproduces the approved digest.
 - "Did Issue #35 create a corpus or manifest?" — No. It created only the generic brief, its
   digest declaration, contract tests, and leakage-review evidence.
 

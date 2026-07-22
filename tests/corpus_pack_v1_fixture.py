@@ -85,6 +85,40 @@ def write_manifest(staging_dir: Path, payload: dict[str, Any]) -> None:
     (staging_dir / "corpus-manifest.json").write_bytes(canonical_json_bytes(payload))
 
 
+def provenance_sidecar(manifest: dict[str, Any]) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "schema_version": "corpus-provenance-review-v1",
+        "corpus_id": manifest["corpus_id"],
+        "corpus_version": manifest["corpus_version"],
+        "sealed_content_digest": manifest["sealed_content_digest"],
+        "reviews": [
+            {
+                "source_id": source["source_id"],
+                "content_sha256": source["content_sha256"],
+                "synthetic_origin": "newly-authored-synthetic",
+                "authoring_owner": "author-001",
+                "license_assignment": "CC0-1.0",
+                "reviewer_identity": "reviewer-001",
+                "review_date": "2026-07-23",
+                "review_timezone": "Asia/Seoul",
+                "decision": "approved",
+            }
+            for source in manifest["sources"]
+        ],
+    }
+    payload["provenance_digest"] = sha256_digest(canonical_json_bytes(payload))
+    return payload
+
+
+def write_provenance_sidecar(path: Path, manifest: dict[str, Any]) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        path.chmod(0o644)
+    path.write_bytes(canonical_json_bytes(provenance_sidecar(manifest)) + b"\n")
+    path.chmod(0o444)
+    return path
+
+
 def stage_valid_pack(
     staging_dir: Path,
     *,

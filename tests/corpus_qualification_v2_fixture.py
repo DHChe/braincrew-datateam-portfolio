@@ -12,6 +12,7 @@ from .corpus_pack_v1_fixture import (
     corpus_manifest,
     source_descriptor,
     write_manifest,
+    write_provenance_sidecar,
 )
 from .corpus_pack_v1_fixture import (
     run_cli as run_cli,
@@ -217,12 +218,19 @@ def stage_qualification_pack(
 
 
 def seal_qualification_pack(staging_dir: Path, output_root: Path) -> Path:
+    manifest = _read_json(staging_dir / "corpus-manifest.json")
+    provenance_sidecar = write_provenance_sidecar(
+        output_root.parent / f"{staging_dir.name}-provenance-review.json",
+        manifest,
+    )
     result = run_cli(
         "seal-corpus",
         "--staging-dir",
         str(staging_dir),
         "--output-root",
         str(output_root),
+        "--provenance-sidecar",
+        str(provenance_sidecar),
     )
     assert result.returncode == 0, result.stderr
     return Path(json.loads(result.stdout)["receipt_path"]).parent
