@@ -448,6 +448,21 @@ Reproduction and CI:
 
 PostgreSQL and pgvector remain in AX_portfolio. A local DuckDB database is disposable query cache; canonical evidence is versioned Parquet and JSON.
 
+### 14.1 Independent corpus schema-sealing boundary
+
+Braincrew pins the reviewed AX synthetic seed content and import schemas from merge
+`47673b83a9fb431f2bad550781db18c7bee8b67e` by exact bytes and fixed SHA-256. The Issue #31
+sealing path accepts only an isolated staging directory containing canonical
+`corpus-manifest.json` and its ordered declared source files. It rejects unknown model fields,
+recursive evaluation-derived fields, floats, unsafe paths, invalid UTF-8, BOM, CR/CRLF, non-NFC,
+digest drift, undeclared files, and any source that is not synthetic/demo, `CC0-1.0`, and reviewed.
+
+Successful sealing creates one new `<corpus-id>/<corpus-version>` directory, copies the exact
+validated bytes, and emits a create-only `corpus-sealing-receipt-v1` containing bounded identities
+and digests only. Replay recomputes the receipt, manifest, ordered content digest, and every source
+digest; a single-byte mutation fails closed. No dataset, fixture, AX implementation, provider,
+database, service, import manifest, or experiment execution enters this boundary.
+
 ## 15. Testing strategy
 
 Required layers are schema tests, hand-calculated metric goldens, claim atomization and proposition-matcher tests, relevant property tests, Adapter HTTP contracts, state and storage invariants, fixture-mode E2E, live AX smoke and Verification, dashboard export and browser checks, and clean Docker reproduction.

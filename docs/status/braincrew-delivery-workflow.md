@@ -1,6 +1,6 @@
 # Braincrew Portfolio Delivery Workflow Status
 
-Last updated: 2026-07-20
+Last updated: 2026-07-22
 
 ## Purpose
 
@@ -76,21 +76,34 @@ research and AX_portfolio context
 - Completed phase: expanded review-repair Lore commit `f802bf815b758557d84fbcc240af21b6ab38ed0d` was pushed without force; local, remote, and PR heads match; its replacement Python quality gate passed; all six review threads have evidence-backed replies and are resolved; GitHub reports merge state `CLEAN`.
 - Completed phase: PR #27 passed its required Python quality gate and squash-merged Issue #13 into `develop` as `52e85ecc303291e0145ac0867c807e9579b04800`; GitHub reports PR #27 `MERGED` and Issue #13 `CLOSED/COMPLETED`.
 - Completed phase: fetched `origin/develop` points exactly to `52e85ecc303291e0145ac0867c807e9579b04800`; the Issue #13 local branch, remote branch, and dedicated worktree are absent.
-- Active canonical phase: Issue #14 implementation is locally verified and stopped at the Git Lifecycle Proposal Gate; no commit, push, pull request, or merge has been executed.
-- Active artifact: validated `dashboard-export-v1` plus a statically exported Next.js TypeScript dashboard on `feat/issue-14-static-dashboard` in `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-14-static-dashboard`.
-- Completion condition status: satisfied locally. Exporter/UI RED→GREEN evidence, golden-to-screen equality, Python/frontend gates, static build, browser smoke, ticket-scoped Standards/Spec review, and `verification-before-completion` all pass; publication remains gated.
-- Entry condition status: satisfied on 2026-07-20; blocker Issue #13 is closed, Issue #14 carries `ready-for-agent`, branch HEAD and fetched `origin/develop` equal `52e85ecc303291e0145ac0867c807e9579b04800`, and the clean Python baseline reports `200 passed`.
-- Frontend toolchain lock: root `npm@11.12.1` with `package-lock.json` lockfile v3; Node.js `>=20.19.0`; Next.js `16.2.10`; React `19.2.7`; TypeScript `5.9.3`; Prettier `3.9.5`; ESLint `9.39.5` plus `eslint-config-next@16.2.10`; Vitest `4.1.10`; Playwright `1.61.1` with package-pinned Chromium; patched transitive PostCSS `8.5.10`.
-- Frontend command lock: `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`, and `npm run test:e2e`.
-- Rejected alternatives and trade-off: pnpm, Yarn, and Bun lack repository evidence and add a bootstrap tool; Jest and Cypress duplicate the selected contract/browser roles. npm produces a larger lockfile and Playwright downloads Chromium on first smoke, but the complete workflow requires no global frontend tool and exercises the actual static export.
-- TDD evidence: RED was observed for the missing Python exporter, permissive sensitive case ID, missing CLI command, missing static app, missing failure-taxonomy projection, and omitted fixture/live execution provenance; minimal GREEN and focused regressions now cover each boundary. Two early Playwright failures were test-selector defects against correct `tab` and native `summary` semantics and were repaired without weakening the UI contract.
-- Implementation evidence: `dashboard-export-v1` replays the canonical JSON/Parquet pair, reuses `DatasetManifest`, enforces synthetic `CC0-1.0` publication plus a public case-ID allowlist, copies canonical metrics/deltas/digest/gates/decision/execution mode/SHAs, and writes create-only JSON. The readonly Next.js app renders comparison, ordered gate trace, metric/taxonomy/case drill-down, explicit fixture-not-live disclosure, and no execution or database surface.
-- Review evidence: ticket-scoped Standards review and Spec review both report PASS with zero unresolved finding after manifest-contract reuse, import cleanup, lint peer compatibility repair, public-ID tightening, and fixture/live disclosure repair.
-- Verification evidence: frozen uv sync; Ruff format and lint; strict mypy; full pytest `207 passed`; `git diff --check`; clean `npm ci` with zero audit vulnerability; Prettier; warning-free ESLint; TypeScript; Vitest `4 passed`; Next static export; and Playwright Chromium `2 passed` all succeed freshly.
-- Next action: present the Issue #14 Git lifecycle proposal and wait for explicit authorization before any commit, push, pull-request creation/modification, or merge.
-- Workflow gate: Issue #14 commit, push, pull request, and merge remain outside the current authorization and must stop at the Git Lifecycle Proposal Gate after review and verification.
+- Completed phase: Issue #14 passed review and verification, and PR #28 merged into `develop` as `e33de765dc54ac76159f249525456d5ab4e63667`.
+- Completed prerequisite: AX Issue #33 is `CLOSED/COMPLETED`; AX PR #39 merged the reviewed generic seed-pack dry-run and exact schema bytes as `47673b83a9fb431f2bad550781db18c7bee8b67e`.
+- Active canonical phase: Braincrew Issue #31 is locally implemented, reviewed, and verified; work is stopped at the Git Lifecycle Proposal Gate.
+- Frontier evidence: Issue #31 is the child of open parent #30, its sole external AX #33 prerequisite is closed, `ready-for-agent` moved from #30 to #31, and draft PR #29 remains open at exact head `b14653c7f2b6e7aad9a36c41c7141a9ccb3ce674`.
+- Branch evidence: `feat/issue-31-schema-sealing` and `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-31-schema-sealing` start from exact fetched `origin/develop@e33de765dc54ac76159f249525456d5ab4e63667`.
+- Clean baseline evidence: before the first RED, frozen sync, Ruff format/lint, strict mypy, full pytest (`207 passed`), `git diff --check`, and clean branch status all succeeded.
+- TDD evidence: the first valid feature RED reported missing exact AX schema files and missing `seal-corpus`; 23 tests failed for the intended unimplemented contracts. Minimal GREEN produced exact schema pinning, strict staged-byte validation, create-only sealing, sanitized receipt, replay, and mutation rejection. Review-driven path coverage then reproduced the accepted-backslash defect RED and repaired it GREEN.
+- Locked artifact: exact AX content/import schema bytes plus SHA-256 declarations, `corpus-sealing-receipt-v1`, and the installed `braincrew-eval seal-corpus` / existing `replay` boundary.
+- Scope fence: no authoring launcher, dataset-v2 qualification, principal/attachment mapping, source authoring, AX apply/provider/database/service work, Issue #15 preflight update, experiment run, dependency addition, or Agent trajectory evaluation is included.
+- Review evidence: separate Standards and Spec passes report zero unresolved finding. A duplicated test helper smell was removed; the only material review defect, backslash path acceptance, was reproduced RED and repaired GREEN.
+- Verification evidence: frozen sync, Ruff format/lint, strict mypy, full pytest (`232 passed`), `git diff --check`, exact four-file AX `cmp`, installed CLI seal/replay, sanitized receipt scan, and wheel schema inclusion all pass freshly.
+- Completion condition status: satisfied locally. Exact schema bytes/digests, strict staged-pack and mutation rejection, immutable create-only sealing, sanitized receipt, replay, full repository gates, and review blocker 0 are evidenced.
+- Active next action: present the Issue #31 Git lifecycle proposal and wait for explicit authorization before commit, push, pull-request creation/modification, or merge.
+- Workflow gate: no commit, push, pull-request creation/modification, or merge is authorized by this implementation request.
 
 ## Transition history
+
+### 2026-07-22 — Issue #31 schema sealing reached the Git Lifecycle Proposal Gate
+
+- Entry evidence: fetched `origin/develop` and the branch base equal `e33de765dc54ac76159f249525456d5ab4e63667`; draft PR #29 is open at `b14653c7f2b6e7aad9a36c41c7141a9ccb3ce674`; AX Issue #33 is closed; AX PR #39 is merged as `47673b83a9fb431f2bad550781db18c7bee8b67e`; and Issue #31 carries `ready-for-agent` after the label moved from parent #30.
+- Clean baseline: `uv sync --frozen --all-groups`, Ruff format/lint, strict mypy, full pytest (`207 passed`), `git diff --check`, and clean status succeeded before the first RED.
+- RED/GREEN evidence: the missing vendored schemas and `seal-corpus` command produced the intended feature RED; 25 focused tests now pass. Review reproduced one unsafe backslash-path acceptance defect RED before its minimal rejection fix passed GREEN.
+- Contract evidence: the four vendored AX schema and digest files match the merge commit byte-for-byte; source and manifest bytes fail closed on schema, path, UTF-8, BOM, line-ending, NFC, float, provenance/license, digest, unknown-field, evaluation-derived-field, and mutation violations.
+- Artifact evidence: `corpus-sealing-receipt-v1` is create-only, omits raw or private material, and binds fixed schema identity plus ordered source identities/digests. Installed CLI replay reproduces the receipt and sealed-content digest and rejects tampered source bytes.
+- Review evidence: Standards and Spec axes have zero unresolved finding after the test-helper simplification and path repair.
+- Final verification: frozen sync, Ruff format/lint, strict mypy, `232 passed`, `git diff --check`, installed CLI seal/replay, sanitized receipt scan, and wheel schema inclusion all pass.
+- Scope fence: no #32 authoring launcher, #33 qualification, #34 principal mapping, corpus authoring, AX operation, Issue #15 preflight change, experiment execution, dependency, or Agent trajectory work entered the diff.
+- Active gate: commit, push, pull-request creation/modification, and merge require separate explicit authorization.
 
 ### 2026-07-20 — Issue #13 completed; Issue #14 static-dashboard implementation activated
 
