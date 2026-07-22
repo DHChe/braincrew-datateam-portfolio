@@ -777,8 +777,28 @@ Why:
   PR #45 review also proved that isolation alone cannot make an impossible contract satisfiable.
   A blind author cannot reproduce source identities and digests hidden inside an already-frozen
   evaluation dataset, and a literal `provenance_status=reviewed` cannot prove who reviewed which
-  bytes. The workflow therefore requires a source-first evaluation freeze or pre-existing
-  evaluation-independent exact source contract, plus durable review evidence, before authoring.
+  bytes. Issue #46 therefore selects source-first evaluation freeze, plus durable review evidence,
+  before authoring.
+
+Issue #46 source-order decision:
+: Selected source-order contract: **source-first evaluation freeze**.
+
+  Rejected alternative: pre-existing, evaluation-independent exact source bytes or generator.
+
+  Reason: no independently versioned, provenance-bearing artifact predates the evaluation-specific freeze.
+
+  Failure mode: frozen evaluation identifiers, digests, or qualification feedback reach authoring.
+
+  `braincrew-evaluation-dataset@2.0.0` remains immutable and is not a target for authoring or qualification in this lane.
+
+  A successor dataset version greater than `2.0.0` is required after the new corpus version is sealed.
+
+  The successor qualification receipt must bind that successor dataset version and digest to the unchanged sealed corpus digest.
+
+  Qualification remains read-only and cannot return feedback, identifiers, or digests to authoring.
+
+  This defers case freezing and qualification to later tickets: Issue #36 stays blocked until
+  Issue #47 is complete and a separate data-creation proposal gate authorizes the selected order.
 
 Rejected alternatives:
 : Prompt-only confidentiality instructions, guessed lowercase role aliases, public-source
@@ -842,8 +862,8 @@ Likely follow-ups:
   seed-pack `VisibilityRole` validator, not UI labels or guessed aliases.
 - "Does APPROVE mean Issue #36 can run now?" — No. APPROVE covers the generic brief and its exact
   bytes, not the missing execution architecture. Issue #36 remains blocked until the provenance
-  sidecar is supported, a source-first evaluation freeze or pre-existing independent source
-  contract is approved, and the committed brief reproduces the approved digest.
+  sidecar is supported, Issue #46's selected source-first order passes the separate data-creation
+  proposal gate, and the committed brief reproduces the approved digest.
 - "Did Issue #35 create a corpus or manifest?" — No. It created only the generic brief, its
   digest declaration, contract tests, and leakage-review evidence.
 

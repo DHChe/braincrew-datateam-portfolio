@@ -84,19 +84,35 @@ research and AX_portfolio context
 - Completed predecessor: Braincrew PR #43 merged Issue #42 into `develop` as `93c8e8dabab855b7f2f700df73cd04ce38995f29`; Issue #42 is `CLOSED/COMPLETED` and no longer carries `ready-for-agent`.
 - Cleanup checkpoint: Issue #42's dedicated worktree and local/remote feature branches still exist and are clean. Cleanup is therefore pending rather than complete; no cleanup mutation is part of Issue #34.
 - Completed predecessor: Braincrew PR #44 merged Issue #34 into `develop` as `67d7c104757f60194e59df20240ac47f8be9c027`; Issue #34 is `CLOSED/COMPLETED`, has no `ready-for-agent`, and its dedicated worktree plus local/remote feature branches are removed.
-- Active canonical phase: PR #45 review remediation for Issue #35 on `feat/issue-35-evaluation-blind-authoring-brief`, based on exact `origin/develop@67d7c104757f60194e59df20240ac47f8be9c027`.
-- Frontier evidence: Issue #35 is `OPEN` with `ready-for-agent`. Issue #36 is `BLOCKED`, has no `ready-for-agent`, and its native `blocked_by` graph contains #35 plus new Issue #46 (source-order decision) and Issue #47 (restricted-input and provenance-sidecar implementation). #46 and #47 are native sub-issues of #30. Draft PR #29 and `feat/issue-15-live-verification` remain untouched and read only.
+- Active canonical phase: Issue #46 implementation with `test-driven-development` on `feat/issue-46-evaluation-corpus-source-order`, based on exact `origin/develop@828524f6a85b9083b72400279987830b12b07a67`.
+- Frontier evidence: Issue #35 is `CLOSED/COMPLETED` after PR #45 merged. Issue #46 is `OPEN` with `ready-for-agent`; Issue #47 remains open. Issue #36 is `BLOCKED`, has no `ready-for-agent` label, and its native `blocked_by` graph contains #35, #46, and #47. #46 and #47 are native sub-issues of #30. Draft PR #29 and `feat/issue-15-live-verification` remain untouched and read only.
 - Clean baseline evidence: frozen sync, Ruff format/lint, strict mypy, full pytest (`293 passed`), `git diff --check`, and clean status succeeded before the first Issue #35 RED.
 - Review-driven TDD evidence: four Codex findings first exposed the staged content/import schema mix-up, stale lifecycle wording, missing durable provenance approval evidence, and circular hidden-source matching. Fresh evaluation-blind contexts amended the brief without evaluation access; stale exact-byte artifacts failed before reapproval. Workflow tests separately failed on the obsolete Issue #36 execution order, the unrecorded merged-launcher mismatch, the false launcher-completion claim, and this stale status checkpoint before each minimal documentation repair.
-- Contract evidence: the 10,680-byte brief is frozen at `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`. The content schema governs future staged `corpus-manifest.json` authoring; the pack schema is post-qualification only. The current merged Issue #32 launcher still exposes the pack schema, so Issue #47 owns that production repair. Durable provenance-sidecar support is also Issue #47; the non-circular source-order decision is Issue #46.
+- Contract evidence: the 10,680-byte brief is frozen at `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`. The content schema governs future staged `corpus-manifest.json` authoring; the pack schema is post-qualification only. The current merged Issue #32 launcher still exposes the pack schema, so Issue #47 owns that production repair. Durable provenance-sidecar support is also Issue #47; Issue #46 owns the selected non-circular source order.
+- Selected source-order contract: **source-first evaluation freeze**.
+- Rejected alternative: pre-existing, evaluation-independent exact source bytes or generator.
+- Reason: no independently versioned, provenance-bearing artifact predates the evaluation-specific freeze.
+- Failure mode: frozen evaluation identifiers, digests, or qualification feedback reach authoring.
+- `braincrew-evaluation-dataset@2.0.0` remains immutable and is not a target for authoring or qualification in this lane.
+- A successor dataset version greater than `2.0.0` is required after the new corpus version is sealed.
+- The successor qualification receipt must bind that successor dataset version and digest to the unchanged sealed corpus digest.
+- Qualification remains read-only and cannot return feedback, identifiers, or digests to authoring.
 - Leakage-review evidence: fresh independent author and reviewer contexts used only the approved non-evaluation inputs. Reviewer `/root/sanitized_blind_reviewer` was denied all tests, prior digests, prior review evidence, and downstream documents; it approved the exact brief bytes above with zero material findings. The adjacent digest declaration and durable review record match those committed bytes.
 - Scope lock: Issue #35 changes only the generic brief, exact-byte approval artifacts, acceptance/contract tests, and synchronized design/status/interview records. The review-proposed production launcher edit was removed as out of scope. Corpus source bytes, Issue #36 authoring/sealing, import manifest, AX operation, qualification, preflight, experiment execution, new dependency packages, and PR #29 changes remain excluded.
 - Review result: ticket-scoped code and Spec axes report `PASS` for the eight-file repair content. The committed brief digest and size were independently recomputed after commit.
 - Repository verification: `uv sync --frozen --all-groups`, Ruff format/lint, strict mypy, full pytest (`308 passed`), `git diff --check`, and exact brief byte/digest checks pass. Repair commit `0d4c0ae8876ad13d37acaa3bca81e2870c1d85d9` is published to PR #45 and matches its remote head before this status-only commit.
-- Active next action: require current-head Python/frontend CI, current review threads, mergeability, and final verification to pass, then merge PR #45 using a regular merge commit.
-- Workflow gate: PR #45 merge is authorized only if those current-head checks pass. Issue closure, label removal, and branch/worktree cleanup remain separate post-merge lifecycle actions. Issue #36 authoring remains prohibited until #46 and #47 are closed and a new data-creation gate is approved.
+- Active next action: complete Issue #46's contract test, ticket-scoped code review, and full verification; then stop at the Git Lifecycle Proposal Gate.
+- Workflow gate: Issue #36 authoring remains prohibited until Issue #47 is closed and a separate data-creation proposal gate approves source-first execution. Issue #46 cannot make #36 ready, create source bytes, seal a corpus, freeze the successor dataset, or run qualification.
 
 ## Transition history
+
+### 2026-07-23 — Issue #46 locks source-first evaluation freeze
+
+- Entry evidence: `origin/develop` is `828524f6a85b9083b72400279987830b12b07a67`; Issue #35 is `CLOSED/COMPLETED`; Issue #36 is `BLOCKED`; Issue #46 is the ready source-order decision frontier; and Issue #47 remains the separate restricted-input and provenance-sidecar repair.
+- Decision: Source-first evaluation freeze is selected. A new independently sealed corpus version must precede a successor evaluation dataset version greater than `2.0.0`; dataset v2 remains immutable and cannot be an authoring or qualification target in this lane.
+- Qualification boundary: the later receipt must bind the successor dataset version and digest to the unchanged sealed corpus digest. Qualification stays read-only and cannot feed any identifier, digest, or correction back to authoring.
+- Failure response: Issue #36 remains `BLOCKED`, has no `ready-for-agent` label, and cannot start until Issue #47 is closed and a separate data-creation proposal gate authorizes the selected order. No source byte, sealing, dataset freeze, qualification, preflight, experiment, AX operation, or PR #29 change is authorized here.
+- Completion condition: the Issue #46 contract test, ticket-scoped code review, and full repository verification pass; then stop at the Git Lifecycle Proposal Gate before commit, push, pull request, or merge.
 
 ### 2026-07-23 — PR #45 review converted Issue #36 into an explicit blocked frontier
 
