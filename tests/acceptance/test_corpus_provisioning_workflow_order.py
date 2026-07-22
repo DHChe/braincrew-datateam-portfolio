@@ -308,13 +308,21 @@ def test_issue_46_locks_source_first_freeze_and_successor_version_boundary() -> 
     current_checkpoint = _section(documents[3], "## Current checkpoint", "## Transition history")
     assert "Completed predecessor: PR #49 merged Issue #47" in current_checkpoint
     assert "Issue #46 is `CLOSED` after PR #48" in current_checkpoint
-    assert (
-        "Issue #36 remains `BLOCKED` only until this approval record is merged"
-        in current_checkpoint
+    assert "Issue #36 authoring, manual review, sealing, and replay are complete" in (
+        current_checkpoint
     )
     assert "Issue #47" in current_checkpoint
     assert "APPROVED_FOR_NEW_SESSION" in current_checkpoint
-    assert "still has no `ready-for-agent` label" in current_checkpoint
+    assert "carries `ready-for-agent`" in current_checkpoint
+    assert "sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4" in (
+        current_checkpoint
+    )
+    assert "sha256:eb43fc824cd54bf10e8805b5fdeb1915bcaac368cb458ce8981a481cd7d4fce1" in (
+        current_checkpoint
+    )
+    assert "sha256:bc508b6001facbef67bacd7e0c1d4d5123f04bc1e33d2849b5e7d455183df62b" in (
+        current_checkpoint
+    )
 
 
 def test_issue_46_removes_dataset_v2_from_the_future_seal_to_qualification_path() -> None:
@@ -356,10 +364,11 @@ def test_delivery_status_records_the_published_review_repair_and_new_frontier() 
     assert "PR #48" in current_checkpoint
     assert "Issue #46" in current_checkpoint
     assert "Issue #47" in current_checkpoint
-    assert (
-        "Issue #36 remains `BLOCKED` only until this approval record is merged"
-        in current_checkpoint
+    assert "Issue #36 authoring, manual review, sealing, and replay are complete" in (
+        current_checkpoint
     )
+    assert "14 exact source digests" in current_checkpoint
+    assert "Qualification remains unstarted" in current_checkpoint
     assert "7 passed" in current_checkpoint
     assert "publish this status-only commit" not in current_checkpoint
 

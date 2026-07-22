@@ -85,7 +85,9 @@ research and AX_portfolio context
 - Cleanup checkpoint: Issue #42's dedicated worktree and local/remote feature branches still exist and are clean. Cleanup is therefore pending rather than complete; no cleanup mutation is part of Issue #34.
 - Completed predecessor: Braincrew PR #44 merged Issue #34 into `develop` as `67d7c104757f60194e59df20240ac47f8be9c027`; Issue #34 is `CLOSED/COMPLETED`, has no `ready-for-agent`, and its dedicated worktree plus local/remote feature branches are removed.
 - Completed predecessor: PR #49 merged Issue #47 into `develop` as `4d80b9b8950f4d7356a9aa9806f492ae79126dab`; required Python and frontend checks succeeded, `develop` resolves to that merge commit, and Issue #47 is `CLOSED`.
-- Current frontier: Issue #35 is `CLOSED/COMPLETED`; Issue #46 is `CLOSED` after PR #48; Issue #47 is `CLOSED` after PR #49. Issue #36 remains `BLOCKED` only until this approval record is merged, still has no `ready-for-agent` label, and must start in a new session that passes its content-addressed entry checks. #46 and #47 are native sub-issues of #30. Draft PR #29 and `feat/issue-15-live-verification` remain untouched and read only.
+- Current frontier: Issue #35 is `CLOSED/COMPLETED`; Issue #46 is `CLOSED` after PR #48; Issue #47 is `CLOSED` after PR #49. Issue #36 authoring, manual review, sealing, and replay are complete on `feat/issue-36-independent-corpus-authoring`; the open issue carries `ready-for-agent` and now stops at its Git Lifecycle Proposal Gate. Qualification remains unstarted and belongs to the later Issue #37 lane. #46 and #47 are native sub-issues of #30. Draft PR #29 and `feat/issue-15-live-verification` remain untouched and read only.
+- Issue #36 execution evidence: clean execution SHA `8e669db46b698b8791739feee910ba1b561a0936`; authorization digest `sha256:9eabf4fff6de5bf54065c8d4bd657eda4ebeb06c630ad45f53fe41c36457a1a7`; authoring-tool digest `sha256:8ba07d07d35ac359a04f0d2f2e3b30062569b3f883e2d6a16e918aa218af6d3e`; independence receipt digest `sha256:28a22cb6f1c0d35ced80d43dc727699cecae388a8012f6a292d618719371cf7f`; and 14 exact source digests were bound without source text.
+- Manual-review and sealing evidence: `DHChe-corpus-provenance-reviewer` approved all 14 exact source digests on `2026-07-23` in `Asia/Seoul`; sealed content digest `sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4`, provenance digest `sha256:eb43fc824cd54bf10e8805b5fdeb1915bcaac368cb458ce8981a481cd7d4fce1`, and sealing receipt digest `sha256:bc508b6001facbef67bacd7e0c1d4d5123f04bc1e33d2849b5e7d455183df62b` reproduced through one successful replay.
 - Clean baseline evidence: frozen sync, Ruff format/lint, strict mypy, full pytest, `git diff --check`, and clean status passed before the first Issue #47 RED.
 - RED/GREEN evidence: the authoring capability test first failed because the sandbox exposed `ax-synthetic-seed-pack-v1` instead of the content schema. Six provenance-sidecar contract cases then failed because sealing allowed missing evidence and had no sidecar CLI, v2 receipt, or replay binding. Minimal GREEN exposes only the content schema plus its pinned digest, requires an external immutable canonical sidecar, creates `corpus-sealing-receipt-v2`, and replays v2 sidecar bindings while retaining v1 receipt replay.
 - Contract evidence: the 10,680-byte brief remains frozen at `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`. The content schema governs staged `corpus-manifest.json` authoring; the pack schema is post-qualification only. The sidecar binds the sealed digest plus every source identity/digest to synthetic origin, owner, CC0 assignment, reviewer/date/timezone, approved decision, and canonical digest; reviewer identity must differ from the authoring owner. Missing, pending, mismatched, mutable sealing input, tampered, symlinked, or staging-contained evidence fails closed. Replay validates canonical bytes and digest independent of normalized filesystem write bits.
@@ -152,14 +154,44 @@ research and AX_portfolio context
 - RED contract tests must first prove the entry pins, restricted inputs, create-only targets,
   distinct owner/reviewer authority, exact order, and every stop condition before any source-byte
   authoring attempt.
-- Active gate: this approval synchronization stops at the Git Lifecycle Proposal Gate; no commit,
-  push, pull request, merge, #36 readiness transition, source-byte authoring, sealing,
-  qualification, AX/DB/service call, preflight, or experiment is authorized in the current session.
-- Workflow gate: after this record merges, the new #36 session must reverify the exact clean SHA,
-  brief and schema digests, authoring-tool digest, external paths, and RED contracts before applying
-  `ready-for-agent` or creating any source byte.
+- Active gate: Issue #36 external authoring, manual review, sealing, and replay are complete. The
+  synchronized repository documents are local and uncommitted; commit, push, pull request, and
+  merge remain separate Git Lifecycle Proposal Gate actions. Qualification, AX/DB/service calls,
+  preflight, experiments, and Issue #15 changes remain unauthorized.
+- Workflow gate: publish and review only this Issue #36 documentation synchronization. Issue #37
+  may begin later from the unchanged sealed content digest only after its own dependency, readiness,
+  and authorization checks; qualification feedback must never return to authoring.
 
 ## Transition history
+
+### 2026-07-23 — Issue #36 restricted authoring, manual review, sealing, and replay completed
+
+- Entry evidence: `develop`, `origin/develop`, and the new Issue #36 branch all began at clean SHA
+  `8e669db46b698b8791739feee910ba1b561a0936`; the full clean baseline passed `320` tests, and Issue
+  #36 received `ready-for-agent` only after every content-addressed entry check passed.
+- Authorization evidence: create-only `corpus-data-creation-authorization-v1` digest
+  `sha256:9eabf4fff6de5bf54065c8d4bd657eda4ebeb06c630ad45f53fe41c36457a1a7`
+  binds the clean execution SHA, reviewed tool digest
+  `sha256:8ba07d07d35ac359a04f0d2f2e3b30062569b3f883e2d6a16e918aa218af6d3e`,
+  four approved input digests, both authorities, and all lifecycle paths.
+- Author evidence: one sandboxed run completed without retry and emitted independence receipt
+  `sha256:28a22cb6f1c0d35ced80d43dc727699cecae388a8012f6a292d618719371cf7f`.
+  The staged pack contains 14 sources totaling 11,528 bytes; retained evidence exposes only
+  identities, counts, and digests rather than source text.
+- Manual review evidence: `DHChe-corpus-provenance-reviewer`, distinct from authoring owner
+  `codex-issue-36-authoring-agent`, approved every exact source digest, newly authored synthetic
+  origin, and `CC0-1.0` assignment on `2026-07-23` in `Asia/Seoul`.
+- Seal and replay evidence: `braincrew-independent-hr-corpus@1.0.0` sealed once and replayed once.
+  Sealed content digest is
+  `sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4`,
+  provenance digest is
+  `sha256:eb43fc824cd54bf10e8805b5fdeb1915bcaac368cb458ce8981a481cd7d4fce1`,
+  and receipt digest is
+  `sha256:bc508b6001facbef67bacd7e0c1d4d5123f04bc1e33d2849b5e7d455183df62b`.
+- Scope evidence: no qualification, successor dataset freeze, AX/DB/service call, preflight,
+  experiment, PR #29 change, retry, repair, overwrite, or feedback-driven second pass occurred.
+- Completion condition: canonical documents and repository gates pass, then stop at the Git
+  Lifecycle Proposal Gate before commit, push, pull request, or merge.
 
 ### 2026-07-23 — Issue #36 data-creation policy approved for a new session
 

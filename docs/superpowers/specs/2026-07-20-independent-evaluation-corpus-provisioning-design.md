@@ -1,7 +1,7 @@
 # Independent Evaluation Corpus Provisioning Design
 
 Date: 2026-07-20
-Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published; Issue #35 authoring brief amended and independently reapproved after PR #45 review on 2026-07-23; Issue #46 selected source-first evaluation freeze and is closed after PR #48; PR #49 merged Issue #47 into `develop` as `4d80b9b8950f4d7356a9aa9806f492ae79126dab` with successful Python and frontend checks, and Issue #47 is closed; the Issue #36 data-creation policy is approved for a new session, with exact execution SHA and authoring-tool digest pinned before source-byte creation
+Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published; Issue #35 authoring brief amended and independently reapproved after PR #45 review on 2026-07-23; Issue #46 selected source-first evaluation freeze and is closed after PR #48; PR #49 merged Issue #47 into `develop` as `4d80b9b8950f4d7356a9aa9806f492ae79126dab` with successful Python and frontend checks, and Issue #47 is closed; Issue #36 restricted authoring, manual provenance review, sealing, and replay completed on 2026-07-23 and now stop at the Git Lifecycle Proposal Gate before later qualification
 Braincrew fixed point: `1185ba8a9e6bab038743531a56f8f2c5ce2b44eb`
 AX fixed base: `a5391ae8aa2b0d1342809f3599283b7759d6e4e3`
 Latest merged AX importer prerequisite: `6bfc27a7bf170172a20dd470d6fd877858c9fb80`
@@ -848,10 +848,15 @@ local/remote feature branches are removed. Braincrew #35 is closed after PR #45 
 now selects source-first evaluation freeze: the next dataset must be a successor version created
 only after a new independently sealed corpus version, while dataset v2 remains immutable and
 outside this authoring lane. PR #49 has merged and verified Braincrew Issue #47, and Issue #47 is
-closed. The separate data-creation proposal gate is `APPROVED_FOR_NEW_SESSION`; Issue #36 can leave
-`BLOCKED` only after this approval record is merged and its fresh session passes the clean-SHA,
-brief-digest, tool-digest, path, and RED-contract entry checks. No corpus
-source bytes, actually authored or sealed Braincrew pack, real
-qualification receipt, operator snapshot, target load, renewed Issue #38 preflight, READY artifact,
-baseline, candidate, comparison, or live quality claim exists. PR #29 and
-`feat/issue-15-live-verification` remain untouched and read only.
+closed. The separate data-creation proposal gate was `APPROVED_FOR_NEW_SESSION`; Issue #36 then
+passed its clean-SHA, brief-digest, tool-digest, lifecycle-path, and RED-contract entry checks at
+`8e669db46b698b8791739feee910ba1b561a0936`, received `ready-for-agent`, and executed the required
+Author → manual Review → Seal → Replay order without retry. The immutable
+`braincrew-independent-hr-corpus@1.0.0` contains 14 exact source digests and has sealed content
+digest `sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4`,
+provenance digest `sha256:eb43fc824cd54bf10e8805b5fdeb1915bcaac368cb458ce8981a481cd7d4fce1`,
+and replayed receipt digest
+`sha256:bc508b6001facbef67bacd7e0c1d4d5123f04bc1e33d2849b5e7d455183df62b`.
+No qualification receipt, successor dataset freeze, operator snapshot, target load, renewed Issue
+#38 preflight, READY artifact, baseline, candidate, comparison, or live quality claim exists. PR
+#29 and `feat/issue-15-live-verification` remain untouched and read only.
