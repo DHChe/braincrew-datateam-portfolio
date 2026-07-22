@@ -19,6 +19,18 @@ CONTENT_SCHEMA_DIGEST = "372118334771854c867d3e7168331ed4cabb9380db95d4aa624345b
 PACK_SCHEMA_DIGEST = "4ddc71d7408324bfed6e7a25024899a7f689431f5f024fb2329f3f844352bffa"
 APPROVED_BRIEF_DIGEST = "121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3"
 ISSUE_47_MERGE_COMMIT = "4d80b9b8950f4d7356a9aa9806f492ae79126dab"
+DATA_CREATION_APPROVAL_BASE = "5cec187af3e2d5b95b35f6e6f81fee55a73d5409"
+AUTHORING_OWNER = "codex-issue-36-authoring-agent"
+PROVENANCE_REVIEWER = "DHChe-corpus-provenance-reviewer"
+AUTHORING_ROOT = "/Users/astralpig/braincrew-issue-36-authoring"
+AUTHORIZATION_RECORD = f"{AUTHORING_ROOT}/authorization/data-creation-authorization.json"
+TOOL_PATH = f"{AUTHORING_ROOT}/tool/author-corpus"
+STAGING_PATH = f"{AUTHORING_ROOT}/staging"
+AUTHORING_RECEIPT_PATH = f"{AUTHORING_ROOT}/receipts/authoring-independence-receipt.json"
+PROVENANCE_SIDECAR_PATH = f"{AUTHORING_ROOT}/review/provenance-review.json"
+SEALED_OUTPUT_PATH = f"{AUTHORING_ROOT}/sealed"
+SCHEMA_DECLARATION_DIGEST = "c9dae9c47ce20f2e4b5c954dbd467e051ebf33081e13a033cc23f9b418897dff"
+INPUT_INVENTORY_DIGEST = "e707333d28fb9452b2823d1b6c125a1b6dcc3a0d5b118069e8bf7b502854061e"
 
 
 def _section(document: str, heading: str, next_heading: str) -> str:
@@ -56,10 +68,11 @@ def test_issue_35_commit_and_ax_36_proof_converge_only_before_operator_load() ->
     assert "Braincrew #35 is closed after PR #45 merged" in progress
 
 
-def test_issue_36_stays_blocked_on_authoring_contract_repairs() -> None:
+def test_issue_36_data_creation_gate_is_approved_for_a_new_session() -> None:
     design = DESIGN_PATH.read_text(encoding="utf-8")
     issue_draft = ISSUE_DRAFT_PATH.read_text(encoding="utf-8")
     interview = INTERVIEW_PATH.read_text(encoding="utf-8")
+    status = STATUS_PATH.read_text(encoding="utf-8")
     normalized_design = " ".join(design.split())
 
     for document in (design, issue_draft, interview):
@@ -69,8 +82,101 @@ def test_issue_36_stays_blocked_on_authoring_contract_repairs() -> None:
         assert "schemas/ax-synthetic-seed-pack-v1.schema.json" in document
         assert PACK_SCHEMA_DIGEST in document
         assert "source-first evaluation freeze" in document
-        assert "Issue #36 remains blocked" in document
         assert "Issue #47" in normalized_document
+
+    approved_gate_facts = (
+        "Data-creation proposal gate: **APPROVED_FOR_NEW_SESSION**.",
+        f"Approval baseline: `{DATA_CREATION_APPROVAL_BASE}`.",
+        f"Authoring owner: `{AUTHORING_OWNER}`.",
+        f"Manual provenance reviewer: `{PROVENANCE_REVIEWER}`.",
+        f"External lifecycle root: `{AUTHORING_ROOT}`.",
+        "Create-only authorization record:",
+        "`corpus-data-creation-authorization-v1`",
+        (
+            "No source byte may be created before the clean execution SHA and external authoring "
+            "tool SHA-256 are recorded"
+        ),
+        (
+            "authoring brief, content schema, schema digest declaration, and canonical "
+            "input-digest inventory"
+        ),
+        "Author, then review, then seal, then replay",
+        "No automatic retry",
+        "RED contract tests must first prove",
+    )
+    exact_targets = (
+        AUTHORIZATION_RECORD,
+        TOOL_PATH,
+        STAGING_PATH,
+        AUTHORING_RECEIPT_PATH,
+        PROVENANCE_SIDECAR_PATH,
+        SEALED_OUTPUT_PATH,
+    )
+    exact_inputs = (
+        (
+            "docs/corpus/braincrew-evaluation-corpus-v2-authoring-brief.md",
+            APPROVED_BRIEF_DIGEST,
+        ),
+        ("schemas/ax-synthetic-seed-content-v1.schema.json", CONTENT_SCHEMA_DIGEST),
+        (
+            "schemas/ax-synthetic-seed-content-v1.schema.sha256",
+            SCHEMA_DECLARATION_DIGEST,
+        ),
+        ("input-digests.json", INPUT_INVENTORY_DIGEST),
+    )
+    authorization_bindings = (
+        "approval authority",
+        "exact execution SHA",
+        "authoring-tool SHA-256",
+        "four exact input digests",
+        "all lifecycle target paths",
+    )
+    for document in (design, interview, status):
+        normalized_document = " ".join(document.split())
+        normalized_casefold = normalized_document.casefold()
+        missing_facts = [
+            fact
+            for fact in approved_gate_facts
+            if " ".join(fact.split()) not in normalized_document
+        ]
+        assert not missing_facts, (
+            f"Issue #36 approved data-creation gate is incomplete: {missing_facts}"
+        )
+        assert AUTHORING_OWNER != PROVENANCE_REVIEWER
+        assert "must differ from the authoring owner" in normalized_document
+        missing_targets = [target for target in exact_targets if target not in document]
+        assert not missing_targets, f"Issue #36 lifecycle targets are incomplete: {missing_targets}"
+        for input_path, input_digest in exact_inputs:
+            assert input_path in document
+            assert input_digest in document
+        missing_bindings = [
+            binding for binding in authorization_bindings if binding not in normalized_document
+        ]
+        assert not missing_bindings, (
+            f"Issue #36 authorization record bindings are incomplete: {missing_bindings}"
+        )
+        assert "authorization record is create-only" in normalized_casefold
+        assert "launch must reject any authorization-record mismatch" in normalized_casefold
+        assert "staging target must be empty" in normalized_casefold
+        assert "all other create-only targets must be absent" in normalized_casefold
+        assert "all targets must be outside the repository and must not be symbolic links" in (
+            normalized_casefold
+        )
+        assert "independence receipt and provenance sidecar are create-only" in normalized_casefold
+        assert "manual reviewer approves every exact source digest" in normalized_casefold
+        assert "before any source-byte authoring attempt" in normalized_casefold
+        assert normalized_document.index("Author, then review, then seal, then replay") < (
+            normalized_document.index("qualification remains")
+        )
+        for stop_condition in (
+            "non-empty staging",
+            "existing target",
+            "nonzero authoring exit",
+            "manual rejection",
+            "sealing failure",
+            "replay failure",
+        ):
+            assert stop_condition in normalized_casefold
 
     assert "provenance sidecar" in design
     assert "sealer support for accepting, preserving, and replaying" in normalized_design
@@ -83,7 +189,7 @@ def test_issue_36_stays_blocked_on_authoring_contract_repairs() -> None:
         in normalized_interview
     )
     assert "checks succeeded, and Issue #47 is closed" in normalized_interview
-    assert "The separate data-creation proposal gate must still pass" in normalized_interview
+    assert "The separate data-creation proposal gate must still pass" not in normalized_interview
     assert "remains blocked until post-commit byte equality passes" not in normalized_interview
 
     assert "Issue #47 repaired staged authoring to expose the content schema" in normalized_design
@@ -103,7 +209,7 @@ def test_issue_36_stays_blocked_on_authoring_contract_repairs() -> None:
         "## 11. Execution and stop order",
         "### Issue #31 schema-sealing implementation lock",
     )
-    assert "in a fresh restricted context, run Braincrew #36" not in execution_order
+    assert "in a fresh restricted context, run Braincrew #36" in execution_order
     assert "qualification feedback" in execution_order
 
 
@@ -202,10 +308,13 @@ def test_issue_46_locks_source_first_freeze_and_successor_version_boundary() -> 
     current_checkpoint = _section(documents[3], "## Current checkpoint", "## Transition history")
     assert "Completed predecessor: PR #49 merged Issue #47" in current_checkpoint
     assert "Issue #46 is `CLOSED` after PR #48" in current_checkpoint
-    assert "Issue #36 remains `BLOCKED`" in current_checkpoint
+    assert (
+        "Issue #36 remains `BLOCKED` only until this approval record is merged"
+        in current_checkpoint
+    )
     assert "Issue #47" in current_checkpoint
-    assert "separate data-creation proposal gate" in current_checkpoint
-    assert "Issue #36 remains `BLOCKED`, has no `ready-for-agent` label" in current_checkpoint
+    assert "APPROVED_FOR_NEW_SESSION" in current_checkpoint
+    assert "still has no `ready-for-agent` label" in current_checkpoint
 
 
 def test_issue_46_removes_dataset_v2_from_the_future_seal_to_qualification_path() -> None:
@@ -247,7 +356,10 @@ def test_delivery_status_records_the_published_review_repair_and_new_frontier() 
     assert "PR #48" in current_checkpoint
     assert "Issue #46" in current_checkpoint
     assert "Issue #47" in current_checkpoint
-    assert "Issue #36 remains `BLOCKED`" in current_checkpoint
+    assert (
+        "Issue #36 remains `BLOCKED` only until this approval record is merged"
+        in current_checkpoint
+    )
     assert "7 passed" in current_checkpoint
     assert "publish this status-only commit" not in current_checkpoint
 
