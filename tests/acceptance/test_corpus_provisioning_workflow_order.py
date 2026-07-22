@@ -73,6 +73,12 @@ def test_issue_36_stays_blocked_on_authoring_contract_repairs() -> None:
     assert "sealer support for accepting, preserving, and replaying" in design
     assert "provenance sidecar" in issue_draft
     assert "provenance sidecar" in interview
+    normalized_interview = " ".join(interview.split())
+    assert "post-commit byte equality is **PASS**" in normalized_interview
+    assert "Issue #46, Issue #47, and the separate data-creation proposal gate remain" in (
+        normalized_interview
+    )
+    assert "remains blocked until post-commit byte equality passes" not in normalized_interview
 
     assert "The current Issue #32 launcher still copies the pack schema" in normalized_design
     assert "the launcher was pinned to" not in normalized_design
@@ -95,6 +101,8 @@ def test_delivery_status_records_the_published_review_repair_and_new_frontier() 
     assert REPAIR_COMMIT in current_checkpoint
     assert APPROVED_BRIEF_DIGEST in current_checkpoint
     assert "10,680-byte brief" in current_checkpoint
+    assert "`/root/sanitized_blind_reviewer`" in current_checkpoint
+    assert "`/root/fresh_blind_final_review`" not in current_checkpoint
     assert "PR #45" in current_checkpoint
     assert "Issue #46" in current_checkpoint
     assert "Issue #47" in current_checkpoint

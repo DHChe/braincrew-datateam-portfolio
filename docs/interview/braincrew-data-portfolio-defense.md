@@ -827,10 +827,11 @@ Validation evidence:
   author amended only the brief contract, a separate blind reviewer approved it with zero material
   findings, and the focused suite passed with the content/import schema split, provenance sidecar
   blocker, source-order blocker, and exact digest above.
-  A fresh independent
-  `code-reviewer` inspected only the allowlisted non-evaluation sources, found zero material
-  issue, and approved the exact digest above. The durable review record explicitly says corpus
-  authoring remains blocked until post-commit byte equality passes.
+  A fresh independent `code-reviewer` inspected only sanitized, allowlisted policy inputs; all
+  tests, prior digests, prior review evidence, and downstream documents were denied. The reviewer
+  found zero material issues and independently reproduced the exact digest above. The fixed repair
+  commit's post-commit byte equality is **PASS**. Issue #46, Issue #47, and the separate
+  data-creation proposal gate remain, so Issue #36 is still blocked.
 
 Likely follow-ups:
 

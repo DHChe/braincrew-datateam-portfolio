@@ -4,16 +4,16 @@ This file records the independent evaluation-leakage review of the repaired Issu
 brief. It does not authorize corpus authoring or clear either Issue #36 blocker. The separate
 clean-commit and post-commit byte-equality gate is recorded below.
 
-- Reviewer identity: `/root/fresh_blind_final_review`
+- Reviewer identity: `/root/sanitized_blind_reviewer`
 - Reviewer role: `code-reviewer`
 - Review date: `2026-07-23`
-- Review time: `01:10:03 KST`
+- Review time: `01:41:23 KST`
 - Review timezone: `Asia/Seoul`
 - Decision: **APPROVE**
 - Material findings: **0**
 - Reviewed brief digest: `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`
 - Reviewed brief size: `10680 bytes`
-- Review base HEAD: `2013da04509f2f23c340467fbe4f8f770b17be69`
+- Review base HEAD: `c387e2a0e44626db43c16d4fbbbffc33cbe110e4`
 - Reviewed source policy: **newly authored synthetic/demo content only**.
 - Reviewed license policy: **every source uses `CC0-1.0`**.
 - Reviewed provenance policy: **independently reviewed for every source; missing or pending
@@ -45,7 +45,6 @@ material findings within the permitted review boundary.
 - `schemas/ax-synthetic-seed-pack-v1.schema.sha256`
 - `pyproject.toml` and `uv.lock` execution settings
 - current Issue #35 authoring brief
-- `tests/acceptance/test_evaluation_blind_authoring_brief.py`
 - `git show 47673b83a9fb431f2bad550781db18c7bee8b67e:backend/src/ax_engine/seed/pack_contract.py` from `AX_portfolio`
 
 Only these sources were permitted for the independent review.
@@ -56,15 +55,17 @@ Only these sources were permitted for the independent review.
 - `tests/fixtures/**`
 - evaluation cases, queries, answers, evidence, scores, or split labels
 - benchmark artifacts or results
+- `tests/**`
 - PR `#29`
 - `feat/issue-15-live-verification`
 - Braincrew `corpus_sealing.py`
 - Braincrew `corpus_qualification.py`
-- the pre-existing brief digest and leakage-review contents
-- the workflow-order test
-- later design, draft, interview, or status documents
+- the adjacent brief digest and all pre-existing leakage-review evidence
+- Git history, diffs, or pull-request review material
+- downstream design, draft, interview, or status documents
 
-The review did not use these prohibited sources.
+The review did not use these prohibited sources. The reviewer computed the brief digest and size
+only after substantive review and did not compare them with any prior brief digest.
 
 ## Issue #36 blockers
 

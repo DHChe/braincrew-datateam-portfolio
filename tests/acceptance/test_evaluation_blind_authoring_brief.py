@@ -11,7 +11,7 @@ REVIEW_EVIDENCE_PATH = (
 )
 APPROVED_BRIEF_DIGEST = "sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3"
 APPROVED_BRIEF_SIZE_BYTES = 10680
-REVIEW_BASE_HEAD = "2013da04509f2f23c340467fbe4f8f770b17be69"
+REVIEW_BASE_HEAD = "c387e2a0e44626db43c16d4fbbbffc33cbe110e4"
 REPAIR_COMMIT = "0d4c0ae8876ad13d37acaa3bca81e2870c1d85d9"
 CONTENT_SCHEMA_PATH = "schemas/ax-synthetic-seed-content-v1.schema.json"
 CONTENT_SCHEMA_DIGEST = "sha256:372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb"
@@ -285,7 +285,7 @@ def test_independent_review_evidence_records_the_blind_boundary_and_completed_ga
     review = REVIEW_EVIDENCE_PATH.read_text(encoding="utf-8")
     normalized_review = " ".join(review.split())
     required_review_facts = (
-        "Reviewer identity: `/root/fresh_blind_final_review`",
+        "Reviewer identity: `/root/sanitized_blind_reviewer`",
         "Reviewer role: `code-reviewer`",
         "Review date: `2026-07-23`",
         "Review timezone: `Asia/Seoul`",
@@ -341,7 +341,6 @@ def test_independent_review_evidence_records_the_blind_boundary_and_completed_ga
         "`schemas/ax-synthetic-seed-pack-v1.schema.sha256`",
         "`pyproject.toml` and `uv.lock` execution settings",
         "current Issue #35 authoring brief",
-        "`tests/acceptance/test_evaluation_blind_authoring_brief.py`",
         (f"`git show {AX_ROLE_CONTRACT_REF}:{AX_ROLE_CONTRACT_PATH}` from `AX_portfolio`"),
     )
     missing_allowed_sources = [
@@ -350,6 +349,7 @@ def test_independent_review_evidence_records_the_blind_boundary_and_completed_ga
     assert not missing_allowed_sources, (
         f"review evidence omits allowed source boundaries: {missing_allowed_sources}"
     )
+    assert "tests/" not in allowed_sources
 
     prohibited_sources = _section_body(review, "## Prohibited review sources")
     required_prohibited_sources = (
@@ -361,9 +361,10 @@ def test_independent_review_evidence_records_the_blind_boundary_and_completed_ga
         "`feat/issue-15-live-verification`",
         "Braincrew `corpus_sealing.py`",
         "Braincrew `corpus_qualification.py`",
-        "the pre-existing brief digest and leakage-review contents",
-        "the workflow-order test",
-        "later design, draft, interview, or status documents",
+        "`tests/**`",
+        "the adjacent brief digest and all pre-existing leakage-review evidence",
+        "Git history, diffs, or pull-request review material",
+        "downstream design, draft, interview, or status documents",
     )
     missing_prohibited_sources = [
         source for source in required_prohibited_sources if source not in prohibited_sources
