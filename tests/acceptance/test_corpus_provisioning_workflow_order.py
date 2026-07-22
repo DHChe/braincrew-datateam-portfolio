@@ -50,7 +50,7 @@ def test_issue_35_commit_and_ax_36_proof_converge_only_before_operator_load() ->
     )
 
     assert "AX #36 remains open" in progress
-    assert "Braincrew #35 is active" in progress
+    assert "Braincrew #35 is closed after PR #45 merged" in progress
 
 
 def test_issue_36_stays_blocked_on_authoring_contract_repairs() -> None:
@@ -91,6 +91,99 @@ def test_issue_36_stays_blocked_on_authoring_contract_repairs() -> None:
     )
     assert "in a fresh restricted context, run Braincrew #36" not in execution_order
     assert "qualification feedback" in execution_order
+
+
+def test_issue_46_locks_source_first_freeze_and_successor_version_boundary() -> None:
+    documents = (
+        DESIGN_PATH.read_text(encoding="utf-8"),
+        ISSUE_DRAFT_PATH.read_text(encoding="utf-8"),
+        INTERVIEW_PATH.read_text(encoding="utf-8"),
+        STATUS_PATH.read_text(encoding="utf-8"),
+    )
+    required_contract_facts = (
+        "Selected source-order contract: **source-first evaluation freeze**.",
+        (
+            "Rejected alternative: pre-existing, evaluation-independent exact source bytes or "
+            "generator."
+        ),
+        (
+            "Reason: no independently versioned, provenance-bearing artifact predates the "
+            "evaluation-specific freeze."
+        ),
+        (
+            "Failure mode: frozen evaluation identifiers, digests, or qualification feedback "
+            "reach authoring."
+        ),
+        (
+            "`braincrew-evaluation-dataset@2.0.0` remains immutable and is not a target for "
+            "authoring or qualification in this lane."
+        ),
+        (
+            "A successor dataset version greater than `2.0.0` is required after the new corpus "
+            "version is sealed."
+        ),
+        (
+            "The successor qualification receipt must bind that successor dataset version and "
+            "digest to the unchanged sealed corpus digest."
+        ),
+        (
+            "Qualification remains read-only and cannot return feedback, identifiers, or digests "
+            "to authoring."
+        ),
+    )
+
+    for document in documents:
+        normalized_document = " ".join(document.split())
+        missing_facts = [
+            fact
+            for fact in required_contract_facts
+            if " ".join(fact.split()) not in normalized_document
+        ]
+        assert not missing_facts, f"Issue #46 source-first contract is incomplete: {missing_facts}"
+
+    design = documents[0]
+    execution_order = _section(
+        design,
+        "## 11. Execution and stop order",
+        "### Issue #31 schema-sealing implementation lock",
+    )
+    assert "freeze the successor evaluation dataset" in execution_order
+    assert (
+        "cross-validate the unchanged sealed pack against the successor dataset" in execution_order
+    )
+
+    current_checkpoint = _section(documents[3], "## Current checkpoint", "## Transition history")
+    assert "Active canonical phase: Issue #46 implementation" in current_checkpoint
+    assert "Issue #36 is `BLOCKED`" in current_checkpoint
+    assert "Issue #47" in current_checkpoint
+    assert "separate data-creation proposal gate" in current_checkpoint
+    assert "Issue #36 is `BLOCKED`, has no `ready-for-agent` label" in current_checkpoint
+
+
+def test_issue_46_removes_dataset_v2_from_the_future_seal_to_qualification_path() -> None:
+    design = DESIGN_PATH.read_text(encoding="utf-8")
+    issue_draft = ISSUE_DRAFT_PATH.read_text(encoding="utf-8")
+    design_cross_validation = _section(
+        design,
+        "## 7. Post-seal cross-validation",
+        "## 8. Parsing mapping and principal recovery",
+    )
+    issue_solution = _section(issue_draft, "## Solution", "## User Stories")
+    normalized_design = " ".join(design.split())
+    normalized_issue_solution = " ".join(issue_solution.split())
+
+    assert "successor evaluation dataset freeze" in design
+    assert "cross-validator <---- successor dataset, read only" in design
+    assert "both the pack and the successor dataset" in design_cross_validation
+    assert "both the pack and dataset v2" not in design_cross_validation
+    assert "bind the sealed corpus digest to dataset v2" not in design_cross_validation
+    assert "successor dataset version and successful cross-validation receipt" in normalized_design
+
+    assert "successor dataset frozen after sealing" in normalized_issue_solution
+    assert "binds the unchanged corpus digest to that successor dataset version and digest" in (
+        normalized_issue_solution
+    )
+    assert "compares the immutable pack with dataset v2" not in issue_solution
 
 
 def test_delivery_status_records_the_published_review_repair_and_new_frontier() -> None:

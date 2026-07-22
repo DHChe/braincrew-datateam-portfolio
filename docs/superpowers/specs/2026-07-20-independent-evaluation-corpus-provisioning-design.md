@@ -1,12 +1,13 @@
 # Independent Evaluation Corpus Provisioning Design
 
 Date: 2026-07-20
-Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published; Issue #35 authoring brief amended and independently reapproved after PR #45 review on 2026-07-23; Issue #36 blocked on source-order and provenance-evidence prerequisites
+Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published; Issue #35 authoring brief amended and independently reapproved after PR #45 review on 2026-07-23; Issue #46 selects source-first evaluation freeze; Issue #36 remains blocked on Issue #47 and a separate data-creation proposal gate
 Braincrew fixed point: `1185ba8a9e6bab038743531a56f8f2c5ce2b44eb`
 AX fixed base: `a5391ae8aa2b0d1342809f3599283b7759d6e4e3`
 Latest merged AX importer prerequisite: `6bfc27a7bf170172a20dd470d6fd877858c9fb80`
 Pinned AX schema merge: `47673b83a9fb431f2bad550781db18c7bee8b67e`
-Dataset: `braincrew-evaluation-dataset@2.0.0`
+Historical dataset: `braincrew-evaluation-dataset@2.0.0` (immutable; not an authoring or qualification target for this lane)
+Future dataset: successor version greater than `2.0.0`, frozen only after the new corpus version is sealed
 Issues: Braincrew #15 and prerequisite #30
 
 ## 1. Purpose
@@ -68,6 +69,9 @@ repair for this blocker.
    dry-run, load, corpus-identity, parse-probe, and preflight receipts.
 8. A `READY` preflight freezes the corpus. No corpus, AX code, model/provider, prompt, role,
    dataset, or configuration mutation is allowed between baseline and candidate.
+9. Issue #46 locks the source-order decision before restricted authoring. The independently
+   sealed corpus is the predecessor of a successor evaluation dataset; the current dataset v2
+   cannot be retrofitted as an authoring target.
 
 ## 4. Ownership and component boundary
 
@@ -83,7 +87,10 @@ schema, license, secret and digest validation
         v
 sealed Braincrew corpus pack
         |
-        +----> Braincrew cross-validator <---- dataset v2, read only
+        v
+successor evaluation dataset freeze
+        |
+        +----> Braincrew cross-validator <---- successor dataset, read only
         |
         v
 AX generic dry-run importer
@@ -100,12 +107,12 @@ create-only Braincrew preflight and replay
 
 Braincrew owns:
 
-- `datasets/corpus/braincrew-evaluation-corpus-v2/` after the pack is sealed;
+- the future corpus-pack path only after the pack is sealed;
 - source files, an independently sealed `corpus-manifest.json`, license/provenance review,
   role-visibility declarations, and file digests;
-- a cross-validator that compares only a sealed pack with dataset v2;
-- a post-validation `import-manifest.json` that binds the unchanged corpus digest to the dataset
-  version and successful cross-validation receipt;
+- a cross-validator that compares only a sealed pack with its successor dataset;
+- a post-validation `import-manifest.json` that binds the unchanged corpus digest to the successor
+  dataset version and successful cross-validation receipt;
 - sanitized cross-validation and preflight receipts;
 - the decision to stop on any mismatch.
 
@@ -248,21 +255,23 @@ sealed-content and import digests but remain outside them as operational envelop
 
 ## 7. Post-seal cross-validation
 
-Only after sealing may the Braincrew cross-validator read both the pack and dataset v2. It is
-read-only and must never emit repaired corpus or dataset bytes. It proves:
+Only after sealing and the successor evaluation dataset freeze may the Braincrew cross-validator
+read both the pack and the successor dataset. It is read-only and must never emit repaired corpus
+or dataset bytes. It proves:
 
 1. strict schema and forbidden-field compliance;
 2. manifest and per-file digest reproduction;
 3. complete 100-case required source-identity closure;
-4. exact source-text digest equality wherever dataset v2 freezes source text;
+4. exact source-text digest equality wherever the successor dataset freezes source text;
 5. required visibility for `Employee`, `Executive`, and `HRPractitioner`;
 6. absence of every forbidden visibility exposure;
 7. provenance and license review completion;
 8. non-empty distractor coverage independent of expected answer sources.
 
 On success, the validator creates a sanitized cross-validation receipt and the separate import
-manifest described above. These files bind the sealed corpus digest to dataset v2 but do not
-change corpus source bytes or the content digest. On failure, neither file is emitted.
+manifest described above. These files bind the sealed corpus digest to the successor dataset
+version and digest but do not change corpus source bytes or the content digest. On failure,
+neither file is emitted.
 
 Any failure ends the provisioning attempt with one or more of:
 
@@ -281,10 +290,33 @@ and HTTP authorization material.
 The original sequence nevertheless required a blind author to produce exact source identities and
 digests already frozen inside a hidden evaluation dataset. That is circular and cannot be repaired
 by qualification feedback without leaking evaluation-derived identifiers or hints into authoring.
-Before Issue #36 may run, a separately reviewed architecture change must choose either a
-**source-first evaluation freeze**, where independently authored and sealed source bytes precede
-case freezing, or truly pre-existing evaluation-independent exact source bytes or a generator.
-Qualification remains a read-only check and must never become an authoring feedback channel.
+
+### Issue #46 source-order decision lock
+
+Selected source-order contract: **source-first evaluation freeze**.
+
+Rejected alternative: pre-existing, evaluation-independent exact source bytes or generator.
+
+Reason: no independently versioned, provenance-bearing artifact predates the evaluation-specific
+freeze.
+
+Failure mode: frozen evaluation identifiers, digests, or qualification feedback reach authoring.
+
+`braincrew-evaluation-dataset@2.0.0` remains immutable and is not a target for authoring or
+qualification in this lane.
+
+A successor dataset version greater than `2.0.0` is required after the new corpus version is
+sealed.
+
+The successor qualification receipt must bind that successor dataset version and digest to the
+unchanged sealed corpus digest.
+
+Qualification remains read-only and cannot return feedback, identifiers, or digests to authoring.
+
+The trade-off is a new dataset freeze and corresponding qualification binding before any later
+live-preflight renewal. This cost prevents the circular exact-match request. The failure response
+is terminal: keep Issue #36 blocked; do not author a corrective source, relabel dataset v2, or
+use a failed qualification result to start another authoring pass.
 
 ## 8. Parsing mapping and principal recovery
 
@@ -320,7 +352,7 @@ observations.
 Braincrew corpus creation and validation require:
 
 - read/write access only to the isolated staging area and the new corpus-pack path;
-- read-only access to dataset v2 during post-seal cross-validation;
+- read-only access to the successor dataset during post-seal cross-validation;
 - no AX database access;
 - no model credential;
 - manual authority to approve provenance and license review.
@@ -404,11 +436,11 @@ The operator path below records dependency and convergence gates, not a strict s
    prove its committed bytes equal the approved digest at the separate Git Lifecycle Proposal Gate;
 7. design, implement, and independently review sealer support for accepting, preserving, and
    replaying the create-only provenance sidecar;
-8. approve either a source-first evaluation freeze or a truly pre-existing,
-   evaluation-independent exact source contract without qualification feedback;
+8. apply Issue #46's selected source-first evaluation freeze: seal a new independent corpus
+   version before any successor evaluation case is frozen, without qualification feedback;
 9. only after both prerequisites, authorize Braincrew #36 in a new evaluation-blind context;
-10. use Braincrew #37 to cross-validate the unchanged sealed pack against the subsequently frozen
-    dataset v2;
+10. freeze the successor evaluation dataset with a version greater than `2.0.0`, then use
+    Braincrew #37 to cross-validate the unchanged sealed pack against the successor dataset;
 11. at the separate AX #37 operational gate, run the exact importer dry-run;
 12. create and verify a restricted PostgreSQL snapshot outside both repositories;
 13. at the operator-load gate, require AX #36 disposable-PostgreSQL idempotency/concurrency proof
@@ -712,9 +744,9 @@ and a separate blind reviewer
 approved the exact 10,680-byte brief with zero material findings at SHA-256
 `121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`.
 The adjacent digest declaration and durable review record bind that decision to exact bytes.
-Issue #36 remains blocked until the provenance sidecar is supported and a source-first evaluation
-freeze or pre-existing evaluation-independent exact source contract is approved. A clean committed
-Braincrew SHA must also reproduce the same brief digest.
+Issue #36 remains blocked until the provenance sidecar is supported and Issue #46's selected
+source-first evaluation freeze can be executed through the separate data-creation proposal gate.
+A clean committed Braincrew SHA must also reproduce the same brief digest.
 
 ## 12. Rejected alternatives and consequences
 
@@ -741,9 +773,10 @@ than a self-fulfilling fixture.
 
 This design phase is complete when both repository specs pass independent read-only review and
 the user approves the written files. Provisioning is complete only when a sealed independent
-pack passes cross-validation, AX dry-run and atomic load succeed from approved clean commits,
-the three role corpus identities include `braincrew-evaluation-dataset@2.0.0`, all six strict
-parse probes succeed, and a create-only preflight replays as `READY`.
+pack passes cross-validation against its successor dataset version, AX dry-run and atomic load
+succeed from approved clean commits, the three role corpus identities include that successor
+dataset version, all six strict parse probes succeed, and a create-only preflight replays as
+`READY`.
 
 No baseline, candidate, comparison, or live quality claim is part of this completion condition.
 
@@ -752,12 +785,12 @@ No baseline, candidate, comparison, or live quality claim is part of this comple
 As of 2026-07-23, the `to-spec` parents and `to-tickets` graph are published. AX #33, #34, and
 #35 are merged; AX #36 remains open. Braincrew PR #44 merged #34 as
 `67d7c104757f60194e59df20240ac47f8be9c027`; #34 is `CLOSED/COMPLETED`, and its worktree and
-local/remote feature branches are removed. Braincrew #35 is active from that exact merge with
-`ready-for-agent`. PR #45 published its initial brief lock, and review correctly forced the content
-schema correction plus explicit provenance-sidecar and source-order gates. The amended brief,
-exact digest declaration, and independent approval record are complete; merge remains subject to
-the latest ticket review, full verification, and required checks. Braincrew Issue #36 remains
-blocked until both newly recorded architecture prerequisites are implemented or approved. No corpus
+local/remote feature branches are removed. Braincrew #35 is closed after PR #45 merged. Issue #46
+now selects source-first evaluation freeze: the next dataset must be a successor version created
+only after a new independently sealed corpus version, while dataset v2 remains immutable and
+outside this authoring lane. Braincrew Issue #36 remains blocked until Issue #47 implements the
+provenance-sidecar and restricted-input repair and a separate data-creation proposal gate approves
+the selected order. No corpus
 source bytes, actually authored or sealed Braincrew pack, real
 qualification receipt, operator snapshot, target load, renewed Issue #38 preflight, READY artifact,
 baseline, candidate, comparison, or live quality claim exists. PR #29 and
