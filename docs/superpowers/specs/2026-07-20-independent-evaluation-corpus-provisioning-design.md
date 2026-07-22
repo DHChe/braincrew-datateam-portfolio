@@ -1,7 +1,7 @@
 # Independent Evaluation Corpus Provisioning Design
 
 Date: 2026-07-20
-Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published; Issue #35 authoring brief amended and independently reapproved after PR #45 review on 2026-07-23; Issue #46 selected source-first evaluation freeze and is closed after PR #48; Issue #47 TDD is green locally; Issue #36 remains blocked until #47 is merged and verified plus a separate data-creation proposal gate
+Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published; Issue #35 authoring brief amended and independently reapproved after PR #45 review on 2026-07-23; Issue #46 selected source-first evaluation freeze and is closed after PR #48; PR #49 merged Issue #47 into `develop` as `4d80b9b8950f4d7356a9aa9806f492ae79126dab` with successful Python and frontend checks, and Issue #47 is closed; Issue #36 remains blocked only pending a separate data-creation proposal gate
 Braincrew fixed point: `1185ba8a9e6bab038743531a56f8f2c5ce2b44eb`
 AX fixed base: `a5391ae8aa2b0d1342809f3599283b7759d6e4e3`
 Latest merged AX importer prerequisite: `6bfc27a7bf170172a20dd470d6fd877858c9fb80`
@@ -166,9 +166,9 @@ The fresh authoring and independent review contexts did not inspect evaluation c
 queries, answers/evidence, scores, split labels, prior results, PR #29, or its branch. The final
 review decision is `APPROVE` with zero material findings and is recorded in
 `docs/reviews/2026-07-22-braincrew-evaluation-corpus-v2-authoring-brief-leakage-review.md` against
-the exact approved digest. Corpus authoring remains blocked until the source-order architecture is
-approved, sealer support for durable provenance evidence is implemented and tested, and a clean
-Braincrew commit reproduces the same digest.
+the exact approved digest. Issue #46's source-first order and Issue #47's durable-provenance
+sealer support are complete. Corpus authoring remains blocked until the separate data-creation
+proposal gate approves one clean Braincrew commit that reproduces the same digest.
 
 Independence is enforced by filesystem capability, not only by prompt wording. The authoring
 process receives a read-only input directory containing only the committed brief, the exact
@@ -739,16 +739,16 @@ source identities would make authoring circular. Focused contract tests failed b
 pinned staged authoring to `schemas/ax-synthetic-seed-content-v1.schema.json` at SHA-256
 `372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb` and limited the pack schema at
 SHA-256 `4ddc71d7408324bfed6e7a25024899a7f689431f5f024fb2329f3f844352bffa` to the post-qualification
-import manifest. Issue #47 now repairs staged authoring to expose the content schema and its
+import manifest. Issue #47 repaired staged authoring to expose the content schema and its
 pinned digest only. A fresh evaluation-blind context added the provenance sidecar and source-order
 gates without reading evaluation material,
 and a separate blind reviewer
 approved the exact 10,680-byte brief with zero material findings at SHA-256
 `121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`.
 The adjacent digest declaration and durable review record bind that decision to exact bytes.
-Issue #36 remains blocked until Issue #47 is merged and verified and Issue #46's selected
-source-first evaluation freeze is approved through the separate data-creation proposal gate.
-A clean committed Braincrew SHA must also reproduce the same brief digest.
+PR #49 merged and verified Issue #47; Issue #46's source-first evaluation freeze is also closed.
+Issue #36 remains blocked until the separate data-creation proposal gate approves that selected
+order and a clean committed Braincrew SHA reproduces the same brief digest.
 
 ## 12. Rejected alternatives and consequences
 
@@ -790,8 +790,9 @@ As of 2026-07-23, the `to-spec` parents and `to-tickets` graph are published. AX
 local/remote feature branches are removed. Braincrew #35 is closed after PR #45 merged. Issue #46
 now selects source-first evaluation freeze: the next dataset must be a successor version created
 only after a new independently sealed corpus version, while dataset v2 remains immutable and
-outside this authoring lane. Braincrew Issue #47 must be merged and verified before Issue #36 can
-leave `BLOCKED`; the separate data-creation proposal gate must also approve the selected order. No corpus
+outside this authoring lane. PR #49 has merged and verified Braincrew Issue #47, and Issue #47 is
+closed. The separate data-creation proposal gate must approve the selected order before Issue #36
+can leave `BLOCKED`. No corpus
 source bytes, actually authored or sealed Braincrew pack, real
 qualification receipt, operator snapshot, target load, renewed Issue #38 preflight, READY artifact,
 baseline, candidate, comparison, or live quality claim exists. PR #29 and
