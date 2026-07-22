@@ -555,7 +555,10 @@ Issue #42 substrate remains `live-preflight-evidence-v1` and retains its complet
 observation/blocker compatibility. Replay returns the schema version so an Issue #34 consumer can
 require the principal-attachment schema rather than treating a generic v1 artifact as qualified
 policy evidence. The logical digest proves internal replay consistency, not artifact origin or
-authenticity.
+authenticity. Replay of the Issue #34 schema also revalidates the exact ordered six-case attachment
+map, reviewed owner, and sole `HRPractitioner` role. An unblocked artifact must contain all six
+probes; an incomplete artifact must contain one terminal blocker for the next expected probe, or
+the pre-probe mapping blocker when no request was eligible to run.
 
 A successful capture requires all six responses to bind the requested attachment, exact pinned
 AX parser identity `utf8-text`/`stdlib-1`, canonical source-text digest, and valid span
@@ -573,6 +576,11 @@ fields, while the Issue #34 schema requires its contract and frozen identity. Bo
 `capture_state="captured"`; transport success creates neither parsing-quality output nor READY.
 Issue #38 alone owns an actual renewed preflight and READY publication.
 
+A non-timeout HTTP request failure such as a connection error remains non-retryable under the
+existing policy, but it is no longer evidence-free. The Adapter records one `request_error` attempt
+with operation, ordinal, method, path, and elapsed time and the collector preserves it on the
+existing `LIVE_PARSE_OBSERVATION_UNREACHABLE` blocker.
+
 The clean Issue #34 baseline passed all 264 pre-change tests before RED. The first 15 new
 contract/acceptance tests failed on the absent policy collector and canonical user UUID contract;
 minimal GREEN passed those 15. Ticket review then reproduced acceptance of a non-matching parser
@@ -585,10 +593,18 @@ blocked partial capture before the discriminator repair. Independent re-review t
 simultaneous discriminator-and-identity removal before semantic downgrade protection, then
 reproduced overbroad classification of generic reviewed-attachment evidence and unrelated legacy
 `LIVE_PARSE_*` blockers. Fingerprint inference was rejected in favor of a separate Issue #34 schema:
-new-schema removal is rejected, while the complete generic v1 schema remains compatible. The final
-preflight set reports 35 passes, all 288
-repository tests pass, and confirmatory Standards and Spec review axes have zero unresolved
-finding. Frozen sync, Ruff format/lint, strict mypy, and Git whitespace validation also pass. No AX
+new-schema removal is rejected, while the complete generic v1 schema remains compatible. The
+latest Codex re-review then reproduced replay acceptance after deleting a successful probe and
+missing attempt evidence for a connection failure. Both were observed RED before the exact
+six-probe / terminal-blocker replay contract and `request_error` retention reached GREEN.
+Independent review then reproduced rejection of the existing unavailable blocker, replay of
+rehashed parser/source policy drift, and replay after blocker-attempt removal. The Issue #34
+validator now rechecks strict response/source/span and attempt evidence while preserving the full
+existing `LIVE_PARSE_OBSERVATION_*` family. A final adversarial pass additionally bound each span's
+digest to its frozen canonical substring, required one tenant across retained observations, and
+required each blocker code to agree with its terminal attempt outcome. A terminal timeout or
+retryable HTTP failure must retain the Adapter's full three-attempt exhaustion history. The five focused
+preflight/adapter files report 50 passes and all 289 repository tests pass. No AX
 operation, corpus mutation, experiment run, READY artifact, or PR #29 modification occurred.
 
 ## 12. Rejected alternatives and consequences

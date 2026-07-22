@@ -136,6 +136,88 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     assert summary["logical_digest"] == artifact.logical_digest
 
     payload = cast(dict[str, Any], json.loads(retained))
+    parse_observations = cast(list[dict[str, Any]], payload["parse_observations"])
+    first_response = cast(dict[str, Any], parse_observations[0]["response"])
+    first_spans = cast(list[dict[str, Any]], first_response["evidence_spans"])
+    first_spans[0]["text_digest"] = "sha256:" + "0" * 64
+    parse_observations[0]["response_digest"] = canonical_digest(first_response)
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    invalid_span_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert invalid_span_replay.returncode == 2
+    assert "Invalid artifact" in invalid_span_replay.stderr
+
+    payload = cast(dict[str, Any], json.loads(retained))
+    parse_observations = cast(list[dict[str, Any]], payload["parse_observations"])
+    second_request = cast(dict[str, Any], parse_observations[1]["request"])
+    second_request["tenant_id"] = "33333333-3333-3333-3333-333333333333"
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    inconsistent_tenant_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert inconsistent_tenant_replay.returncode == 2
+    assert "Invalid artifact" in inconsistent_tenant_replay.stderr
+
+    payload = cast(dict[str, Any], json.loads(retained))
+    parse_observations = cast(list[dict[str, Any]], payload["parse_observations"])
+    first_response = cast(dict[str, Any], parse_observations[0]["response"])
+    first_response["parser_name"] = "markdown-text"
+    parse_observations[0]["response_digest"] = canonical_digest(first_response)
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    semantically_invalid_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert semantically_invalid_replay.returncode == 2
+    assert "Invalid artifact" in semantically_invalid_replay.stderr
+
+    payload = cast(dict[str, Any], json.loads(retained))
+    parse_observations = cast(list[dict[str, Any]], payload["parse_observations"])
+    parse_observations.pop()
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    incomplete_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert incomplete_replay.returncode == 2
+    assert "Invalid artifact" in incomplete_replay.stderr
+
+    payload = cast(dict[str, Any], json.loads(retained))
     payload.pop("dataset_identity")
     payload.pop("capture_contract")
     payload["logical_digest"] = canonical_digest(
@@ -181,7 +263,7 @@ def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_iden
     assert validation.state == "VALID"
 
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(503, json={"detail": "starting"})
+        raise httpx.ConnectError("synthetic endpoint unavailable", request=request)
 
     artifact = live_preflight.capture_principal_attachment_preflight(
         run_id="issue-34-blocked-acceptance",
@@ -199,13 +281,72 @@ def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_iden
     assert artifact.schema_version == "principal-attachment-preflight-evidence-v1"
     assert artifact.capture_contract == "principal-attachment-preflight-v1"
     assert artifact.dataset_identity is not None
-    assert [blocker.code for blocker in artifact.blockers] == ["LIVE_PARSE_OBSERVATION_FAILED"]
+    assert [blocker.code for blocker in artifact.blockers] == ["LIVE_PARSE_OBSERVATION_UNREACHABLE"]
 
     artifact_path = live_preflight.write_live_preflight_artifact(
         artifact,
         tmp_path / "issue-34-blocked-live-preflight-evidence.json",
     )
-    payload = cast(dict[str, Any], json.loads(artifact_path.read_text(encoding="utf-8")))
+    retained = artifact_path.read_text(encoding="utf-8")
+    payload = cast(dict[str, Any], json.loads(retained))
+    blockers = cast(list[dict[str, Any]], payload["blockers"])
+    attempts = cast(list[dict[str, Any]], blockers[0]["attempts"])
+    attempts[0]["outcome"] = "success"
+    attempts[0]["status_code"] = 200
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    inconsistent_blocker_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert inconsistent_blocker_replay.returncode == 2
+    assert "Invalid artifact" in inconsistent_blocker_replay.stderr
+
+    payload = cast(dict[str, Any], json.loads(retained))
+    blockers = cast(list[dict[str, Any]], payload["blockers"])
+    blockers[0]["attempts"] = []
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    attemptless_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert attemptless_replay.returncode == 2
+    assert "Invalid artifact" in attemptless_replay.stderr
+
+    payload = cast(dict[str, Any], json.loads(retained))
+    payload["blockers"] = []
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    incomplete_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert incomplete_replay.returncode == 2
+    assert "Invalid artifact" in incomplete_replay.stderr
+
+    payload = cast(dict[str, Any], json.loads(retained))
     payload.pop("dataset_identity")
     payload.pop("capture_contract")
     payload["logical_digest"] = canonical_digest(

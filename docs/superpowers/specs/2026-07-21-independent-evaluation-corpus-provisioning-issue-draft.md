@@ -144,13 +144,17 @@ Issue #34 implementation checkpoint:
   `live-preflight-evidence-v1` schema remains fully backward compatible, including arbitrary
   caller-supplied observations and `LIVE_PARSE_*` blockers. Replay exposes the schema version and
   Issue #34 consumers must require the principal-attachment schema; the logical digest proves
-  internal consistency rather than origin authenticity.
+  internal consistency rather than origin authenticity. The Issue #34 replay validator additionally
+  requires the exact ordered six-case attachment map, reviewed owner, and sole `HRPractitioner`
+  role. A blocker-free artifact requires all six probes; an incomplete artifact requires the one
+  terminal blocker that explains the next probe, or the pre-probe mapping blocker.
   Untrusted response correlation values are digest-only at the retention boundary. An
   available response with a failure code is blocked, while an available response with zero spans
   remains a downstream quality observation. Successful transport is retained only as six
   sanitized strict parse observations in the Issue #42 create-only artifact; it emits no
-  parsing-quality result or READY. Legacy v1 artifacts without the newly introduced optional
-  fields retain their original logical-digest semantics.
+  parsing-quality result or READY. A connection failure remains non-retryable but now retains one
+  `request_error` attempt on `LIVE_PARSE_OBSERVATION_UNREACHABLE`. Legacy v1 artifacts without the
+  newly introduced optional fields retain their original logical-digest semantics.
   A 264-test clean baseline preceded the first 15-test RED. Ticket review separately reproduced a
   non-matching parser defect before repair. PR #44 review remediation separately reproduced the
   initial four bot findings, legacy replay drift, correlation-header retention, and rehashed
@@ -159,7 +163,12 @@ Issue #34 implementation checkpoint:
   independent review then reproduced simultaneous discriminator-and-identity removal before the
   semantic downgrade repair, then overbroad classification of generic reviewed-attachment evidence
   and unrelated legacy `LIVE_PARSE_*` blockers. Fingerprint inference was removed in favor of a
-  separate required-field Issue #34 schema while preserving generic v1 replay. Focused preflight
-  coverage now reports 35 passes, both confirmatory review axes have zero unresolved finding, and
-  final frozen sync, Ruff format/lint, strict mypy, all 288
-  repository tests, and Git whitespace validation pass.
+  separate required-field Issue #34 schema while preserving generic v1 replay. The latest Codex
+  re-review then reproduced an incomplete five-probe artifact replay and an evidence-free
+  connection failure before both contracts were repaired. Independent review then reproduced the
+  unavailable blocker being rejected, rehashed parser/source drift replaying, and a blocked receipt
+  replaying without attempts. A final adversarial pass also bound span digests to frozen source
+  substrings, one tenant to the retained probe set, and blocker codes to their terminal attempt
+  outcomes. Terminal timeout/retryable failures must also retain all three exhausted attempts.
+  Those paths are repaired while preserving generic v1. Focused preflight/adapter
+  coverage reports 50 passes and all 289 repository tests pass.

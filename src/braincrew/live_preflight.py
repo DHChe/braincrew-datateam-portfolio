@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Iterable, Mapping
 from datetime import datetime
 from pathlib import Path
@@ -57,6 +58,35 @@ REVIEWED_PARSING_ATTACHMENT_IDS: Mapping[str, str] = MappingProxyType(
         "synthetic-rule-018": "816b01c3-a571-4f02-9f14-32e71d7fb2ee",
         "synthetic-rule-019": "07b849ea-5e0a-44f7-87c9-600f539d7d9a",
         "synthetic-rule-020": "569dc67a-5ba8-4a00-a0d8-e03a8ac43449",
+    }
+)
+REVIEWED_PARSING_SOURCE_EVIDENCE: Mapping[str, tuple[str, str]] = MappingProxyType(
+    {
+        "synthetic-rule-015": (
+            "sha256:6e418e4be8e4de344d6b3e0162d00177668483c21e864b477fae6b1b044bf7a2",
+            "근속 연수 | 휴가 일수\n1년 | 15일\n3년 | 16일",
+        ),
+        "synthetic-rule-016": (
+            "sha256:620ad58790745f5d1852c3e97a36ce40ca74d8b6dd6e010469ea44b2ec4b3a75",
+            "퇴직 절차\n1. 퇴직 의사 제출\n2. 인수인계\n3. 자산 반납",
+        ),
+        "synthetic-rule-017": (
+            "sha256:3982c372a75d30b3b1699a58a9d567ad0072fb088f3a10ab929dcbb6096319c6",
+            "문서명: 육아휴직 안내\n담당: 피플팀\n육아휴직은 최대 1년이다.",
+        ),
+        "synthetic-rule-018": (
+            "sha256:9070d1c9cab7d54d7836d1ef28369f2ab9a4968a23208e10a9e66585ecca8d1f",
+            "제5조 초과근무\n평일 한도는 2시간이다. 주간 한도는 12시간이다.",
+        ),
+        "synthetic-rule-019": (
+            "sha256:0937ba63f9fde634c13bea38c3974e0226b083fb299bfdd5a111789c190d0042",
+            "제1절 신고\n괴롭힘 신고는 익명으로 가능하다.\n"
+            "제2절 보호\n신고자에게 불이익을 주어서는 안 된다.",
+        ),
+        "synthetic-rule-020": (
+            "sha256:333a023c2e477249aa2b16718826c897f4efed6c4358bd86fe4f6d9cc386a23d",
+            "교육 과정 | 시간\n윤리 | 2시간\n안전 | 3시간\n이수 방법\n- 온라인\n- 집합",
+        ),
     }
 )
 
@@ -207,6 +237,7 @@ class LivePreflightArtifact(StrictModel):
                 raise ValueError("principal attachment schema requires its capture contract")
             if self.dataset_identity is None:
                 raise ValueError("principal attachment capture requires frozen dataset identity")
+            _validate_principal_attachment_capture(self)
         elif self.capture_contract is not None:
             raise ValueError("generic live preflight schema cannot declare a capture contract")
         if _contains_private_path(self.model_dump(mode="json")):
@@ -550,6 +581,8 @@ def _parse_blocker(
 
 
 def _classify_parse_failure(error: AxHttpFailure) -> tuple[str, str]:
+    if error.failure_code == "AX_REQUEST_FAILURE":
+        return "LIVE_PARSE_OBSERVATION_UNREACHABLE", "parse_endpoint_unreachable"
     if error.detail == "evaluation_principal_id_invalid":
         return "EVALUATION_PRINCIPAL_ID_INVALID", "principal_rejected_by_ax"
     if error.detail == "evaluation_principal_subject_invalid":
@@ -557,6 +590,178 @@ def _classify_parse_failure(error: AxHttpFailure) -> tuple[str, str]:
     if error.detail == "not_found":
         return "PARSE_ATTACHMENT_MAPPING_INVALID", "attachment_not_found"
     return "LIVE_PARSE_OBSERVATION_FAILED", error.failure_code
+
+
+def _validate_principal_attachment_capture(artifact: LivePreflightArtifact) -> None:
+    if artifact.corpus_observations:
+        raise ValueError("principal attachment capture cannot contain corpus observations")
+
+    expected_probes = tuple(sorted(REVIEWED_PARSING_ATTACHMENT_IDS.items()))
+    if len(artifact.parse_observations) > len(expected_probes):
+        raise ValueError("principal attachment capture has too many parse observations")
+
+    tenant_ids: set[str] = set()
+    for observation, (document_id, attachment_id) in zip(
+        artifact.parse_observations,
+        expected_probes,
+        strict=False,
+    ):
+        request = observation.request
+        if (
+            request.operation != "parse"
+            or request.case_id != document_id
+            or request.attachment_id != attachment_id
+            or observation.response.attachment_id != attachment_id
+        ):
+            raise ValueError("principal attachment capture must use the reviewed probe mapping")
+        if request.user_id != ACTIVE_OWNER_USER_ID or request.roles != (
+            PARSING_AUTHORIZATION_ROLE,
+        ):
+            raise ValueError("principal attachment capture must use the reviewed owner role")
+        if not _is_canonical_uuid(request.tenant_id):
+            raise ValueError("principal attachment capture must use a canonical tenant UUID")
+        tenant_ids.add(request.tenant_id)
+
+        source_digest, source_text = REVIEWED_PARSING_SOURCE_EVIDENCE[document_id]
+        response = observation.response
+        if (
+            not response.parse_available
+            or response.failure_code is not None
+            or (response.parser_name, response.parser_version) != EXPECTED_PARSER_IDENTITY
+            or response.extracted_text_digest != source_digest
+        ):
+            raise ValueError("principal attachment capture has invalid strict parse evidence")
+        if any(
+            span.source_text_digest != source_digest
+            or span.end_char > len(source_text)
+            or span.text_digest != _text_digest(source_text[span.start_char : span.end_char])
+            for span in response.evidence_spans
+        ):
+            raise ValueError("principal attachment capture has invalid span evidence")
+        _validate_principal_parse_attempts(
+            observation.attempts,
+            attachment_id=attachment_id,
+            require_success=True,
+        )
+
+    if len(tenant_ids) > 1:
+        raise ValueError("principal attachment capture must use one tenant identity")
+
+    if not artifact.blockers:
+        if len(artifact.parse_observations) != len(expected_probes):
+            raise ValueError("unblocked principal attachment capture requires all six probes")
+        return
+
+    if len(artifact.blockers) != 1:
+        raise ValueError("principal attachment capture requires exactly one terminal blocker")
+    if len(artifact.parse_observations) == len(expected_probes):
+        raise ValueError("complete principal attachment capture cannot contain a blocker")
+
+    blocker = artifact.blockers[0]
+    if blocker.operation is None:
+        if (
+            artifact.parse_observations
+            or blocker.case_id is not None
+            or blocker.code != "PARSE_ATTACHMENT_MAPPING_INVALID"
+            or blocker.attempts
+        ):
+            raise ValueError("pre-probe principal attachment blocker is inconsistent")
+        return
+
+    expected_case_id = expected_probes[len(artifact.parse_observations)][0]
+    if blocker.operation != "parse" or blocker.case_id != expected_case_id:
+        raise ValueError("partial principal attachment capture requires its next probe blocker")
+    if blocker.code not in {
+        "EVALUATION_PRINCIPAL_ID_INVALID",
+        "EVALUATION_PRINCIPAL_SUBJECT_INVALID",
+        "PARSE_ATTACHMENT_MAPPING_INVALID",
+        "LIVE_PARSE_OBSERVATION_UNAVAILABLE",
+        "LIVE_PARSE_OBSERVATION_UNREACHABLE",
+        "LIVE_PARSE_OBSERVATION_FAILED",
+    }:
+        raise ValueError("principal attachment capture has an unsupported parse blocker")
+    _validate_principal_parse_attempts(
+        blocker.attempts,
+        attachment_id=expected_probes[len(artifact.parse_observations)][1],
+        require_success=False,
+    )
+    allowed_terminal_outcomes = {
+        "EVALUATION_PRINCIPAL_ID_INVALID": {"permanent_http"},
+        "EVALUATION_PRINCIPAL_SUBJECT_INVALID": {"permanent_http"},
+        "PARSE_ATTACHMENT_MAPPING_INVALID": {"permanent_http", "success"},
+        "LIVE_PARSE_OBSERVATION_UNAVAILABLE": {"success"},
+        "LIVE_PARSE_OBSERVATION_UNREACHABLE": {"request_error"},
+        "LIVE_PARSE_OBSERVATION_FAILED": {
+            "success",
+            "timeout",
+            "retryable_http",
+            "permanent_http",
+            "schema_error",
+        },
+    }
+    if blocker.attempts[-1].outcome not in allowed_terminal_outcomes[blocker.code]:
+        raise ValueError("principal attachment blocker contradicts its terminal attempt")
+
+
+def _validate_principal_parse_attempts(
+    attempts: tuple[HttpAttempt, ...],
+    *,
+    attachment_id: str,
+    require_success: bool,
+) -> None:
+    if not attempts or len(attempts) > 3:
+        raise ValueError("principal attachment operation requires bounded attempt evidence")
+
+    expected_path = f"/v1/evaluation/attachments/{attachment_id}/parse-observation"
+    for attempt_number, attempt in enumerate(attempts, start=1):
+        if (
+            attempt.operation != "parse"
+            or attempt.attempt_number != attempt_number
+            or attempt.method != "GET"
+            or attempt.path != expected_path
+        ):
+            raise ValueError("principal attachment attempt identity is inconsistent")
+        if (
+            attempt.response_correlation_id is not None
+            and re.fullmatch(
+                SHA256_PATTERN,
+                attempt.response_correlation_id,
+            )
+            is None
+        ):
+            raise ValueError("principal attachment attempt correlation must be digest-only")
+        if attempt.outcome == "success" and not (
+            attempt.status_code is not None and 200 <= attempt.status_code < 300
+        ):
+            raise ValueError("successful principal attachment attempt requires a success status")
+        if attempt.outcome in {"timeout", "request_error"} and attempt.status_code is not None:
+            raise ValueError("failed principal attachment request cannot declare a status")
+        if attempt.outcome == "retryable_http" and not (
+            attempt.status_code == 429
+            or (attempt.status_code is not None and attempt.status_code >= 500)
+        ):
+            raise ValueError("retryable principal attachment attempt has invalid status")
+        if attempt.outcome == "permanent_http" and (
+            attempt.status_code is None
+            or 200 <= attempt.status_code < 300
+            or attempt.status_code == 429
+            or attempt.status_code >= 500
+        ):
+            raise ValueError("permanent principal attachment attempt has invalid status")
+        if attempt.outcome == "schema_error" and not (
+            attempt.status_code is not None and 200 <= attempt.status_code < 300
+        ):
+            raise ValueError("schema-error principal attachment attempt needs a success status")
+        if attempt_number < len(attempts) and attempt.outcome not in {
+            "timeout",
+            "retryable_http",
+        }:
+            raise ValueError("only retryable attempts may precede the terminal attempt")
+
+    if require_success and attempts[-1].outcome != "success":
+        raise ValueError("principal attachment observation requires a successful final attempt")
+    if attempts[-1].outcome in {"timeout", "retryable_http"} and len(attempts) != 3:
+        raise ValueError("terminal retryable failure requires three exhausted attempts")
 
 
 def _verification_cases(

@@ -693,7 +693,10 @@ Trade-offs and failure modes:
   contract and dataset identity make rehashed removal invalid while that schema remains unchanged.
   Generic Issue #42 `live-preflight-evidence-v1` artifacts retain full backward compatibility, and
   an Issue #34 consumer must require the newer schema. The logical digest proves replay consistency,
-  not who created the artifact. An available response with
+  not who created the artifact. Within the newer schema replay revalidates the exact ordered six
+  case/attachment pairs, reviewed owner, and sole role. A missing probe cannot be hidden by
+  recomputing the logical digest: a complete artifact needs all six, while a partial artifact needs
+  the terminal blocker for its next probe. An available response with
   zero spans is retained as measurable poor parsing quality; an available response with a failure
   code is rejected as inconsistent evidence. Server-controlled correlation headers are retained
   only as digests, and legacy v1 artifacts keep their omitted-field digest semantics.
@@ -702,7 +705,9 @@ Trade-offs and failure modes:
   `EVALUATION_PRINCIPAL_SUBJECT_INVALID`; inaccessible or unstable live operations retain the
   existing `LIVE_PARSE_OBSERVATION_*` family, with exhausted attempts retained on the blocker. If
   retries recover to an HTTP success whose evidence is then rejected, that blocker still retains
-  the complete retry-plus-success attempt sequence.
+  the complete retry-plus-success attempt sequence. A non-timeout connection failure is
+  non-retryable but retains a `request_error` attempt with method, path, ordinal, and timing on
+  `LIVE_PARSE_OBSERVATION_UNREACHABLE`.
 
 Validation evidence:
 : A clean baseline passed frozen sync, Ruff, strict mypy, and all 264 pre-change tests before the
@@ -717,10 +722,15 @@ Validation evidence:
   Independent re-review then reproduced simultaneous contract-and-identity removal before semantic
   downgrade protection was added, then reproduced overbroad classification of generic
   reviewed-attachment evidence and unrelated legacy `LIVE_PARSE_*` blockers. Fingerprint inference
-  was removed in favor of a separate required-field Issue #34 schema. The final preflight set reports
-  35 passes, both confirmatory review axes
-  have zero unresolved finding, and frozen sync, Ruff format/lint, strict mypy, all 288 repository tests, and Git
-  whitespace validation pass. No real preflight or READY
+  was removed in favor of a separate required-field Issue #34 schema. The latest Codex review then
+  reproduced acceptance of a rehashed five-probe artifact and a missing connection-attempt receipt;
+  both became RED before the six-probe/terminal-blocker validator and `request_error` receipt
+  reached GREEN. Independent review then reproduced rejection of the existing unavailable blocker,
+  rehashed strict-response drift, and attempt removal from a blocked receipt before repair. The five
+  focused preflight/adapter files report 50 passes. A final adversarial pass bound span digests to
+  the frozen substrings, one tenant to all retained observations, and blocker codes to terminal
+  attempt outcomes, then rejected shortening a terminal retryable failure below its three-attempt
+  exhaustion history. All 289 repository tests pass. No real preflight or READY
   artifact was produced.
 
 Likely follow-ups:

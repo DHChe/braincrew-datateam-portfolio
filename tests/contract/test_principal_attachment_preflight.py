@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
@@ -14,6 +15,7 @@ import braincrew.live_preflight as live_preflight
 from braincrew.ax_http_adapter import AxHttpAdapterConfig
 from braincrew.contracts import ParsingCase
 from braincrew.dataset_registry import DatasetValidationReport, validate_dataset_bundle
+from braincrew.digest import canonical_digest
 
 PROJECT_ROOT = Path(__file__).parents[2]
 DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v2.json"
@@ -250,6 +252,42 @@ def test_inaccessible_attachment_preserves_the_live_operation_blocker(
     artifact = _capture(dataset_validation, transport=httpx.MockTransport(handler))
 
     assert [blocker.code for blocker in artifact.blockers] == ["LIVE_PARSE_OBSERVATION_UNREACHABLE"]
+    assert len(artifact.blockers[0].attempts) == 1
+    assert artifact.blockers[0].attempts[0].operation == "parse"
+    assert artifact.blockers[0].attempts[0].attempt_number == 1
+    assert artifact.blockers[0].attempts[0].method == "GET"
+    assert artifact.blockers[0].attempts[0].path == (
+        "/v1/evaluation/attachments/2c7d525b-7463-463e-8893-0d37009775de/parse-observation"
+    )
+    assert artifact.blockers[0].attempts[0].outcome == "request_error"
+    assert artifact.blockers[0].attempts[0].status_code is None
+
+
+def test_unavailable_parse_preserves_the_existing_typed_live_blocker(
+    dataset_validation: DatasetValidationReport,
+) -> None:
+    cases = _verification_cases(dataset_validation)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested = _requested_attachment(request)
+        document_id = _attachment_documents()[requested]
+        payload = _parse_response(cases[document_id], attachment_id=requested)
+        payload.update(
+            parse_available=False,
+            parser_name=None,
+            parser_version=None,
+            failure_code="parse_unavailable",
+            extracted_text=None,
+            extracted_text_digest=None,
+            evidence_spans=[],
+        )
+        return httpx.Response(200, json=payload)
+
+    artifact = _capture(dataset_validation, transport=httpx.MockTransport(handler))
+
+    assert [blocker.code for blocker in artifact.blockers] == ["LIVE_PARSE_OBSERVATION_UNAVAILABLE"]
+    assert artifact.blockers[0].detail == "parse_unavailable"
+    assert [attempt.outcome for attempt in artifact.blockers[0].attempts] == ["success"]
 
 
 def test_mismatched_attachment_identity_is_a_mapping_blocker(
@@ -337,6 +375,7 @@ def test_available_parse_with_empty_spans_remains_measureable(
 
 def test_exhausted_parse_retries_are_retained_with_the_blocker(
     dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
 ) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
@@ -362,6 +401,22 @@ def test_exhausted_parse_retries_are_retained_with_the_blocker(
         HOSTILE_CORRELATION_DIGEST,
     ]
     assert HOSTILE_CORRELATION_ID not in artifact.model_dump_json()
+
+    artifact_path = live_preflight.write_live_preflight_artifact(
+        artifact,
+        tmp_path / "exhausted-retry-evidence.json",
+    )
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    final_attempt = payload["blockers"][0]["attempts"][-1]
+    final_attempt["attempt_number"] = 1
+    payload["blockers"][0]["attempts"] = [final_attempt]
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="three exhausted attempts"):
+        live_preflight.replay_live_preflight_artifact(artifact_path)
 
 
 def test_retries_are_retained_when_recovered_response_evidence_is_rejected(

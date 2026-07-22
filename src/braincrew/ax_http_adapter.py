@@ -115,7 +115,14 @@ class HttpAttempt(StrictModel):
     attempt_number: int = Field(ge=1)
     method: HttpMethod
     path: str
-    outcome: Literal["success", "timeout", "retryable_http", "permanent_http", "schema_error"]
+    outcome: Literal[
+        "success",
+        "timeout",
+        "request_error",
+        "retryable_http",
+        "permanent_http",
+        "schema_error",
+    ]
     status_code: int | None
     elapsed_ms: float = Field(ge=0)
     response_correlation_id: str | None = None
@@ -765,6 +772,24 @@ class AxHttpAdapter:
                     request=request,
                     attempts=attempts,
                 ) from None
+            except httpx.RequestError as error:
+                attempts.append(
+                    HttpAttempt(
+                        operation=operation,
+                        attempt_number=attempt_number,
+                        method=method,
+                        path=path,
+                        outcome="request_error",
+                        status_code=None,
+                        elapsed_ms=(time.perf_counter() - started) * 1000,
+                    )
+                )
+                raise AxHttpFailure(
+                    operation=operation,
+                    failure_code="AX_REQUEST_FAILURE",
+                    request=request,
+                    attempts=attempts,
+                ) from error
             elapsed_ms = (time.perf_counter() - started) * 1000
             if response.status_code == 429 or response.status_code >= 500:
                 attempts.append(
