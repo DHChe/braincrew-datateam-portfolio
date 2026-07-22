@@ -1,0 +1,67 @@
+{
+  "schema_version": "dataset-manifest-v1",
+  "dataset_id": "braincrew-evaluation-dataset",
+  "dataset_version": "2.0.0",
+  "case_count": 100,
+  "allocation": {
+    "parsing": 20,
+    "retrieval": 30,
+    "grounded_answer": 40,
+    "visibility_abstention": 10
+  },
+  "split_counts": {
+    "Calibration": 70,
+    "Verification": 30
+  },
+  "minimum_verification_denominators": {
+    "evidence_span_recovery": 6,
+    "recall_at_5": 9,
+    "claim_support_precision": 10,
+    "citation_precision": 10,
+    "answer_mode_accuracy": 15,
+    "abstention_accuracy": 5
+  },
+  "components": {
+    "parsing": {
+      "path": "parsing/parsing_cases_v1.json",
+      "schema_version": "parsing-dataset-v1",
+      "content_digest": "sha256:a4ce3d2381853288e92cc2fd21df5cfcd9629db39ea134d8314594e146b48127"
+    },
+    "retrieval": {
+      "path": "retrieval/retrieval_cases_v1.json",
+      "schema_version": "retrieval-dataset-v1",
+      "content_digest": "sha256:5364cb7d7919304f5ebe78e4b7bd9bf2ed073c5e9f1e84c36f48697c2759fca8"
+    },
+    "grounded": {
+      "path": "grounded/grounded_cases_v1.json",
+      "schema_version": "grounded-dataset-v1",
+      "content_digest": "sha256:f3a6f6848cccb4c5bddea8f5f9df9151b08b61b8537054c46afb7855957d3fbe"
+    }
+  },
+  "provenance": {
+    "source_type": "synthetic",
+    "license": "CC0-1.0",
+    "review_status": "reviewed"
+  },
+  "dataset_card": {
+    "path": "DATASET_CARD_V2.md",
+    "provenance_status": "complete",
+    "license_status": "approved"
+  },
+  "risk_policy": {
+    "parsing_default": "standard",
+    "retrieval_standard": "standard",
+    "retrieval_adversarial": "high",
+    "grounded_field": "risk_level"
+  },
+  "leakage_policy": {
+    "duplicate_content": "reject_across_splits",
+    "banned_answer_keys": [
+      "reference_answer",
+      "gold_answer",
+      "answer_key",
+      "expected_answer_text"
+    ]
+  },
+  "content_digest": "sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a"
+}

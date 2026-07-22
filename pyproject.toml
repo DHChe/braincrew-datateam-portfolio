@@ -30,6 +30,7 @@ packages = ["src/braincrew"]
 [tool.hatch.build.targets.wheel.force-include]
 "src/braincrew/ax-http-v1.yaml" = "braincrew/ax-http-v1.yaml"
 "schemas" = "braincrew/schemas"
+"datasets" = "braincrew/datasets"
 
 [tool.pytest.ini_options]
 addopts = "-ra"

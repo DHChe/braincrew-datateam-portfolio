@@ -188,10 +188,13 @@ be explicitly `reviewed`; `pending` or missing provenance blocks sealing.
 successful post-seal cross-validation, Braincrew creates `import-manifest.json` under the strict
 generic `ax-synthetic-seed-pack-v1` contract. That non-content envelope references the sealed
 corpus ID, version, `sealed_content_digest`, source manifest, tenant/demo-company target, and
-cross-validation receipt digest, and sets
-`seed_version = braincrew-evaluation-dataset@2.0.0`. AX therefore receives the dataset version
-only after actual content alignment is proven. A failed cross-validation cannot produce an
-import manifest, which prevents an arbitrary version string from masquerading as provenance.
+cross-validation receipt digest. The reviewed AX identifier grammar does not permit `@`, so the
+strict envelope sets `seed_version = braincrew-evaluation-dataset-2.0.0`. The qualification
+receipt separately binds exact dataset ID `braincrew-evaluation-dataset`, semantic version
+`2.0.0`, integrated digest, component digests, and 100-case count. AX therefore receives the
+dataset version only after actual content alignment is proven without weakening its generic schema.
+A failed cross-validation cannot produce an import manifest, which prevents an arbitrary version
+string from masquerading as provenance.
 
 ## 6. Canonical identity and tamper behavior
 
@@ -456,6 +459,38 @@ reports `239 passed` across the repository and `32 passed` across the combined a
 boundary, with frozen sync, Ruff format/lint, strict mypy, installed CLI help, and Git whitespace
 validation also passing.
 
+### Issue #33 post-seal qualification implementation lock
+
+`braincrew-eval qualify-corpus` accepts only an Issue #31 sealed directory, the exact
+`braincrew-evaluation-dataset@2.0.0` bundle, and bounded AX tenant/demo target identifiers. It first
+replays the pinned AX schemas, strict manifest, every source digest, sealed-content digest, and
+sealing receipt. It independently validates the 100-case dataset identity as
+`sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a`; dataset v2 reuses the
+unchanged v1 parsing, retrieval, and grounded component bytes while using a dedicated v2 card.
+
+The validator projects all parsing, retrieval, grounded-answer, and visibility/abstention cases
+into a complete source requirement set. It checks exact full-source digests wherever the dataset
+freezes source text, `Employee`/`Executive`/`HRPractitioner` required roles, forbidden role
+exposure, synthetic reviewed `CC0-1.0` provenance, and at least one source independent of every
+required or forbidden dataset identity. It never changes corpus or dataset bytes and returns only
+`CORPUS_PACK_SCHEMA_INVALID`, `CORPUS_PACK_DIGEST_MISMATCH`, `CORPUS_REQUIRED_SOURCE_MISSING`,
+`CORPUS_SOURCE_TEXT_DIGEST_MISMATCH`, `CORPUS_REQUIRED_VISIBILITY_MISMATCH`,
+`CORPUS_FORBIDDEN_VISIBILITY_MISMATCH`, or `CORPUS_PROVENANCE_REVIEW_REQUIRED` on failure.
+
+Success publishes canonical `qualification-receipt.json` and `import-manifest.json` as a
+create-only pair. The sanitized receipt binds corpus, sealing receipt, exact dataset/component
+digests, case count, source identities, expected/observed digests, roles, and distractor count. The
+strict AX envelope uses schema-valid `braincrew-evaluation-dataset-2.0.0` as `seed_version` while
+the receipt carries the exact `braincrew-evaluation-dataset@2.0.0` identity. Pair publication is
+rollback-safe on ordinary I/O failure; replay revalidates current pack, packaged exact dataset,
+receipt, and import bytes and rejects tampering.
+
+The first RED was 13 tests failing on the absent v2 manifest and qualification command. Review
+then reproduced stale v1 card metadata, missing wheel replay resources, and partial pair-publication
+risk before repair. All 15 focused tests and all 254 repository tests pass, with Ruff format/lint,
+strict mypy, wheel-content validation, replay, tamper rejection, and Git whitespace validation.
+Actual authoring/sealing/qualification execution and every AX operation remain Issues #35-#38.
+
 ## 12. Rejected alternatives and consequences
 
 - Reverse-generating the corpus from expected evidence was rejected because the evaluator would
@@ -489,8 +524,9 @@ No baseline, candidate, comparison, or live quality claim is part of this comple
 ## 14. Implementation progress checkpoint
 
 As of 2026-07-22, the `to-spec` parents and `to-tickets` graph are published. AX #33, #34, and
-#35 are merged; AX #36 remains open. Braincrew #31 is merged and closed, which opened both the
-authoring-boundary and qualification branches. Braincrew #32 is the current implementation ticket;
-#33 remains open without `ready-for-agent`. No approved authoring brief, authored or sealed Braincrew
-pack, qualification receipt, operator snapshot, target load, renewed preflight, baseline, candidate,
-comparison, or live quality claim exists.
+#35 are merged; AX #36 remains open. Braincrew PR #40 merged #32 as
+`9502f21e10ece832cd2c1bc369d2b5d0f9f1fb94`, and #32 is closed with cleanup complete. Braincrew
+#33 is implemented, reviewed, and verified locally on `feat/issue-33-corpus-qualification` and is
+stopped at the Git Lifecycle Proposal Gate. No approved authoring brief, actually authored or
+sealed Braincrew pack, real qualification receipt, operator snapshot, target load, renewed
+preflight, baseline, candidate, comparison, or live quality claim exists.

@@ -248,7 +248,11 @@ def replay_sealing_receipt(receipt_path: Path) -> dict[str, str]:
 
     validated = _validate_corpus_directory(
         receipt_path.resolve(strict=True).parent,
-        allowed_extra_files={"sealing-receipt.json"},
+        allowed_extra_files={
+            "sealing-receipt.json",
+            "qualification-receipt.json",
+            "import-manifest.json",
+        },
     )
     expected = _build_receipt(validated)
     if expected != receipt:
@@ -261,6 +265,19 @@ def replay_sealing_receipt(receipt_path: Path) -> dict[str, str]:
         "sealed_content_digest": receipt.sealed_content_digest,
         "corpus_version": receipt.corpus_version,
     }
+
+
+def validate_sealed_corpus(
+    directory: Path,
+    *,
+    allowed_extra_files: set[str] | None = None,
+) -> ValidatedCorpus:
+    """Revalidate immutable sealed corpus bytes against the pinned AX schema."""
+    _verify_vendored_schemas()
+    return _validate_corpus_directory(
+        directory.resolve(strict=True),
+        allowed_extra_files=allowed_extra_files,
+    )
 
 
 def _validate_corpus_directory(
