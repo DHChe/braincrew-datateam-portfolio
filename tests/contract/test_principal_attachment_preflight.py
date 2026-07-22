@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
@@ -28,6 +29,8 @@ APPROVED_ATTACHMENTS = {
     "synthetic-rule-019": "07b849ea-5e0a-44f7-87c9-600f539d7d9a",
     "synthetic-rule-020": "569dc67a-5ba8-4a00-a0d8-e03a8ac43449",
 }
+HOSTILE_CORRELATION_ID = "Bearer secret-material"
+HOSTILE_CORRELATION_DIGEST = "sha256:" + hashlib.sha256(HOSTILE_CORRELATION_ID.encode()).hexdigest()
 
 
 @pytest.fixture(scope="module")
@@ -136,6 +139,91 @@ def test_missing_malformed_or_unreviewed_mapping_blocks_without_http(
     assert [blocker.code for blocker in artifact.blockers] == ["PARSE_ATTACHMENT_MAPPING_INVALID"]
 
 
+def test_nonfrozen_dataset_identity_blocks_before_http(
+    dataset_validation: DatasetValidationReport,
+) -> None:
+    assert dataset_validation.snapshot is not None
+    wrong_digest = "sha256:" + "0" * 64
+    forged_snapshot = dataset_validation.snapshot.model_copy(
+        update={
+            "manifest": dataset_validation.snapshot.manifest.model_copy(
+                update={"content_digest": wrong_digest}
+            ),
+            "dataset_digest": wrong_digest,
+        }
+    )
+    forged_validation = dataset_validation.model_copy(
+        update={
+            "snapshot": forged_snapshot,
+            "computed_dataset_digest": wrong_digest,
+        }
+    )
+    cases = _verification_cases(forged_validation)
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        requested = _requested_attachment(request)
+        document_id = _attachment_documents()[requested]
+        return httpx.Response(
+            200,
+            json=_parse_response(cases[document_id], attachment_id=requested),
+        )
+
+    artifact = _capture(forged_validation, transport=httpx.MockTransport(handler))
+
+    assert requests == []
+    assert [blocker.code for blocker in artifact.blockers] == ["PARSE_ATTACHMENT_MAPPING_INVALID"]
+    assert artifact.blockers[0].detail == "dataset_identity_mismatch"
+
+
+def test_nonfrozen_dataset_component_digest_blocks_before_http(
+    dataset_validation: DatasetValidationReport,
+) -> None:
+    assert dataset_validation.snapshot is not None
+    snapshot = dataset_validation.snapshot
+    wrong_digest = "sha256:" + "0" * 64
+    forged_components = snapshot.manifest.components.model_copy(
+        update={
+            "parsing": snapshot.manifest.components.parsing.model_copy(
+                update={"content_digest": wrong_digest}
+            )
+        }
+    )
+    forged_snapshot = snapshot.model_copy(
+        update={
+            "manifest": snapshot.manifest.model_copy(update={"components": forged_components}),
+            "component_digests": {**snapshot.component_digests, "parsing": wrong_digest},
+        }
+    )
+    forged_validation = dataset_validation.model_copy(
+        update={
+            "snapshot": forged_snapshot,
+            "computed_component_digests": {
+                **dataset_validation.computed_component_digests,
+                "parsing": wrong_digest,
+            },
+        }
+    )
+    cases = _verification_cases(forged_validation)
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        requested = _requested_attachment(request)
+        document_id = _attachment_documents()[requested]
+        return httpx.Response(
+            200,
+            json=_parse_response(cases[document_id], attachment_id=requested),
+        )
+
+    artifact = _capture(forged_validation, transport=httpx.MockTransport(handler))
+
+    assert requests == []
+    assert [blocker.code for blocker in artifact.blockers] == ["PARSE_ATTACHMENT_MAPPING_INVALID"]
+    assert artifact.blockers[0].detail == "dataset_identity_mismatch"
+
+
 def test_nonexistent_attachment_is_a_mapping_blocker_without_retry(
     dataset_validation: DatasetValidationReport,
 ) -> None:
@@ -200,7 +288,10 @@ def test_mismatched_attachment_identity_is_a_mapping_blocker(
             ),
             "source_text_digest_mismatch",
         ),
-        (lambda payload: payload.update(evidence_spans=[]), "evidence_span_invalid"),
+        (
+            lambda payload: payload.update(failure_code="parse_materialization_failed"),
+            "parse_failure_code_present",
+        ),
     ],
 )
 def test_successful_transport_with_invalid_strict_evidence_remains_blocked(
@@ -224,6 +315,53 @@ def test_successful_transport_with_invalid_strict_evidence_remains_blocked(
     assert artifact.parse_observations == ()
 
 
+def test_available_parse_with_empty_spans_remains_measureable(
+    dataset_validation: DatasetValidationReport,
+) -> None:
+    cases = _verification_cases(dataset_validation)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested = _requested_attachment(request)
+        document_id = _attachment_documents()[requested]
+        payload = _parse_response(cases[document_id], attachment_id=requested)
+        if document_id == "synthetic-rule-015":
+            payload["evidence_spans"] = []
+        return httpx.Response(200, json=payload)
+
+    artifact = _capture(dataset_validation, transport=httpx.MockTransport(handler))
+
+    assert artifact.blockers == ()
+    assert len(artifact.parse_observations) == 6
+    assert artifact.parse_observations[0].response.evidence_spans == ()
+
+
+def test_exhausted_parse_retries_are_retained_with_the_blocker(
+    dataset_validation: DatasetValidationReport,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            503,
+            headers={"x-correlation-id": HOSTILE_CORRELATION_ID},
+            json={"detail": "starting"},
+        )
+
+    artifact = _capture(dataset_validation, transport=httpx.MockTransport(handler))
+
+    assert [blocker.code for blocker in artifact.blockers] == ["LIVE_PARSE_OBSERVATION_FAILED"]
+    assert [attempt.outcome for attempt in artifact.blockers[0].attempts] == [
+        "retryable_http",
+        "retryable_http",
+        "retryable_http",
+    ]
+    assert [attempt.status_code for attempt in artifact.blockers[0].attempts] == [503, 503, 503]
+    assert [attempt.response_correlation_id for attempt in artifact.blockers[0].attempts] == [
+        HOSTILE_CORRELATION_DIGEST,
+        HOSTILE_CORRELATION_DIGEST,
+        HOSTILE_CORRELATION_DIGEST,
+    ]
+    assert HOSTILE_CORRELATION_ID not in artifact.model_dump_json()
+
+
 def test_retryable_parse_failures_retain_attempts_and_then_complete_six_probes(
     dataset_validation: DatasetValidationReport,
 ) -> None:
@@ -234,11 +372,16 @@ def test_retryable_parse_failures_retain_attempts_and_then_complete_six_probes(
         nonlocal request_count
         request_count += 1
         if request_count < 3:
-            return httpx.Response(503, json={"detail": "starting"})
+            return httpx.Response(
+                503,
+                headers={"x-correlation-id": HOSTILE_CORRELATION_ID},
+                json={"detail": "starting"},
+            )
         requested = _requested_attachment(request)
         document_id = _attachment_documents()[requested]
         return httpx.Response(
             200,
+            headers={"x-correlation-id": HOSTILE_CORRELATION_ID},
             json=_parse_response(cases[document_id], attachment_id=requested),
         )
 
@@ -251,6 +394,10 @@ def test_retryable_parse_failures_retain_attempts_and_then_complete_six_probes(
         "retryable_http",
         "success",
     ]
+    assert [
+        attempt.response_correlation_id for attempt in artifact.parse_observations[0].attempts
+    ] == [HOSTILE_CORRELATION_DIGEST] * 3
+    assert HOSTILE_CORRELATION_ID not in artifact.model_dump_json()
     assert request_count == 8
 
 

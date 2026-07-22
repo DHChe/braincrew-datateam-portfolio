@@ -544,13 +544,23 @@ reviewed immutable attachment map in section 8 exactly. Missing, malformed, extr
 nonexistent, or response-mismatched attachment identities yield
 `PARSE_ATTACHMENT_MAPPING_INVALID`. Inaccessible or otherwise failed operations retain the
 existing `LIVE_PARSE_OBSERVATION_*` family and the Adapter's timeout, `429`, and `5xx` retry
-history.
+history. Before any parse call, the collector also requires the exact frozen dataset ID, version,
+integrated digest, and parsing/retrieval/grounded component digests. The accepted identity is
+retained in the artifact and replay rejects a substituted identity even if its top-level logical
+digest is recomputed.
 
 A successful capture requires all six responses to bind the requested attachment, exact pinned
 AX parser identity `utf8-text`/`stdlib-1`, canonical source-text digest, and valid span
-offsets/text digests. The retained
-artifact records exact request role, structure counts, attempts, and sanitized response digests,
-but no raw extracted or span text. It remains `live-preflight-evidence-v1` with
+offsets/text digests for every span that is present. An available parse with zero spans remains a
+quality observation for the downstream evaluator rather than becoming a transport blocker. An
+available parse carrying a failure code is internally inconsistent and yields
+`LIVE_PARSE_OBSERVATION_FAILED`. The retained artifact records exact request role, structure
+counts, successful attempts, failed-operation retry attempts on the blocker, dataset identity,
+and sanitized response digests, but no raw extracted or span text. Untrusted response correlation
+headers are retained only as SHA-256 digests across successful and blocked attempts. Replay keeps
+field-presence semantics for legacy v1 artifacts that predate dataset identity and blocker-attempt
+fields, while successful six-probe Issue #34 artifacts require the frozen identity. It remains
+`live-preflight-evidence-v1` with
 `capture_state="captured"`; transport success creates neither parsing-quality output nor READY.
 Issue #38 alone owns an actual renewed preflight and READY publication.
 
@@ -558,10 +568,12 @@ The clean Issue #34 baseline passed all 264 pre-change tests before RED. The fir
 contract/acceptance tests failed on the absent policy collector and canonical user UUID contract;
 minimal GREEN passed those 15. Ticket review then reproduced acceptance of a non-matching parser
 as `1 failed, 14 passed` before the exact pinned parser repair reached 16 focused passes. The
-affected regression set reports 52 passing tests and both Standards and Spec review axes have zero
-unresolved finding. Final frozen sync, Ruff format/lint, strict mypy, all 280 repository tests, and
-Git whitespace validation pass. No AX operation, corpus mutation, experiment run, READY artifact,
-or PR #29 modification occurred.
+affected regression set initially reported 52 passing tests. PR #44 review remediation then
+reproduced the four bot findings plus legacy replay drift, correlation-header retention, and
+rehash-with-identity-removal before repair. The final preflight set reports 32 passes, all 285
+repository tests pass, and confirmatory Standards and Spec review axes have zero unresolved
+finding. Frozen sync, Ruff format/lint, strict mypy, and Git whitespace validation also pass. No AX
+operation, corpus mutation, experiment run, READY artifact, or PR #29 modification occurred.
 
 ## 12. Rejected alternatives and consequences
 

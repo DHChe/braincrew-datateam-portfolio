@@ -669,8 +669,9 @@ Likely follow-ups:
 Decision:
 : Implement Issue #34 on merged Issue #42 only. Reject noncanonical tenant/user UUIDs before HTTP,
   require active owner `22222222-2222-2222-2222-222222222222`, apply exactly
-  `HRPractitioner`, and freeze the six reviewed parsing attachment UUIDs. Retain successful probes
-  only through the create-only `live-preflight-evidence-v1` artifact.
+  `HRPractitioner`, freeze the six reviewed parsing attachment UUIDs, and bind the collector to the
+  exact dataset-v2 integrated and component digests. Retain accepted dataset identity and probe
+  evidence only through the create-only `live-preflight-evidence-v1` artifact.
 
 Why:
 : The earlier placeholder user could reach AX as a malformed subject and make an authorization
@@ -686,10 +687,15 @@ Rejected alternatives:
 Trade-offs and failure modes:
 : The reviewed owner and attachment UUIDs are environment-specific contract data, so a legitimate
   corpus re-import requires an explicit reviewed mapping update rather than automatic repair.
+  A dataset substitution is rejected before HTTP and replay rejects a rehashed dataset-identity
+  substitution or identity removal from a successful six-probe capture. An available response with
+  zero spans is retained as measurable poor parsing quality; an available response with a failure
+  code is rejected as inconsistent evidence. Server-controlled correlation headers are retained
+  only as digests, and legacy v1 artifacts keep their omitted-field digest semantics.
   Missing/nonexistent/mismatched attachment identity becomes `PARSE_ATTACHMENT_MAPPING_INVALID`;
   malformed principals become `EVALUATION_PRINCIPAL_ID_INVALID`; unknown/inactive subjects become
   `EVALUATION_PRINCIPAL_SUBJECT_INVALID`; inaccessible or unstable live operations retain the
-  existing `LIVE_PARSE_OBSERVATION_*` family and retry history.
+  existing `LIVE_PARSE_OBSERVATION_*` family, with exhausted attempts retained on the blocker.
 
 Validation evidence:
 : A clean baseline passed frozen sync, Ruff, strict mypy, and all 264 pre-change tests before the
@@ -697,17 +703,26 @@ Validation evidence:
   covers pre-HTTP rejection, owner/role projection, exact mapping, typed AX errors, digest/span
   checks including exact `utf8-text`/`stdlib-1` parser identity, retry retention, six sanitized
   probes, create-only publication, and replay. Review first reproduced acceptance of a non-matching
-  parser, then the exact pinned parser repair reached 16 focused and 52 affected regression passes;
-  both review axes have zero unresolved finding. Final frozen sync, Ruff format/lint, strict mypy,
-  all 280 repository tests, and Git whitespace validation pass. No real preflight or READY artifact
-  was produced.
+  parser. PR #44 review remediation then reproduced empty-span overblocking, failure-code
+  inconsistency, retry-evidence loss, dataset digest substitution/removal, legacy replay drift, and
+  hostile correlation retention before repair. The final preflight set reports 32 passes, both
+  confirmatory review axes have zero unresolved finding, and frozen sync, Ruff format/lint, strict
+  mypy, all 285 repository tests, and Git whitespace validation pass. No real preflight or READY
+  artifact was produced.
 
 Likely follow-ups:
 
 - "Why is an HTTP 200 not enough?" — It proves transport and schema only. Source digest and span
-  integrity must also match, while headings, metadata, tables, and lists remain later quality data.
+  integrity must also match for spans that exist, while zero spans, headings, metadata, tables, and
+  lists remain later quality data. `parse_available=true` also cannot carry a failure code.
 - "Why hard-code the six UUIDs?" — They are reviewed attachment identities for the pinned local
   corpus. Accepting arbitrary caller input would make the evidence non-reproducible.
+- "How does replay prove which dataset drove the probe?" — The collector validates the exact ID,
+  version, integrated digest, and three component digests before HTTP, stores that frozen identity,
+  and rejects identity removal or substitution even when the top-level digest is recomputed.
+- "Can AX smuggle secrets into retained retry metadata?" — Response correlation headers are
+  server-controlled, so the retention boundary stores only their SHA-256 digests while preserving
+  attempt number, outcome, status, timing, method, and path.
 - "Did Issue #34 make the system READY?" — No. It implements and tests the policy collector. Issue
   #38 alone may perform the actual renewed preflight and publish READY.
 

@@ -101,6 +101,9 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - Failure tests require the exact typed blocker family and prove that no import manifest or repaired output is emitted on mismatch.
 - Independence tests launch the authoring boundary with only allowlisted inputs and prove that repository, dataset, fixture, network, and undeclared filesystem reads are denied.
 - Preflight tests cover malformed UUID configuration, well-formed unknown/inactive subjects, invalid attachment mapping, exact role isolation, and preservation of the existing live-operation blocker taxonomy.
+- Principal/attachment preflight tests bind the accepted input to the exact dataset-v2 integrated and component digests before HTTP, retain that identity for replay, and reject a rehashed substituted identity.
+- Parse qualification tests preserve exhausted retry attempts on the blocker, reject a failure code on an available response, and allow zero recovered spans to reach parsing-quality evaluation while validating every span that is present.
+- Artifact tests digest untrusted attempt correlation headers, preserve replay of legacy v1 artifacts that omitted the new defaulted fields, and reject removal or substitution of frozen identity from a rehashed successful six-probe capture.
 - Adapter and acceptance tests require six fresh strict parse responses plus three role-specific corpus identities before `READY` can be created.
 - Substrate tests independently require exact AX response schemas and digests, safely encoded attachment paths, bounded permanent details, retained retry attempts, create-only sanitized capture, CLI replay, and tamper/raw-field rejection without asserting READY or parsing quality.
 - Receipt tests scan for raw source text, query/answer material, vectors, credentials, database URLs, HTTP authorization material, prompt transcripts, and private paths.
@@ -130,11 +133,19 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 Issue #34 implementation checkpoint:
 : The collector rejects noncanonical tenant/user UUIDs before HTTP, requires reviewed owner
   `22222222-2222-2222-2222-222222222222`, sends exactly `HRPractitioner`, and requires the six
-  approved parsing attachment UUIDs. It maps malformed principals, unknown/inactive subjects, and
-  attachment mapping failures to distinct non-retryable blockers while preserving existing live
-  retry/failure blockers. Successful transport is retained only as six sanitized strict parse
-  observations in the Issue #42 create-only artifact; it emits no parsing-quality result or READY.
+  approved parsing attachment UUIDs. The input must also match the frozen dataset ID, version,
+  integrated digest, and three component digests, which are retained and replay-validated. It maps
+  malformed principals, unknown/inactive subjects, and attachment mapping failures to distinct
+  non-retryable blockers while preserving existing live retry/failure blockers and their exhausted
+  attempts. Untrusted response correlation values are digest-only at the retention boundary. An
+  available response with a failure code is blocked, while an available response with zero spans
+  remains a downstream quality observation. Successful transport is retained only as six
+  sanitized strict parse observations in the Issue #42 create-only artifact; it emits no
+  parsing-quality result or READY. Legacy v1 artifacts without the newly introduced optional
+  fields retain their original logical-digest semantics.
   A 264-test clean baseline preceded the first 15-test RED. Ticket review separately reproduced a
-  non-matching parser defect before repair; focused coverage now reports 16 passes, the affected
-  regression set reports 52 passes, and both review axes have zero unresolved finding. Final frozen
-  sync, Ruff format/lint, strict mypy, all 280 repository tests, and Git whitespace validation pass.
+  non-matching parser defect before repair. PR #44 review remediation separately reproduced the
+  four bot findings, legacy replay drift, correlation-header retention, and rehashed identity
+  removal before repair. Focused preflight coverage now reports 32 passes, both confirmatory review
+  axes have zero unresolved finding, and final frozen sync, Ruff format/lint, strict mypy, all 285
+  repository tests, and Git whitespace validation pass.

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
@@ -36,6 +36,16 @@ PINNED_AX_SHA = "72805930d9addd8ea41743d1922acf8de621c3f8"
 ACTIVE_OWNER_USER_ID = "22222222-2222-2222-2222-222222222222"
 PARSING_AUTHORIZATION_ROLE = "HRPractitioner"
 EXPECTED_PARSER_IDENTITY = ("utf8-text", "stdlib-1")
+FROZEN_DATASET_ID: Literal["braincrew-evaluation-dataset"] = "braincrew-evaluation-dataset"
+FROZEN_DATASET_VERSION: Literal["2.0.0"] = "2.0.0"
+FROZEN_DATASET_DIGEST = "sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a"
+FROZEN_COMPONENT_DIGESTS: Mapping[str, str] = MappingProxyType(
+    {
+        "parsing": "sha256:a4ce3d2381853288e92cc2fd21df5cfcd9629db39ea134d8314594e146b48127",
+        "retrieval": "sha256:5364cb7d7919304f5ebe78e4b7bd9bf2ed073c5e9f1e84c36f48697c2759fca8",
+        "grounded": "sha256:f3a6f6848cccb4c5bddea8f5f9df9151b08b61b8537054c46afb7855957d3fbe",
+    }
+)
 REVIEWED_PARSING_ATTACHMENT_IDS: Mapping[str, str] = MappingProxyType(
     {
         "synthetic-rule-015": "2c7d525b-7463-463e-8893-0d37009775de",
@@ -57,6 +67,7 @@ class LivePreflightBlocker(StrictModel):
     operation: OperationName | None = None
     case_id: str | None = Field(default=None, pattern=SAFE_ID_PATTERN)
     detail: str | None = Field(default=None, pattern=SAFE_DETAIL_PATTERN)
+    attempts: tuple[HttpAttempt, ...] = ()
 
 
 class CorpusIdentityEvidence(StrictModel):
@@ -119,6 +130,28 @@ class ParseObservationEvidence(StrictModel):
     attempts: tuple[HttpAttempt, ...]
 
 
+class DatasetComponentDigests(StrictModel):
+    parsing: str = Field(pattern=SHA256_PATTERN)
+    retrieval: str = Field(pattern=SHA256_PATTERN)
+    grounded: str = Field(pattern=SHA256_PATTERN)
+
+
+class DatasetIdentityEvidence(StrictModel):
+    id: Literal["braincrew-evaluation-dataset"]
+    version: Literal["2.0.0"]
+    content_digest: str = Field(pattern=SHA256_PATTERN)
+    component_digests: DatasetComponentDigests
+
+    @model_validator(mode="after")
+    def require_frozen_dataset_digests(self) -> DatasetIdentityEvidence:
+        if (
+            self.content_digest != FROZEN_DATASET_DIGEST
+            or self.component_digests.model_dump() != dict(FROZEN_COMPONENT_DIGESTS)
+        ):
+            raise ValueError("dataset identity must match the frozen dataset digests")
+        return self
+
+
 class LivePreflightArtifact(StrictModel):
     schema_version: Literal["live-preflight-evidence-v1"]
     capture_state: Literal["captured"]
@@ -126,6 +159,7 @@ class LivePreflightArtifact(StrictModel):
     captured_at: datetime
     evaluation_plane_sha: str = Field(pattern=COMMIT_SHA_PATTERN)
     sut_commit_sha: str = Field(pattern=COMMIT_SHA_PATTERN)
+    dataset_identity: DatasetIdentityEvidence | None = None
     corpus_observations: tuple[CorpusIdentityEvidence, ...]
     parse_observations: tuple[ParseObservationEvidence, ...]
     blockers: tuple[LivePreflightBlocker, ...]
@@ -161,6 +195,14 @@ class LivePreflightArtifact(StrictModel):
             expected = canonical_digest(observation.response.model_dump(mode="json"))
             if observation.response_digest != expected:
                 raise ValueError("parse response digest does not match sanitized response")
+        parse_case_ids = {item.request.case_id for item in self.parse_observations}
+        if (
+            not self.blockers
+            and len(self.parse_observations) == len(REVIEWED_PARSING_ATTACHMENT_IDS)
+            and parse_case_ids == set(REVIEWED_PARSING_ATTACHMENT_IDS)
+            and self.dataset_identity is None
+        ):
+            raise ValueError("principal attachment capture requires frozen dataset identity")
         if _contains_private_path(self.model_dump(mode="json")):
             raise ValueError("live preflight artifact cannot retain a private path")
         return self
@@ -175,6 +217,7 @@ def build_live_preflight_artifact(
     corpus_observations: tuple[CorpusIdentityObservation, ...],
     parse_observations: tuple[ParseObservation, ...],
     blockers: tuple[LivePreflightBlocker, ...],
+    dataset_identity: DatasetIdentityEvidence | None = None,
 ) -> LivePreflightArtifact:
     artifact = LivePreflightArtifact(
         schema_version="live-preflight-evidence-v1",
@@ -183,9 +226,10 @@ def build_live_preflight_artifact(
         captured_at=captured_at,
         evaluation_plane_sha=evaluation_plane_sha,
         sut_commit_sha=sut_commit_sha,
+        dataset_identity=dataset_identity,
         corpus_observations=tuple(_sanitize_corpus(item) for item in corpus_observations),
         parse_observations=tuple(_sanitize_parse(item) for item in parse_observations),
-        blockers=blockers,
+        blockers=tuple(_sanitize_blocker(item) for item in blockers),
         logical_digest="sha256:" + "0" * 64,
     )
     return artifact.model_copy(
@@ -206,6 +250,8 @@ def capture_principal_attachment_preflight(
     dataset_validation: DatasetValidationReport,
     transport: httpx.BaseTransport | None = None,
 ) -> LivePreflightArtifact:
+    accepted_dataset_identity: DatasetIdentityEvidence | None = None
+
     def blocked(
         blocker: LivePreflightBlocker,
         parse_observations: tuple[ParseObservation, ...] = (),
@@ -217,6 +263,7 @@ def capture_principal_attachment_preflight(
             sut_commit_sha=sut_commit_sha,
             blocker=blocker,
             parse_observations=parse_observations,
+            dataset_identity=accepted_dataset_identity,
         )
 
     if not _is_canonical_uuid(tenant_id) or not _is_canonical_uuid(user_id):
@@ -231,6 +278,14 @@ def capture_principal_attachment_preflight(
             LivePreflightBlocker(
                 code="EVALUATION_PRINCIPAL_SUBJECT_INVALID",
                 detail="subject_is_not_reviewed_owner",
+            )
+        )
+    accepted_dataset_identity = _frozen_dataset_identity(dataset_validation)
+    if accepted_dataset_identity is None:
+        return blocked(
+            LivePreflightBlocker(
+                code="PARSE_ATTACHMENT_MAPPING_INVALID",
+                detail="dataset_identity_mismatch",
             )
         )
     verification_cases = _verification_cases(dataset_validation)
@@ -279,6 +334,7 @@ def capture_principal_attachment_preflight(
                     code=code,
                     document_id=document_id,
                     detail=detail,
+                    attempts=error.attempts,
                 ),
                 tuple(observations),
             )
@@ -315,6 +371,7 @@ def capture_principal_attachment_preflight(
         corpus_observations=(),
         parse_observations=tuple(observations),
         blockers=(),
+        dataset_identity=accepted_dataset_identity,
     )
 
 
@@ -324,7 +381,7 @@ def write_live_preflight_artifact(
 ) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     serialized = json.dumps(
-        artifact.model_dump(mode="json"),
+        artifact.model_dump(mode="json", exclude_unset=True),
         ensure_ascii=False,
         indent=2,
         sort_keys=True,
@@ -355,7 +412,7 @@ def _sanitize_corpus(observation: CorpusIdentityObservation) -> CorpusIdentityEv
         request=observation.request,
         response=observation.response,
         response_digest=canonical_digest(response_payload),
-        attempts=tuple(observation.attempts),
+        attempts=_sanitize_attempts(observation.attempts),
     )
 
 
@@ -408,7 +465,26 @@ def _sanitize_parse(observation: ParseObservation) -> ParseObservationEvidence:
         request=observation.request,
         response=sanitized,
         response_digest=canonical_digest(sanitized.model_dump(mode="json")),
-        attempts=tuple(observation.attempts),
+        attempts=_sanitize_attempts(observation.attempts),
+    )
+
+
+def _sanitize_blocker(blocker: LivePreflightBlocker) -> LivePreflightBlocker:
+    return blocker.model_copy(update={"attempts": _sanitize_attempts(blocker.attempts)})
+
+
+def _sanitize_attempts(attempts: Iterable[HttpAttempt]) -> tuple[HttpAttempt, ...]:
+    return tuple(
+        attempt.model_copy(
+            update={
+                "response_correlation_id": (
+                    None
+                    if attempt.response_correlation_id is None
+                    else _text_digest(attempt.response_correlation_id)
+                )
+            }
+        )
+        for attempt in attempts
     )
 
 
@@ -420,6 +496,7 @@ def _blocked_capture(
     sut_commit_sha: str,
     blocker: LivePreflightBlocker,
     parse_observations: tuple[ParseObservation, ...] = (),
+    dataset_identity: DatasetIdentityEvidence | None = None,
 ) -> LivePreflightArtifact:
     return build_live_preflight_artifact(
         run_id=run_id,
@@ -429,15 +506,23 @@ def _blocked_capture(
         corpus_observations=(),
         parse_observations=parse_observations,
         blockers=(blocker,),
+        dataset_identity=dataset_identity,
     )
 
 
-def _parse_blocker(*, code: str, document_id: str, detail: str) -> LivePreflightBlocker:
+def _parse_blocker(
+    *,
+    code: str,
+    document_id: str,
+    detail: str,
+    attempts: tuple[HttpAttempt, ...] = (),
+) -> LivePreflightBlocker:
     return LivePreflightBlocker(
         code=code,
         operation="parse",
         case_id=document_id,
         detail=detail,
+        attempts=attempts,
     )
 
 
@@ -466,6 +551,41 @@ def _verification_cases(
     }
 
 
+def _frozen_dataset_identity(
+    validation: DatasetValidationReport,
+) -> DatasetIdentityEvidence | None:
+    snapshot = validation.snapshot
+    if validation.state != "VALID" or snapshot is None:
+        return None
+    manifest = snapshot.manifest
+    manifest_component_digests = {
+        "parsing": manifest.components.parsing.content_digest,
+        "retrieval": manifest.components.retrieval.content_digest,
+        "grounded": manifest.components.grounded.content_digest,
+    }
+    if not (
+        manifest.dataset_id == FROZEN_DATASET_ID
+        and manifest.dataset_version == FROZEN_DATASET_VERSION
+        and manifest.content_digest == FROZEN_DATASET_DIGEST
+        and snapshot.dataset_digest == FROZEN_DATASET_DIGEST
+        and validation.computed_dataset_digest == FROZEN_DATASET_DIGEST
+        and snapshot.component_digests == FROZEN_COMPONENT_DIGESTS
+        and validation.computed_component_digests == FROZEN_COMPONENT_DIGESTS
+        and manifest_component_digests == FROZEN_COMPONENT_DIGESTS
+    ):
+        return None
+    return DatasetIdentityEvidence(
+        id=FROZEN_DATASET_ID,
+        version=FROZEN_DATASET_VERSION,
+        content_digest=FROZEN_DATASET_DIGEST,
+        component_digests=DatasetComponentDigests(
+            parsing=FROZEN_COMPONENT_DIGESTS["parsing"],
+            retrieval=FROZEN_COMPONENT_DIGESTS["retrieval"],
+            grounded=FROZEN_COMPONENT_DIGESTS["grounded"],
+        ),
+    )
+
+
 def _approved_mapping(
     mapping: Mapping[str, str],
     verification_cases: Mapping[str, ParsingCase],
@@ -485,6 +605,8 @@ def _parse_evidence_failure(
     parsed = response.response
     if not parsed.parse_available:
         return "LIVE_PARSE_OBSERVATION_UNAVAILABLE", "parse_unavailable"
+    if parsed.failure_code is not None:
+        return "LIVE_PARSE_OBSERVATION_FAILED", "parse_failure_code_present"
     if not parsed.parser_name or not parsed.parser_version:
         return "LIVE_PARSE_OBSERVATION_FAILED", "parser_identity_missing"
     if (parsed.parser_name, parsed.parser_version) != EXPECTED_PARSER_IDENTITY:
@@ -496,7 +618,7 @@ def _parse_evidence_failure(
         or _text_digest(parsed.extracted_text) != expected_source_digest
     ):
         return "LIVE_PARSE_OBSERVATION_FAILED", "source_text_digest_mismatch"
-    if not parsed.evidence_spans or any(
+    if any(
         span.source_text_digest != expected_source_digest
         or span.end_char > len(parsed.extracted_text)
         or parsed.extracted_text[span.start_char : span.end_char] != span.text
@@ -507,7 +629,11 @@ def _parse_evidence_failure(
 
 
 def _logical_payload(artifact: LivePreflightArtifact) -> dict[str, object]:
-    return artifact.model_dump(mode="json", exclude={"logical_digest"})
+    return artifact.model_dump(
+        mode="json",
+        exclude={"logical_digest"},
+        exclude_unset=True,
+    )
 
 
 def _text_digest(value: str) -> str:

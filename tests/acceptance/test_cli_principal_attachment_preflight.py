@@ -11,6 +11,7 @@ import httpx
 import braincrew.live_preflight as live_preflight
 from braincrew.contracts import ParsingCase
 from braincrew.dataset_registry import validate_dataset_bundle
+from braincrew.digest import canonical_digest
 
 PROJECT_ROOT = Path(__file__).parents[2]
 PINNED_AX_SHA = "72805930d9addd8ea41743d1922acf8de621c3f8"
@@ -71,6 +72,17 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     assert artifact.capture_state == "captured"
     assert artifact.blockers == ()
     assert artifact.corpus_observations == ()
+    assert artifact.dataset_identity is not None
+    assert artifact.dataset_identity.id == "braincrew-evaluation-dataset"
+    assert artifact.dataset_identity.version == "2.0.0"
+    assert (
+        artifact.dataset_identity.content_digest
+        == "sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a"
+    )
+    assert (
+        artifact.dataset_identity.component_digests.parsing
+        == "sha256:a4ce3d2381853288e92cc2fd21df5cfcd9629db39ea134d8314594e146b48127"
+    )
     assert len(artifact.parse_observations) == 6
     assert [request.headers["x-ax-user-id"] for request in requests] == [OWNER_USER_ID] * 6
     assert [request.headers["x-ax-roles"] for request in requests] == ["HRPractitioner"] * 6
@@ -120,6 +132,43 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     assert summary["parse_observation_count"] == 6
     assert summary["blocker_count"] == 0
     assert summary["logical_digest"] == artifact.logical_digest
+
+    payload = cast(dict[str, Any], json.loads(retained))
+    payload.pop("dataset_identity")
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    missing_identity_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert missing_identity_replay.returncode == 2
+    assert "Invalid artifact" in missing_identity_replay.stderr
+
+    payload = cast(dict[str, Any], json.loads(retained))
+    dataset_identity = cast(dict[str, Any], payload["dataset_identity"])
+    dataset_identity["content_digest"] = "sha256:" + "0" * 64
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    tampered_replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert tampered_replay.returncode == 2
+    assert "Invalid artifact" in tampered_replay.stderr
 
 
 def _parse_response(case: ParsingCase, *, attachment_id: str) -> dict[str, Any]:
