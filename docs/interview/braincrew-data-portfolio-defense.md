@@ -934,6 +934,26 @@ Validation evidence:
   successful Python and frontend checks and merged into `develop`; that merge is the verification
   evidence for the closed Issue #47 dependency.
 
+Issue #36 execution checkpoint:
+: The restricted lifecycle ran from clean Braincrew SHA
+  `8e669db46b698b8791739feee910ba1b561a0936` only after a 320-test baseline and the
+  content-addressed entry checks passed. Create-only authorization digest
+  `sha256:9eabf4fff6de5bf54065c8d4bd657eda4ebeb06c630ad45f53fe41c36457a1a7`
+  bound the reviewed authoring-tool digest, four approved input digests, exact lifecycle paths,
+  and the distinct author/reviewer authorities. One sandboxed authoring run produced 14 exact
+  source digests and independence receipt
+  `sha256:28a22cb6f1c0d35ced80d43dc727699cecae388a8012f6a292d618719371cf7f`.
+  `DHChe-corpus-provenance-reviewer` manually approved every source digest, newly authored
+  synthetic origin, `codex-issue-36-authoring-agent` ownership, and `CC0-1.0` assignment on
+  `2026-07-23` in `Asia/Seoul`. Seal and replay each succeeded once. The immutable corpus digest is
+  `sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4`,
+  provenance digest is
+  `sha256:eb43fc824cd54bf10e8805b5fdeb1915bcaac368cb458ce8981a481cd7d4fce1`,
+  and receipt digest is
+  `sha256:bc508b6001facbef67bacd7e0c1d4d5123f04bc1e33d2849b5e7d455183df62b`.
+  Retained evidence contains identities and digests, not source text. Qualification, successor
+  dataset freeze, AX/DB/service calls, preflight, experiments, repair, and retry remain absent.
+
 Likely follow-ups:
 
 - "Did the reviewer see the benchmark cases?" — No. The authoring and leakage-review contexts
@@ -941,11 +961,11 @@ Likely follow-ups:
   PR #29, and its branch.
 - "Why are the AX roles capitalized?" — They are exact case-sensitive values from the external
   seed-pack `VisibilityRole` validator, not UI labels or guessed aliases.
-- "Does APPROVE mean Issue #36 can run now?" — The brief approval alone did not. The later
-  data-creation gate is now `APPROVED_FOR_NEW_SESSION`, but the current session still cannot run
-  #36. The approval record must first merge; then the new session must pin the exact clean
-  execution SHA and external tool digest and observe the required RED contracts before creating
-  source bytes.
+- "Did APPROVE immediately start Issue #36?" — No. The brief approval alone did not authorize
+  authoring. The later data-creation gate had to merge, and the fresh session then pinned the exact
+  clean execution SHA, external tool digest, lifecycle paths, and RED contracts before creating
+  source bytes. Only after those checks passed did the one-run Author → manual Review → Seal →
+  Replay lifecycle execute.
 - "Did Issue #35 create a corpus or manifest?" — No. It created only the generic brief, its
   digest declaration, contract tests, and leakage-review evidence.
 
