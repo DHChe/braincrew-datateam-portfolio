@@ -1,7 +1,7 @@
 # Independent Evaluation Corpus Provisioning Design
 
 Date: 2026-07-20
-Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published and implementation progress reconciled 2026-07-22
+Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published; Issue #35 authoring brief independently approved at its pre-commit gate 2026-07-22
 Braincrew fixed point: `1185ba8a9e6bab038743531a56f8f2c5ce2b44eb`
 AX fixed base: `a5391ae8aa2b0d1342809f3599283b7759d6e4e3`
 Latest merged AX importer prerequisite: `6bfc27a7bf170172a20dd470d6fd877858c9fb80`
@@ -139,13 +139,24 @@ The exact future authoring inputs are:
   `docs/contracts/ax-synthetic-seed-pack-v1.schema.json`;
 - an empty isolated staging directory outside the Braincrew repository.
 
-The authoring brief does not exist at this design-review fixed point and must not be written by a
-session that has inspected evaluation cases or fixtures. Its creation is a separate fresh-context
-step. It may define domain families, synthetic-content and CC0 policy, source-authority policy,
-allowed AX roles, language/format bounds, and distractor policy. It may not contain dataset case
-IDs, case queries, expected answers/evidence, expected source IDs/digests, scores, or split labels.
-Authoring cannot start until that brief and the vendored schema are reviewed and committed at a
-clean Braincrew SHA.
+Issue #35 now supplies the separately authored
+`docs/corpus/braincrew-evaluation-corpus-v2-authoring-brief.md`. Its approved exact bytes are 8,531
+bytes with SHA-256
+`f21f5df1950ec0872e45c956f9c689b09c59362d2cae53dbd2f86635bbb690ae`, declared in the adjacent
+`.sha256` file. The brief pins the AX external visibility-role contract at merge
+`47673b83a9fb431f2bad550781db18c7bee8b67e`, content version
+`ax-synthetic-seed-content-v1`, source path `backend/src/ax_engine/seed/pack_contract.py`, and file
+SHA-256 `09fe230ca2e976bec156d72987b5cf1f39419c34829e323222d11bef35e1fc2a`.
+That fail-closed contract permits exactly `Executive`, `HRAdmin`, `HRPractitioner`, and
+`Employee`.
+
+The fresh authoring and independent review contexts did not inspect evaluation cases, fixtures,
+queries, answers/evidence, scores, split labels, prior results, PR #29, or its branch. The final
+review decision is `APPROVE` with zero material findings and is recorded in
+`docs/reviews/2026-07-22-braincrew-evaluation-corpus-v2-authoring-brief-leakage-review.md` against
+the exact approved digest. Corpus authoring remains blocked until a separate Git Lifecycle
+Proposal Gate creates a clean Braincrew commit and post-commit byte equality reproduces the same
+digest.
 
 Independence is enforced by filesystem capability, not only by prompt wording. The authoring
 process receives a read-only input directory containing only the committed brief, the exact
@@ -353,7 +364,12 @@ mutation command back into the authoring lane.
 
 ## 11. Execution and stop order
 
-The required sequence is:
+The operator path below records dependency and convergence gates, not a strict start order:
+
+- Braincrew #35's only blocker is Braincrew #32. Its separate commit gate must reproduce the
+  independently approved brief digest before Braincrew #36 authoring starts.
+- AX #36 may proceed independently of the Braincrew #35 commit lane after AX #35.
+  AX #36 must be complete before operator load, but it is not an Issue #35 dependency.
 
 1. approve and review the Braincrew and AX design documents;
 2. publish `to-spec` parents and the dependency-reviewed `to-tickets` graph;
@@ -361,17 +377,20 @@ The required sequence is:
 4. vendor and digest-check the reviewed AX JSON schema in Braincrew #31, then stop at its Git gate;
 5. implement Braincrew #32 authoring isolation, #33 qualification, and #34 principal/mapping repair
    from separate clean baselines with RED/GREEN and independent review;
-6. implement AX #36 disposable-PostgreSQL idempotency/concurrency proof before any operator load;
-7. in a fresh restricted context, approve the Braincrew #35 authoring brief and run Braincrew #36
-   independent authoring/sealing without evaluation data access;
+6. commit the independently approved Braincrew #35 brief and prove its committed bytes equal the
+   approved digest at the separate Git Lifecycle Proposal Gate;
+7. in a fresh restricted context, run Braincrew #36 independent authoring/sealing without
+   evaluation data access;
 8. use Braincrew #37 to cross-validate the unchanged sealed pack against dataset v2;
 9. at the separate AX #37 operational gate, run the exact importer dry-run;
 10. create and verify a restricted PostgreSQL snapshot outside both repositories;
-11. perform the approved atomic AX load once and preserve sanitized evidence;
-12. query and freeze all three role-visible corpus identities;
-13. re-run all six strict parse observations through the reviewed principals and mappings;
-14. create and replay the Braincrew #38 preflight artifact;
-15. stop at `READY`.
+11. at the operator-load gate, require AX #36 disposable-PostgreSQL idempotency/concurrency proof
+    to be complete;
+12. perform the approved atomic AX load once and preserve sanitized evidence;
+13. query and freeze all three role-visible corpus identities;
+14. re-run all six strict parse observations through the reviewed principals and mappings;
+15. create and replay the Braincrew #38 preflight artifact;
+16. stop at `READY`.
 
 Baseline and candidate execution is a separate, later authorization. Stop immediately on a
 schema, digest, source, visibility, private-data, license, provider, snapshot, dry-run, embedding,
@@ -623,6 +642,36 @@ generic blocker requests were forbidden, and safe span IDs remained principal-sc
 five focused files now report 54 passes and all 293 repository tests pass. No AX
 operation, corpus mutation, experiment run, READY artifact, or PR #29 modification occurred.
 
+### Issue #35 evaluation-blind authoring brief lock
+
+Issue #35 was authored in fresh contexts restricted to `AGENTS.md`, the Issue #35 body, the
+vendored AX pack schema and digest, Python execution settings, and the explicitly authorized AX
+`VisibilityRole` source. No evaluation dataset, fixture, case/query, expected answer/evidence,
+score, split, benchmark artifact, prior run output, PR #29, or Issue #15 branch content entered the
+authoring or leakage-review contexts.
+
+The brief limits future content to generic HR/labor families and requires every source to be newly
+authored synthetic/demo material, licensed `CC0-1.0`, and explicitly provenance-reviewed.
+Public-source ingestion or adaptation is excluded so the pack-wide `synthetic=true` label remains
+truthful. Korean or English, canonical BOM-free UTF-8/NFC/LF text, normalized relative POSIX paths,
+explicit source authority, generic authority-based distractors, and the exact AX role vocabulary
+`Executive`, `HRAdmin`, `HRPractitioner`, and `Employee` remain fail-closed boundaries. It creates
+no corpus bytes, manifest, AX operation, qualification, preflight, experiment, or evaluation result.
+
+TDD first observed two failures for the absent brief. Review-driven cycles then observed four
+failures for an unpinned role authority and missing reviewed-to-committed byte binding, two
+failures for overbroad public-domain licensing and incomplete byte/path constraints, and two
+failures for absent digest/review evidence. A later Standards review found that the brief still
+described its now-completed review and lock as pending. One new contract test failed before a fresh
+evaluation-blind context corrected only that state, which intentionally invalidated the earlier
+approval. New exact-byte expectations then produced two failures against the stale lock artifacts
+before the independent re-review and relock restored all ten focused tests. The independent leakage
+reviewer approved the exact 8,531-byte brief with zero material findings at SHA-256
+`f21f5df1950ec0872e45c956f9c689b09c59362d2cae53dbd2f86635bbb690ae`.
+The adjacent digest declaration and durable review record bind that decision to exact bytes.
+Authoring remains prohibited until a clean committed Braincrew SHA reproduces the same digest;
+commit, push, pull request, and merge remain behind the Git Lifecycle Proposal Gate.
+
 ## 12. Rejected alternatives and consequences
 
 - Reverse-generating the corpus from expected evidence was rejected because the evaluator would
@@ -656,12 +705,12 @@ No baseline, candidate, comparison, or live quality claim is part of this comple
 ## 14. Implementation progress checkpoint
 
 As of 2026-07-22, the `to-spec` parents and `to-tickets` graph are published. AX #33, #34, and
-#35 are merged; AX #36 remains open. Braincrew PR #41 merged #33 as
-`fdbb732ee05a9de5270c91a82f0930da0413107b`; #33 is closed and cleaned up. Braincrew PR #43
-merged the minimum Issue #42 substrate as `93c8e8dabab855b7f2f700df73cd04ce38995f29` and #42 is
-closed, though its clean local/remote branch and dedicated worktree still await cleanup. Issue #34
-is active from that exact merge with `ready-for-agent`; its principal/mapping policy is implemented,
-reviewed, and fully verified locally at the Git Lifecycle Proposal Gate. No approved authoring brief, actually
-authored or sealed Braincrew pack, real qualification receipt, operator snapshot, target load,
-renewed Issue #38 preflight, READY artifact, baseline, candidate, comparison, or live quality
-claim exists.
+#35 are merged; AX #36 remains open. Braincrew PR #44 merged #34 as
+`67d7c104757f60194e59df20240ac47f8be9c027`; #34 is `CLOSED/COMPLETED`, and its worktree and
+local/remote feature branches are removed. Braincrew #35 is active from that exact merge with
+`ready-for-agent`. Its evaluation-blind brief, exact digest declaration, and independent approval
+record are complete locally and still await ticket review, full verification, and the Git
+Lifecycle Proposal Gate. No corpus source bytes, actually authored or sealed Braincrew pack, real
+qualification receipt, operator snapshot, target load, renewed Issue #38 preflight, READY artifact,
+baseline, candidate, comparison, or live quality claim exists. PR #29 and
+`feat/issue-15-live-verification` remain untouched and read only.

@@ -758,6 +758,68 @@ Likely follow-ups:
 - "Did Issue #34 make the system READY?" — No. It implements and tests the policy collector. Issue
   #38 alone may perform the actual renewed preflight and publish READY.
 
+### D8.6 Approve exact evaluation-blind authoring guidance before corpus bytes exist
+
+Decision:
+: Freeze `docs/corpus/braincrew-evaluation-corpus-v2-authoring-brief.md` before Issue #36. Bind
+  its exact 8,531 bytes to
+  `sha256:f21f5df1950ec0872e45c956f9c689b09c59362d2cae53dbd2f86635bbb690ae`, an adjacent digest
+  declaration, and a separate independent leakage-review record. Keep authoring blocked until a
+  clean committed Braincrew SHA reproduces that digest.
+
+Why:
+: A filesystem sandbox proves which inputs an authoring process can read, but it does not prove
+  that the allowed brief is generic, accurate, or free of hidden benchmark hints. Reviewing and
+  digest-locking the brief before any corpus byte exists closes that semantic gap and prevents a
+  later wording edit from inheriting an earlier approval.
+
+Rejected alternatives:
+: Prompt-only confidentiality instructions, guessed lowercase role aliases, public-source
+  ingestion or adaptation under a pack-wide synthetic label, approval without an exact byte
+  digest, and opening evaluation design or result material during authoring. Those paths make
+  independence unverifiable, can produce AX-invalid visibility/provenance metadata, or allow a
+  changed brief to masquerade as reviewed.
+
+Trade-offs and failure modes:
+: Exact-byte approval makes even a harmless wording change require a fresh evaluation-blind
+  authoring and review cycle. The brief must also track external AX contracts without importing
+  AX code. To keep that pin narrow, it records AX merge
+  `47673b83a9fb431f2bad550781db18c7bee8b67e`, content version
+  `ax-synthetic-seed-content-v1`, canonical `pack_contract.py` digest
+  `09fe230ca2e976bec156d72987b5cf1f39419c34829e323222d11bef35e1fc2a`, and exact roles
+  `Executive`, `HRAdmin`, `HRPractitioner`, and `Employee`. Post-review drift, incorrect aliases,
+  non-CC0 licensing, BOM/Unicode/line-ending drift, and unsafe paths all fail closed.
+
+Validation evidence:
+: The first TDD run failed twice because the brief was absent. Review-driven cycles then failed
+  four tests for the unpinned role authority and missing reviewed-to-committed byte binding, two
+  tests for overbroad licensing and incomplete byte/path rules, and two tests for missing digest
+  and review artifacts. Standards later caught stale gate-state wording inside the brief; a fresh
+  evaluation-blind repair invalidated the first approval, and two exact-byte tests failed against
+  the stale artifacts before reapproval and relocking. Spec review then caught a remaining
+  contradiction that excluded the brief's own digest lock; another fresh evaluation-blind RED/GREEN
+  repair and exact-byte reapproval restored ten passes. Final Spec review then found that external
+  CC0 adaptation contradicted the synthetic-only pack contract; another fresh blind RED/GREEN cycle
+  required every source to be newly authored, `CC0-1.0`, and reviewed, prohibited public-source
+  ingestion/adaptation, and rebound the final ten-pass suite to the digest above.
+  A fresh independent
+  `code-reviewer` inspected only the allowlisted non-evaluation sources, found zero material
+  issue, and approved the exact digest above. The durable review record explicitly says corpus
+  authoring remains blocked until post-commit byte equality passes.
+
+Likely follow-ups:
+
+- "Did the reviewer see the benchmark cases?" — No. The authoring and leakage-review contexts
+  excluded datasets, fixtures, queries, expected answers/evidence, scores, splits, prior results,
+  PR #29, and its branch.
+- "Why are the AX roles capitalized?" — They are exact case-sensitive values from the external
+  seed-pack `VisibilityRole` validator, not UI labels or guessed aliases.
+- "Does APPROVE mean Issue #36 can run now?" — No. Approval covers only uncommitted exact bytes.
+  Issue #36 stays blocked until the Git Lifecycle Proposal Gate creates a clean commit and the
+  committed brief reproduces the approved digest.
+- "Did Issue #35 create a corpus or manifest?" — No. It created only the generic brief, its
+  digest declaration, contract tests, and leakage-review evidence.
+
 ### D9. Use layered verification and an evidence-driven ten-day sequence
 
 Decision:

@@ -3,7 +3,7 @@
 Date: 2026-07-21
 Status: published as [Braincrew Issue #30](https://github.com/DHChe/braincrew-datateam-portfolio/issues/30) on 2026-07-21; local source retained
 Implementation tickets: [#31](https://github.com/DHChe/braincrew-datateam-portfolio/issues/31) through [#38](https://github.com/DHChe/braincrew-datateam-portfolio/issues/38)
-Implementation checkpoint: Braincrew #31/#32/#33/#42 merged; Braincrew #34 reviewed and fully verified locally at its Git gate on 2026-07-22
+Implementation checkpoint: Braincrew #31/#32/#33/#42/#34 merged; Braincrew #35 authoring brief independently approved at its pre-commit gate on 2026-07-22
 Proposed title: Provision an independently authored corpus for pinned live Verification
 Tracker relationship: new Braincrew prerequisite that blocks Issue #15
 Approved design: `2026-07-20-independent-evaluation-corpus-provisioning-design.md`
@@ -128,7 +128,7 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - AX #33 has published the reviewed generic schema and no-write dry-run, AX #34 has published typed evaluation-principal validation, and AX #35 has published the atomic apply path. Braincrew #31 may now vendor and digest-pin the exact schema; AX #36 and every data/operational gate remain incomplete.
 - The current clean preflight artifact remains `BLOCKED`; neither this draft nor later ticket publication changes that measured state.
 - `to-tickets` published Braincrew #31-#38 with the approved dependencies. #42 was later added as the minimum extraction required to keep #34 independent of unmerged Issue #15 work; #42 is a native child of #30 and native blocker of #34.
-- Braincrew #31, #32, #33, and #42 are merged and closed. PR #43 merged #42 as `93c8e8dabab855b7f2f700df73cd04ce38995f29`; its clean local/remote branch and dedicated worktree still await cleanup. #34 is now open with `ready-for-agent` and implements its policy independently on that merged base. Actual brief approval remains #35, independent authoring/sealing remains #36, real qualification remains #37, and actual preflight renewal remains #38.
+- Braincrew #31, #32, #33, #42, and #34 are merged and closed. PR #44 merged #34 as `67d7c104757f60194e59df20240ac47f8be9c027`; its dedicated worktree and local/remote feature branches are removed. #35 is open with `ready-for-agent` on that exact base. Its brief is independently approved for exact bytes but remains uncommitted; independent authoring/sealing remains #36, real qualification remains #37, and actual preflight renewal remains #38.
 
 Issue #34 implementation checkpoint:
 : The collector rejects noncanonical tenant/user UUIDs before HTTP, requires reviewed owner
@@ -181,3 +181,26 @@ Issue #34 implementation checkpoint:
   ID rejection and raw query retention through a generic blocker request. Shared span compatibility
   is restored, generic blocker requests are forbidden, and safe span-ID checks remain confined to
   Issue #34; focused coverage reports 54 passes and all 293 repository tests pass.
+
+Issue #35 implementation checkpoint:
+: Fresh evaluation-blind authoring contexts produced
+  `docs/corpus/braincrew-evaluation-corpus-v2-authoring-brief.md` without reading datasets,
+  fixtures, cases, queries, expected answers/evidence, scores, splits, prior results, PR #29, or
+  its branch. The brief pins the reviewed pack schema plus AX `VisibilityRole` contract version
+  `ax-synthetic-seed-content-v1` at merge
+  `47673b83a9fb431f2bad550781db18c7bee8b67e`, file digest
+  `09fe230ca2e976bec156d72987b5cf1f39419c34829e323222d11bef35e1fc2a`, and exact roles
+  `Executive`, `HRAdmin`, `HRPractitioner`, and `Employee`. It limits authoring to generic HR/labor
+  families and requires every source to be newly authored synthetic/demo content, licensed
+  `CC0-1.0`, and explicitly provenance-reviewed; public-source ingestion/adaptation is excluded.
+  Korean or English, canonical text/path bytes, explicit authority guidance, and generic
+  distractors remain bounded. Independent review approved the exact 8,531-byte brief with zero
+  material findings at
+  `sha256:f21f5df1950ec0872e45c956f9c689b09c59362d2cae53dbd2f86635bbb690ae`.
+  The adjacent digest declaration and durable review record bind the approval; corpus authoring
+  remains blocked until a clean commit reproduces the same digest. Focused TDD reports ten passes,
+  including review-driven state-consistency, exclusion, and synthetic-only provenance repairs with
+  exact-byte reapproval after each brief change. A separate workflow-order contract test passes for
+  the independent AX #36 lane.
+  No corpus bytes, import manifest, AX operation, qualification, preflight, experiment, PR #29
+  change, dependency, commit, push, pull request, or merge was created.
