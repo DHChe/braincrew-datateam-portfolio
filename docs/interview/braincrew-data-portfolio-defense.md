@@ -466,6 +466,50 @@ Likely follow-ups:
 - "Does this dashboard prove live AX quality?" — No. The Issue #14 golden is fixture-authoritative presentation evidence. A separately pinned live Verification comparison is still required before a live product-quality claim.
 - "How does the screen prevent that confusion?" — The export copies `execution_mode`, Evaluation Plane SHA, and SUT SHA from the immutable run summaries, and the golden screen labels itself “Fixture evidence — not a live AX verification.” React does not infer or upgrade that status.
 
+### D8.1 Seal independent corpus bytes before evaluation comparison
+
+Decision:
+: Vendor the AX `ax-synthetic-seed-content-v1` and `ax-synthetic-seed-pack-v1` schema files from
+  merge `47673b83a9fb431f2bad550781db18c7bee8b67e` by exact bytes and fixed digest, then accept only
+  strict isolated staging input into a create-only corpus version.
+
+Why:
+: Independent evaluation fails if expected answers can shape the evidence world or if corpus
+  bytes can be repaired after inspection. Byte-exact schema pinning, ordered source digests, and
+  replay make the boundary reviewable without importing AX code or reading the evaluation dataset.
+
+Rejected alternatives:
+: Normalizing CRLF or Unicode, generating corrected digests, overwriting a sealed version, reading
+  dataset v2 during sealing, and placing raw text or local paths in the receipt. Each alternative
+  either changes authored evidence, leaks evaluation context, weakens immutability, or makes the
+  retained evidence unsafe.
+
+Trade-offs and failure modes:
+: Strict rejection makes authoring mistakes require a new corrected staging attempt and later a
+  new corpus version. The filesystem is not claimed as cryptographic write-once storage; the
+  enforceable guarantees are application create-only publication plus digest replay. Drifted AX
+  schemas, path escapes, undeclared files, noncanonical bytes, stale per-source hashes, receipt
+  edits, and post-seal source mutations all fail closed.
+
+Validation evidence:
+: Contract and CLI tests reproduce the two AX schema byte counts and SHA-256 values, observe the
+  missing schema/CLI RED before implementation, cover recursive unsafe fields and canonical byte
+  rejection, prove ordered digest changes, preserve exact source bytes, refuse existing versions,
+  sanitize receipts, and reject replay after a one-byte source mutation. A review-driven test also
+  caught and repaired backslash path acceptance. The final full repository gate passes 232 tests;
+  installed CLI seal/replay, sanitized receipt scanning, and wheel schema inclusion also pass.
+
+Likely follow-ups:
+
+- "Does sealing prove dataset v2 coverage?" — No. Issue #31 never reads the dataset. Post-seal
+  qualification belongs to Issue #33 and may only compare the unchanged sealed digest read-only.
+- "Why vendor both schemas when sealing uses the content manifest?" — The repository boundary
+  must pin the complete reviewed AX v1 file contract before later qualification creates an import
+  manifest; Issue #31 validates drift but does not create that later envelope.
+- "Can someone still chmod and edit the files?" — The local filesystem is not object lock. Such an
+  edit is detected by replay and cannot be accepted as the same sealed identity; stronger retention
+  is a later operational concern and is not claimed here.
+
 ### D9. Use layered verification and an evidence-driven ten-day sequence
 
 Decision:

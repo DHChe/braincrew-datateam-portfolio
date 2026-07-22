@@ -13,6 +13,11 @@ from braincrew.comparison import (
     ExperimentRunSummary,
     compare_runs,
 )
+from braincrew.corpus_sealing import (
+    CorpusPackError,
+    replay_sealing_receipt,
+    seal_corpus_pack,
+)
 from braincrew.dashboard_export import export_dashboard_artifact
 from braincrew.dataset_registry import validate_dataset_bundle
 from braincrew.dataset_run import (
@@ -406,6 +411,36 @@ def compare_experiment_runs(
     )
 
 
+@app.command("seal-corpus")
+def seal_corpus(
+    staging_dir: Annotated[
+        Path,
+        typer.Option("--staging-dir", exists=True, file_okay=False, readable=True),
+    ],
+    output_root: Annotated[Path, typer.Option("--output-root")],
+) -> None:
+    """Validate and create one immutable synthetic corpus version."""
+    try:
+        result = seal_corpus_pack(staging_dir, output_root)
+    except CorpusPackError as error:
+        typer.echo(f"Invalid corpus pack: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    typer.echo(
+        json.dumps(
+            {
+                "receipt_path": str(result.receipt_path),
+                "receipt_digest": result.receipt.receipt_digest,
+                "sealed_content_digest": result.receipt.sealed_content_digest,
+                "corpus_id": result.receipt.corpus_id,
+                "corpus_version": result.receipt.corpus_version,
+                "source_count": result.receipt.source_count,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
 @app.command("replay")
 def replay_fixture(
     artifact_path: Annotated[
@@ -415,8 +450,14 @@ def replay_fixture(
 ) -> None:
     """Recompute a stored fixture artifact's logical result and digest."""
     try:
-        replay_summary = replay_run_artifact(artifact_path)
-    except ValueError as error:
+        payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict) and payload.get("schema_version") == (
+            "corpus-sealing-receipt-v1"
+        ):
+            replay_summary = replay_sealing_receipt(artifact_path)
+        else:
+            replay_summary = replay_run_artifact(artifact_path)
+    except (UnicodeError, ValueError) as error:
         typer.echo(f"Invalid artifact: {error}", err=True)
         raise typer.Exit(code=2) from error
     typer.echo(
