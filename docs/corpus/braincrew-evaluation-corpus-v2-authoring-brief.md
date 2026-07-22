@@ -1,16 +1,23 @@
 # Braincrew Evaluation Corpus v2 Authoring Brief
 
-Independent exact-byte review approval: **recorded**. This document defines generic authoring
-boundaries only. It does not authorize corpus authoring, import, AX execution, or evaluation.
+The approval state is authoritative only in the separate exact-byte leakage-review record. Any
+change to these brief bytes requires a new exact-byte review. This document defines generic
+authoring boundaries only. It does not authorize corpus authoring, import, AX execution, or
+evaluation.
 
 ## Pinned AX schema contract
 
-Any future seed pack governed by this brief must conform to
+Staged corpus-manifest authoring governed by this brief must conform to
+`schemas/ax-synthetic-seed-content-v1.schema.json`, reviewed at
+`sha256:372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb`.
+The content schema governs staged `corpus-manifest.json` authoring.
+
+The future post-qualification contract is
 `schemas/ax-synthetic-seed-pack-v1.schema.json`, reviewed at
 `sha256:4ddc71d7408324bfed6e7a25024899a7f689431f5f024fb2329f3f844352bffa`.
-The schema pin fixes the packaging contract; it does not supply corpus content or authorize
-creation of any schema artifact. The accompanying `.sha256` digest file and independent
-leakage-review record hold the approved brief-byte lock.
+The pack schema is separately labeled for the post-qualification `import-manifest.json` only.
+It does not govern staged authoring, supply corpus content, or authorize creation of any
+manifest or schema artifact.
 
 The authoritative AX visibility-role contract is pinned to repository
 `https://github.com/DHChe/AX_portfolio`, ref
@@ -78,6 +85,22 @@ published `CC0-1.0` material. No external source bytes, excerpts, translations, 
 adaptations may enter the corpus. Exclude any source with ambiguous authorship or ownership,
 incompatible terms, or an unverified license assignment.
 
+## Future provenance evidence boundary
+
+The current strict content and pack contracts do not preserve durable evidence of an
+independent per-source provenance approval. A `provenance_status` value alone cannot prove who
+reviewed which sealed source bytes, when they reviewed them, or what they decided.
+
+The future provenance sidecar is create-only and remains outside the staged pack. It must bind
+the sealed content digest and, for every source, the per-source identifier and content digest,
+synthetic origin, authoring owner, and CC0 assignment. It must also bind reviewer identity,
+review date, timezone, and approve-or-reject decision, and publish a receipt digest over its
+canonical bytes.
+
+Issue #36 remains blocked until sealer support for accepting, preserving, and replaying this
+evidence is separately implemented and tested. This ticket creates no provenance sidecar or
+provenance receipt.
+
 ## Allowed AX visibility roles
 
 The authoring vocabulary is limited to the fail-closed `VisibilityRole` values from the pinned
@@ -122,6 +145,19 @@ Do not fabricate a public authority, hide decisive exceptions, introduce adversa
 derive distractors from evaluation queries, answers, evidence, failures, or observed behavior.
 Distractors must test authority resolution rather than exploit wording overlap or secret clues.
 
+## Source-order architecture gate
+
+Evaluation-blind authoring cannot be required to match an already-hidden exact evaluation source
+contract. A separately approved source-order architecture resolution must choose either:
+
+- **source-first evaluation freeze**: approve and seal independently authored source bytes before
+  evaluation cases are frozen; or
+- **pre-existing, evaluation-independent exact source bytes or generator**: prove that the exact
+  source contract existed independently before evaluation-specific authoring constraints are set.
+
+Qualification feedback, evaluation identifiers, and evaluation digests must never enter
+authoring. Issue #36 remains blocked until this architecture resolution is approved.
+
 ## Explicit exclusions
 
 This brief contains and authorizes none of the following:
@@ -139,17 +175,19 @@ this brief.
 
 ## Independent review and authoring gate
 
-Only the clean-commit and post-commit byte-equality gate remains **pending**. A reviewer separate
-from this evaluation-blind authoring lane must verify the schema pin, generic-only scope, role
-vocabulary, authority model, content-license boundary, format bounds, and absence of
-evaluation-derived hints. The reviewer must record their identity, review date, review base HEAD,
-exact brief SHA-256 and size, findings, and an explicit approve-or-reject decision. The review
-base HEAD identifies the review environment; it is not the future committed Braincrew SHA.
+Any earlier exact-byte approval does not cover these amended bytes. A reviewer separate from this
+evaluation-blind authoring lane must verify both schema pins, their distinct lifecycle roles, the
+generic-only scope, role vocabulary, authority model, content-license boundary, future provenance
+evidence boundary, source-order gate, format bounds, and absence of evaluation-derived hints. The
+reviewer must record their identity, review date, review timezone, review base HEAD, exact brief
+SHA-256 and size, findings, and an explicit approve-or-reject decision. The review base HEAD
+identifies the review environment; it is not the future committed Braincrew SHA.
 
 The independent review evidence must record the exact brief SHA-256 and a post-commit
 byte-equality verification before corpus authoring may open.
 
-Corpus authoring remains prohibited until the independent decision is recorded as approved and
-this brief reaches a clean committed Braincrew SHA through the separate Git Lifecycle Proposal
-Gate. This document records the digest-bound independent approval but does not create that future
-committed SHA or satisfy its post-commit byte-equality verification.
+Corpus authoring remains prohibited until the independent decision is recorded as approved, the
+source-order architecture is separately approved, the provenance-evidence sealer boundary is
+implemented and tested, and this brief reaches a clean committed Braincrew SHA through the
+separate Git Lifecycle Proposal Gate. This document does not create a brief digest lock, a future
+committed SHA, or a post-commit byte-equality verification.

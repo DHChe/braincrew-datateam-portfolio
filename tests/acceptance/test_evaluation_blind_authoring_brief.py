@@ -9,11 +9,13 @@ REVIEW_EVIDENCE_PATH = (
     REPOSITORY_ROOT
     / "docs/reviews/2026-07-22-braincrew-evaluation-corpus-v2-authoring-brief-leakage-review.md"
 )
-APPROVED_BRIEF_DIGEST = "sha256:f21f5df1950ec0872e45c956f9c689b09c59362d2cae53dbd2f86635bbb690ae"
-APPROVED_BRIEF_SIZE_BYTES = 8531
-REVIEW_BASE_HEAD = "67d7c104757f60194e59df20240ac47f8be9c027"
-SCHEMA_PATH = "schemas/ax-synthetic-seed-pack-v1.schema.json"
-SCHEMA_DIGEST = "sha256:4ddc71d7408324bfed6e7a25024899a7f689431f5f024fb2329f3f844352bffa"
+APPROVED_BRIEF_DIGEST = "sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3"
+APPROVED_BRIEF_SIZE_BYTES = 10680
+REVIEW_BASE_HEAD = "2013da04509f2f23c340467fbe4f8f770b17be69"
+CONTENT_SCHEMA_PATH = "schemas/ax-synthetic-seed-content-v1.schema.json"
+CONTENT_SCHEMA_DIGEST = "sha256:372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb"
+PACK_SCHEMA_PATH = "schemas/ax-synthetic-seed-pack-v1.schema.json"
+PACK_SCHEMA_DIGEST = "sha256:4ddc71d7408324bfed6e7a25024899a7f689431f5f024fb2329f3f844352bffa"
 AX_ROLE_CONTRACT_REPOSITORY = "https://github.com/DHChe/AX_portfolio"
 AX_ROLE_CONTRACT_REF = "47673b83a9fb431f2bad550781db18c7bee8b67e"
 AX_ROLE_CONTRACT_PATH = "backend/src/ax_engine/seed/pack_contract.py"
@@ -73,11 +75,19 @@ def _section_body(markdown: str, heading: str) -> str:
     return remainder.partition("\n## ")[0].strip()
 
 
-def test_brief_pins_reviewed_schema_and_defines_only_generic_policy_sections() -> None:
+def test_brief_pins_staged_content_schema_and_separates_import_schema() -> None:
     brief = _read_brief()
+    normalized_brief = " ".join(brief.split())
 
-    assert SCHEMA_PATH in brief
-    assert SCHEMA_DIGEST in brief
+    assert CONTENT_SCHEMA_PATH in brief
+    assert CONTENT_SCHEMA_DIGEST in brief
+    assert PACK_SCHEMA_PATH in brief
+    assert PACK_SCHEMA_DIGEST in brief
+    assert "The content schema governs staged `corpus-manifest.json` authoring." in normalized_brief
+    assert (
+        "The pack schema is separately labeled for the post-qualification "
+        "`import-manifest.json` only." in normalized_brief
+    )
     for heading in REQUIRED_GENERIC_POLICY_SECTIONS:
         assert _section_body(brief, heading), f"generic policy section is empty: {heading}"
 
@@ -169,7 +179,11 @@ def test_brief_contains_no_evaluation_derived_identifiers_or_hints() -> None:
     brief = _read_brief()
 
     digests = set(re.findall(r"sha256:[0-9a-f]{64}", brief, flags=re.IGNORECASE))
-    assert digests == {SCHEMA_DIGEST, AX_ROLE_CONTRACT_DIGEST}, (
+    assert digests == {
+        CONTENT_SCHEMA_DIGEST,
+        PACK_SCHEMA_DIGEST,
+        AX_ROLE_CONTRACT_DIGEST,
+    }, (
         "only the reviewed AX schema and role-contract digests may appear in the brief; "
         f"found {sorted(digests)}"
     )
@@ -192,37 +206,75 @@ def test_approved_digest_lock_matches_the_exact_frozen_brief_bytes() -> None:
     assert BRIEF_DIGEST_PATH.read_bytes() == f"{APPROVED_BRIEF_DIGEST}\n".encode("ascii")
 
 
-def test_brief_records_exact_byte_approval_and_only_post_commit_gate_pending() -> None:
+def test_brief_defines_future_provenance_sidecar_and_blocks_issue_36() -> None:
     normalized_brief = " ".join(_read_brief().split())
-    required_state_facts = (
-        "Independent exact-byte review approval: **recorded**.",
+    required_provenance_facts = (
         (
-            "The accompanying `.sha256` digest file and independent leakage-review record "
-            "hold the approved brief-byte lock."
+            "The current strict content and pack contracts do not preserve durable evidence "
+            "of an independent per-source provenance approval."
         ),
-        "Only the clean-commit and post-commit byte-equality gate remains **pending**.",
+        "The future provenance sidecar is create-only and remains outside the staged pack.",
+        "sealed content digest",
+        "per-source identifier and content digest",
+        "synthetic origin",
+        "authoring owner",
+        "CC0 assignment",
+        "reviewer identity, review date, timezone, and approve-or-reject decision",
+        "receipt digest",
+        (
+            "Issue #36 remains blocked until sealer support for accepting, preserving, and "
+            "replaying this evidence is separately implemented and tested."
+        ),
+        "This ticket creates no provenance sidecar or provenance receipt.",
     )
-    obsolete_state_phrases = (
-        "pending independent review",
-        "This brief has no digest lock yet",
-        "Gate status: **pending**",
-        "reviewed commit",
-        "does not create a brief digest lock",
-        "or a brief digest lock",
-    )
-
-    violations: dict[str, list[str]] = {}
-    missing_state_facts = [fact for fact in required_state_facts if fact not in normalized_brief]
-    if missing_state_facts:
-        violations["missing current approval and gate state"] = missing_state_facts
-
-    retained_obsolete_phrases = [
-        phrase for phrase in obsolete_state_phrases if phrase in normalized_brief
+    missing_provenance_facts = [
+        fact for fact in required_provenance_facts if fact not in normalized_brief
     ]
-    if retained_obsolete_phrases:
-        violations["retained obsolete pre-review state"] = retained_obsolete_phrases
+    assert not missing_provenance_facts, (
+        f"provenance sidecar boundary is incomplete: {missing_provenance_facts}"
+    )
 
-    assert not violations, f"authoring brief approval state is stale: {violations}"
+
+def test_brief_requires_source_order_resolution_without_evaluation_feedback() -> None:
+    normalized_brief = " ".join(_read_brief().split())
+    required_source_order_facts = (
+        (
+            "Evaluation-blind authoring cannot be required to match an already-hidden exact "
+            "evaluation source contract."
+        ),
+        "A separately approved source-order architecture resolution must choose either",
+        "source-first evaluation freeze",
+        "pre-existing, evaluation-independent exact source bytes or generator",
+        (
+            "Qualification feedback, evaluation identifiers, and evaluation digests must "
+            "never enter authoring."
+        ),
+        "Issue #36 remains blocked until this architecture resolution is approved.",
+    )
+    missing_source_order_facts = [
+        fact for fact in required_source_order_facts if fact not in normalized_brief
+    ]
+    assert not missing_source_order_facts, (
+        f"source-order architecture boundary is incomplete: {missing_source_order_facts}"
+    )
+
+    assert (
+        "Only the clean-commit and post-commit byte-equality gate remains **pending**."
+        not in normalized_brief
+    )
+
+
+def test_brief_defers_exact_byte_approval_state_to_the_separate_review_record() -> None:
+    opening = " ".join(_read_brief().partition("\n## ")[0].split())
+
+    assert "pending" not in opening.casefold(), (
+        f"brief opening must not embed time-dependent approval state: {opening}"
+    )
+    assert (
+        "The approval state is authoritative only in the separate exact-byte leakage-review "
+        "record." in opening
+    )
+    assert "Any change to these brief bytes requires a new exact-byte review." in opening
 
 
 def test_independent_review_evidence_records_the_blind_boundary_and_pending_gate() -> None:
@@ -232,9 +284,9 @@ def test_independent_review_evidence_records_the_blind_boundary_and_pending_gate
     review = REVIEW_EVIDENCE_PATH.read_text(encoding="utf-8")
     normalized_review = " ".join(review.split())
     required_review_facts = (
-        "Reviewer identity: `/root/code_reviewer_license_fix`",
+        "Reviewer identity: `/root/fresh_blind_final_review`",
         "Reviewer role: `code-reviewer`",
-        "Review date: `2026-07-22`",
+        "Review date: `2026-07-23`",
         "Review timezone: `Asia/Seoul`",
         "Decision: **APPROVE**",
         "Material findings: **0**",
@@ -252,6 +304,26 @@ def test_independent_review_evidence_records_the_blind_boundary_and_pending_gate
             "published `CC0-1.0` material**."
         ),
         "Pack-wide `synthetic=true`: **preserved by the synthetic-only branch**.",
+        (
+            "Reviewed staged schema: **the content schema governs staged "
+            "`corpus-manifest.json` authoring**."
+        ),
+        (
+            "Reviewed post-qualification schema: **the pack schema governs only the later "
+            "`import-manifest.json`**."
+        ),
+        (
+            "Current strict provenance evidence: **not durable; `provenance_status` alone "
+            "does not preserve independent approval evidence**."
+        ),
+        (
+            "Future provenance sidecar: **create-only, outside the staged pack, and not "
+            "created by Issue #35**."
+        ),
+        (
+            "Evaluation feedback boundary: **qualification feedback, evaluation identifiers, "
+            "and evaluation digests cannot enter authoring**."
+        ),
     )
     missing_review_facts = [fact for fact in required_review_facts if fact not in normalized_review]
     assert not missing_review_facts, (
@@ -262,6 +334,8 @@ def test_independent_review_evidence_records_the_blind_boundary_and_pending_gate
     required_allowed_sources = (
         "`AGENTS.md`",
         "GitHub Issue `#35` body",
+        "`schemas/ax-synthetic-seed-content-v1.schema.json`",
+        "`schemas/ax-synthetic-seed-content-v1.schema.sha256`",
         "`schemas/ax-synthetic-seed-pack-v1.schema.json`",
         "`schemas/ax-synthetic-seed-pack-v1.schema.sha256`",
         "`pyproject.toml` and `uv.lock` execution settings",
@@ -280,10 +354,14 @@ def test_independent_review_evidence_records_the_blind_boundary_and_pending_gate
     required_prohibited_sources = (
         "`datasets/**`",
         "`tests/fixtures/**`",
-        "evaluation content or results",
+        "evaluation cases, queries, answers, evidence, scores, or split labels",
+        "benchmark artifacts or results",
         "PR `#29`",
         "`feat/issue-15-live-verification`",
         "Braincrew `corpus_sealing.py`",
+        "Braincrew `corpus_qualification.py`",
+        "the pre-existing brief digest and leakage-review contents",
+        "the workflow-order test",
         "later design, draft, interview, or status documents",
     )
     missing_prohibited_sources = [
@@ -293,9 +371,30 @@ def test_independent_review_evidence_records_the_blind_boundary_and_pending_gate
         f"review evidence omits prohibited source boundaries: {missing_prohibited_sources}"
     )
 
+    issue_36_blockers = " ".join(_section_body(review, "## Issue #36 blockers").split())
+    required_issue_36_blockers = (
+        (
+            "Source-order architecture: **blocked** until a separately approved resolution "
+            "chooses a source-first evaluation freeze or pre-existing, evaluation-independent "
+            "exact source bytes or generator."
+        ),
+        (
+            "Provenance-sidecar sealer support: **blocked** until accepting, preserving, and "
+            "replaying the sidecar evidence is separately implemented and tested."
+        ),
+        "This exact-byte approval clears neither Issue #36 blocker.",
+    )
+    missing_issue_36_blockers = [
+        blocker for blocker in required_issue_36_blockers if blocker not in issue_36_blockers
+    ]
+    assert not missing_issue_36_blockers, (
+        f"review evidence omits Issue #36 blockers: {missing_issue_36_blockers}"
+    )
+
     pending_gate = " ".join(_section_body(review, "## Pending post-commit gate").split())
     required_gate_statements = (
         "Approval applies only to the reviewed brief bytes.",
+        "Repaired-brief clean commit: **pending**.",
         "Post-commit byte-equality verification: **pending**.",
         (
             "Corpus authoring remains blocked until the brief reaches a clean committed "
