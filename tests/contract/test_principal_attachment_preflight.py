@@ -347,6 +347,8 @@ def test_exhausted_parse_retries_are_retained_with_the_blocker(
 
     artifact = _capture(dataset_validation, transport=httpx.MockTransport(handler))
 
+    assert artifact.capture_contract == "principal-attachment-preflight-v1"
+    assert artifact.dataset_identity is not None
     assert [blocker.code for blocker in artifact.blockers] == ["LIVE_PARSE_OBSERVATION_FAILED"]
     assert [attempt.outcome for attempt in artifact.blockers[0].attempts] == [
         "retryable_http",
@@ -354,6 +356,49 @@ def test_exhausted_parse_retries_are_retained_with_the_blocker(
         "retryable_http",
     ]
     assert [attempt.status_code for attempt in artifact.blockers[0].attempts] == [503, 503, 503]
+    assert [attempt.response_correlation_id for attempt in artifact.blockers[0].attempts] == [
+        HOSTILE_CORRELATION_DIGEST,
+        HOSTILE_CORRELATION_DIGEST,
+        HOSTILE_CORRELATION_DIGEST,
+    ]
+    assert HOSTILE_CORRELATION_ID not in artifact.model_dump_json()
+
+
+def test_retries_are_retained_when_recovered_response_evidence_is_rejected(
+    dataset_validation: DatasetValidationReport,
+) -> None:
+    cases = _verification_cases(dataset_validation)
+    request_count = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal request_count
+        request_count += 1
+        if request_count < 3:
+            return httpx.Response(
+                503,
+                headers={"x-correlation-id": HOSTILE_CORRELATION_ID},
+                json={"detail": "starting"},
+            )
+        requested = _requested_attachment(request)
+        document_id = _attachment_documents()[requested]
+        payload = _parse_response(cases[document_id], attachment_id=requested)
+        payload["parser_name"] = "markdown-text"
+        return httpx.Response(
+            200,
+            headers={"x-correlation-id": HOSTILE_CORRELATION_ID},
+            json=payload,
+        )
+
+    artifact = _capture(dataset_validation, transport=httpx.MockTransport(handler))
+
+    assert [blocker.code for blocker in artifact.blockers] == ["LIVE_PARSE_OBSERVATION_FAILED"]
+    assert artifact.blockers[0].detail == "parser_identity_mismatch"
+    assert [attempt.outcome for attempt in artifact.blockers[0].attempts] == [
+        "retryable_http",
+        "retryable_http",
+        "success",
+    ]
+    assert [attempt.status_code for attempt in artifact.blockers[0].attempts] == [503, 503, 200]
     assert [attempt.response_correlation_id for attempt in artifact.blockers[0].attempts] == [
         HOSTILE_CORRELATION_DIGEST,
         HOSTILE_CORRELATION_DIGEST,

@@ -36,6 +36,9 @@ PINNED_AX_SHA = "72805930d9addd8ea41743d1922acf8de621c3f8"
 ACTIVE_OWNER_USER_ID = "22222222-2222-2222-2222-222222222222"
 PARSING_AUTHORIZATION_ROLE = "HRPractitioner"
 EXPECTED_PARSER_IDENTITY = ("utf8-text", "stdlib-1")
+PRINCIPAL_ATTACHMENT_CAPTURE_CONTRACT: Literal["principal-attachment-preflight-v1"] = (
+    "principal-attachment-preflight-v1"
+)
 FROZEN_DATASET_ID: Literal["braincrew-evaluation-dataset"] = "braincrew-evaluation-dataset"
 FROZEN_DATASET_VERSION: Literal["2.0.0"] = "2.0.0"
 FROZEN_DATASET_DIGEST = "sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a"
@@ -153,8 +156,12 @@ class DatasetIdentityEvidence(StrictModel):
 
 
 class LivePreflightArtifact(StrictModel):
-    schema_version: Literal["live-preflight-evidence-v1"]
+    schema_version: Literal[
+        "live-preflight-evidence-v1",
+        "principal-attachment-preflight-evidence-v1",
+    ]
     capture_state: Literal["captured"]
+    capture_contract: Literal["principal-attachment-preflight-v1"] | None = None
     run_id: str = Field(pattern=SAFE_ID_PATTERN)
     captured_at: datetime
     evaluation_plane_sha: str = Field(pattern=COMMIT_SHA_PATTERN)
@@ -195,14 +202,13 @@ class LivePreflightArtifact(StrictModel):
             expected = canonical_digest(observation.response.model_dump(mode="json"))
             if observation.response_digest != expected:
                 raise ValueError("parse response digest does not match sanitized response")
-        parse_case_ids = {item.request.case_id for item in self.parse_observations}
-        if (
-            not self.blockers
-            and len(self.parse_observations) == len(REVIEWED_PARSING_ATTACHMENT_IDS)
-            and parse_case_ids == set(REVIEWED_PARSING_ATTACHMENT_IDS)
-            and self.dataset_identity is None
-        ):
-            raise ValueError("principal attachment capture requires frozen dataset identity")
+        if self.schema_version == "principal-attachment-preflight-evidence-v1":
+            if self.capture_contract != PRINCIPAL_ATTACHMENT_CAPTURE_CONTRACT:
+                raise ValueError("principal attachment schema requires its capture contract")
+            if self.dataset_identity is None:
+                raise ValueError("principal attachment capture requires frozen dataset identity")
+        elif self.capture_contract is not None:
+            raise ValueError("generic live preflight schema cannot declare a capture contract")
         if _contains_private_path(self.model_dump(mode="json")):
             raise ValueError("live preflight artifact cannot retain a private path")
         return self
@@ -218,10 +224,16 @@ def build_live_preflight_artifact(
     parse_observations: tuple[ParseObservation, ...],
     blockers: tuple[LivePreflightBlocker, ...],
     dataset_identity: DatasetIdentityEvidence | None = None,
+    capture_contract: Literal["principal-attachment-preflight-v1"] | None = None,
 ) -> LivePreflightArtifact:
     artifact = LivePreflightArtifact(
-        schema_version="live-preflight-evidence-v1",
+        schema_version=(
+            "principal-attachment-preflight-evidence-v1"
+            if capture_contract is not None
+            else "live-preflight-evidence-v1"
+        ),
         capture_state="captured",
+        capture_contract=capture_contract,
         run_id=run_id,
         captured_at=captured_at,
         evaluation_plane_sha=evaluation_plane_sha,
@@ -264,6 +276,11 @@ def capture_principal_attachment_preflight(
             blocker=blocker,
             parse_observations=parse_observations,
             dataset_identity=accepted_dataset_identity,
+            capture_contract=(
+                PRINCIPAL_ATTACHMENT_CAPTURE_CONTRACT
+                if accepted_dataset_identity is not None
+                else None
+            ),
         )
 
     if not _is_canonical_uuid(tenant_id) or not _is_canonical_uuid(user_id):
@@ -345,6 +362,7 @@ def capture_principal_attachment_preflight(
                     code="PARSE_ATTACHMENT_MAPPING_INVALID",
                     document_id=document_id,
                     detail="attachment_identity_mismatch",
+                    attempts=tuple(observation.attempts),
                 ),
                 tuple(observations),
             )
@@ -359,6 +377,7 @@ def capture_principal_attachment_preflight(
                     code=code,
                     document_id=document_id,
                     detail=detail,
+                    attempts=tuple(observation.attempts),
                 ),
                 tuple(observations),
             )
@@ -372,6 +391,7 @@ def capture_principal_attachment_preflight(
         parse_observations=tuple(observations),
         blockers=(),
         dataset_identity=accepted_dataset_identity,
+        capture_contract=PRINCIPAL_ATTACHMENT_CAPTURE_CONTRACT,
     )
 
 
@@ -397,6 +417,7 @@ def replay_live_preflight_artifact(path: Path) -> dict[str, str | int]:
     if artifact.logical_digest != recomputed_digest:
         raise ValueError("artifact logical content does not reproduce its stored digest")
     return {
+        "schema_version": artifact.schema_version,
         "logical_digest": recomputed_digest,
         "capture_state": artifact.capture_state,
         "corpus_observation_count": len(artifact.corpus_observations),
@@ -497,6 +518,7 @@ def _blocked_capture(
     blocker: LivePreflightBlocker,
     parse_observations: tuple[ParseObservation, ...] = (),
     dataset_identity: DatasetIdentityEvidence | None = None,
+    capture_contract: Literal["principal-attachment-preflight-v1"] | None = None,
 ) -> LivePreflightArtifact:
     return build_live_preflight_artifact(
         run_id=run_id,
@@ -507,6 +529,7 @@ def _blocked_capture(
         parse_observations=parse_observations,
         blockers=(blocker,),
         dataset_identity=dataset_identity,
+        capture_contract=capture_contract,
     )
 
 

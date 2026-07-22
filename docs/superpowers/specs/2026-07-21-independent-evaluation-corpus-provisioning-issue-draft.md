@@ -137,7 +137,15 @@ Issue #34 implementation checkpoint:
   integrated digest, and three component digests, which are retained and replay-validated. It maps
   malformed principals, unknown/inactive subjects, and attachment mapping failures to distinct
   non-retryable blockers while preserving existing live retry/failure blockers and their exhausted
-  attempts. Untrusted response correlation values are digest-only at the retention boundary. An
+  attempts. Every post-dataset Issue #34 capture uses
+  `principal-attachment-preflight-evidence-v1` with
+  `capture_contract="principal-attachment-preflight-v1"`, so replay requires frozen identity for
+  complete, partial, and blocked parse captures. The generic Issue #42
+  `live-preflight-evidence-v1` schema remains fully backward compatible, including arbitrary
+  caller-supplied observations and `LIVE_PARSE_*` blockers. Replay exposes the schema version and
+  Issue #34 consumers must require the principal-attachment schema; the logical digest proves
+  internal consistency rather than origin authenticity.
+  Untrusted response correlation values are digest-only at the retention boundary. An
   available response with a failure code is blocked, while an available response with zero spans
   remains a downstream quality observation. Successful transport is retained only as six
   sanitized strict parse observations in the Issue #42 create-only artifact; it emits no
@@ -145,7 +153,13 @@ Issue #34 implementation checkpoint:
   fields retain their original logical-digest semantics.
   A 264-test clean baseline preceded the first 15-test RED. Ticket review separately reproduced a
   non-matching parser defect before repair. PR #44 review remediation separately reproduced the
-  four bot findings, legacy replay drift, correlation-header retention, and rehashed identity
-  removal before repair. Focused preflight coverage now reports 32 passes, both confirmatory review
-  axes have zero unresolved finding, and final frozen sync, Ruff format/lint, strict mypy, all 285
+  initial four bot findings, legacy replay drift, correlation-header retention, and rehashed
+  identity removal before repair. A later re-review separately reproduced retry-history loss after
+  a recovered invalid response and identity removal from a blocked partial capture. Focused
+  independent review then reproduced simultaneous discriminator-and-identity removal before the
+  semantic downgrade repair, then overbroad classification of generic reviewed-attachment evidence
+  and unrelated legacy `LIVE_PARSE_*` blockers. Fingerprint inference was removed in favor of a
+  separate required-field Issue #34 schema while preserving generic v1 replay. Focused preflight
+  coverage now reports 35 passes, both confirmatory review axes have zero unresolved finding, and
+  final frozen sync, Ruff format/lint, strict mypy, all 288
   repository tests, and Git whitespace validation pass.

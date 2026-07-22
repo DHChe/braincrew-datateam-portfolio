@@ -69,6 +69,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
         transport=httpx.MockTransport(handler),
     )
 
+    assert artifact.schema_version == "principal-attachment-preflight-evidence-v1"
     assert artifact.capture_state == "captured"
     assert artifact.blockers == ()
     assert artifact.corpus_observations == ()
@@ -129,12 +130,14 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     assert replay.returncode == 0, replay.stderr
     summary = cast(dict[str, Any], json.loads(replay.stdout))
     assert summary["capture_state"] == "captured"
+    assert summary["schema_version"] == "principal-attachment-preflight-evidence-v1"
     assert summary["parse_observation_count"] == 6
     assert summary["blocker_count"] == 0
     assert summary["logical_digest"] == artifact.logical_digest
 
     payload = cast(dict[str, Any], json.loads(retained))
     payload.pop("dataset_identity")
+    payload.pop("capture_contract")
     payload["logical_digest"] = canonical_digest(
         {key: value for key, value in payload.items() if key != "logical_digest"}
     )
@@ -169,6 +172,57 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
 
     assert tampered_replay.returncode == 2
     assert "Invalid artifact" in tampered_replay.stderr
+
+
+def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_identity(
+    tmp_path: Path,
+) -> None:
+    validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v2.json")
+    assert validation.state == "VALID"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503, json={"detail": "starting"})
+
+    artifact = live_preflight.capture_principal_attachment_preflight(
+        run_id="issue-34-blocked-acceptance",
+        captured_at=datetime(2026, 7, 22, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=validation,
+        transport=httpx.MockTransport(handler),
+    )
+
+    assert artifact.schema_version == "principal-attachment-preflight-evidence-v1"
+    assert artifact.capture_contract == "principal-attachment-preflight-v1"
+    assert artifact.dataset_identity is not None
+    assert [blocker.code for blocker in artifact.blockers] == ["LIVE_PARSE_OBSERVATION_FAILED"]
+
+    artifact_path = live_preflight.write_live_preflight_artifact(
+        artifact,
+        tmp_path / "issue-34-blocked-live-preflight-evidence.json",
+    )
+    payload = cast(dict[str, Any], json.loads(artifact_path.read_text(encoding="utf-8")))
+    payload.pop("dataset_identity")
+    payload.pop("capture_contract")
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    replay = subprocess.run(
+        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert replay.returncode == 2
+    assert "Invalid artifact" in replay.stderr
 
 
 def _parse_response(case: ParsingCase, *, attachment_id: str) -> dict[str, Any]:

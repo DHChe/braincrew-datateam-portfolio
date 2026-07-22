@@ -547,7 +547,15 @@ existing `LIVE_PARSE_OBSERVATION_*` family and the Adapter's timeout, `429`, and
 history. Before any parse call, the collector also requires the exact frozen dataset ID, version,
 integrated digest, and parsing/retrieval/grounded component digests. The accepted identity is
 retained in the artifact and replay rejects a substituted identity even if its top-level logical
-digest is recomputed.
+digest is recomputed. Every capture produced after that identity is accepted uses schema
+`principal-attachment-preflight-evidence-v1` and carries explicit
+`capture_contract="principal-attachment-preflight-v1"`; that schema requires the frozen identity on
+partial and blocked parse captures, not only on a complete six-probe capture. The older generic
+Issue #42 substrate remains `live-preflight-evidence-v1` and retains its complete caller-supplied
+observation/blocker compatibility. Replay returns the schema version so an Issue #34 consumer can
+require the principal-attachment schema rather than treating a generic v1 artifact as qualified
+policy evidence. The logical digest proves internal replay consistency, not artifact origin or
+authenticity.
 
 A successful capture requires all six responses to bind the requested attachment, exact pinned
 AX parser identity `utf8-text`/`stdlib-1`, canonical source-text digest, and valid span
@@ -557,10 +565,11 @@ available parse carrying a failure code is internally inconsistent and yields
 `LIVE_PARSE_OBSERVATION_FAILED`. The retained artifact records exact request role, structure
 counts, successful attempts, failed-operation retry attempts on the blocker, dataset identity,
 and sanitized response digests, but no raw extracted or span text. Untrusted response correlation
-headers are retained only as SHA-256 digests across successful and blocked attempts. Replay keeps
+headers are retained only as SHA-256 digests across successful and blocked attempts. A retryable
+failure followed by an HTTP success whose parser, source, span, or attachment evidence is rejected
+retains the complete attempt sequence on its blocker. Replay keeps
 field-presence semantics for legacy v1 artifacts that predate dataset identity and blocker-attempt
-fields, while successful six-probe Issue #34 artifacts require the frozen identity. It remains
-`live-preflight-evidence-v1` with
+fields, while the Issue #34 schema requires its contract and frozen identity. Both schemas retain
 `capture_state="captured"`; transport success creates neither parsing-quality output nor READY.
 Issue #38 alone owns an actual renewed preflight and READY publication.
 
@@ -569,8 +578,15 @@ contract/acceptance tests failed on the absent policy collector and canonical us
 minimal GREEN passed those 15. Ticket review then reproduced acceptance of a non-matching parser
 as `1 failed, 14 passed` before the exact pinned parser repair reached 16 focused passes. The
 affected regression set initially reported 52 passing tests. PR #44 review remediation then
-reproduced the four bot findings plus legacy replay drift, correlation-header retention, and
-rehash-with-identity-removal before repair. The final preflight set reports 32 passes, all 285
+reproduced the initial four bot findings plus legacy replay drift, correlation-header retention,
+and rehash-with-identity-removal before repair. A later Codex re-review separately reproduced
+retry-history loss after a recovered but invalid response and frozen-identity removal from a
+blocked partial capture before the discriminator repair. Independent re-review then reproduced
+simultaneous discriminator-and-identity removal before semantic downgrade protection, then
+reproduced overbroad classification of generic reviewed-attachment evidence and unrelated legacy
+`LIVE_PARSE_*` blockers. Fingerprint inference was rejected in favor of a separate Issue #34 schema:
+new-schema removal is rejected, while the complete generic v1 schema remains compatible. The final
+preflight set reports 35 passes, all 288
 repository tests pass, and confirmatory Standards and Spec review axes have zero unresolved
 finding. Frozen sync, Ruff format/lint, strict mypy, and Git whitespace validation also pass. No AX
 operation, corpus mutation, experiment run, READY artifact, or PR #29 modification occurred.

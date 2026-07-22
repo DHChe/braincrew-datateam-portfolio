@@ -671,7 +671,8 @@ Decision:
   require active owner `22222222-2222-2222-2222-222222222222`, apply exactly
   `HRPractitioner`, freeze the six reviewed parsing attachment UUIDs, and bind the collector to the
   exact dataset-v2 integrated and component digests. Retain accepted dataset identity and probe
-  evidence only through the create-only `live-preflight-evidence-v1` artifact.
+  evidence only through the create-only `principal-attachment-preflight-evidence-v1` artifact,
+  layered on the generic Issue #42 replay boundary.
 
 Why:
 : The earlier placeholder user could reach AX as a malformed subject and make an authorization
@@ -687,15 +688,21 @@ Rejected alternatives:
 Trade-offs and failure modes:
 : The reviewed owner and attachment UUIDs are environment-specific contract data, so a legitimate
   corpus re-import requires an explicit reviewed mapping update rather than automatic repair.
-  A dataset substitution is rejected before HTTP and replay rejects a rehashed dataset-identity
-  substitution or identity removal from a successful six-probe capture. An available response with
+  A dataset substitution is rejected before HTTP. After the frozen identity is accepted, complete,
+  partial, and blocked captures use `principal-attachment-preflight-evidence-v1`, whose required
+  contract and dataset identity make rehashed removal invalid while that schema remains unchanged.
+  Generic Issue #42 `live-preflight-evidence-v1` artifacts retain full backward compatibility, and
+  an Issue #34 consumer must require the newer schema. The logical digest proves replay consistency,
+  not who created the artifact. An available response with
   zero spans is retained as measurable poor parsing quality; an available response with a failure
   code is rejected as inconsistent evidence. Server-controlled correlation headers are retained
   only as digests, and legacy v1 artifacts keep their omitted-field digest semantics.
   Missing/nonexistent/mismatched attachment identity becomes `PARSE_ATTACHMENT_MAPPING_INVALID`;
   malformed principals become `EVALUATION_PRINCIPAL_ID_INVALID`; unknown/inactive subjects become
   `EVALUATION_PRINCIPAL_SUBJECT_INVALID`; inaccessible or unstable live operations retain the
-  existing `LIVE_PARSE_OBSERVATION_*` family, with exhausted attempts retained on the blocker.
+  existing `LIVE_PARSE_OBSERVATION_*` family, with exhausted attempts retained on the blocker. If
+  retries recover to an HTTP success whose evidence is then rejected, that blocker still retains
+  the complete retry-plus-success attempt sequence.
 
 Validation evidence:
 : A clean baseline passed frozen sync, Ruff, strict mypy, and all 264 pre-change tests before the
@@ -705,9 +712,15 @@ Validation evidence:
   probes, create-only publication, and replay. Review first reproduced acceptance of a non-matching
   parser. PR #44 review remediation then reproduced empty-span overblocking, failure-code
   inconsistency, retry-evidence loss, dataset digest substitution/removal, legacy replay drift, and
-  hostile correlation retention before repair. The final preflight set reports 32 passes, both
-  confirmatory review axes have zero unresolved finding, and frozen sync, Ruff format/lint, strict
-  mypy, all 285 repository tests, and Git whitespace validation pass. No real preflight or READY
+  hostile correlation retention before repair. A later Codex re-review reproduced attempt loss
+  after recovery to invalid evidence and dataset-identity removal from a blocked partial capture.
+  Independent re-review then reproduced simultaneous contract-and-identity removal before semantic
+  downgrade protection was added, then reproduced overbroad classification of generic
+  reviewed-attachment evidence and unrelated legacy `LIVE_PARSE_*` blockers. Fingerprint inference
+  was removed in favor of a separate required-field Issue #34 schema. The final preflight set reports
+  35 passes, both confirmatory review axes
+  have zero unresolved finding, and frozen sync, Ruff format/lint, strict mypy, all 288 repository tests, and Git
+  whitespace validation pass. No real preflight or READY
   artifact was produced.
 
 Likely follow-ups:
