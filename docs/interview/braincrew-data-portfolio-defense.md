@@ -664,6 +664,100 @@ Likely follow-ups:
   response-summary, attempt, and digest integrity only. Evaluators and Issue #38's READY decision
   remain downstream.
 
+### D8.5 Separate principal, mapping, and live-operation failures
+
+Decision:
+: Implement Issue #34 on merged Issue #42 only. Reject noncanonical tenant/user UUIDs before HTTP,
+  require active owner `22222222-2222-2222-2222-222222222222`, apply exactly
+  `HRPractitioner`, freeze the six reviewed parsing attachment UUIDs, and bind the collector to the
+  exact dataset-v2 integrated and component digests. Retain accepted dataset identity and probe
+  evidence only through the create-only `principal-attachment-preflight-evidence-v1` artifact,
+  layered on the generic Issue #42 replay boundary.
+
+Why:
+: The earlier placeholder user could reach AX as a malformed subject and make an authorization
+  problem look like service failure. A document label could also point to a nonexistent or wrong
+  attachment. Separating configuration, subject, mapping, and operation failures makes the
+  evidence actionable without weakening fail-closed behavior.
+
+Rejected alternatives:
+: Normalize malformed IDs, retry unknown subjects, accept a partial or caller-invented mapping,
+  infer authorization from persona text, or turn six HTTP 200 responses into a parsing-quality
+  pass. Each hides a different failure cause or claims more than the probe measured.
+
+Trade-offs and failure modes:
+: The reviewed owner and attachment UUIDs are environment-specific contract data, so a legitimate
+  corpus re-import requires an explicit reviewed mapping update rather than automatic repair.
+  A dataset substitution is rejected before HTTP. After the frozen identity is accepted, complete,
+  partial, and blocked captures use `principal-attachment-preflight-evidence-v1`, whose required
+  contract and dataset identity make rehashed removal invalid while that schema remains unchanged.
+  Generic Issue #42 `live-preflight-evidence-v1` artifacts retain full backward compatibility, and
+  an Issue #34 consumer must require the newer schema. The logical digest proves replay consistency,
+  not who created the artifact. Within the newer schema replay revalidates the exact ordered six
+  case/attachment pairs, reviewed owner, and sole role. A missing probe cannot be hidden by
+  recomputing the logical digest: a complete artifact needs all six, while a partial artifact needs
+  the terminal blocker for its next probe. An available response with
+  zero spans is retained as measurable poor parsing quality; an available response with a failure
+  code is rejected as inconsistent evidence. Server-controlled correlation headers are retained
+  only as digests, and legacy v1 artifacts keep their omitted-field digest semantics.
+  Missing/nonexistent/mismatched attachment identity becomes `PARSE_ATTACHMENT_MAPPING_INVALID`;
+  malformed principals become `EVALUATION_PRINCIPAL_ID_INVALID`; unknown/inactive subjects become
+  `EVALUATION_PRINCIPAL_SUBJECT_INVALID`; inaccessible or unstable live operations retain the
+  existing `LIVE_PARSE_OBSERVATION_*` family, with exhausted attempts retained on the blocker. If
+  retries recover to an HTTP success whose evidence is then rejected, that blocker still retains
+  the complete retry-plus-success attempt sequence. A non-timeout connection failure is
+  non-retryable but retains a `request_error` attempt with method, path, ordinal, and timing on
+  `LIVE_PARSE_OBSERVATION_UNREACHABLE`. Every operation blocker also retains its canonical request,
+  so a failure on the first probe still proves the tenant, owner, role, and attachment. Replay
+  requires the fixed parse-only request shape and rejects query/corpus/retrieval fields, impossible
+  correlations on attempts without a response, mismatched code/detail/outcome/status taxonomy, and
+  server-controlled span IDs outside the bounded safe grammar.
+
+Validation evidence:
+: A clean baseline passed frozen sync, Ruff, strict mypy, and all 264 pre-change tests before the
+  first RED. Fifteen new acceptance/contract tests then failed on the absent policy. Minimal GREEN
+  covers pre-HTTP rejection, owner/role projection, exact mapping, typed AX errors, digest/span
+  checks including exact `utf8-text`/`stdlib-1` parser identity, retry retention, six sanitized
+  probes, create-only publication, and replay. Review first reproduced acceptance of a non-matching
+  parser. PR #44 review remediation then reproduced empty-span overblocking, failure-code
+  inconsistency, retry-evidence loss, dataset digest substitution/removal, legacy replay drift, and
+  hostile correlation retention before repair. A later Codex re-review reproduced attempt loss
+  after recovery to invalid evidence and dataset-identity removal from a blocked partial capture.
+  Independent re-review then reproduced simultaneous contract-and-identity removal before semantic
+  downgrade protection was added, then reproduced overbroad classification of generic
+  reviewed-attachment evidence and unrelated legacy `LIVE_PARSE_*` blockers. Fingerprint inference
+  was removed in favor of a separate required-field Issue #34 schema. The latest Codex review then
+  reproduced acceptance of a rehashed five-probe artifact and a missing connection-attempt receipt;
+  both became RED before the six-probe/terminal-blocker validator and `request_error` receipt
+  reached GREEN. Independent review then reproduced rejection of the existing unavailable blocker,
+  rehashed strict-response drift, and attempt removal from a blocked receipt before repair. The five
+  focused preflight/adapter files report 50 passes. A final adversarial pass bound span digests to
+  the frozen substrings, one tenant to all retained observations, and blocker codes to terminal
+  attempt outcomes, then rejected shortening a terminal retryable failure below its three-attempt
+  exhaustion history. A fourth Codex review then produced six RED failures covering five gaps:
+  first-probe principal evidence, blocker taxonomy binding, parse-only requests, response-less
+  correlation, and safe span IDs. Independent review then caught a generic-v1 span compatibility
+  regression and raw query retention through generic blocker requests. Both were RED before the
+  safe-ID check was confined to Issue #34 and generic blocker requests were rejected. The focused
+  five-file suite reports 54 passes after repair, and all 293 repository tests pass. No real
+  preflight or READY artifact was produced.
+
+Likely follow-ups:
+
+- "Why is an HTTP 200 not enough?" — It proves transport and schema only. Source digest and span
+  integrity must also match for spans that exist, while zero spans, headings, metadata, tables, and
+  lists remain later quality data. `parse_available=true` also cannot carry a failure code.
+- "Why hard-code the six UUIDs?" — They are reviewed attachment identities for the pinned local
+  corpus. Accepting arbitrary caller input would make the evidence non-reproducible.
+- "How does replay prove which dataset drove the probe?" — The collector validates the exact ID,
+  version, integrated digest, and three component digests before HTTP, stores that frozen identity,
+  and rejects identity removal or substitution even when the top-level digest is recomputed.
+- "Can AX smuggle secrets into retained retry metadata?" — Response correlation headers are
+  server-controlled, so the retention boundary stores only their SHA-256 digests while preserving
+  attempt number, outcome, status, timing, method, and path.
+- "Did Issue #34 make the system READY?" — No. It implements and tests the policy collector. Issue
+  #38 alone may perform the actual renewed preflight and publish READY.
+
 ### D9. Use layered verification and an evidence-driven ten-day sequence
 
 Decision:

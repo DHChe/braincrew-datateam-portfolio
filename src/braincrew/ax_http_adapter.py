@@ -9,9 +9,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 OperationName = Literal[
     "preflight",
@@ -53,13 +61,22 @@ class AxHttpContract(StrictModel):
 class AxHttpAdapterConfig(StrictModel):
     base_url: str
     sut_commit_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
-    tenant_id: str = Field(
-        pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-    )
+    tenant_id: str
     user_id: str
     roles: tuple[str, ...]
     bearer_token: str | None = Field(default=None, repr=False, exclude=True)
     timeout_seconds: float = Field(default=10.0, gt=0)
+
+    @field_validator("tenant_id", "user_id")
+    @classmethod
+    def require_canonical_uuid(cls, value: str) -> str:
+        try:
+            parsed = UUID(value)
+        except (AttributeError, ValueError) as error:
+            raise ValueError("principal identifiers must be canonical UUIDs") from error
+        if str(parsed) != value:
+            raise ValueError("principal identifiers must be canonical UUIDs")
+        return value
 
     @model_validator(mode="after")
     def require_roles(self) -> AxHttpAdapterConfig:
@@ -98,7 +115,14 @@ class HttpAttempt(StrictModel):
     attempt_number: int = Field(ge=1)
     method: HttpMethod
     path: str
-    outcome: Literal["success", "timeout", "retryable_http", "permanent_http", "schema_error"]
+    outcome: Literal[
+        "success",
+        "timeout",
+        "request_error",
+        "retryable_http",
+        "permanent_http",
+        "schema_error",
+    ]
     status_code: int | None
     elapsed_ms: float = Field(ge=0)
     response_correlation_id: str | None = None
@@ -748,6 +772,24 @@ class AxHttpAdapter:
                     request=request,
                     attempts=attempts,
                 ) from None
+            except httpx.RequestError as error:
+                attempts.append(
+                    HttpAttempt(
+                        operation=operation,
+                        attempt_number=attempt_number,
+                        method=method,
+                        path=path,
+                        outcome="request_error",
+                        status_code=None,
+                        elapsed_ms=(time.perf_counter() - started) * 1000,
+                    )
+                )
+                raise AxHttpFailure(
+                    operation=operation,
+                    failure_code="AX_REQUEST_FAILURE",
+                    request=request,
+                    attempts=attempts,
+                ) from error
             elapsed_ms = (time.perf_counter() - started) * 1000
             if response.status_code == 429 or response.status_code >= 500:
                 attempts.append(

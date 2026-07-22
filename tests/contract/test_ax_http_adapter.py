@@ -21,6 +21,7 @@ from braincrew.ax_http_adapter import (
 
 PINNED_AX_SHA = "72805930d9addd8ea41743d1922acf8de621c3f8"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
+USER_ID = "22222222-2222-2222-2222-222222222222"
 
 
 def test_preflight_records_evaluation_operations_without_claiming_a_corpus_probe() -> None:
@@ -62,7 +63,7 @@ def test_preflight_records_evaluation_operations_without_claiming_a_corpus_probe
             base_url="https://ax.example.test",
             sut_commit_sha=PINNED_AX_SHA,
             tenant_id=TENANT_ID,
-            user_id="evaluation-plane",
+            user_id=USER_ID,
             roles=("Executive",),
         ),
         transport=httpx.MockTransport(handler),
@@ -225,7 +226,7 @@ def test_retrieve_preserves_request_identity_and_ax_response_provenance() -> Non
     assert observation.context == context
     assert observation.request.operation == "retrieve"
     assert observation.request.tenant_id == TENANT_ID
-    assert observation.request.user_id == "evaluation-plane"
+    assert observation.request.user_id == USER_ID
     assert observation.request.roles == ("Executive",)
     assert observation.request.timeout_seconds == 10.0
     assert observation.request.query == "징계 절차"
@@ -462,7 +463,7 @@ def test_adapter_config_rejects_a_non_uuid_tenant_before_http() -> None:
             base_url="https://ax.example.test",
             sut_commit_sha=PINNED_AX_SHA,
             tenant_id="demo-tenant",
-            user_id="evaluation-plane",
+            user_id=USER_ID,
             roles=("Executive",),
         )
 
@@ -472,7 +473,7 @@ def test_adapter_config_never_serializes_the_bearer_credential() -> None:
         base_url="https://ax.example.test",
         sut_commit_sha=PINNED_AX_SHA,
         tenant_id=TENANT_ID,
-        user_id="evaluation-plane",
+        user_id=USER_ID,
         roles=("Executive",),
         bearer_token="secret-token",
     )
@@ -487,7 +488,7 @@ def _adapter(handler: Callable[[httpx.Request], httpx.Response]) -> AxHttpAdapte
             base_url="https://ax.example.test",
             sut_commit_sha=PINNED_AX_SHA,
             tenant_id=TENANT_ID,
-            user_id="evaluation-plane",
+            user_id=USER_ID,
             roles=("Executive",),
         ),
         transport=httpx.MockTransport(handler),

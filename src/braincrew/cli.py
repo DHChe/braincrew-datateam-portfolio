@@ -564,9 +564,10 @@ def replay_fixture(
             "corpus-qualification-receipt-v1"
         ):
             replay_summary = replay_qualification_receipt(artifact_path)
-        elif isinstance(payload, dict) and payload.get("schema_version") == (
-            "live-preflight-evidence-v1"
-        ):
+        elif isinstance(payload, dict) and payload.get("schema_version") in {
+            "live-preflight-evidence-v1",
+            "principal-attachment-preflight-evidence-v1",
+        }:
             replay_summary = replay_live_preflight_artifact(artifact_path)
         else:
             replay_summary = replay_run_artifact(artifact_path)

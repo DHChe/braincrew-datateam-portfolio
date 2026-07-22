@@ -529,6 +529,100 @@ ambiguous attachment naming, mixed run identity, and the stale grounded Adapter 
 focused tests including that grounded regression and all 264 repository tests pass after repair,
 with Ruff format/lint, strict mypy, and Git whitespace validation also green.
 
+### Issue #34 principal and attachment preflight implementation lock
+
+Issue #34 consumes the merged Issue #42 seam without importing Issue #15. `AxHttpAdapterConfig`
+now rejects any tenant or user value that is not the canonical lowercase UUID spelling before an
+HTTP request can be constructed. The policy collector additionally requires the reviewed active
+owner `22222222-2222-2222-2222-222222222222` and applies only `HRPractitioner`. A malformed
+identifier yields non-retryable `EVALUATION_PRINCIPAL_ID_INVALID`; a well-formed unknown or
+inactive AX subject yields non-retryable `EVALUATION_PRINCIPAL_SUBJECT_INVALID`.
+
+Dataset `braincrew-evaluation-dataset@2.0.0` intentionally reuses the v1 parsing component bytes.
+Its six Verification documents `synthetic-rule-015` through `synthetic-rule-020` must match the
+reviewed immutable attachment map in section 8 exactly. Missing, malformed, extra, unreviewed,
+nonexistent, or response-mismatched attachment identities yield
+`PARSE_ATTACHMENT_MAPPING_INVALID`. Inaccessible or otherwise failed operations retain the
+existing `LIVE_PARSE_OBSERVATION_*` family and the Adapter's timeout, `429`, and `5xx` retry
+history. Before any parse call, the collector also requires the exact frozen dataset ID, version,
+integrated digest, and parsing/retrieval/grounded component digests. The accepted identity is
+retained in the artifact and replay rejects a substituted identity even if its top-level logical
+digest is recomputed. Every capture produced after that identity is accepted uses schema
+`principal-attachment-preflight-evidence-v1` and carries explicit
+`capture_contract="principal-attachment-preflight-v1"`; that schema requires the frozen identity on
+partial and blocked parse captures, not only on a complete six-probe capture. The older generic
+Issue #42 substrate remains `live-preflight-evidence-v1` and retains its complete caller-supplied
+observation/blocker compatibility. Replay returns the schema version so an Issue #34 consumer can
+require the principal-attachment schema rather than treating a generic v1 artifact as qualified
+policy evidence. The logical digest proves internal replay consistency, not artifact origin or
+authenticity. Replay of the Issue #34 schema also revalidates the exact ordered six-case attachment
+map, reviewed owner, sole `HRPractitioner` role, fixed timeout, run/case/correlation identity, and
+parse-only request shape. Query, corpus, record, retrieval-limit, and evidence-limit fields must be
+absent. An unblocked artifact must contain all six probes; an incomplete artifact must contain one
+terminal blocker for the next expected probe, or the pre-probe mapping blocker when no request was
+eligible to run. An operation blocker retains the same canonical request, so even a first-probe
+connection or authorization failure proves which tenant, subject, role, and attachment were tried.
+
+A successful capture requires all six responses to bind the requested attachment, exact pinned
+AX parser identity `utf8-text`/`stdlib-1`, canonical source-text digest, and valid span
+offsets/text digests for every span that is present. An available parse with zero spans remains a
+quality observation for the downstream evaluator rather than becoming a transport blocker. An
+available parse carrying a failure code is internally inconsistent and yields
+`LIVE_PARSE_OBSERVATION_FAILED`. The retained artifact records exact request role, structure
+counts, successful attempts, failed-operation retry attempts on the blocker, dataset identity,
+and sanitized response digests, but no raw extracted or span text. Untrusted response correlation
+headers are retained only as SHA-256 digests across successful and blocked attempts. A retryable
+failure followed by an HTTP success whose parser, source, span, or attachment evidence is rejected
+retains the complete attempt sequence on its blocker. Replay keeps
+field-presence semantics for legacy v1 artifacts that predate dataset identity and blocker-attempt
+fields, while the Issue #34 schema requires its contract and frozen identity. Both schemas retain
+`capture_state="captured"`; transport success creates neither parsing-quality output nor READY.
+Issue #38 alone owns an actual renewed preflight and READY publication.
+
+A non-timeout HTTP request failure such as a connection error remains non-retryable under the
+existing policy, but it is no longer evidence-free. The Adapter records one `request_error` attempt
+with operation, ordinal, method, path, and elapsed time and the collector preserves it on the
+existing `LIVE_PARSE_OBSERVATION_UNREACHABLE` blocker. Attempts with no response cannot carry a
+response-correlation digest. Blocker code, detail, terminal outcome, and the fixed principal or
+not-found HTTP status must agree; replay rejects relabeling one failure as another after rehashing.
+Server-controlled span identifiers must match the bounded safe-ID grammar before sanitization or
+the response becomes `LIVE_PARSE_OBSERVATION_FAILED` without retaining the unsafe value.
+
+The clean Issue #34 baseline passed all 264 pre-change tests before RED. The first 15 new
+contract/acceptance tests failed on the absent policy collector and canonical user UUID contract;
+minimal GREEN passed those 15. Ticket review then reproduced acceptance of a non-matching parser
+as `1 failed, 14 passed` before the exact pinned parser repair reached 16 focused passes. The
+affected regression set initially reported 52 passing tests. PR #44 review remediation then
+reproduced the initial four bot findings plus legacy replay drift, correlation-header retention,
+and rehash-with-identity-removal before repair. A later Codex re-review separately reproduced
+retry-history loss after a recovered but invalid response and frozen-identity removal from a
+blocked partial capture before the discriminator repair. Independent re-review then reproduced
+simultaneous discriminator-and-identity removal before semantic downgrade protection, then
+reproduced overbroad classification of generic reviewed-attachment evidence and unrelated legacy
+`LIVE_PARSE_*` blockers. Fingerprint inference was rejected in favor of a separate Issue #34 schema:
+new-schema removal is rejected, while the complete generic v1 schema remains compatible. The
+latest Codex re-review then reproduced replay acceptance after deleting a successful probe and
+missing attempt evidence for a connection failure. Both were observed RED before the exact
+six-probe / terminal-blocker replay contract and `request_error` retention reached GREEN.
+Independent review then reproduced rejection of the existing unavailable blocker, replay of
+rehashed parser/source policy drift, and replay after blocker-attempt removal. The Issue #34
+validator now rechecks strict response/source/span and attempt evidence while preserving the full
+existing `LIVE_PARSE_OBSERVATION_*` family. A final adversarial pass additionally bound each span's
+digest to its frozen canonical substring, required one tenant across retained observations, and
+required each blocker code to agree with its terminal attempt outcome. A terminal timeout or
+retryable HTTP failure must retain the Adapter's full three-attempt exhaustion history. A fourth
+Codex review then reproduced five more replay gaps: first-probe blockers without principal request
+evidence, code/detail taxonomy relabeling, parse requests carrying unrelated payload, response
+correlations on response-less attempts, and unsafe span identifiers. Six focused tests first
+failed across those contracts; canonical blocker requests, exact request/taxonomy validation,
+response-aware correlation rules, and safe span-ID rejection then reached GREEN. The five focused
+preflight/adapter files first reported 52 passes. Independent Standards/Spec review then reproduced
+generic-v1 span-ID rejection, and Standards also reproduced raw query retention through the new
+generic blocker request field. Both became RED before shared span compatibility was restored,
+generic blocker requests were forbidden, and safe span IDs remained principal-schema-only. The
+five focused files now report 54 passes and all 293 repository tests pass. No AX
+operation, corpus mutation, experiment run, READY artifact, or PR #29 modification occurred.
+
 ## 12. Rejected alternatives and consequences
 
 - Reverse-generating the corpus from expected evidence was rejected because the evaluator would
@@ -563,9 +657,11 @@ No baseline, candidate, comparison, or live quality claim is part of this comple
 
 As of 2026-07-22, the `to-spec` parents and `to-tickets` graph are published. AX #33, #34, and
 #35 are merged; AX #36 remains open. Braincrew PR #41 merged #33 as
-`fdbb732ee05a9de5270c91a82f0930da0413107b`; #33 is closed and cleaned up. The user approved
-Issue #42 as the minimum substrate extraction after Issue #34 stopped before RED on the missing
-merged seam. #42 is open with `ready-for-agent`, is a native child of #30, and natively blocks #34;
-#34 remains open without `ready-for-agent`. No approved authoring brief, actually authored or
-sealed Braincrew pack, real qualification receipt, operator snapshot, target load, renewed
-preflight, baseline, candidate, comparison, or live quality claim exists.
+`fdbb732ee05a9de5270c91a82f0930da0413107b`; #33 is closed and cleaned up. Braincrew PR #43
+merged the minimum Issue #42 substrate as `93c8e8dabab855b7f2f700df73cd04ce38995f29` and #42 is
+closed, though its clean local/remote branch and dedicated worktree still await cleanup. Issue #34
+is active from that exact merge with `ready-for-agent`; its principal/mapping policy is implemented,
+reviewed, and fully verified locally at the Git Lifecycle Proposal Gate. No approved authoring brief, actually
+authored or sealed Braincrew pack, real qualification receipt, operator snapshot, target load,
+renewed Issue #38 preflight, READY artifact, baseline, candidate, comparison, or live quality
+claim exists.
