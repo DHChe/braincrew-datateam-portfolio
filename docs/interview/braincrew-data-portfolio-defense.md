@@ -797,9 +797,74 @@ Issue #46 source-order decision:
 
   Qualification remains read-only and cannot return feedback, identifiers, or digests to authoring.
 
-  PR #49 has merged and verified Issue #47, and Issue #47 is closed. This still defers case
-  freezing and qualification to later tickets: Issue #36 stays blocked until a separate
-  data-creation proposal gate authorizes the selected order.
+  PR #49 has merged and verified Issue #47, and Issue #47 is closed. Case freezing and
+  qualification remain later tickets. The data-creation policy below authorizes only the new
+  restricted Issue #36 session and its source-first lifecycle.
+
+Issue #36 data-creation approval:
+: Data-creation proposal gate: **APPROVED_FOR_NEW_SESSION**.
+
+  Approval baseline: `5cec187af3e2d5b95b35f6e6f81fee55a73d5409`.
+
+  The execution SHA must be the clean `origin/develop` commit containing this approval record, be
+  descended from the baseline, and reproduce approved brief digest
+  `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`.
+
+  Authoring owner: `codex-issue-36-authoring-agent`.
+
+  Manual provenance reviewer: `DHChe-corpus-provenance-reviewer`. This is the human approval
+  authority and must differ from the authoring owner.
+
+  External lifecycle root: `/Users/astralpig/braincrew-issue-36-authoring`.
+
+  Exact lifecycle targets are
+  `/Users/astralpig/braincrew-issue-36-authoring/authorization/data-creation-authorization.json`,
+  `/Users/astralpig/braincrew-issue-36-authoring/tool/author-corpus`, empty
+  `/Users/astralpig/braincrew-issue-36-authoring/staging`, absent
+  `/Users/astralpig/braincrew-issue-36-authoring/receipts/authoring-independence-receipt.json`, absent
+  `/Users/astralpig/braincrew-issue-36-authoring/review/provenance-review.json`, and absent
+  `/Users/astralpig/braincrew-issue-36-authoring/sealed`. The staging target must be empty; all
+  other create-only targets must be absent. All targets must be outside the repository and must not
+  be symbolic links.
+
+  Create-only authorization record:
+  `/Users/astralpig/braincrew-issue-36-authoring/authorization/data-creation-authorization.json`
+  uses schema `corpus-data-creation-authorization-v1`. It binds approval authority `DHChe`, the
+  exact execution SHA, authoring-tool SHA-256, four exact input digests, all lifecycle target paths,
+  authoring owner, manual reviewer, and its own canonical digest. The authorization record is
+  create-only and must exist before authoring. Launch must reject any authorization-record
+  mismatch.
+
+  Allowed authoring inputs are exactly
+  `docs/corpus/braincrew-evaluation-corpus-v2-authoring-brief.md` at
+  `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`,
+  `schemas/ax-synthetic-seed-content-v1.schema.json` at
+  `sha256:372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb`,
+  `schemas/ax-synthetic-seed-content-v1.schema.sha256` at
+  `sha256:c9dae9c47ce20f2e4b5c954dbd467e051ebf33081e13a033cc23f9b418897dff`, and
+  sandbox-mounted `input-digests.json` at
+  `sha256:e707333d28fb9452b2823d1b6c125a1b6dcc3a0d5b118069e8bf7b502854061e`.
+  These are the authoring brief, content schema, schema digest declaration, and canonical
+  input-digest inventory. Repository contents, pack schema, datasets, fixtures, prior artifacts,
+  credentials, network, database, AX, and qualification feedback are denied.
+
+  No source byte may be created before the clean execution SHA and external authoring tool SHA-256
+  are recorded and revalidated. The user delegated those dynamic pin decisions to the new-session
+  agent under this policy; their values must be durable before the authoring process starts.
+
+  Author, then review, then seal, then replay. Both the independence receipt and provenance sidecar
+  are create-only. Sealing may start only after the manual reviewer approves every exact source
+  digest, and qualification remains out of scope.
+
+  No automatic retry, in-place repair, overwrite, alternate input, feedback-driven second pass, or
+  cleanup after a failed run is authorized. Dirty or wrong source SHA, any digest drift, denied
+  capability success, non-empty staging, existing target, unsupported sandbox, nonzero authoring
+  exit, empty or invalid output, manual rejection, sidecar mismatch, sealing failure, or replay
+  failure stops the lifecycle.
+
+  RED contract tests must first prove the entry pins, restricted inputs, create-only targets,
+  distinct owner/reviewer authority, lifecycle order, and stop conditions before any source-byte
+  authoring attempt.
 
 Rejected alternatives:
 : Prompt-only confidentiality instructions, guessed lowercase role aliases, public-source
@@ -856,8 +921,9 @@ Validation evidence:
   found zero material issues and independently reproduced the exact digest above. The fixed repair
   commit's post-commit byte equality is **PASS**. Issue #46 is closed after PR #48. PR #49 merged
   Issue #47 into `develop` as `4d80b9b8950f4d7356a9aa9806f492ae79126dab`; its Python and frontend
-  checks succeeded, and Issue #47 is closed. The separate data-creation proposal gate must still
-  pass, so Issue #36 remains blocked.
+  checks succeeded, and Issue #47 is closed. The separate data-creation proposal gate is now
+  `APPROVED_FOR_NEW_SESSION`; Issue #36 remains blocked only until this approval record is merged
+  and the new session passes the dynamic execution-SHA and authoring-tool-digest entry checks.
 
   PR #49 review then found three contract gaps before merge: self-review was accepted, replay
   depended on preserved read-only filesystem bits, and the canonical design still described the
@@ -875,10 +941,11 @@ Likely follow-ups:
   PR #29, and its branch.
 - "Why are the AX roles capitalized?" — They are exact case-sensitive values from the external
   seed-pack `VisibilityRole` validator, not UI labels or guessed aliases.
-- "Does APPROVE mean Issue #36 can run now?" — No. APPROVE covers the generic brief and its exact
-  bytes, not the separate execution authorization. Issue #47 is merged, verified, and closed, but
-  Issue #36 remains blocked until the data-creation proposal gate approves Issue #46's selected
-  source-first order and the committed brief reproduces the approved digest.
+- "Does APPROVE mean Issue #36 can run now?" — The brief approval alone did not. The later
+  data-creation gate is now `APPROVED_FOR_NEW_SESSION`, but the current session still cannot run
+  #36. The approval record must first merge; then the new session must pin the exact clean
+  execution SHA and external tool digest and observe the required RED contracts before creating
+  source bytes.
 - "Did Issue #35 create a corpus or manifest?" — No. It created only the generic brief, its
   digest declaration, contract tests, and leakage-review evidence.
 

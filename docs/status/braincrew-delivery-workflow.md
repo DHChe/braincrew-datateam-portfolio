@@ -85,7 +85,7 @@ research and AX_portfolio context
 - Cleanup checkpoint: Issue #42's dedicated worktree and local/remote feature branches still exist and are clean. Cleanup is therefore pending rather than complete; no cleanup mutation is part of Issue #34.
 - Completed predecessor: Braincrew PR #44 merged Issue #34 into `develop` as `67d7c104757f60194e59df20240ac47f8be9c027`; Issue #34 is `CLOSED/COMPLETED`, has no `ready-for-agent`, and its dedicated worktree plus local/remote feature branches are removed.
 - Completed predecessor: PR #49 merged Issue #47 into `develop` as `4d80b9b8950f4d7356a9aa9806f492ae79126dab`; required Python and frontend checks succeeded, `develop` resolves to that merge commit, and Issue #47 is `CLOSED`.
-- Current frontier: Issue #35 is `CLOSED/COMPLETED`; Issue #46 is `CLOSED` after PR #48; Issue #47 is `CLOSED` after PR #49; Issue #36 remains `BLOCKED`, has no `ready-for-agent` label, and its native `blocked_by` graph contains #35, #46, and #47. Its only remaining start condition is the separate data-creation proposal gate. #46 and #47 are native sub-issues of #30. Draft PR #29 and `feat/issue-15-live-verification` remain untouched and read only.
+- Current frontier: Issue #35 is `CLOSED/COMPLETED`; Issue #46 is `CLOSED` after PR #48; Issue #47 is `CLOSED` after PR #49. Issue #36 remains `BLOCKED` only until this approval record is merged, still has no `ready-for-agent` label, and must start in a new session that passes its content-addressed entry checks. #46 and #47 are native sub-issues of #30. Draft PR #29 and `feat/issue-15-live-verification` remain untouched and read only.
 - Clean baseline evidence: frozen sync, Ruff format/lint, strict mypy, full pytest, `git diff --check`, and clean status passed before the first Issue #47 RED.
 - RED/GREEN evidence: the authoring capability test first failed because the sandbox exposed `ax-synthetic-seed-pack-v1` instead of the content schema. Six provenance-sidecar contract cases then failed because sealing allowed missing evidence and had no sidecar CLI, v2 receipt, or replay binding. Minimal GREEN exposes only the content schema plus its pinned digest, requires an external immutable canonical sidecar, creates `corpus-sealing-receipt-v2`, and replays v2 sidecar bindings while retaining v1 receipt replay.
 - Contract evidence: the 10,680-byte brief remains frozen at `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`. The content schema governs staged `corpus-manifest.json` authoring; the pack schema is post-qualification only. The sidecar binds the sealed digest plus every source identity/digest to synthetic origin, owner, CC0 assignment, reviewer/date/timezone, approved decision, and canonical digest; reviewer identity must differ from the authoring owner. Missing, pending, mismatched, mutable sealing input, tampered, symlinked, or staging-contained evidence fails closed. Replay validates canonical bytes and digest independent of normalized filesystem write bits.
@@ -101,10 +101,84 @@ research and AX_portfolio context
 - Scope lock: Issue #47 changes only the authoring schema pin, provenance-sidecar sealing/replay contract, deterministic fixture tests, and synchronized design/status/interview records. Corpus source bytes, actual Issue #36 authoring or sealing, qualification, preflight, experiment, AX/DB/service calls, dependencies, PR #29, and `feat/issue-15-live-verification` remain excluded.
 - Review evidence: two ticket-scoped reviewers found the initial v2 sealed-corpus qualification regression: `provenance-review.json` was correctly allowlisted for replay but not the initial qualification revalidation. The acceptance test first failed with `CORPUS_PACK_SCHEMA_INVALID`; the minimal allowlist repair then passed it together with all six provenance-sidecar contracts (`7 passed`). Both reviewers re-reviewed that repair with zero remaining blockers.
 - PR #49 review repair: three new regression tests first proved that a self-reviewed sidecar sealed, replay rejected a byte-identical sidecar after write-bit normalization, and the canonical design still instructed v1/pack-schema behavior. Minimal GREEN rejects identical author/reviewer identities, limits read-only enforcement to external sealing input, replays sealed canonical bytes independent of normalized filesystem write bits, and synchronizes the canonical design. Focused contract/workflow tests passed `43`, and the full repository suite passed `320`.
-- Active gate: this docs-only synchronization stops at the Git Lifecycle Proposal Gate; no commit, push, pull request, merge, #36 readiness transition, source-byte authoring, sealing, qualification, AX/DB/service call, preflight, or experiment is authorized here.
-- Workflow gate: the #47 merge-and-closure prerequisite is complete. Issue #36 authoring remains prohibited until a separate data-creation proposal gate approves source-first execution from a clean committed Braincrew SHA that reproduces the approved brief digest.
+- Data-creation proposal gate: **APPROVED_FOR_NEW_SESSION**.
+- Approval baseline: `5cec187af3e2d5b95b35f6e6f81fee55a73d5409`.
+- The execution SHA must be the clean `origin/develop` commit containing this approval record,
+  descend from that baseline, and reproduce approved brief digest
+  `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`.
+- Authoring owner: `codex-issue-36-authoring-agent`.
+- Manual provenance reviewer: `DHChe-corpus-provenance-reviewer`. This human approval authority
+  must differ from the authoring owner.
+- External lifecycle root: `/Users/astralpig/braincrew-issue-36-authoring`.
+- Exact lifecycle targets are
+  `/Users/astralpig/braincrew-issue-36-authoring/authorization/data-creation-authorization.json`,
+  `/Users/astralpig/braincrew-issue-36-authoring/tool/author-corpus`, empty
+  `/Users/astralpig/braincrew-issue-36-authoring/staging`, absent
+  `/Users/astralpig/braincrew-issue-36-authoring/receipts/authoring-independence-receipt.json`, absent
+  `/Users/astralpig/braincrew-issue-36-authoring/review/provenance-review.json`, and absent
+  `/Users/astralpig/braincrew-issue-36-authoring/sealed`. The staging target must be empty; all
+  other create-only targets must be absent. All targets must be outside the repository and must not
+  be symbolic links.
+- Create-only authorization record:
+  `/Users/astralpig/braincrew-issue-36-authoring/authorization/data-creation-authorization.json`
+  uses schema `corpus-data-creation-authorization-v1`. It binds approval authority `DHChe`, the
+  exact execution SHA, authoring-tool SHA-256, four exact input digests, all lifecycle target paths,
+  authoring owner, manual reviewer, and its own canonical digest. The authorization record is
+  create-only and must exist before authoring. Launch must reject any authorization-record
+  mismatch.
+- Allowed authoring inputs are exactly
+  `docs/corpus/braincrew-evaluation-corpus-v2-authoring-brief.md` at
+  `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`,
+  `schemas/ax-synthetic-seed-content-v1.schema.json` at
+  `sha256:372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb`,
+  `schemas/ax-synthetic-seed-content-v1.schema.sha256` at
+  `sha256:c9dae9c47ce20f2e4b5c954dbd467e051ebf33081e13a033cc23f9b418897dff`, and
+  sandbox-mounted `input-digests.json` at
+  `sha256:e707333d28fb9452b2823d1b6c125a1b6dcc3a0d5b118069e8bf7b502854061e`.
+  These are the authoring brief, content schema, schema digest declaration, and canonical
+  input-digest inventory. Repository contents, pack schema, datasets, fixtures, prior artifacts,
+  credentials, network, database, AX, and qualification feedback remain denied.
+- No source byte may be created before the clean execution SHA and external authoring tool SHA-256
+  are recorded and revalidated. The new-session agent may pin those dynamic values under the
+  user's delegated approval without reopening the policy decision.
+- Author, then review, then seal, then replay. The independence receipt and provenance sidecar are
+  create-only; sealing starts only after the manual reviewer approves every exact source digest;
+  qualification remains a later ticket.
+- No automatic retry, in-place repair, overwrite, alternate input, feedback-driven second pass, or
+  cleanup after failure is authorized. A dirty or wrong SHA, digest drift, denied capability
+  success, non-empty staging, existing target, unsupported sandbox, nonzero authoring exit, empty
+  or invalid output, manual rejection, sidecar mismatch, sealing failure, or replay failure stops
+  the lifecycle immediately.
+- RED contract tests must first prove the entry pins, restricted inputs, create-only targets,
+  distinct owner/reviewer authority, exact order, and every stop condition before any source-byte
+  authoring attempt.
+- Active gate: this approval synchronization stops at the Git Lifecycle Proposal Gate; no commit,
+  push, pull request, merge, #36 readiness transition, source-byte authoring, sealing,
+  qualification, AX/DB/service call, preflight, or experiment is authorized in the current session.
+- Workflow gate: after this record merges, the new #36 session must reverify the exact clean SHA,
+  brief and schema digests, authoring-tool digest, external paths, and RED contracts before applying
+  `ready-for-agent` or creating any source byte.
 
 ## Transition history
+
+### 2026-07-23 — Issue #36 data-creation policy approved for a new session
+
+- User decision: all six proposed lifecycle conditions are approved, and selection of the dynamic
+  clean execution SHA plus external authoring-tool digest is delegated to the next agent under the
+  fail-closed rules recorded above.
+- Authority decision: `codex-issue-36-authoring-agent` owns restricted authoring;
+  `DHChe-corpus-provenance-reviewer` is the distinct human manual provenance-review authority.
+- Input and path decision: the four authoring inputs and the exact external lifecycle root are
+  fixed. Source bytes, receipts, review evidence, and sealed output remain create-only and outside
+  the repository.
+- Order and failure decision: Author, then review, then seal, then replay. Every entry, sandbox,
+  authoring, review, sealing, or replay failure stops without retry, repair, overwrite, or feedback.
+- Scope evidence: no #36 label transition, source-byte authoring, sealing, qualification,
+  AX/DB/service call, preflight, experiment, branch/worktree creation, commit, push, pull request,
+  or merge occurred in this decision step.
+- Completion condition: the documentation contract passes and this approval record is merged into
+  `develop`; #36 then starts in a fresh session and first pins the exact clean execution SHA and
+  authoring-tool digest through RED entry contracts.
 
 ### 2026-07-23 — PR #49 merge verification and Issue #47 closure completed
 

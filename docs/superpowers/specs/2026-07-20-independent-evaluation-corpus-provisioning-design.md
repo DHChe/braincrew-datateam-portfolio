@@ -1,7 +1,7 @@
 # Independent Evaluation Corpus Provisioning Design
 
 Date: 2026-07-20
-Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published; Issue #35 authoring brief amended and independently reapproved after PR #45 review on 2026-07-23; Issue #46 selected source-first evaluation freeze and is closed after PR #48; PR #49 merged Issue #47 into `develop` as `4d80b9b8950f4d7356a9aa9806f492ae79126dab` with successful Python and frontend checks, and Issue #47 is closed; Issue #36 remains blocked only pending a separate data-creation proposal gate
+Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published; Issue #35 authoring brief amended and independently reapproved after PR #45 review on 2026-07-23; Issue #46 selected source-first evaluation freeze and is closed after PR #48; PR #49 merged Issue #47 into `develop` as `4d80b9b8950f4d7356a9aa9806f492ae79126dab` with successful Python and frontend checks, and Issue #47 is closed; the Issue #36 data-creation policy is approved for a new session, with exact execution SHA and authoring-tool digest pinned before source-byte creation
 Braincrew fixed point: `1185ba8a9e6bab038743531a56f8f2c5ce2b44eb`
 AX fixed base: `a5391ae8aa2b0d1342809f3599283b7759d6e4e3`
 Latest merged AX importer prerequisite: `6bfc27a7bf170172a20dd470d6fd877858c9fb80`
@@ -167,8 +167,9 @@ queries, answers/evidence, scores, split labels, prior results, PR #29, or its b
 review decision is `APPROVE` with zero material findings and is recorded in
 `docs/reviews/2026-07-22-braincrew-evaluation-corpus-v2-authoring-brief-leakage-review.md` against
 the exact approved digest. Issue #46's source-first order and Issue #47's durable-provenance
-sealer support are complete. Corpus authoring remains blocked until the separate data-creation
-proposal gate approves one clean Braincrew commit that reproduces the same digest.
+sealer support are complete. The data-creation policy is approved for a new session; corpus
+authoring remains blocked only until this approval record is merged and the new session binds its
+clean execution SHA and authoring-tool digest before source-byte creation.
 
 Independence is enforced by filesystem capability, not only by prompt wording. The authoring
 process receives a read-only input directory containing only the committed brief, the exact
@@ -428,8 +429,62 @@ The operator path below records dependency and convergence gates, not a strict s
   support and a non-circular source-order contract.
 - AX #36 may proceed independently of the Braincrew #35 commit lane after AX #35.
   AX #36 must be complete before operator load, but it is not an Issue #35 dependency.
-- Braincrew Issue #36 remains blocked. Neither hidden evaluation identifiers/digests nor
+- Braincrew Issue #36 remains blocked only until this approval record is merged and a new session
+  passes its content-addressed entry checks. Neither hidden evaluation identifiers/digests nor
   qualification feedback may be supplied to an authoring context to make its output match.
+
+Data-creation proposal gate: **APPROVED_FOR_NEW_SESSION**.
+
+- Approval baseline: `5cec187af3e2d5b95b35f6e6f81fee55a73d5409`.
+- The execution SHA is the clean `origin/develop` commit that contains this approval record,
+  descends from the approval baseline, and reproduces the approved brief digest
+  `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`.
+- Authoring owner: `codex-issue-36-authoring-agent`.
+- Manual provenance reviewer: `DHChe-corpus-provenance-reviewer`. This reviewer is the human
+  approval authority and must differ from the authoring owner.
+- External lifecycle root: `/Users/astralpig/braincrew-issue-36-authoring`.
+- Exact lifecycle targets are
+  `/Users/astralpig/braincrew-issue-36-authoring/authorization/data-creation-authorization.json`,
+  `/Users/astralpig/braincrew-issue-36-authoring/tool/author-corpus`, empty
+  `/Users/astralpig/braincrew-issue-36-authoring/staging`, absent
+  `/Users/astralpig/braincrew-issue-36-authoring/receipts/authoring-independence-receipt.json`, absent
+  `/Users/astralpig/braincrew-issue-36-authoring/review/provenance-review.json`, and absent
+  `/Users/astralpig/braincrew-issue-36-authoring/sealed`. The staging target must be empty; all
+  other create-only targets must be absent. All targets must be outside the repository and must not
+  be symbolic links.
+- Create-only authorization record:
+  `/Users/astralpig/braincrew-issue-36-authoring/authorization/data-creation-authorization.json`
+  uses schema `corpus-data-creation-authorization-v1`. It binds approval authority `DHChe`, the
+  exact execution SHA, authoring-tool SHA-256, four exact input digests, all lifecycle target
+  paths, authoring owner, manual reviewer, and its own canonical digest. The authorization record
+  is create-only and must exist before authoring. Launch must reject any authorization-record
+  mismatch.
+- Allowed authoring inputs are exactly:
+  `docs/corpus/braincrew-evaluation-corpus-v2-authoring-brief.md` at
+  `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`;
+  `schemas/ax-synthetic-seed-content-v1.schema.json` at
+  `sha256:372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb`;
+  `schemas/ax-synthetic-seed-content-v1.schema.sha256` at
+  `sha256:c9dae9c47ce20f2e4b5c954dbd467e051ebf33081e13a033cc23f9b418897dff`;
+  and sandbox-mounted `input-digests.json` at
+  `sha256:e707333d28fb9452b2823d1b6c125a1b6dcc3a0d5b118069e8bf7b502854061e`.
+  These are the authoring brief, content schema, schema digest declaration, and canonical
+  input-digest inventory. The pack schema, repository tree, datasets, fixtures, prior artifacts,
+  credentials, network, database, AX, and qualification feedback remain denied.
+- No source byte may be created before the clean execution SHA and external authoring tool SHA-256
+  are recorded and revalidated. The new session may pin those two dynamic values under this
+  delegated approval without another policy decision.
+- Author, then review, then seal, then replay. The independence receipt and provenance sidecar are
+  create-only; sealing starts only after the manual reviewer approves every exact source digest;
+  qualification remains a later ticket.
+- No automatic retry, in-place repair, overwrite, feedback-driven second pass, deletion, or
+  alternate input is authorized. A dirty or wrong SHA, digest drift, unexpected input or
+  capability, non-empty staging, existing target, unsupported sandbox, nonzero authoring exit,
+  empty or invalid output, manual rejection, sidecar mismatch, sealing failure, or replay failure
+  stops the lifecycle immediately.
+- RED contract tests must first prove the entry pins, restricted inputs, create-only targets,
+  distinct owner/reviewer authority, exact order, and every stop condition before any source-byte
+  authoring attempt.
 
 1. approve and review the Braincrew and AX design documents;
 2. publish `to-spec` parents and the dependency-reviewed `to-tickets` graph;
@@ -443,7 +498,7 @@ The operator path below records dependency and convergence gates, not a strict s
    replaying the create-only provenance sidecar;
 8. apply Issue #46's selected source-first evaluation freeze: seal a new independent corpus
    version before any successor evaluation case is frozen, without qualification feedback;
-9. only after both prerequisites, authorize Braincrew #36 in a new evaluation-blind context;
+9. only after both prerequisites and this gate record are published, in a fresh restricted context, run Braincrew #36 after its RED entry contracts pin the clean execution SHA and authoring-tool digest;
 10. freeze the successor evaluation dataset with a version greater than `2.0.0`, then use
     Braincrew #37 to cross-validate the unchanged sealed pack against the successor dataset;
 11. at the separate AX #37 operational gate, run the exact importer dry-run;
@@ -747,8 +802,10 @@ approved the exact 10,680-byte brief with zero material findings at SHA-256
 `121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`.
 The adjacent digest declaration and durable review record bind that decision to exact bytes.
 PR #49 merged and verified Issue #47; Issue #46's source-first evaluation freeze is also closed.
-Issue #36 remains blocked until the separate data-creation proposal gate approves that selected
-order and a clean committed Braincrew SHA reproduces the same brief digest.
+The data-creation proposal gate is now `APPROVED_FOR_NEW_SESSION` on baseline
+`5cec187af3e2d5b95b35f6e6f81fee55a73d5409`. Issue #36 remains blocked only until this approval
+record is merged and the fresh session pins a clean descendant execution SHA plus the external
+authoring-tool digest before creating any source byte.
 
 ## 12. Rejected alternatives and consequences
 
@@ -791,8 +848,9 @@ local/remote feature branches are removed. Braincrew #35 is closed after PR #45 
 now selects source-first evaluation freeze: the next dataset must be a successor version created
 only after a new independently sealed corpus version, while dataset v2 remains immutable and
 outside this authoring lane. PR #49 has merged and verified Braincrew Issue #47, and Issue #47 is
-closed. The separate data-creation proposal gate must approve the selected order before Issue #36
-can leave `BLOCKED`. No corpus
+closed. The separate data-creation proposal gate is `APPROVED_FOR_NEW_SESSION`; Issue #36 can leave
+`BLOCKED` only after this approval record is merged and its fresh session passes the clean-SHA,
+brief-digest, tool-digest, path, and RED-contract entry checks. No corpus
 source bytes, actually authored or sealed Braincrew pack, real
 qualification receipt, operator snapshot, target load, renewed Issue #38 preflight, READY artifact,
 baseline, candidate, comparison, or live quality claim exists. PR #29 and
