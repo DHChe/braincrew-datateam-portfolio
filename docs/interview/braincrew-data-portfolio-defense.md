@@ -510,6 +510,61 @@ Likely follow-ups:
   edit is detected by replay and cannot be accepted as the same sealed identity; stronger retention
   is a later operational concern and is not claimed here.
 
+### D8.2 Enforce authoring independence with OS capabilities
+
+Decision:
+: Run the corpus-authoring tool through `braincrew-eval launch-authoring` with a clean committed
+  Braincrew source, exactly four read-only declared inputs, one empty writable staging directory,
+  a cleared environment, and a deny-by-default operating-system sandbox. Retain only a create-only
+  `corpus-authoring-independence-receipt-v1` with bounded identities and digests.
+
+Why:
+: Prompt instructions cannot prove that an author never opened the evaluation dataset or reused a
+  prior result. Filesystem and network denial makes the independence claim executable, while the
+  receipt lets a reviewer bind the attempt to the clean source, tool, inputs, timing, exit state,
+  and produced bytes without retaining sensitive content.
+
+Rejected alternatives:
+: A prompt-only warning, a normal subprocess with a reduced environment, mounting the Braincrew
+  repository read-only, passing qualification failures back for repair, and storing stdout/stderr or
+  raw paths in the receipt. Each leaves an evaluation-feedback path, an undeclared input path, or an
+  unsafe retained transcript.
+
+Trade-offs and failure modes:
+: macOS uses the built-in `sandbox-exec`; Linux requires an already-installed Bubblewrap backend.
+  Unsupported environments fail closed, so portability is narrower than an unrestricted CLI. The
+  launcher proves capability denial and byte identity, not that the future brief is substantively
+  good or that authored content qualifies against dataset v2. Sandbox-profile overbreadth,
+  inherited secrets, raw output retention, or a validator feedback mount would weaken the claim and
+  must remain regression-tested. Runtime libraries remain a narrowly declared execution substrate,
+  not authoring inputs; unsupported tool runtimes fail rather than widening the profile.
+
+Validation evidence:
+: Five contract/acceptance tests first failed on the missing `launch-authoring` command. Review then
+  reproduced four further boundary defects: a non-Braincrew Git remote could be mislabeled, file
+  metadata was too broad, an invalid tool label leaked a traceback, and `/Library` data access
+  exposed the system keychain. The repaired seven-test suite passes. The macOS acceptance process
+  sees only the brief, AX pack schema, schema digest declaration, input digest inventory, runtime
+  substrate, and staging; Braincrew/AX repositories, dataset, fixture, prior artifact, database,
+  credentials, private document, generic undeclared path, system keychain, and post-seal result are
+  denied at both data and metadata probes, as is a live localhost network connection. Failure exit
+  state is retained while process stdout/stderr is discarded and raw/private material is absent
+  from the receipt. The final repository gate reports `239 passed`; the authoring and reused sealing
+  boundary subset reports `32 passed`; frozen sync, Ruff format/lint, mypy, installed CLI help, and
+  Git whitespace validation also pass.
+
+Likely follow-ups:
+
+- "Does this prove the corpus is independent?" — It proves the declared process lacked the tested
+  repository, evaluation, filesystem, credential, database, and network capabilities. Brief review
+  and operator discipline remain separate evidence.
+- "Why not let qualification repair the pack?" — A repair informed by expected results would turn
+  the benchmark into its own evidence author. Qualification may emit only success or typed blockers.
+- "Does Issue #32 write the brief or corpus?" — No. Brief approval is Issue #35, actual restricted
+  authoring/sealing is Issue #36, and read-only dataset qualification starts later.
+- "What happens without a supported sandbox?" — `AUTHORING_SANDBOX_UNAVAILABLE`; there is no
+  unrestricted fallback.
+
 ### D9. Use layered verification and an evidence-driven ten-day sequence
 
 Decision:

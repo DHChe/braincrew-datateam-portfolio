@@ -13,6 +13,7 @@ from braincrew.comparison import (
     ExperimentRunSummary,
     compare_runs,
 )
+from braincrew.corpus_authoring import AuthoringBoundaryError, launch_authoring_process
 from braincrew.corpus_sealing import (
     CorpusPackError,
     replay_sealing_receipt,
@@ -439,6 +440,56 @@ def seal_corpus(
             sort_keys=True,
         )
     )
+
+
+@app.command("launch-authoring")
+def launch_authoring(
+    braincrew_root: Annotated[
+        Path,
+        typer.Option("--braincrew-root", exists=True, file_okay=False, readable=True),
+    ],
+    brief: Annotated[Path, typer.Option("--brief")],
+    staging_dir: Annotated[
+        Path,
+        typer.Option("--staging-dir", exists=True, file_okay=False, writable=True),
+    ],
+    receipt: Annotated[Path, typer.Option("--receipt")],
+    tool_path: Annotated[
+        Path,
+        typer.Option("--tool-path", exists=True, dir_okay=False, readable=True),
+    ],
+    tool_name: Annotated[str, typer.Option("--tool-name")],
+    tool_version: Annotated[str, typer.Option("--tool-version")],
+) -> None:
+    """Run one evaluation-blind authoring process inside an OS capability sandbox."""
+    try:
+        result = launch_authoring_process(
+            braincrew_root=braincrew_root,
+            brief_relative_path=brief,
+            staging_dir=staging_dir,
+            receipt_path=receipt,
+            tool_path=tool_path,
+            tool_name=tool_name,
+            tool_version=tool_version,
+        )
+    except AuthoringBoundaryError as error:
+        typer.echo(f"Authoring boundary rejected: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    typer.echo(
+        json.dumps(
+            {
+                "braincrew_commit_sha": result.receipt.braincrew_commit_sha,
+                "exit_code": result.receipt.exit_state.exit_code,
+                "receipt_digest": result.receipt.receipt_digest,
+                "staging_run_id": result.receipt.staging_run_id,
+                "status": result.receipt.exit_state.status,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+    if result.receipt.exit_state.exit_code != 0:
+        raise typer.Exit(code=result.receipt.exit_state.exit_code)
 
 
 @app.command("replay")

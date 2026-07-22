@@ -78,20 +78,34 @@ research and AX_portfolio context
 - Completed phase: fetched `origin/develop` points exactly to `52e85ecc303291e0145ac0867c807e9579b04800`; the Issue #13 local branch, remote branch, and dedicated worktree are absent.
 - Completed phase: Issue #14 passed review and verification, and PR #28 merged into `develop` as `e33de765dc54ac76159f249525456d5ab4e63667`.
 - Completed prerequisite: AX Issue #33 is `CLOSED/COMPLETED`; AX PR #39 merged the reviewed generic seed-pack dry-run and exact schema bytes as `47673b83a9fb431f2bad550781db18c7bee8b67e`.
-- Active canonical phase: Braincrew Issue #31 is locally implemented, reviewed, and verified; work is stopped at the Git Lifecycle Proposal Gate.
-- Frontier evidence: Issue #31 is the child of open parent #30, its sole external AX #33 prerequisite is closed, `ready-for-agent` moved from #30 to #31, and draft PR #29 remains open at exact head `b14653c7f2b6e7aad9a36c41c7141a9ccb3ce674`.
-- Branch evidence: `feat/issue-31-schema-sealing` and `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-31-schema-sealing` start from exact fetched `origin/develop@e33de765dc54ac76159f249525456d5ab4e63667`.
-- Clean baseline evidence: before the first RED, frozen sync, Ruff format/lint, strict mypy, full pytest (`207 passed`), `git diff --check`, and clean branch status all succeeded.
-- TDD evidence: the first valid feature RED reported missing exact AX schema files and missing `seal-corpus`; 23 tests failed for the intended unimplemented contracts. Minimal GREEN produced exact schema pinning, strict staged-byte validation, create-only sealing, sanitized receipt, replay, and mutation rejection. Review-driven path coverage then reproduced the accepted-backslash defect RED and repaired it GREEN.
-- Locked artifact: exact AX content/import schema bytes plus SHA-256 declarations, `corpus-sealing-receipt-v1`, and the installed `braincrew-eval seal-corpus` / existing `replay` boundary.
-- Scope fence: no authoring launcher, dataset-v2 qualification, principal/attachment mapping, source authoring, AX apply/provider/database/service work, Issue #15 preflight update, experiment run, dependency addition, or Agent trajectory evaluation is included.
-- Review evidence: separate Standards and Spec passes report zero unresolved finding. A duplicated test helper smell was removed; the only material review defect, backslash path acceptance, was reproduced RED and repaired GREEN.
-- Verification evidence: frozen sync, Ruff format/lint, strict mypy, full pytest (`232 passed`), `git diff --check`, exact four-file AX `cmp`, installed CLI seal/replay, sanitized receipt scan, and wheel schema inclusion all pass freshly.
-- Completion condition status: satisfied locally. Exact schema bytes/digests, strict staged-pack and mutation rejection, immutable create-only sealing, sanitized receipt, replay, full repository gates, and review blocker 0 are evidenced.
-- Active next action: present the Issue #31 Git lifecycle proposal and wait for explicit authorization before commit, push, pull-request creation/modification, or merge.
+- Completed predecessor: Braincrew PR #39 merged Issue #31 into `develop` as `df5891378732a653511e7fa37aae53ac56883672`; Issue #31 is `CLOSED/COMPLETED`.
+- Active canonical phase: Braincrew Issue #32 is implemented, documented, reviewed, and verified locally; work is stopped at the Git Lifecycle Proposal Gate.
+- Frontier evidence: Issue #32's only native blocker is closed Issue #31; #32 is open with `ready-for-agent`, #33 is open without it, and draft PR #29 remains untouched at exact head `b14653c7f2b6e7aad9a36c41c7141a9ccb3ce674`.
+- Branch evidence: `feat/issue-32-authoring-boundary` and `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-32-authoring-boundary` start from exact fetched `origin/develop@df5891378732a653511e7fa37aae53ac56883672`.
+- Clean baseline evidence: before the first RED, frozen sync, Ruff format/lint, strict mypy, full pytest (`232 passed`), `git diff --check`, and clean branch status all succeeded.
+- TDD evidence: five acceptance/contract tests failed because `launch-authoring` did not exist. Minimal GREEN passed all five. Review-driven RED/GREEN then closed non-Braincrew source identity, undeclared metadata visibility, invalid tool-label traceback, and system-keychain exposure defects; all seven authoring-boundary tests now pass.
+- Locked artifact: installed `braincrew-eval launch-authoring`, deny-by-default OS sandbox execution, and create-only `corpus-authoring-independence-receipt-v1` with clean-source, tool/input, denied-capability, opaque staging, timing, exit, and path-redacted output digest evidence.
+- Denial evidence: the real macOS sandbox probe sees exactly four declared read-only inputs and one writable staging directory while Braincrew/AX repositories, dataset, fixture, prior artifact, database, inherited credential, private document, undeclared filesystem, network, and post-seal feedback attempts all return denied.
+- Scope fence: no Issue #33 qualification, #34 principal/attachment mapping, #35 real brief approval, #36 source authoring or sealing run, dataset-v2 read/comparison, AX importer/provider/database/service change, Issue #15 preflight update, experiment execution, PR #29 modification, dependency addition, or Agent trajectory evaluation is included.
+- Review evidence: separate Standards and Spec passes report zero unresolved finding after the four review defects were reproduced and repaired through RED/GREEN.
+- Verification evidence: frozen sync checks 29 packages; Ruff format checks 51 files; Ruff lint and strict mypy over 51 source files pass; full pytest reports `239 passed`; the combined Issue #31 sealing and Issue #32 authoring subset reports `32 passed`; and installed `braincrew-eval launch-authoring --help` succeeds.
+- Completion condition status: satisfied locally. The declared input/staging boundary, real denial probes, sanitized create-only receipt, post-seal separation, reused sealing contract, canonical documentation, review blocker 0, and full repository gates are evidenced.
+- Active next action: present the Issue #32 Git lifecycle proposal and wait for explicit authorization before commit, push, pull-request creation/modification, or merge.
 - Workflow gate: no commit, push, pull-request creation/modification, or merge is authorized by this implementation request.
 
 ## Transition history
+
+### 2026-07-22 — Issue #32 authoring-boundary implementation and review reached GREEN
+
+- Entry evidence: fetched `origin/develop` equals Issue #31 merge `df5891378732a653511e7fa37aae53ac56883672`; PR #39 is merged; Issue #31 is `CLOSED/COMPLETED`; Issue #32's native blocker is closed; #32 alone carries `ready-for-agent`; and draft PR #29 remains untouched at `b14653c7f2b6e7aad9a36c41c7141a9ccb3ce674`.
+- Clean baseline: frozen sync, Ruff format/lint, strict mypy, all `232` pre-change tests, `git diff --check`, and clean branch status passed before the first RED.
+- RED/GREEN evidence: all five initial tests first failed on the missing `launch-authoring` command. Minimal implementation passed them. Review added or strengthened denial probes for repository identity, file metadata, tool-label error handling, and the system keychain; each defect was observed failing before repair, and all seven authoring tests now pass.
+- Boundary evidence: only the committed brief, exact pack schema, digest declaration, and generated digest inventory are readable; staging alone is writable; inherited environment secrets and all repository/evaluation/network/post-seal inputs are denied.
+- Receipt evidence: `corpus-authoring-independence-receipt-v1` is create-only, binds the clean SHA, tool/input identities, capability classes, timing, exit, and path-redacted output digests, and retains no process transcript or raw/private material.
+- Scope fence: qualification, mapping, real brief/content authoring, sealing execution, dataset comparison, AX operation, preflight, experiments, PR #29, new dependencies, and trajectory evaluation remain excluded.
+- Review evidence: Standards and Spec axes have zero unresolved finding. The launcher rejects non-Braincrew remotes, allows only ancestor metadata needed to traverse declared/runtime paths, returns a typed invalid-label error without traceback, denies system-keychain data and metadata, and discards child transcripts without buffering them.
+- Verification evidence: frozen sync, Ruff format/lint, strict mypy, all `239` repository tests, all `32` combined authoring/sealing tests, installed CLI help, and Git whitespace validation pass freshly.
+- Completion condition: satisfied locally; work is stopped at the Git Lifecycle Proposal Gate.
 
 ### 2026-07-22 — Issue #31 schema sealing reached the Git Lifecycle Proposal Gate
 
