@@ -93,7 +93,7 @@ research and AX_portfolio context
 - Scope lock: Issue #35 changes only the generic brief, exact-byte approval artifacts, acceptance/contract tests, and synchronized design/status/interview records. The review-proposed production launcher edit was removed as out of scope. Corpus source bytes, Issue #36 authoring/sealing, import manifest, AX operation, qualification, preflight, experiment execution, new dependency packages, and PR #29 changes remain excluded.
 - Review result: ticket-scoped code and Spec axes report `PASS` for the eight-file repair content. The committed brief digest and size were independently recomputed after commit.
 - Repository verification: `uv sync --frozen --all-groups`, Ruff format/lint, strict mypy, full pytest (`308 passed`), `git diff --check`, and exact brief byte/digest checks pass. Repair commit `0d4c0ae8876ad13d37acaa3bca81e2870c1d85d9` is published to PR #45 and matches its remote head before this status-only commit.
-- Active next action: publish this status-only commit, update PR #45's description, then require replacement Python/frontend CI, current review threads, mergeability, and final verification to pass before merge.
+- Active next action: require current-head Python/frontend CI, current review threads, mergeability, and final verification to pass, then merge PR #45 using a regular merge commit.
 - Workflow gate: PR #45 merge is authorized only if those current-head checks pass. Issue closure, label removal, and branch/worktree cleanup remain separate post-merge lifecycle actions. Issue #36 authoring remains prohibited until #46 and #47 are closed and a new data-creation gate is approved.
 
 ## Transition history
