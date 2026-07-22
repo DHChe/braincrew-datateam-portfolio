@@ -610,6 +610,60 @@ Likely follow-ups:
 - "Can qualification repair a missing source?" — No. It returns
   `CORPUS_REQUIRED_SOURCE_MISSING` and emits neither qualification nor import output.
 
+### D8.4 Extract live transport evidence before adding evaluation policy
+
+Decision:
+: Add Braincrew Issue #42 from merged `develop` as the minimum substrate between AX's reviewed
+  evaluation router and Issue #34. Pin AX
+  `72805930d9addd8ea41743d1922acf8de621c3f8`, freeze strict corpus-identity and parse-observation
+  HTTP contracts, and retain their sanitized evidence in create-only
+  `live-preflight-evidence-v1`. Leave principal, attachment, role, blocker, and READY policy to
+  Issues #34 and #38.
+
+Why:
+: The requested Issue #34 policy could not be tested independently because merged `develop` had
+  only the old Adapter where parse was unavailable and corpus identity was caller-declared. The
+  missing seam existed inside draft PR #29 together with unrelated Issue #15 prompt/model and live
+  experiment scope. A small prerequisite makes the dependency explicit without copying those
+  commits or weakening the branch boundary.
+
+Rejected alternatives:
+: Cherry-picking PR #29's four Issue #15 commits, re-creating the entire live runner inside #34,
+  or treating transport success as a preflight or parsing-quality result. Each would mix
+  infrastructure, policy, and experiment execution, making the ticket review and resulting claim
+  ambiguous.
+
+Trade-offs and failure modes:
+: #42 deliberately cannot report `READY`; its only state is `captured`. The Adapter response may
+  contain raw text in memory because that is the strict AX wire contract, but the retained artifact
+  replaces extracted and span text with digests and stores only structure counts. A changed AX
+  schema, unencoded attachment identity, leaked raw field, stale digest, overwrite attempt, or
+  tampered artifact fails closed. Timeout, `429`, and `5xx` retain bounded retries; other HTTP
+  failures stop after one attempt with only a short token-like detail.
+
+Validation evidence:
+: A clean baseline passed frozen sync, Ruff, strict mypy, and all 254 pre-change tests before the
+  first RED. New contract and acceptance tests first failed because the pinned SHA, strict response
+  models, and `braincrew.live_preflight` module did not exist. The focused GREEN covers both strict
+  transports, schema drift, path encoding, retry and permanent-error behavior, raw-text-free
+  create-only capture, installed CLI replay, digest tampering, and raw-field injection. Review
+  tests additionally reproduced nested-digest rehash bypass, private-path retention, stale
+  capability evidence, ambiguous attachment naming, mixed run identity, and the old grounded
+  Adapter pin before repair. Final evidence is 26 focused tests including that grounded regression
+  and 264 full repository tests, with Ruff, strict mypy, and Git whitespace validation passing.
+
+Likely follow-ups:
+
+- "Did #42 validate the six real attachments?" — No. It proves only that strict transport evidence
+  can be collected and retained safely. #34 owns the actual six-document mapping, owner subject,
+  exact `HRPractitioner` role, digests, spans, and blocker classification.
+- "Why keep AX raw text in the in-memory response at all?" — Strict response validation must match
+  what AX actually publishes. The retention boundary sanitizes before writing, so wire fidelity
+  and safe evidence storage remain separate responsibilities.
+- "Does a replayable captured artifact prove parsing quality?" — No. It proves schema, request,
+  response-summary, attempt, and digest integrity only. Evaluators and Issue #38's READY decision
+  remain downstream.
+
 ### D9. Use layered verification and an evidence-driven ten-day sequence
 
 Decision:

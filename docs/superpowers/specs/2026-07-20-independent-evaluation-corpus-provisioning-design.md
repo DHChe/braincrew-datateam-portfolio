@@ -491,6 +491,44 @@ risk before repair. All 15 focused tests and all 254 repository tests pass, with
 strict mypy, wheel-content validation, replay, tamper rejection, and Git whitespace validation.
 Actual authoring/sealing/qualification execution and every AX operation remain Issues #35-#38.
 
+### Issue #42 live-preflight substrate implementation lock
+
+Issue #34 could not be isolated on merged `develop`: the strict AX corpus-identity and parse
+operations plus a compatible create-only live evidence/replay boundary existed only inside the
+unmerged Issue #15 branch. Importing that branch would also import prompt/model planning and live
+experiment orchestration outside Issue #34. The accepted minimum extraction is therefore Braincrew
+Issue #42, a native child of #30 and native blocker of #34.
+
+Issue #42 pins `ax-sut-http-v1` to merged AX
+`72805930d9addd8ea41743d1922acf8de621c3f8`. The Adapter exposes strict
+`GET /v1/evaluation/corpus-identity` and
+`GET /v1/evaluation/attachments/{attachment_id}/parse-observation` calls with canonical request
+identity, safely encoded attachment paths, complete attempt history, exact response schemas, and
+bounded permanent-error detail. The Issue #7 retry taxonomy is unchanged: timeout, `429`, and
+`5xx` may use the three-attempt ceiling, while other HTTP and schema failures are permanent.
+
+The new `live-preflight-evidence-v1` boundary accepts already collected Adapter observations. It
+stores corpus identity, applied request roles, lifecycle/parser/source digests, span
+identities/digests/offsets, structure counts, attempts, and caller-supplied typed blockers. It
+never stores raw extracted text or span text. Publication uses create-only file semantics, and the
+installed replay command strictly reloads the complete schema and recomputes its logical digest.
+The artifact state is only `captured`; Issue #42 cannot report `READY`, create a parsing-quality
+result, call providers, or run a baseline/candidate/comparison.
+
+Issue #34 still owns every evaluation policy decision: pre-HTTP canonical principal UUID checks,
+mapping AX principal detail to `EVALUATION_PRINCIPAL_*`, projecting the current dataset-v2
+Verification documents onto the six reviewed attachment UUIDs, proving the active owner and exact
+`HRPractitioner` role, distinguishing mapping failures from existing `LIVE_*` blockers, and
+qualifying the six raw-text-free response digests. Issue #38 remains the only ticket that may renew
+the actual live preflight and create a READY artifact.
+
+The clean baseline passed all 254 pre-change tests before RED. The first contract/acceptance run
+failed on the absent response models, artifact module, and new AX pin. Review-driven tests then
+reproduced nested response-digest rehash bypass, private-path retention, stale capability evidence,
+ambiguous attachment naming, mixed run identity, and the stale grounded Adapter test pin. All 26
+focused tests including that grounded regression and all 264 repository tests pass after repair,
+with Ruff format/lint, strict mypy, and Git whitespace validation also green.
+
 ## 12. Rejected alternatives and consequences
 
 - Reverse-generating the corpus from expected evidence was rejected because the evaluator would
@@ -524,9 +562,10 @@ No baseline, candidate, comparison, or live quality claim is part of this comple
 ## 14. Implementation progress checkpoint
 
 As of 2026-07-22, the `to-spec` parents and `to-tickets` graph are published. AX #33, #34, and
-#35 are merged; AX #36 remains open. Braincrew PR #40 merged #32 as
-`9502f21e10ece832cd2c1bc369d2b5d0f9f1fb94`, and #32 is closed with cleanup complete. Braincrew
-#33 is implemented, reviewed, and verified locally on `feat/issue-33-corpus-qualification` and is
-stopped at the Git Lifecycle Proposal Gate. No approved authoring brief, actually authored or
+#35 are merged; AX #36 remains open. Braincrew PR #41 merged #33 as
+`fdbb732ee05a9de5270c91a82f0930da0413107b`; #33 is closed and cleaned up. The user approved
+Issue #42 as the minimum substrate extraction after Issue #34 stopped before RED on the missing
+merged seam. #42 is open with `ready-for-agent`, is a native child of #30, and natively blocks #34;
+#34 remains open without `ready-for-agent`. No approved authoring brief, actually authored or
 sealed Braincrew pack, real qualification receipt, operator snapshot, target load, renewed
 preflight, baseline, candidate, comparison, or live quality claim exists.

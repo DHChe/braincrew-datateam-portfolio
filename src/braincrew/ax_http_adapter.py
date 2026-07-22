@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import builtins
 import hashlib
 import json
+import re
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
 from urllib.parse import quote
@@ -10,7 +13,14 @@ from urllib.parse import quote
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-OperationName = Literal["preflight", "parse", "retrieve", "answer", "source_text"]
+OperationName = Literal[
+    "preflight",
+    "corpus_identity",
+    "parse",
+    "retrieve",
+    "answer",
+    "source_text",
+]
 HttpMethod = Literal["GET", "POST"]
 CommitSha = str
 
@@ -76,7 +86,7 @@ class AxCanonicalRequest(StrictModel):
     corpus_id: str | None = None
     corpus_version: str | None = None
     query: str | None = None
-    document_id: str | None = None
+    attachment_id: str | None = None
     record_kind: str | None = None
     record_id: str | None = None
     top_k: int | None = None
@@ -159,6 +169,80 @@ class OpenApiDocument(BaseModel):
     openapi: str
     info: dict[str, object]
     paths: dict[str, dict[str, object]]
+
+
+class CorpusIdentityResponse(StrictModel):
+    schema_version: Literal["ax-corpus-identity-v1"]
+    corpus_id: str
+    corpus_version: Literal["retrieval-inventory-v1"]
+    corpus_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    principal_roles: list[str]
+    inventory_count: int = Field(ge=0)
+    counts: dict[str, dict[str, int]]
+    contributing_versions: list[str]
+    generated_at: datetime
+
+
+class CorpusIdentityObservation(StrictModel):
+    context: AxRequestContext
+    request: AxCanonicalRequest
+    response: CorpusIdentityResponse
+    attempts: list[HttpAttempt]
+
+
+class ParseEvidenceSpan(StrictModel):
+    id: str
+    text: str = Field(min_length=1)
+    start_char: int = Field(ge=0)
+    end_char: int = Field(gt=0)
+    source_text_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+
+
+class ParseTableObservation(StrictModel):
+    columns: list[str] = Field(min_length=1)
+    rows: list[list[str]] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def require_rectangular_rows(self) -> ParseTableObservation:
+        if any(len(row) != len(self.columns) for row in self.rows):
+            raise ValueError("table rows must match the declared column count")
+        return self
+
+
+class ParseListObservation(StrictModel):
+    items: list[str] = Field(min_length=1)
+    ordered: bool
+
+
+class ParseObservationResponse(StrictModel):
+    schema_version: Literal["ax-parse-observation-v1"]
+    attachment_id: str
+    lifecycle_state: str
+    parse_state: str
+    materialization_state: str
+    parse_available: bool
+    parser_name: str | None
+    parser_version: str | None
+    failure_code: str | None
+    extracted_text: str | None
+    extracted_text_digest: str | None = Field(
+        default=None,
+        pattern=r"^sha256:[0-9a-f]{64}$",
+    )
+    text_truncated: bool
+    evidence_spans: list[ParseEvidenceSpan]
+    headings: list[str]
+    metadata: dict[str, str]
+    table: ParseTableObservation | None
+    list: ParseListObservation | None
+    unavailable_fields: builtins.list[str]
+
+
+class ParseObservation(StrictModel):
+    context: AxRequestContext
+    request: AxCanonicalRequest
+    response: ParseObservationResponse
+    attempts: list[HttpAttempt]
 
 
 class RetrievalCandidate(StrictModel):
@@ -280,7 +364,8 @@ def load_ax_http_contract() -> AxHttpContract:
     contract = AxHttpContract.model_validate_json(contract_path.read_text(encoding="utf-8"))
     response_models: dict[OperationName, type[BaseModel] | None] = {
         "preflight": ReadinessResponse,
-        "parse": None,
+        "corpus_identity": CorpusIdentityResponse,
+        "parse": ParseObservationResponse,
         "retrieve": RetrievalResponse,
         "answer": AnswerResponse,
         "source_text": SourceTextResponse,
@@ -307,12 +392,16 @@ def _safe_response_detail(response: httpx.Response) -> str:
     try:
         payload = response.json()
     except json.JSONDecodeError:
-        return f"HTTP {response.status_code}"
+        return f"HTTP_{response.status_code}"
     if isinstance(payload, dict):
         detail: object = payload.get("detail")
-        if isinstance(detail, str):
+        if (
+            isinstance(detail, str)
+            and len(detail) <= 160
+            and re.fullmatch(r"[A-Za-z0-9_.:-]+", detail) is not None
+        ):
             return detail
-    return f"HTTP {response.status_code}"
+    return f"HTTP_{response.status_code}"
 
 
 def write_capability_manifest(manifest: CapabilityManifest, path: Path) -> Path:
@@ -412,7 +501,7 @@ class AxHttpAdapter:
                 id=corpus_id,
                 version=corpus_version,
                 verified_by_sut=False,
-                reason="AX_CORPUS_IDENTITY_NOT_EXPOSED",
+                reason="AX_CORPUS_IDENTITY_NOT_PROBED",
             ),
             operations=operations,
             attempts=[*readiness_attempts, *openapi_attempts],
@@ -451,23 +540,59 @@ class AxHttpAdapter:
             attempts=attempts,
         )
 
+    def corpus_identity(
+        self,
+        *,
+        context: AxRequestContext,
+    ) -> CorpusIdentityObservation:
+        operation = self._contract.operations["corpus_identity"]
+        if operation.path is None:
+            raise ValueError("corpus_identity operation has no configured AX path")
+        request = self._canonical_request(
+            operation="corpus_identity",
+            context=context,
+        )
+        response, attempts = self._request_json(
+            operation="corpus_identity",
+            method="GET",
+            path=operation.path,
+            response_model=CorpusIdentityResponse,
+            request=request,
+        )
+        return CorpusIdentityObservation(
+            context=context,
+            request=request,
+            response=response,
+            attempts=attempts,
+        )
+
     def parse(
         self,
         *,
         context: AxRequestContext,
-        document_id: str,
-    ) -> None:
+        attachment_id: str,
+    ) -> ParseObservation:
         operation = self._contract.operations["parse"]
+        if operation.path is None:
+            raise ValueError("parse operation has no configured AX path")
+        path = operation.path.format(attachment_id=quote(attachment_id, safe=""))
         request = self._canonical_request(
             operation="parse",
             context=context,
-            document_id=document_id,
+            attachment_id=attachment_id,
         )
-        raise AxHttpFailure(
+        response, attempts = self._request_json(
             operation="parse",
-            failure_code=operation.unavailable_reason or "AX_ENDPOINT_UNAVAILABLE",
+            method="GET",
+            path=path,
+            response_model=ParseObservationResponse,
             request=request,
-            attempts=[],
+        )
+        return ParseObservation(
+            context=context,
+            request=request,
+            response=response,
+            attempts=attempts,
         )
 
     def answer(
@@ -548,7 +673,7 @@ class AxHttpAdapter:
         corpus_id: str | None = None,
         corpus_version: str | None = None,
         query: str | None = None,
-        document_id: str | None = None,
+        attachment_id: str | None = None,
         record_kind: str | None = None,
         record_id: str | None = None,
         top_k: int | None = None,
@@ -566,7 +691,7 @@ class AxHttpAdapter:
             corpus_id=corpus_id,
             corpus_version=corpus_version,
             query=query,
-            document_id=document_id,
+            attachment_id=attachment_id,
             record_kind=record_kind,
             record_id=record_id,
             top_k=top_k,
