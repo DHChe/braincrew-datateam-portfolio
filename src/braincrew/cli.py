@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Annotated
 
@@ -38,6 +39,7 @@ from braincrew.grounded_run import (
     load_grounded_dataset,
     load_grounded_observations,
 )
+from braincrew.live_preflight import replay_live_preflight_artifact
 from braincrew.parsing_run import (
     execute_parsing_fixture,
     load_parsing_dataset,
@@ -551,6 +553,7 @@ def replay_fixture(
     ],
 ) -> None:
     """Recompute a stored fixture artifact's logical result and digest."""
+    replay_summary: Mapping[str, object]
     try:
         payload = json.loads(artifact_path.read_text(encoding="utf-8"))
         if isinstance(payload, dict) and payload.get("schema_version") == (
@@ -561,6 +564,10 @@ def replay_fixture(
             "corpus-qualification-receipt-v1"
         ):
             replay_summary = replay_qualification_receipt(artifact_path)
+        elif isinstance(payload, dict) and payload.get("schema_version") == (
+            "live-preflight-evidence-v1"
+        ):
+            replay_summary = replay_live_preflight_artifact(artifact_path)
         else:
             replay_summary = replay_run_artifact(artifact_path)
     except (UnicodeError, ValueError) as error:

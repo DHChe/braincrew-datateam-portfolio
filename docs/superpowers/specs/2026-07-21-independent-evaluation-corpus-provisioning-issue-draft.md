@@ -89,6 +89,7 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - Principal and mapping failures remain distinguishable as `EVALUATION_PRINCIPAL_ID_INVALID`, `EVALUATION_PRINCIPAL_SUBJECT_INVALID`, and `PARSE_ATTACHMENT_MAPPING_INVALID`; existing `LIVE_*` operation blockers remain fail closed.
 - All six dataset-v2 parsing cases use the frozen `HRPractitioner` authorization role and the reviewed active owner subject. Braincrew never infers authorization from persona text.
 - The existing create-only live-preflight and replay boundary remains authoritative. A `READY` result still requires exact role-isolated corpus identity and all six strict parse observations.
+- Braincrew #42 is the minimum merged-base substrate for that boundary. It pins the strict AX corpus-identity and parse-observation transports, preserves the existing retry taxonomy, and adds raw-text-free `live-preflight-evidence-v1` create/replay mechanics. Its artifact state is only `captured`; #34 still owns principal, mapping, role, blocker, and six-observation policy, while #38 owns an actual READY renewal.
 - No corpus, database, service, or experiment execution is authorized by this specification. Those operations remain behind later proposal gates.
 
 ## Testing Decisions
@@ -101,6 +102,7 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - Independence tests launch the authoring boundary with only allowlisted inputs and prove that repository, dataset, fixture, network, and undeclared filesystem reads are denied.
 - Preflight tests cover malformed UUID configuration, well-formed unknown/inactive subjects, invalid attachment mapping, exact role isolation, and preservation of the existing live-operation blocker taxonomy.
 - Adapter and acceptance tests require six fresh strict parse responses plus three role-specific corpus identities before `READY` can be created.
+- Substrate tests independently require exact AX response schemas and digests, safely encoded attachment paths, bounded permanent details, retained retry attempts, create-only sanitized capture, CLI replay, and tamper/raw-field rejection without asserting READY or parsing quality.
 - Receipt tests scan for raw source text, query/answer material, vectors, credentials, database URLs, HTTP authorization material, prompt transcripts, and private paths.
 - Existing dataset v1/v2 validation, fixture execution, live preflight, create-only persistence, artifact replay, and all current repository regressions must remain unchanged.
 - A full clean repository baseline runs before the first RED. Each new behavior is observed failing before implementation and passes through targeted tests before the full quality gate.
@@ -122,5 +124,5 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - This specification is a prerequisite to, not an expansion of, Braincrew Issue #15. The new tracker issue should block #15 until provisioning and preflight can truthfully reach `READY`.
 - AX #33 has published the reviewed generic schema and no-write dry-run, AX #34 has published typed evaluation-principal validation, and AX #35 has published the atomic apply path. Braincrew #31 may now vendor and digest-pin the exact schema; AX #36 and every data/operational gate remain incomplete.
 - The current clean preflight artifact remains `BLOCKED`; neither this draft nor later ticket publication changes that measured state.
-- `to-tickets` published Braincrew #31-#38 with the approved dependencies. Braincrew #31 is the selected next fresh-context ticket; the independent authoring run remains the later restricted-context Braincrew #36 ticket.
-- Braincrew #31 and #32 are merged and closed. Braincrew #33 implements the read-only qualifier, exact dataset-v2 replay bundle, sanitized receipt, and bound import manifest; it does not execute a real corpus qualification. Actual brief approval remains #35, independent authoring/sealing remains #36, and real qualification remains #37.
+- `to-tickets` published Braincrew #31-#38 with the approved dependencies. #42 was later added as the minimum extraction required to keep #34 independent of unmerged Issue #15 work; #42 is a native child of #30 and native blocker of #34.
+- Braincrew #31, #32, and #33 are merged and closed; PR #41 merged #33 as `fdbb732ee05a9de5270c91a82f0930da0413107b`. #42 is open with `ready-for-agent`, and #34 is open without that label until #42 merges. Actual brief approval remains #35, independent authoring/sealing remains #36, real qualification remains #37, and actual preflight renewal remains #38.

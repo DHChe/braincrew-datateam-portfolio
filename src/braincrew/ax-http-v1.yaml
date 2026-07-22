@@ -2,7 +2,7 @@
   "schema_version": "ax-http-contract-v1",
   "adapter_version": "ax-sut-http-v1",
   "sut_repository": "https://github.com/DHChe/AX_portfolio",
-  "sut_commit_sha": "c318b2192006bdb36a5bd5b3a2bc403425b45701",
+  "sut_commit_sha": "72805930d9addd8ea41743d1922acf8de621c3f8",
   "discovery_path": "/openapi.json",
   "operations": {
     "preflight": {
@@ -26,22 +26,65 @@
       },
       "expected_schema_digest": "sha256:3c896ef178bdfc201cff5a7e1335861b54e7d9f11ce155ff36b984fbf281a3a2"
     },
-    "parse": {
-      "method": null,
-      "path": null,
+    "corpus_identity": {
+      "method": "GET",
+      "path": "/v1/evaluation/corpus-identity",
       "request_mapping": {
-        "run_id": "evidence.request.run_id",
-        "case_id": "evidence.request.case_id",
-        "eval_correlation_id": "evidence.request.eval_correlation_id",
-        "tenant_id": "evidence.request.tenant_id",
-        "user_id": "evidence.request.user_id",
-        "roles": "evidence.request.roles",
-        "timeout_seconds": "evidence.request.timeout_seconds",
-        "document_id": "unavailable.no_ax_mapping"
+        "run_id": "header.x-eval-run-id",
+        "case_id": "header.x-eval-case-id",
+        "eval_correlation_id": "header.x-eval-correlation-id",
+        "tenant_id": "header.x-ax-tenant-id",
+        "user_id": "header.x-ax-user-id",
+        "roles": "header.x-ax-roles",
+        "timeout_seconds": "client.timeout_seconds"
       },
-      "response_mapping": {},
-      "expected_schema_digest": null,
-      "unavailable_reason": "AX_PARSE_OBSERVABILITY_UNAVAILABLE"
+      "response_mapping": {
+        "schema_version": "body.schema_version",
+        "corpus_id": "body.corpus_id",
+        "corpus_version": "body.corpus_version",
+        "corpus_digest": "body.corpus_digest",
+        "principal_roles": "body.principal_roles",
+        "inventory_count": "body.inventory_count",
+        "counts": "body.counts",
+        "contributing_versions": "body.contributing_versions",
+        "generated_at": "body.generated_at"
+      },
+      "expected_schema_digest": "sha256:3203d2d6358152e93e2396e76ceb619d3a83a0443bfd95d42b743ffdd65abed5"
+    },
+    "parse": {
+      "method": "GET",
+      "path": "/v1/evaluation/attachments/{attachment_id}/parse-observation",
+      "request_mapping": {
+        "run_id": "header.x-eval-run-id",
+        "case_id": "header.x-eval-case-id",
+        "eval_correlation_id": "header.x-eval-correlation-id",
+        "tenant_id": "header.x-ax-tenant-id",
+        "user_id": "header.x-ax-user-id",
+        "roles": "header.x-ax-roles",
+        "timeout_seconds": "client.timeout_seconds",
+        "attachment_id": "path.attachment_id"
+      },
+      "response_mapping": {
+        "schema_version": "body.schema_version",
+        "attachment_id": "body.attachment_id",
+        "lifecycle_state": "body.lifecycle_state",
+        "parse_state": "body.parse_state",
+        "materialization_state": "body.materialization_state",
+        "parse_available": "body.parse_available",
+        "parser_name": "body.parser_name",
+        "parser_version": "body.parser_version",
+        "failure_code": "body.failure_code",
+        "extracted_text": "body.extracted_text",
+        "extracted_text_digest": "body.extracted_text_digest",
+        "text_truncated": "body.text_truncated",
+        "evidence_spans": "body.evidence_spans",
+        "headings": "body.headings",
+        "metadata": "body.metadata",
+        "table": "body.table",
+        "list": "body.list",
+        "unavailable_fields": "body.unavailable_fields"
+      },
+      "expected_schema_digest": "sha256:988f71991c9075a1be7bb411742dfde11b6537cd8f7433cecf76afd679627810"
     },
     "retrieve": {
       "method": "POST",

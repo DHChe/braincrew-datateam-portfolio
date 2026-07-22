@@ -19,11 +19,11 @@ from braincrew.ax_http_adapter import (
     write_capability_manifest,
 )
 
-PINNED_AX_SHA = "c318b2192006bdb36a5bd5b3a2bc403425b45701"
+PINNED_AX_SHA = "72805930d9addd8ea41743d1922acf8de621c3f8"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
 
 
-def test_preflight_records_supported_operations_and_the_parse_observability_gap() -> None:
+def test_preflight_records_evaluation_operations_without_claiming_a_corpus_probe() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/health/ready":
             return httpx.Response(
@@ -47,6 +47,8 @@ def test_preflight_records_supported_operations_and_the_parse_observability_gap(
                     "openapi": "3.1.0",
                     "info": {"title": "AX Portfolio HR/Labor Engine", "version": "0.1.0"},
                     "paths": {
+                        "/v1/evaluation/corpus-identity": {"get": {}},
+                        "/v1/evaluation/attachments/{attachment_id}/parse-observation": {"get": {}},
                         "/v1/retrieval/search": {"post": {}},
                         "/v1/answers/generate": {"post": {}},
                         "/v1/retrieval/source-text/{record_kind}/{record_id}": {"get": {}},
@@ -88,18 +90,21 @@ def test_preflight_records_supported_operations_and_the_parse_observability_gap(
     assert manifest.corpus.id == "synthetic-hr-v1"
     assert manifest.corpus.version == "1.0.0"
     assert manifest.corpus.verified_by_sut is False
+    assert manifest.corpus.reason == "AX_CORPUS_IDENTITY_NOT_PROBED"
     assert manifest.operations["preflight"].available is True
     assert manifest.operations["retrieve"].available is True
     assert manifest.operations["answer"].available is True
     assert manifest.operations["source_text"].available is True
-    assert manifest.operations["parse"].available is False
-    assert manifest.operations["parse"].reason == "AX_PARSE_OBSERVABILITY_UNAVAILABLE"
+    assert manifest.operations["corpus_identity"].available is True
+    assert manifest.operations["parse"].available is True
     assert [attempt.operation for attempt in manifest.attempts] == ["preflight", "preflight"]
     assert all(attempt.outcome == "success" for attempt in manifest.attempts)
 
 
 def test_packaged_contract_locks_field_mappings_and_response_schema_digests() -> None:
     contract = load_ax_http_contract()
+
+    assert contract.sut_commit_sha == PINNED_AX_SHA
 
     retrieve = contract.operations["retrieve"]
     assert retrieve.request_mapping["query"] == "body.query"
@@ -111,9 +116,22 @@ def test_packaged_contract_locks_field_mappings_and_response_schema_digests() ->
     )
 
     parse = contract.operations["parse"]
-    assert parse.request_mapping["document_id"] == "unavailable.no_ax_mapping"
-    assert parse.response_mapping == {}
-    assert parse.expected_schema_digest is None
+    assert parse.path == "/v1/evaluation/attachments/{attachment_id}/parse-observation"
+    assert parse.request_mapping["attachment_id"] == "path.attachment_id"
+    assert parse.response_mapping["attachment_id"] == "body.attachment_id"
+    assert (
+        parse.expected_schema_digest
+        == "sha256:988f71991c9075a1be7bb411742dfde11b6537cd8f7433cecf76afd679627810"
+    )
+
+    corpus_identity = contract.operations["corpus_identity"]
+    assert corpus_identity.path == "/v1/evaluation/corpus-identity"
+    assert corpus_identity.request_mapping["roles"] == "header.x-ax-roles"
+    assert corpus_identity.response_mapping["corpus_digest"] == "body.corpus_digest"
+    assert (
+        corpus_identity.expected_schema_digest
+        == "sha256:3203d2d6358152e93e2396e76ceb619d3a83a0443bfd95d42b743ffdd65abed5"
+    )
 
 
 def test_preflight_uses_the_same_bounded_retry_policy_as_live_operations() -> None:
@@ -367,32 +385,6 @@ def test_retrieve_rejects_a_schema_mismatch_without_retrying() -> None:
     assert len(caught.value.attempts) == 1
     assert caught.value.attempts[0].status_code == 200
     assert caught.value.attempts[0].outcome == "schema_error"
-
-
-def test_parse_fails_explicitly_before_http_when_ax_observability_is_unavailable() -> None:
-    request_count = 0
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal request_count
-        request_count += 1
-        raise AssertionError(f"parse must not call an unfrozen endpoint: {request.url}")
-
-    with pytest.raises(AxHttpFailure) as caught:
-        _adapter(handler).parse(
-            context=AxRequestContext(
-                run_id="run-7",
-                case_id="parse-1",
-                eval_correlation_id="eval-7-parse-1",
-            ),
-            document_id="attachment-1",
-        )
-
-    assert request_count == 0
-    assert caught.value.failure_code == "AX_PARSE_OBSERVABILITY_UNAVAILABLE"
-    assert caught.value.request.run_id == "run-7"
-    assert caught.value.request.case_id == "parse-1"
-    assert caught.value.request.document_id == "attachment-1"
-    assert caught.value.attempts == ()
 
 
 def test_answer_preserves_structured_claims_citations_and_provider_metadata() -> None:

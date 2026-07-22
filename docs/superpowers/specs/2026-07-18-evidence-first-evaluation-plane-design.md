@@ -91,13 +91,14 @@ Owns orchestration, timeouts, retries, case attempts, execution mode, and versio
 
 Maps standard evaluation requests to AX HTTP endpoints and normalizes responses. It does not score, invent missing values, hide contract mismatch, or import AX internals.
 
-The versioned `ax-sut-http-v1` interface has `preflight`, `parse`, `retrieve`, `answer`, and permission-checked `source_text` operations. The first mapping freezes methods, paths, schema digests, and field mappings in `ax-http-v1.yaml`:
+The versioned `ax-sut-http-v1` interface has `preflight`, `corpus_identity`, `parse`, `retrieve`, `answer`, and permission-checked `source_text` operations. The packaged mapping freezes methods, paths, schema digests, and field mappings in `ax-http-v1.yaml`:
 
 - `GET /health/ready`;
+- `GET /v1/evaluation/corpus-identity`;
+- `GET /v1/evaluation/attachments/{attachment_id}/parse-observation`;
 - `POST /v1/retrieval/search`;
 - `POST /v1/answers/generate`;
 - `GET /v1/retrieval/source-text/{record_kind}/{record_id}`;
-- existing attachment upload/status APIs plus one local/test-only parsed-document observation endpoint when AX preflight proves parsed text, sections, tables/lists, and spans are otherwise unavailable.
 
 Canonical requests carry run, case, evaluation correlation, tenant, role, corpus, query or document, `top_k`, evidence limit, and timeout fields as applicable. Canonical observations carry opaque AX identifiers, order and rank, source/chunk/span identifiers, source class, authority, visibility, snippets, allowed full text, structured answer, Answer Mode, citations, provider metadata, timings, AX correlation identifiers, and explicit availability flags.
 
@@ -113,6 +114,14 @@ Issue #7 implementation lock:
 - The pinned AX build also exposes no verifiable corpus identity. Preflight records the caller-declared public or synthetic corpus with `verified_by_sut=false` and `AX_CORPUS_IDENTITY_NOT_EXPOSED`; this is evidence of a capability gap, not a successful corpus check.
 - Canonical requests preserve run, case, evaluation correlation, UUID tenant, user, roles, timeout, query or record identity, `top_k`, and evidence limit. Live responses preserve AX correlations, retrieval identities, visibility decisions, structured answer fields, citations, provider metadata, source text provenance, latency, and every attempt.
 - timeout, `429`, and `5xx` use at most two retries after the first attempt. Other HTTP failures and response-schema failures are permanent and are never retried. Create-only capability manifests prevent accidental local overwrite.
+
+Issue #42 substrate lock:
+
+- The Adapter contract is advanced to merged AX commit `72805930d9addd8ea41743d1922acf8de621c3f8`, where the local/test-only evaluation router publishes strict `ax-corpus-identity-v1` and `ax-parse-observation-v1` responses. Braincrew freezes their exact paths, request/response mappings, and Pydantic schema digests without importing AX implementation code.
+- `corpus_identity` and `parse` now return canonical request identity, the complete strict response, and every HTTP attempt. Attachment path values are percent-encoded. Timeout, `429`, and `5xx` retain the Issue #7 three-attempt ceiling; other `4xx` responses stop after the first attempt and retain only a bounded token-like AX detail for later policy mapping.
+- `live-preflight-evidence-v1` is a transport-evidence substrate, not a READY decision. It stores corpus identity, request roles, state, parser and source-text digests, span identities/digests/offsets, structure counts, attempts, and caller-supplied typed blockers. Raw extracted text, span text, credentials, authorization material, database URLs, and private paths are absent.
+- The artifact is create-only and content-digested. `braincrew-eval replay` strictly reloads it, recomputes the logical digest, and rejects tampering or raw-field injection. Issue #42 adds no live execution command and produces no parsing score, benchmark result, or quality claim.
+- Issue #34 remains the policy owner for canonical principal UUID validation, AX principal-detail mapping, the six reviewed attachment mappings, active owner and exact `HRPractitioner` role, mapping versus existing `LIVE_*` blocker classification, and the conditions required before Issue #38 may create a READY artifact.
 
 ### Normalized Observation
 
