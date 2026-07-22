@@ -1,7 +1,7 @@
 # Independent Evaluation Corpus Provisioning Design
 
 Date: 2026-07-20
-Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published; Issue #35 authoring brief amended and independently reapproved after PR #45 review on 2026-07-23; Issue #46 selects source-first evaluation freeze; Issue #36 remains blocked on Issue #47 and a separate data-creation proposal gate
+Status: independent spec review passed; user written-spec approved 2026-07-21; tracker graph published; Issue #35 authoring brief amended and independently reapproved after PR #45 review on 2026-07-23; Issue #46 selected source-first evaluation freeze and is closed after PR #48; Issue #47 TDD is green locally; Issue #36 remains blocked until #47 is merged and verified plus a separate data-creation proposal gate
 Braincrew fixed point: `1185ba8a9e6bab038743531a56f8f2c5ce2b44eb`
 AX fixed base: `a5391ae8aa2b0d1342809f3599283b7759d6e4e3`
 Latest merged AX importer prerequisite: `6bfc27a7bf170172a20dd470d6fd877858c9fb80`
@@ -197,11 +197,16 @@ The independently authored `corpus-manifest.json` contains at least:
 
 The strict content manifest's literal `provenance_status=reviewed` is necessary but does not prove
 who reviewed which bytes, when, or what they decided. Durable approval therefore requires a
-create-only provenance sidecar outside the staged pack. It must bind the sealed content digest and
-each source ID/content digest to synthetic origin, authoring owner, `CC0-1.0` assignment, reviewer
-identity, review date and timezone, approve-or-reject decision, and a digest over canonical sidecar
-bytes. Issue #36 remains blocked until sealer support for accepting, preserving, and replaying this
-sidecar is implemented and tested; an undeclared sidecar cannot be smuggled into the strict pack.
+create-only provenance sidecar outside the staged pack. It binds the sealed content digest and each
+source ID/content digest to `newly-authored-synthetic` origin, authoring owner, `CC0-1.0`
+assignment, reviewer identity, review date/timezone, approve-or-reject decision, and a digest over
+canonical sidecar bytes. The Issue #47 sealing path requires that external sidecar to be a single,
+read-only regular file; it rejects missing, pending, mismatched, mutable, tampered, symlinked, or
+staging-contained evidence. It copies only validated canonical sidecar bytes as
+`provenance-review.json` beside the sealed pack and binds their digest in
+`corpus-sealing-receipt-v2`. Replay revalidates both the pack and sidecar. Historical
+`corpus-sealing-receipt-v1` replay remains supported; new seals require v2 evidence. An undeclared
+sidecar cannot be smuggled into the strict pack.
 
 The manifest and source files must not contain query text, answer keys, expected-answer fields,
 expected evidence, metric values, case-to-answer mappings, Calibration/Verification labels, or
@@ -466,20 +471,22 @@ exactly 2,241 bytes with SHA-256
 both fixed digests and their committed declaration files, so changing schema bytes and rewriting
 the adjacent digest together still fails closed as `AX_SCHEMA_DRIFT`.
 
-`braincrew-eval seal-corpus` accepts one isolated staging directory and one output root. It reads
-only canonical `corpus-manifest.json` plus the ordered declared source files, rejects undeclared
-files and unsafe/symlink/non-POSIX paths, and copies the exact validated bytes into
+`braincrew-eval seal-corpus` now requires one isolated staging directory, one output root, and one
+external `--provenance-sidecar`. It reads only canonical `corpus-manifest.json`, the ordered
+declared source files, and the sidecar; rejects undeclared files and unsafe/symlink/non-POSIX paths;
+and copies the exact validated bytes into
 `<output-root>/<corpus-id>/<corpus-version>/`. An existing destination returns
 `SEALED_CORPUS_VERSION_EXISTS`; no existing byte is opened for write.
 
 The validator mirrors the shared v1 byte contract: strict frozen Pydantic models, recursive
 evaluation-derived-field rejection, no floats, UTF-8 without BOM, NFC, LF-only text, exact
 per-source SHA-256, and a canonical ordered `sealed_content_digest`. Pack and source labels must
-remain synthetic/demo, `CC0-1.0`, and reviewed. The generated `corpus-sealing-receipt-v1` stores
-only corpus identity, fixed AX schema identity, ordered source IDs/digests, counts, byte total,
-and its own digest. It stores no dataset version, query/answer, raw text, credential, database
-location, or private path. Existing `braincrew-eval replay` revalidates the receipt, schema pin,
-manifest, and current sealed source bytes and rejects any mutation.
+remain synthetic/demo, `CC0-1.0`, and reviewed. The generated `corpus-sealing-receipt-v2` stores
+only corpus identity, fixed AX schema identity, ordered source IDs/digests, counts, byte total, the
+provenance-sidecar digest, and its own digest. It stores no dataset version, query/answer, raw text,
+credential, database location, or private path. `braincrew-eval replay` revalidates the receipt,
+schema pin, manifest, current sealed source bytes, and the immutable sidecar, and rejects any
+mutation.
 
 Rejected alternatives were normalizing invalid input, generating missing digests, overwriting a
 version in place, embedding source text or staging paths in the receipt, reading dataset v2 during
@@ -497,17 +504,11 @@ Git Lifecycle Proposal Gate.
 
 `braincrew-eval launch-authoring` accepts a clean Git worktree, one committed repository-relative
 brief, one empty staging directory outside that worktree, one create-only receipt path, and one
-executable authoring tool outside both source and staging. The launcher reuses the Issue #31 fixed
-`ax-synthetic-seed-pack-v1.schema.json` digest and its committed declaration. It copies only the
-brief, pack schema, schema digest declaration, and a generated canonical digest inventory into a
-temporary read-only input directory. The authoring tool receives only that input directory and the
-empty writable staging directory through a cleared environment.
-
-That paragraph records the merged Issue #32 implementation, not an approved future authoring
-input. The current Issue #32 launcher still copies the pack schema even though staged
-`corpus-manifest.json` authoring requires the content schema. This mismatch must be repaired in a
-separate prerequisite before Issue #36; PR #45 does not reopen or modify the closed Issue #32
-production boundary.
+executable authoring tool outside both source and staging. Issue #47 corrects the restricted input
+set to the brief, fixed `ax-synthetic-seed-content-v1.schema.json`, its committed digest declaration,
+and a generated canonical digest inventory. The post-qualification
+`ax-synthetic-seed-pack-v1.schema.json` is not mounted. The authoring tool receives only that
+read-only input directory and the empty writable staging directory through a cleared environment.
 
 Filesystem and network independence are operating-system capabilities, not prompt claims. On the
 verified macOS path the launcher uses the built-in `sandbox-exec` deny-by-default profile; on Linux
@@ -738,14 +739,15 @@ source identities would make authoring circular. Focused contract tests failed b
 pinned staged authoring to `schemas/ax-synthetic-seed-content-v1.schema.json` at SHA-256
 `372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb` and limited the pack schema at
 SHA-256 `4ddc71d7408324bfed6e7a25024899a7f689431f5f024fb2329f3f844352bffa` to the post-qualification
-import manifest. The merged launcher still requires Issue #47 repair. A fresh evaluation-blind
-context added the provenance sidecar and source-order gates without reading evaluation material,
+import manifest. Issue #47 now repairs staged authoring to expose the content schema and its
+pinned digest only. A fresh evaluation-blind context added the provenance sidecar and source-order
+gates without reading evaluation material,
 and a separate blind reviewer
 approved the exact 10,680-byte brief with zero material findings at SHA-256
 `121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`.
 The adjacent digest declaration and durable review record bind that decision to exact bytes.
-Issue #36 remains blocked until the provenance sidecar is supported and Issue #46's selected
-source-first evaluation freeze can be executed through the separate data-creation proposal gate.
+Issue #36 remains blocked until Issue #47 is merged and verified and Issue #46's selected
+source-first evaluation freeze is approved through the separate data-creation proposal gate.
 A clean committed Braincrew SHA must also reproduce the same brief digest.
 
 ## 12. Rejected alternatives and consequences
@@ -788,9 +790,8 @@ As of 2026-07-23, the `to-spec` parents and `to-tickets` graph are published. AX
 local/remote feature branches are removed. Braincrew #35 is closed after PR #45 merged. Issue #46
 now selects source-first evaluation freeze: the next dataset must be a successor version created
 only after a new independently sealed corpus version, while dataset v2 remains immutable and
-outside this authoring lane. Braincrew Issue #36 remains blocked until Issue #47 implements the
-provenance-sidecar and restricted-input repair and a separate data-creation proposal gate approves
-the selected order. No corpus
+outside this authoring lane. Braincrew Issue #47 must be merged and verified before Issue #36 can
+leave `BLOCKED`; the separate data-creation proposal gate must also approve the selected order. No corpus
 source bytes, actually authored or sealed Braincrew pack, real
 qualification receipt, operator snapshot, target load, renewed Issue #38 preflight, READY artifact,
 baseline, candidate, comparison, or live quality claim exists. PR #29 and

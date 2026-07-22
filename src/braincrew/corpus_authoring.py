@@ -23,8 +23,8 @@ from braincrew.corpus_sealing import (
     sha256_digest,
 )
 
-PACK_SCHEMA_NAME = "ax-synthetic-seed-pack-v1.schema.json"
-PACK_SCHEMA_DIGEST_NAME = "ax-synthetic-seed-pack-v1.schema.sha256"
+CONTENT_SCHEMA_NAME = "ax-synthetic-seed-content-v1.schema.json"
+CONTENT_SCHEMA_DIGEST_NAME = "ax-synthetic-seed-content-v1.schema.sha256"
 EXPECTED_BRAINCREW_REMOTES = frozenset(
     {
         "git@github.com:DHChe/braincrew-datateam-portfolio.git",
@@ -157,8 +157,8 @@ def launch_authoring_process(
 ) -> AuthoringLaunchResult:
     source_root, commit_sha = _validate_clean_source(braincrew_root)
     brief = _resolve_committed_brief(source_root, brief_relative_path)
-    schema = source_root / "schemas" / PACK_SCHEMA_NAME
-    schema_digest_file = source_root / "schemas" / PACK_SCHEMA_DIGEST_NAME
+    schema = source_root / "schemas" / CONTENT_SCHEMA_NAME
+    schema_digest_file = source_root / "schemas" / CONTENT_SCHEMA_DIGEST_NAME
     _validate_schema_pin(schema, schema_digest_file)
     staging = _validate_staging(source_root, staging_dir)
     receipt = _validate_receipt_path(source_root, staging, receipt_path)
@@ -209,8 +209,8 @@ def launch_authoring_process(
     with TemporaryDirectory(prefix="braincrew-authoring-inputs-") as raw_inputs:
         input_directory = Path(raw_inputs).resolve()
         _write_read_only(input_directory / "authoring-brief.md", brief_bytes)
-        _write_read_only(input_directory / PACK_SCHEMA_NAME, schema_bytes)
-        _write_read_only(input_directory / PACK_SCHEMA_DIGEST_NAME, schema_digest_bytes)
+        _write_read_only(input_directory / CONTENT_SCHEMA_NAME, schema_bytes)
+        _write_read_only(input_directory / CONTENT_SCHEMA_DIGEST_NAME, schema_digest_bytes)
         _write_read_only(input_directory / "input-digests.json", declared_input_bytes)
         invocation = _build_sandbox_invocation(
             input_directory=input_directory,
@@ -331,7 +331,7 @@ def _validate_schema_pin(schema: Path, digest_file: Path) -> None:
             "AX_SCHEMA_DRIFT",
             "the pinned AX pack schema contract is incomplete",
         ) from exc
-    expected_digest = EXPECTED_SCHEMA_DIGESTS[PACK_SCHEMA_NAME]
+    expected_digest = EXPECTED_SCHEMA_DIGESTS[CONTENT_SCHEMA_NAME]
     if (
         sha256_digest(schema_bytes) != expected_digest
         or declared_digest_bytes != f"{expected_digest}\n".encode()

@@ -11,6 +11,7 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError
 
 from braincrew.corpus_sealing import (
+    PROVENANCE_SIDECAR_NAME,
     CorpusPackError,
     ValidatedCorpus,
     VisibilityRole,
@@ -29,6 +30,7 @@ QUALIFICATION_RECEIPT_NAME = "qualification-receipt.json"
 IMPORT_MANIFEST_NAME = "import-manifest.json"
 _SEALED_EXTRA_FILES = {
     "sealing-receipt.json",
+    PROVENANCE_SIDECAR_NAME,
     QUALIFICATION_RECEIPT_NAME,
     IMPORT_MANIFEST_NAME,
 }
@@ -136,7 +138,10 @@ def qualify_corpus_pack(
             "qualification outputs are create-only",
         )
 
-    validated, sealing_receipt_digest = _validate_pack(sealed_dir)
+    validated, sealing_receipt_digest = _validate_pack(
+        sealed_dir,
+        allowed_extra_files=_SEALED_EXTRA_FILES,
+    )
     snapshot = _validate_dataset(dataset_manifest_path)
     receipt = _build_qualification_receipt(
         validated=validated,

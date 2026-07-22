@@ -14,6 +14,7 @@ from ..corpus_pack_v1_fixture import (
     run_cli,
     stage_valid_pack,
     write_manifest,
+    write_provenance_sidecar,
 )
 
 REPOSITORY_ROOT = Path(__file__).parents[2]
@@ -31,12 +32,19 @@ EXPECTED_SCHEMA_CONTRACTS = {
 
 
 def seal(staging_dir: Path, output_root: Path) -> subprocess.CompletedProcess[str]:
+    manifest = json.loads((staging_dir / "corpus-manifest.json").read_text(encoding="utf-8"))
+    provenance_sidecar = write_provenance_sidecar(
+        output_root.parent / f"{staging_dir.name}-provenance-review.json",
+        manifest,
+    )
     return run_cli(
         "seal-corpus",
         "--staging-dir",
         str(staging_dir),
         "--output-root",
         str(output_root),
+        "--provenance-sidecar",
+        str(provenance_sidecar),
     )
 
 

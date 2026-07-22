@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import unicodedata
 from dataclasses import dataclass
 from datetime import date
@@ -12,6 +13,7 @@ from importlib import resources
 from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
 from typing import Annotated, Any, Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, StringConstraints, ValidationError
 
@@ -29,6 +31,7 @@ MAX_SOURCE_BYTES = 2 * 1024 * 1024
 MAX_TOTAL_SOURCE_BYTES = 32 * 1024 * 1024
 MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 MAX_JSON_NESTING = 64
+PROVENANCE_SIDECAR_NAME = "provenance-review.json"
 
 Digest = Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")]
 Identifier = Annotated[
@@ -150,11 +153,45 @@ class SealedSourceReceipt(_StrictModel):
     content_sha256: Digest
 
 
-class SealingReceipt(_StrictModel):
+class ProvenanceReview(_StrictModel):
+    source_id: Identifier
+    content_sha256: Digest
+    synthetic_origin: Literal["newly-authored-synthetic"]
+    authoring_owner: Identifier
+    license_assignment: Literal["CC0-1.0"]
+    reviewer_identity: Identifier
+    review_date: Annotated[str, StringConstraints(pattern=r"^\d{4}-\d{2}-\d{2}$")]
+    review_timezone: Annotated[str, StringConstraints(min_length=1, max_length=80)]
+    decision: Literal["approved", "rejected"]
+
+
+class ProvenanceSidecar(_StrictModel):
+    schema_version: Literal["corpus-provenance-review-v1"]
+    corpus_id: Identifier
+    corpus_version: Identifier80
+    sealed_content_digest: Digest
+    reviews: list[ProvenanceReview] = Field(min_length=1, max_length=MAX_SOURCES)
+    provenance_digest: Digest
+
+
+class LegacySealingReceipt(_StrictModel):
     schema_version: Literal["corpus-sealing-receipt-v1"]
     corpus_id: Identifier
     corpus_version: Identifier80
     sealed_content_digest: Digest
+    source_count: int = Field(ge=1, le=MAX_SOURCES)
+    total_source_bytes: int = Field(ge=1, le=MAX_TOTAL_SOURCE_BYTES)
+    sources: list[SealedSourceReceipt] = Field(min_length=1, max_length=MAX_SOURCES)
+    ax_schema_contract: AxSchemaContract
+    receipt_digest: Digest
+
+
+class SealingReceipt(_StrictModel):
+    schema_version: Literal["corpus-sealing-receipt-v2"]
+    corpus_id: Identifier
+    corpus_version: Identifier80
+    sealed_content_digest: Digest
+    provenance_digest: Digest
     source_count: int = Field(ge=1, le=MAX_SOURCES)
     total_source_bytes: int = Field(ge=1, le=MAX_TOTAL_SOURCE_BYTES)
     sources: list[SealedSourceReceipt] = Field(min_length=1, max_length=MAX_SOURCES)
@@ -168,6 +205,12 @@ class ValidatedCorpus:
     manifest: CorpusManifest
     source_paths: tuple[Path, ...]
     total_source_bytes: int
+
+
+@dataclass(frozen=True)
+class ValidatedProvenanceSidecar:
+    raw_bytes: bytes
+    sidecar: ProvenanceSidecar
 
 
 @dataclass(frozen=True)
@@ -189,12 +232,32 @@ def sha256_digest(value: bytes) -> str:
     return f"sha256:{hashlib.sha256(value).hexdigest()}"
 
 
-def seal_corpus_pack(staging_dir: Path, output_root: Path) -> SealingResult:
+def seal_corpus_pack(
+    staging_dir: Path,
+    output_root: Path,
+    provenance_sidecar_path: Path | None,
+) -> SealingResult:
     _verify_vendored_schemas()
     staging = staging_dir.resolve(strict=True)
     output = output_root.resolve()
     _require_isolated_staging(staging, output)
+    if provenance_sidecar_path is None:
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_REQUIRED",
+            "sealing requires one create-only provenance sidecar",
+        )
+    _validate_provenance_sidecar_location(
+        provenance_sidecar_path,
+        staging=staging,
+        output=output,
+    )
     validated = _validate_corpus_directory(staging)
+    provenance_sidecar = _validate_provenance_sidecar(
+        provenance_sidecar_path,
+        staging=staging,
+        output=output,
+        manifest=validated.manifest,
+    )
     destination = output / validated.manifest.corpus_id / validated.manifest.corpus_version
     if destination.exists():
         raise CorpusPackError(
@@ -202,7 +265,7 @@ def seal_corpus_pack(staging_dir: Path, output_root: Path) -> SealingResult:
             "the corpus version already exists and cannot be modified",
         )
 
-    receipt = _build_receipt(validated)
+    receipt = _build_receipt(validated, provenance_sidecar.sidecar)
     corpus_root = destination.parent
     corpus_root.mkdir(parents=True, exist_ok=True)
     try:
@@ -210,7 +273,7 @@ def seal_corpus_pack(staging_dir: Path, output_root: Path) -> SealingResult:
             prefix=f".{validated.manifest.corpus_version}-", dir=corpus_root
         ) as raw:
             temporary = Path(raw)
-            _copy_validated_bytes(validated, temporary)
+            _copy_validated_bytes(validated, provenance_sidecar, temporary)
             receipt_path = temporary / "sealing-receipt.json"
             receipt_path.write_bytes(canonical_json_bytes(receipt.model_dump(mode="json")) + b"\n")
             os.rename(temporary, destination)
@@ -235,7 +298,17 @@ def replay_sealing_receipt(receipt_path: Path) -> dict[str, str]:
     try:
         payload = json.loads(text, parse_float=_reject_float)
         _validate_json_nesting(payload)
-        receipt = SealingReceipt.model_validate(payload)
+        if not isinstance(payload, dict):
+            raise ValueError("receipt must be an object")
+        schema_version = payload.get("schema_version")
+        if schema_version == "corpus-sealing-receipt-v1":
+            receipt: LegacySealingReceipt | SealingReceipt = LegacySealingReceipt.model_validate(
+                payload
+            )
+        elif schema_version == "corpus-sealing-receipt-v2":
+            receipt = SealingReceipt.model_validate(payload)
+        else:
+            raise ValueError("receipt schema version is unsupported")
     except (json.JSONDecodeError, RecursionError, ValidationError, ValueError) as exc:
         raise CorpusPackError("CORPUS_RECEIPT_INVALID", "receipt is not strict JSON") from exc
     canonical_receipt = canonical_json_bytes(receipt.model_dump(mode="json")) + b"\n"
@@ -246,25 +319,41 @@ def replay_sealing_receipt(receipt_path: Path) -> dict[str, str]:
     if sha256_digest(canonical_json_bytes(receipt_payload)) != declared_receipt_digest:
         raise CorpusPackError("CORPUS_RECEIPT_DIGEST_MISMATCH", "receipt digest does not reproduce")
 
+    sealed_directory = receipt_path.resolve(strict=True).parent
+    allowed_extra_files = {
+        "sealing-receipt.json",
+        "qualification-receipt.json",
+        "import-manifest.json",
+    }
+    if isinstance(receipt, SealingReceipt):
+        allowed_extra_files.add(PROVENANCE_SIDECAR_NAME)
     validated = _validate_corpus_directory(
-        receipt_path.resolve(strict=True).parent,
-        allowed_extra_files={
-            "sealing-receipt.json",
-            "qualification-receipt.json",
-            "import-manifest.json",
-        },
+        sealed_directory, allowed_extra_files=allowed_extra_files
     )
-    expected = _build_receipt(validated)
+    if isinstance(receipt, SealingReceipt):
+        provenance_sidecar = _load_provenance_sidecar(
+            sealed_directory / PROVENANCE_SIDECAR_NAME,
+            validated.manifest,
+        )
+        expected: LegacySealingReceipt | SealingReceipt = _build_receipt(
+            validated,
+            provenance_sidecar.sidecar,
+        )
+    else:
+        expected = _build_legacy_receipt(validated)
     if expected != receipt:
         raise CorpusPackError(
             "CORPUS_RECEIPT_DIGEST_MISMATCH",
             "receipt does not bind the current sealed corpus bytes",
         )
-    return {
+    summary = {
         "receipt_digest": receipt.receipt_digest,
         "sealed_content_digest": receipt.sealed_content_digest,
         "corpus_version": receipt.corpus_version,
     }
+    if isinstance(receipt, SealingReceipt):
+        summary["provenance_digest"] = receipt.provenance_digest
+    return summary
 
 
 def validate_sealed_corpus(
@@ -370,7 +459,7 @@ def _validate_corpus_directory(
     )
 
 
-def _build_receipt(validated: ValidatedCorpus) -> SealingReceipt:
+def _build_legacy_receipt(validated: ValidatedCorpus) -> LegacySealingReceipt:
     payload: dict[str, Any] = {
         "schema_version": "corpus-sealing-receipt-v1",
         "corpus_id": validated.manifest.corpus_id,
@@ -394,10 +483,45 @@ def _build_receipt(validated: ValidatedCorpus) -> SealingReceipt:
         },
     }
     payload["receipt_digest"] = sha256_digest(canonical_json_bytes(payload))
+    return LegacySealingReceipt.model_validate(payload)
+
+
+def _build_receipt(
+    validated: ValidatedCorpus,
+    provenance_sidecar: ProvenanceSidecar,
+) -> SealingReceipt:
+    payload: dict[str, Any] = {
+        "schema_version": "corpus-sealing-receipt-v2",
+        "corpus_id": validated.manifest.corpus_id,
+        "corpus_version": validated.manifest.corpus_version,
+        "sealed_content_digest": validated.manifest.sealed_content_digest,
+        "provenance_digest": provenance_sidecar.provenance_digest,
+        "source_count": len(validated.manifest.sources),
+        "total_source_bytes": validated.total_source_bytes,
+        "sources": [
+            {
+                "source_id": source.source_id,
+                "content_sha256": source.content_sha256,
+            }
+            for source in validated.manifest.sources
+        ],
+        "ax_schema_contract": {
+            "merge_commit": AX_SCHEMA_MERGE_COMMIT,
+            "content_schema_sha256": EXPECTED_SCHEMA_DIGESTS[
+                "ax-synthetic-seed-content-v1.schema.json"
+            ],
+            "pack_schema_sha256": EXPECTED_SCHEMA_DIGESTS["ax-synthetic-seed-pack-v1.schema.json"],
+        },
+    }
+    payload["receipt_digest"] = sha256_digest(canonical_json_bytes(payload))
     return SealingReceipt.model_validate(payload)
 
 
-def _copy_validated_bytes(validated: ValidatedCorpus, destination: Path) -> None:
+def _copy_validated_bytes(
+    validated: ValidatedCorpus,
+    provenance_sidecar: ValidatedProvenanceSidecar,
+    destination: Path,
+) -> None:
     manifest_destination = destination / "corpus-manifest.json"
     shutil.copyfile(validated.directory / "corpus-manifest.json", manifest_destination)
     for source_path in validated.source_paths:
@@ -405,6 +529,142 @@ def _copy_validated_bytes(validated: ValidatedCorpus, destination: Path) -> None
         destination_path = destination / relative
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source_path, destination_path)
+    provenance_destination = destination / PROVENANCE_SIDECAR_NAME
+    with provenance_destination.open("xb") as provenance_file:
+        provenance_file.write(provenance_sidecar.raw_bytes)
+    provenance_destination.chmod(0o444)
+
+
+def _validate_provenance_sidecar(
+    sidecar_path: Path,
+    *,
+    staging: Path,
+    output: Path,
+    manifest: CorpusManifest,
+) -> ValidatedProvenanceSidecar:
+    resolved = _validate_provenance_sidecar_location(
+        sidecar_path,
+        staging=staging,
+        output=output,
+    )
+    return _load_provenance_sidecar(resolved, manifest)
+
+
+def _validate_provenance_sidecar_location(
+    sidecar_path: Path,
+    *,
+    staging: Path,
+    output: Path,
+) -> Path:
+    if sidecar_path.is_symlink():
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_PATH_INVALID",
+            "provenance sidecar must be a regular file outside staging",
+        )
+    try:
+        resolved = sidecar_path.resolve(strict=True)
+    except OSError as exc:
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_PATH_INVALID",
+            "provenance sidecar is unavailable",
+        ) from exc
+    if resolved.is_relative_to(staging) or resolved.is_relative_to(output):
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_PATH_INVALID",
+            "provenance sidecar must be outside staging and sealed output",
+        )
+    return resolved
+
+
+def _load_provenance_sidecar(
+    sidecar_path: Path,
+    manifest: CorpusManifest,
+) -> ValidatedProvenanceSidecar:
+    try:
+        sidecar_stat = sidecar_path.stat()
+    except OSError as exc:
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_PATH_INVALID",
+            "provenance sidecar is unavailable",
+        ) from exc
+    if (
+        sidecar_path.is_symlink()
+        or not stat.S_ISREG(sidecar_stat.st_mode)
+        or sidecar_stat.st_nlink != 1
+    ):
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_PATH_INVALID",
+            "provenance sidecar must be one regular non-linked file",
+        )
+    if sidecar_stat.st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH):
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_MUTABLE",
+            "provenance sidecar must be read-only before sealing or replay",
+        )
+    raw_bytes, sidecar_text = _read_utf8_bytes(
+        sidecar_path,
+        maximum_bytes=MAX_MANIFEST_BYTES,
+    )
+    try:
+        payload = json.loads(sidecar_text, parse_float=_reject_float)
+        _validate_json_nesting(payload)
+        _reject_unsafe_content(payload)
+        sidecar = ProvenanceSidecar.model_validate(payload)
+        for review in sidecar.reviews:
+            date.fromisoformat(review.review_date)
+            ZoneInfo(review.review_timezone)
+    except (
+        json.JSONDecodeError,
+        RecursionError,
+        ValidationError,
+        ValueError,
+        ZoneInfoNotFoundError,
+    ) as exc:
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_INVALID",
+            "provenance sidecar is not a strict approved review record",
+        ) from exc
+    if raw_bytes != canonical_json_bytes(sidecar.model_dump(mode="json")) + b"\n":
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_INVALID",
+            "provenance sidecar bytes are not canonical",
+        )
+    sidecar_payload = sidecar.model_dump(mode="json")
+    declared_digest = sidecar_payload.pop("provenance_digest")
+    if sha256_digest(canonical_json_bytes(sidecar_payload)) != declared_digest:
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_DIGEST_MISMATCH",
+            "provenance sidecar digest does not reproduce",
+        )
+    if (
+        sidecar.corpus_id != manifest.corpus_id
+        or sidecar.corpus_version != manifest.corpus_version
+        or sidecar.sealed_content_digest != manifest.sealed_content_digest
+    ):
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_BINDING_MISMATCH",
+            "provenance sidecar does not bind this sealed corpus identity",
+        )
+    expected_sources = {source.source_id: source.content_sha256 for source in manifest.sources}
+    reviewed_sources: dict[str, str] = {}
+    for review in sidecar.reviews:
+        if review.decision != "approved":
+            raise CorpusPackError(
+                "CORPUS_PROVENANCE_SIDECAR_INVALID",
+                "provenance sidecar requires an approve decision for every source",
+            )
+        if review.source_id in reviewed_sources:
+            raise CorpusPackError(
+                "CORPUS_PROVENANCE_SIDECAR_BINDING_MISMATCH",
+                "provenance sidecar review identities must be unique",
+            )
+        reviewed_sources[review.source_id] = review.content_sha256
+    if reviewed_sources != expected_sources:
+        raise CorpusPackError(
+            "CORPUS_PROVENANCE_SIDECAR_BINDING_MISMATCH",
+            "provenance sidecar does not bind every current source digest exactly",
+        )
+    return ValidatedProvenanceSidecar(raw_bytes=raw_bytes, sidecar=sidecar)
 
 
 def _require_isolated_staging(staging: Path, output: Path) -> None:

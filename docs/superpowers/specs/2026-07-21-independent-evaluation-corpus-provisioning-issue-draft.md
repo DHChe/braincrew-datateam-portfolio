@@ -42,7 +42,8 @@ PR #45 review proved that the original source-after-dataset order was circular: 
 author cannot recreate hidden frozen source identities and digests. Issue #46 selects the
 **source-first evaluation freeze**: a new independently sealed corpus version must precede a
 successor dataset version greater than `2.0.0`. Braincrew Issue #36 remains blocked until Issue
-#47 and the separate data-creation proposal gate are complete. Qualification feedback must never
+#47 is merged and verified and the separate data-creation proposal gate approves source-first
+execution. Qualification feedback must never
 flow back into authoring.
 
 The qualified pack then crosses the repository boundary through the versioned
@@ -86,13 +87,13 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - Authoring is not part of the initial code implementation slice. It remains a later child ticket that begins from a reviewed clean commit in a fresh restricted context.
 - Staged authoring is governed by `schemas/ax-synthetic-seed-content-v1.schema.json` at SHA-256 `372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb`.
 - `schemas/ax-synthetic-seed-pack-v1.schema.json` at SHA-256 `4ddc71d7408324bfed6e7a25024899a7f689431f5f024fb2329f3f844352bffa` governs only the post-qualification import manifest.
-- The current Issue #32 launcher still exposes the pack schema. Issue #35 does not reopen that closed production boundary; a separate prerequisite must switch the restricted input to the content schema and prove the pack schema is absent before Issue #36.
+- Issue #47 switches the restricted launcher input to the content schema and its pinned digest, and proves that the pack schema is absent. Issue #36 remains blocked until Issue #47 is merged and verified plus the separate data-creation proposal gate approves the source-first order.
 - The pack uses two manifests. The sealed content manifest contains source identity and bytes but no `seed_version`; the post-qualification import manifest binds the unchanged content digest to the dataset version and qualification receipt.
 - The generic AX identifier grammar excludes `@`; the import manifest therefore uses schema-valid `seed_version = braincrew-evaluation-dataset-2.0.0`, while the qualification receipt binds exact ID `braincrew-evaluation-dataset`, version `2.0.0`, integrated digest, component digests, and 100-case count.
 - Canonical identity rejects rather than normalizes invalid bytes. Accepted source bytes are UTF-8 without BOM, NFC, and LF-only. Canonical JSON uses sorted object keys, compact separators, preserved array order, materialized defaults, no floats, and NFC strings without carriage returns.
 - The pack covers the complete 100-case required source-identity surface and contains non-empty distractor coverage. It is not required to contain one document per case.
 - Every source is synthetic/demo, licensed `CC0-1.0`, and explicitly provenance-reviewed. Private/customer content and mixed public-source labeling are excluded from this version.
-- A strict-manifest `provenance_status=reviewed` literal is not durable approval evidence. A create-only provenance sidecar outside the staged pack must bind the sealed digest, per-source identities and digests, origin, author, CC0 assignment, reviewer/date/timezone, decision, and its own digest. Issue #36 remains blocked until sealer support can accept, preserve, and replay that evidence.
+- A strict-manifest `provenance_status=reviewed` literal is not durable approval evidence. A create-only provenance sidecar outside the staged pack must bind the sealed digest, per-source identities and digests, origin, author, CC0 assignment, reviewer/date/timezone, decision, and its own digest. Issue #47 supplies the required accepting, preserving, and replaying contract; Issue #36 remains blocked until Issue #47 is merged and verified and the separate data-creation proposal gate approves source-first execution.
 - Selected source-order contract: **source-first evaluation freeze**.
 - Rejected alternative: pre-existing, evaluation-independent exact source bytes or generator.
 - Reason: no independently versioned, provenance-bearing artifact predates the evaluation-specific freeze.
@@ -121,7 +122,7 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - Failure tests require the exact typed blocker family and prove that no import manifest or repaired output is emitted on mismatch.
 - Independence tests launch the authoring boundary with only allowlisted inputs and prove that repository, dataset, fixture, network, and undeclared filesystem reads are denied.
 - Authoring-boundary tests pin the staged input to the content schema and reject substitution of the later import-pack schema.
-- Workflow tests keep Issue #36 blocked until the provenance sidecar is retained, Issue #46's source-first order is implemented through the separate data-creation proposal gate, and the successor dataset/qualification binding is testable.
+- Workflow tests keep Issue #36 blocked until Issue #47 is merged and verified, the separate data-creation proposal gate approves Issue #46's source-first order, and the successor dataset/qualification binding is testable.
 - Preflight tests cover malformed UUID configuration, well-formed unknown/inactive subjects, invalid attachment mapping, exact role isolation, and preservation of the existing live-operation blocker taxonomy.
 - Principal/attachment preflight tests bind the accepted input to the exact dataset-v2 integrated and component digests before HTTP, retain that identity for replay, and reject a rehashed substituted identity.
 - Parse qualification tests preserve exhausted retry attempts on the blocker, reject a failure code on an available response, and allow zero recovered spans to reach parsing-quality evaluation while validating every span that is present.
@@ -150,7 +151,7 @@ workflow stops at `READY`; baseline and candidate execution require separate aut
 - AX #33 has published the reviewed generic schema and no-write dry-run, AX #34 has published typed evaluation-principal validation, and AX #35 has published the atomic apply path. Braincrew #31 may now vendor and digest-pin the exact schema; AX #36 and every data/operational gate remain incomplete.
 - The current clean preflight artifact remains `BLOCKED`; neither this draft nor later ticket publication changes that measured state.
 - `to-tickets` published Braincrew #31-#38 with the approved dependencies. #42 was later added as the minimum extraction required to keep #34 independent of unmerged Issue #15 work; #42 is a native child of #30 and native blocker of #34.
-- Braincrew #31, #32, #33, #42, #34, and #35 are merged and closed. PR #44 merged #34 as `67d7c104757f60194e59df20240ac47f8be9c027`; its dedicated worktree and local/remote feature branches are removed. PR #45 corrected the schema phase and exposed two missing prerequisites. Issue #46 now selects source-first evaluation freeze; Issue #47 owns the restricted-input and provenance-sidecar repair. Independent authoring/sealing remains #36 and stays blocked until #47 and a separate data-creation proposal gate are complete; real qualification remains #37, and actual preflight renewal remains #38.
+- Braincrew #31, #32, #33, #42, #34, and #35 are merged and closed. PR #44 merged #34 as `67d7c104757f60194e59df20240ac47f8be9c027`; its dedicated worktree and local/remote feature branches are removed. PR #45 corrected the schema phase and exposed two missing prerequisites. Issue #46 now selects source-first evaluation freeze; Issue #47 owns the restricted-input and provenance-sidecar repair. Independent authoring/sealing remains #36 and stays blocked until #47 is merged and verified and the separate data-creation proposal gate approves source-first execution; real qualification remains #37, and actual preflight renewal remains #38.
 
 Issue #34 implementation checkpoint:
 : The collector rejects noncanonical tenant/user UUIDs before HTTP, requires reviewed owner
@@ -229,9 +230,8 @@ Issue #35 implementation checkpoint:
   material findings at
   `sha256:121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3`.
   The adjacent digest declaration and durable review record bind the approval. Issue #36 remains
-  blocked until sealer support accepts, preserves, and replays the provenance sidecar, the
-  selected source-first order passes the separate data-creation proposal gate, and a clean commit
-  reproduces the same digest.
+  blocked until Issue #47 is merged and verified, the separate data-creation proposal gate
+  approves source-first execution, and a clean commit reproduces the same digest.
   Focused TDD covers exact-byte approval, schema lifecycle separation, and blocker preservation.
   No corpus bytes, import manifest, AX operation, qualification, preflight, experiment, or PR #29
   change was created.

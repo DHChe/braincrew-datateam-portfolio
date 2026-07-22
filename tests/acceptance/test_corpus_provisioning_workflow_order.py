@@ -15,7 +15,7 @@ STATUS_PATH = PROJECT_ROOT / "docs/status/braincrew-delivery-workflow.md"
 CONTENT_SCHEMA_DIGEST = "372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb"
 PACK_SCHEMA_DIGEST = "4ddc71d7408324bfed6e7a25024899a7f689431f5f024fb2329f3f844352bffa"
 APPROVED_BRIEF_DIGEST = "121e2fa1f2c25eb57e714a25acf662c7a3d928ab68e5ea5f9a081f7368e93fe3"
-REPAIR_COMMIT = "0d4c0ae8876ad13d37acaa3bca81e2870c1d85d9"
+INTEGRATION_COMMIT = "49a8c2a6228418757c34d8f4bfa0f384d3f0ff52"
 
 
 def _section(document: str, heading: str, next_heading: str) -> str:
@@ -67,22 +67,34 @@ def test_issue_36_stays_blocked_on_authoring_contract_repairs() -> None:
         assert PACK_SCHEMA_DIGEST in document
         assert "source-first evaluation freeze" in document
         assert "Issue #36 remains blocked" in document
-        assert "current Issue #32 launcher" in normalized_document
+        assert "Issue #47" in normalized_document
 
     assert "provenance sidecar" in design
-    assert "sealer support for accepting, preserving, and replaying" in design
+    assert "sealer support for accepting, preserving, and replaying" in normalized_design
     assert "provenance sidecar" in issue_draft
     assert "provenance sidecar" in interview
     normalized_interview = " ".join(interview.split())
     assert "post-commit byte equality is **PASS**" in normalized_interview
-    assert "Issue #46, Issue #47, and the separate data-creation proposal gate remain" in (
-        normalized_interview
-    )
+    assert (
+        "Issue #46 is now closed after PR #48. Issue #47 has local TDD GREEN but must be "
+        "merged and verified"
+    ) in normalized_interview
+    assert "the separate data-creation proposal gate must still pass" in normalized_interview
     assert "remains blocked until post-commit byte equality passes" not in normalized_interview
 
-    assert "The current Issue #32 launcher still copies the pack schema" in normalized_design
-    assert "the launcher was pinned to" not in normalized_design
-    assert "must be repaired in a separate prerequisite before Issue #36" in normalized_design
+    assert (
+        "Issue #47 now repairs staged authoring to expose the content schema" in normalized_design
+    )
+    assert "The merged launcher still requires Issue #47 repair" not in normalized_design
+    assert "Issue #47 is merged and verified" in normalized_design
+    normalized_issue_draft = " ".join(issue_draft.split())
+    assert "Issue #47 is merged and verified" in normalized_issue_draft
+    assert "Issue #36 remains blocked until sealer support can accept" not in normalized_issue_draft
+    assert "blocked until sealer support" not in normalized_issue_draft
+    assert (
+        "#47 and the separate data-creation proposal gate are complete"
+        not in normalized_issue_draft
+    )
 
     execution_order = _section(
         design,
@@ -153,7 +165,8 @@ def test_issue_46_locks_source_first_freeze_and_successor_version_boundary() -> 
     )
 
     current_checkpoint = _section(documents[3], "## Current checkpoint", "## Transition history")
-    assert "Active canonical phase: Issue #46 implementation" in current_checkpoint
+    assert "Active canonical phase: Issue #47 implementation" in current_checkpoint
+    assert "Issue #46 is `CLOSED` after PR #48 merged" in current_checkpoint
     assert "Issue #36 is `BLOCKED`" in current_checkpoint
     assert "Issue #47" in current_checkpoint
     assert "separate data-creation proposal gate" in current_checkpoint
@@ -191,16 +204,16 @@ def test_delivery_status_records_the_published_review_repair_and_new_frontier() 
     current_checkpoint = _section(status, "## Current checkpoint", "## Transition history")
 
     assert "Last updated: 2026-07-23" in status
-    assert REPAIR_COMMIT in current_checkpoint
+    assert INTEGRATION_COMMIT in current_checkpoint
     assert APPROVED_BRIEF_DIGEST in current_checkpoint
     assert "10,680-byte brief" in current_checkpoint
     assert "`/root/sanitized_blind_reviewer`" in current_checkpoint
     assert "`/root/fresh_blind_final_review`" not in current_checkpoint
-    assert "PR #45" in current_checkpoint
+    assert "PR #48" in current_checkpoint
     assert "Issue #46" in current_checkpoint
     assert "Issue #47" in current_checkpoint
     assert "Issue #36 is `BLOCKED`" in current_checkpoint
-    assert "308 passed" in current_checkpoint
+    assert "7 passed" in current_checkpoint
     assert "publish this status-only commit" not in current_checkpoint
 
     assert "8,531-byte brief" not in current_checkpoint
