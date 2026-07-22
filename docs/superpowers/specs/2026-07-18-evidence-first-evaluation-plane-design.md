@@ -224,6 +224,34 @@ A fresh read-only check after the dataset-v2 change found external-state drift: 
 
 No baseline or candidate case artifact, metric, cost, latency, failure result, comparison gate, or manual critical-failure conclusion was produced. The incomplete evidence is a workflow/preflight blocker, not a failed product-quality result. Dashboard meaning, Issue #13 gate semantics, Calibration data, and Agent trajectory evaluation remain unchanged.
 
+#### Issue #15 independent corpus provisioning addendum
+
+The approved recovery design is
+`docs/superpowers/specs/2026-07-20-independent-evaluation-corpus-provisioning-design.md`.
+Braincrew owns an independently authored, sealed public/synthetic corpus pack; AX owns a generic
+local/test importer. Evaluation queries, expected answers, expected evidence, metric values,
+split labels, and fixtures are forbidden authoring inputs and forbidden pack fields. The pack is
+sealed before dataset-v2 cross-validation. Any source, digest, visibility, provenance, or license
+mismatch becomes a typed blocker and cannot feed automatic corpus or dataset repair.
+
+The corresponding AX load path must hold a tenant-wide session advisory lock, complete all
+embeddings outside any PostgreSQL transaction, and validate provider identity, count, dimension,
+finiteness, and provenance before opening one transaction that inserts the seed run, sources,
+chunks, spans, already-embedded vectors, exact digest manifest, and one
+`provider.embedding.used` audit event plus one `demo_seed_pack.loaded` audit event.
+No automatic delete or snapshot restore follows a successful load. After reviewed clean commits,
+the sequence is independent authoring and seal, cross-validation, AX dry-run, verified external
+snapshot, atomic apply, three role-visible corpus identities, six strict parse probes, and one
+create-only replayable preflight. The workflow stops at `READY`; baseline and candidate remain a
+separate authorization.
+
+As of 2026-07-22, AX #33, #34, and #35 are merged through AX `develop` commit
+`6bfc27a7bf170172a20dd470d6fd877858c9fb80`. This completes the generic schema/no-write dry-run,
+typed evaluation-principal validation, and atomic apply implementation prerequisites; it does not
+prove concurrency hardening, create a Braincrew pack, mutate the target evaluation database, or
+renew the preflight. Braincrew #31 is the selected next implementation ticket. Braincrew #34 and
+AX #36 are also dependency-unblocked, while Issue #15 remains blocked by Issue #30.
+
 ## 8. Dataset contract
 
 The dataset contains exactly 100 cases:

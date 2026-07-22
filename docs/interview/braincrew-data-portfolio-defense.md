@@ -518,7 +518,54 @@ Why endpoint availability and credentials are not enough:
 : The AX prerequisite resolves the old parse-observation and corpus-identity gaps, but the current evidence reports contributing version `bprime-2026-07-04`. A healthy endpoint and one corpus digest do not prove the three authorization roles see the correct `braincrew-evaluation-dataset@2.0.0` records. Preflight therefore requires a separate verified principal and corpus identity for every required role, plus the exact dataset contributing version. A reviewed public or synthetic AX-visible benchmark corpus must be provisioned before READY and remain unchanged through both runs.
 
 Current parse limitation:
-: Six exact attachment identities had previously returned valid strict parse responses. Fresh calls now fail as HTTP `503` with `audit_persistence_failed` and exhaust bounded retries. This is an operational blocker to reverify, not a negative parsing-quality score.
+: The last clean Issue #15 preflight used placeholder attachment identities and the old AX principal boundary, so it failed as HTTP `503` with `audit_persistence_failed` and exhausted bounded retries. AX #34 has since merged typed principal validation, but Braincrew #34 has not yet frozen the reviewed mapping or consumed those errors in a new clean preflight. The recorded preflight therefore remains `BLOCKED`; the code prerequisite is complete, but no new parsing-quality observation exists.
+
+Confirmed 503 root cause:
+: The parser and audit database are not the failure source. The current preflight map names
+  placeholder attachment UUIDs that do not exist, so AX correctly enters its denied-access audit
+  path. That path then tries to convert the configured non-UUID user label `evaluation-plane` to
+  a UUID, raises `ValueError`, and misclassifies the configuration error as
+  `503 audit_persistence_failed`. The six real synthetic attachments still return strict
+  observations with their owner UUID and `HRPractitioner`. The repair is typed principal
+  validation plus an active tenant-user subject check and the real mapping. Malformed IDs become
+  typed 400, well-formed but nonexistent/inactive subjects become typed 401 without an impossible
+  foreign-key audit, valid denied subjects remain audited 404, and true audit persistence errors
+  remain 503.
+
+Independent corpus provisioning decision:
+: Braincrew owns a separately authored and sealed synthetic corpus pack; AX owns a benchmark-
+  agnostic local/test importer. The author cannot read dataset cases, queries, expected answers,
+  expected evidence, scores, split labels, or fixtures. Only after the pack digest is sealed does
+  a read-only validator compare source identity, source-text digest, required and forbidden role
+  visibility, provenance, and license with dataset v2. A mismatch is a typed blocker and never an
+  instruction to tune either side.
+
+Atomicity and operations decision:
+: AX validates the complete pack and current embedding-provider lineage, generates every
+  embedding outside the database transaction, and rejects any incomplete, non-finite,
+  wrong-dimension, or provider-mismatched result with zero writes. A tenant-wide PostgreSQL
+  session advisory lock is held from the authoritative identity recheck through commit, so two
+  concurrent identical applies do not both call the provider. AX then inserts the seed run with
+  exact content/import/provider-evidence digests, sources, chunks, spans, already-embedded
+  vectors, one `provider.embedding.used` audit event, and one dedicated
+  `demo_seed_pack.loaded` event in one transaction. Dry-run precedes a restricted external
+  snapshot and approved apply. A later preflight failure does not trigger
+  automatic delete or restore; destructive recovery requires a new proposal gate.
+
+Prerequisite implementation progress:
+: AX #33, #34, and #35 are merged. They provide the reviewed schema/no-write dry-run, typed
+  principal failures, and atomic apply path, but they do not create or load a Braincrew corpus.
+  Braincrew #31 is the next selected ticket because it vendors the AX schema and unlocks the
+  authoring-boundary and qualification implementation. Braincrew #34 and AX #36 are also
+  dependency-unblocked, but the workflow keeps one active implementation frontier. The live
+  experiment remains blocked until the full corpus path, operator-gated AX #37 load, and
+  Braincrew #38 `READY` preflight complete.
+
+Why this is stronger than a benchmark fixture:
+: The corpus cannot be reverse-generated from the answer key, and AX derives
+  `contributing_versions` from records actually loaded under `created_by_seed_version`. The
+  Evaluation Plane therefore checks an independently created retrieval world through the real
+  role boundary instead of asking the SUT to echo evaluator-owned expectations.
 
 Rejected alternative:
 : Treat the SUT-verified B-prime digest as proof that it contains the 30-case benchmark, or fill missing attachment, corpus, latency, token, cost, or case results from fixtures. Endpoint health and a real corpus digest do not establish dataset alignment; those shortcuts would turn missing provenance into a false comparison.
@@ -531,6 +578,19 @@ Likely follow-ups:
 - "Can the fixture dashboard stand in for the live run?" — No. Fixture and live execution modes are incompatible, and Issue #14 explicitly labels its evidence as not a live AX verification.
 - "Why not map `manager` or `interviewer` to whichever AX role makes the run work?" — We withdrew that crosswalk. Dataset v2 records the exact AX authorization role in each case and keeps `manager` or `interviewer` only as explanatory persona. Preflight never derives permissions from persona.
 - "Does `parse_available=true` mean parsing passed?" — No. The six local synthetic attachments proved the strict endpoint and exact attachment identities execute, but AX returned no evidence spans, headings, metadata, tables, or lists. Those missing observations remain measured zeroes where applicable; transport success is not a quality claim.
+- "Why not generate the corpus from expected evidence?" — That would let the evaluator manufacture
+  its own supporting world. Independent authoring and post-seal cross-validation preserve a real
+  possibility of mismatch; a mismatch blocks rather than becoming training feedback.
+- "Why not seed rows directly with SQL?" — A one-off write would bypass AX's tenant, schema,
+  embedding, audit, idempotency, and reproducibility contracts. The generic importer makes the
+  same data path reviewable without teaching AX Braincrew semantics.
+- "Why not clean up automatically if preflight still fails?" — A successful additive load is
+  evidence-bearing state. Automatic deletion could destroy diagnostic provenance or target the
+  wrong rows; exact recovery scope requires a separate destructive approval.
+- "What happens if two operators apply the same pack together?" — The tenant-wide session
+  advisory lock serializes the authoritative digest check before provider work. The first import
+  may embed and commit; the second then observes the persisted `import_digest` and returns
+  `ALREADY_LOADED` without another provider call or database write.
 
 ## Failure taxonomy defense
 

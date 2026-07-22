@@ -116,6 +116,55 @@ path stops before HTTP discovery and parse probes when its producer is dirty. Th
 prospective check above shows the three corpus-provenance blockers and current parse failure that
 will remain after a clean commit unless external AX data or operational state changes.
 
+### Clean-producer external blocker reproduction
+
+After commit `1185ba8a9e6bab038743531a56f8f2c5ce2b44eb`, a separate clean-producer preflight was created
+outside the repository at
+`/private/tmp/braincrew-issue15-clean-preflight.Dy9AW6/issue-15-v2-clean-producer-1185ba8.json`.
+Replay reproduced state `BLOCKED`, logical digest
+`sha256:06bcb74747000c0aedb825f14eac0bb45d12ba37e50394a527fad3d33b7caecf`, and exactly four
+external blockers: one `LIVE_CORPUS_DATASET_PROVENANCE_MISMATCH` for each of `Employee`,
+`Executive`, and `HRPractitioner`, plus `LIVE_PARSE_OBSERVATION_FAILED` for the first strict
+parsing probe. Neither baseline nor candidate started.
+
+Read-only AX database and endpoint inspection then isolated the parsing failure. The configured
+mapping used nonexistent placeholder attachment UUIDs, so AX entered the denied-access audit
+path. The configured user ID `evaluation-plane` was not a UUID; denied-audit persistence called
+`uuid.UUID(principal.user_id)`, raised `ValueError: badly formed hexadecimal UUID string`, and
+was surfaced as HTTP `503 audit_persistence_failed`. PostgreSQL, `audit_events`, the parser, and
+all six stored attachments were healthy.
+
+The current synthetic attachment mapping is:
+
+| Parsing document | AX attachment UUID | Required role |
+| --- | --- | --- |
+| `synthetic-rule-015` | `2c7d525b-7463-463e-8893-0d37009775de` | `HRPractitioner` |
+| `synthetic-rule-016` | `e2d16eeb-c86e-45be-994f-fe3aecfc3f8d` | `HRPractitioner` |
+| `synthetic-rule-017` | `87dcebfe-f3cf-47cd-8e0c-c03a6a28270f` | `HRPractitioner` |
+| `synthetic-rule-018` | `816b01c3-a571-4f02-9f14-32e71d7fb2ee` | `HRPractitioner` |
+| `synthetic-rule-019` | `07b849ea-5e0a-44f7-87c9-600f539d7d9a` | `HRPractitioner` |
+| `synthetic-rule-020` | `569dc67a-5ba8-4a00-a0d8-e03a8ac43449` | `HRPractitioner` |
+
+All six return strict `ax-parse-observation-v1` when called with owner principal UUID
+`22222222-2222-2222-2222-222222222222` and `HRPractitioner`. This proves the recovery requires
+principal/mapping correction and typed UUID validation, not service restart or database repair.
+The attachment UUIDs are local synthetic identifiers, not private document evidence.
+
+### Prerequisite implementation checkpoint — 2026-07-22
+
+AX #33, #34, and #35 are closed through AX `develop` merge
+`6bfc27a7bf170172a20dd470d6fd877858c9fb80`. They provide the reviewed generic schema and
+no-write dry-run, typed evaluation-principal failures, and the atomic apply path. This is
+prerequisite implementation evidence only: no independently authored Braincrew pack, operator
+snapshot, target-database apply, renewed role-visible corpus identity, or renewed strict parse
+observation was produced. The clean preflight artifact and its four blockers therefore remain the
+latest experiment evidence.
+
+Braincrew #31 and #34 now have their external AX prerequisites closed, and AX #36 has AX #35
+closed. Braincrew #31 is the selected next ticket because it unlocks the longest remaining corpus
+path. None of these implementation-frontier facts authorizes baseline/candidate execution or
+changes the recorded `BLOCKED` result.
+
 The old create-only v1 artifacts and their replay digests remain historical evidence of earlier
 fail-closed checks. Because their dataset, generic-role, single-corpus, and schema contracts were
 superseded, they cannot authorize either v2 run.
@@ -128,15 +177,19 @@ evaluation changed.
 
 Resume only after all of the following are true:
 
-1. dataset-v2 and preflight-v2 pass ticket-level Standards/Spec review and full repository gates;
-2. the Git Lifecycle Proposal Gate authorizes a local commit, producing a clean immutable Evaluation
-   Plane SHA;
+1. the approved Braincrew #31-#37 and AX #36 tickets satisfy their own implementation, review,
+   evidence, repository-gate, and Git Lifecycle Proposal contracts, including clean-baseline and
+   RED/GREEN proof where their ticket type requires code changes;
+2. Braincrew #34 freezes valid evaluation principals and the exact six-attachment mapping against
+   the merged AX typed-principal contract;
 3. reviewed public or synthetic AX data proves the exact role-visible corpus identity and
    `braincrew-evaluation-dataset@2.0.0` provenance for `Employee`, `Executive`, and
    `HRPractitioner`;
-4. the six parsing attachment UUIDs and all prompt/model/evaluator/Adapter identities are frozen;
-5. a new create-only v2 preflight replays and reports `READY`;
-6. only then may the 30-case baseline and candidate run, replay, compare, and receive manual
+4. AX #37 completes its separately approved snapshot, dry-run, atomic load, and sanitized handoff
+   without automatic repair or cleanup;
+5. the six parsing attachment UUIDs and all prompt/model/evaluator/Adapter identities are frozen;
+6. Braincrew #38 creates a new clean, create-only v2 preflight that replays and reports `READY`;
+7. only then may the 30-case baseline and candidate run, replay, compare, and receive manual
    critical-failure and provenance review.
 
 Issue #15 remains open until the full live evidence path is complete.
@@ -167,4 +220,7 @@ Manual provenance review instead confirms the current blockers: every visible AX
 HTTP 503. Therefore baseline/candidate artifact replay, comparison gates, and result-level critical
 failure review are correctly not run; treating them as passed would be a false quality claim.
 
-No commit, push, PR #29 update, ready transition, or merge is authorized by this document.
+On 2026-07-22 the user authorized one documentation-only Lore commit and force-free push of the
+four synchronized canonical documents plus the two approved provisioning documents to the
+existing draft PR #29. That authorization does not cover code, corpus, database, service, labels,
+ready transition, merge, Issue #15 closure, or baseline/candidate execution.

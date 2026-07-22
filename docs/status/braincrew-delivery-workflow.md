@@ -1,6 +1,6 @@
 # Braincrew Portfolio Delivery Workflow Status
 
-Last updated: 2026-07-20
+Last updated: 2026-07-22
 
 ## Purpose
 
@@ -78,27 +78,205 @@ research and AX_portfolio context
 - Completed phase: fetched `origin/develop` points exactly to `52e85ecc303291e0145ac0867c807e9579b04800`; the Issue #13 local branch, remote branch, and dedicated worktree are absent.
 - Completed phase: PR #28 squash-merged Issue #14 into `develop` as `e33de765dc54ac76159f249525456d5ab4e63667`; GitHub reports PR #28 `MERGED` and Issue #14 `CLOSED/COMPLETED`.
 - Completed cleanup: fetched `origin/develop` points exactly to `e33de765dc54ac76159f249525456d5ab4e63667`; no local Issue #14 branch, remote Issue #14 branch, registered Issue #14 worktree, or Issue #14 worktree directory remains.
-- Active phase: Issue #15 dataset authorization repair and preflight renewal with `test-driven-development`; the worktree remains on existing branch `feat/issue-15-live-verification` with draft PR #29.
+- Blocked phase: Issue #15 dataset authorization repair and preflight renewal; the worktree remains on existing branch `feat/issue-15-live-verification` with draft PR #29, but no further live execution is authorized while the new provisioning prerequisite remains open.
+- Completed supporting phase: the `brainstorming` design loop locked independent corpus
+  ownership, the generic AX importer boundary, DB-outside embedding plus one-transaction apply,
+  typed failure/security rules, TDD, independence proof, and the exact execution/stop order. The
+  canonical Braincrew and AX design files both passed second-round independent read-only review
+  with `OKAY`, and the user approved both written specs on 2026-07-21.
+- Completed canonical phase: `to-spec`. [Braincrew Issue #30](https://github.com/DHChe/braincrew-datateam-portfolio/issues/30)
+  and [AX Issue #32](https://github.com/DHChe/AX_portfolio/issues/32) publish the approved parent
+  specifications with `ready-for-agent` and cross-link each other.
+- Workflow correction: `writing-plans` is not the next canonical phase. The next canonical phase
+  is `to-tickets`, which must create fresh-context vertical slices and dependency edges.
+  `writing-plans` remains optional only for a concrete ticket-local gap.
+- Completed AX setup: the repository now documents its GitHub tracker, single-context domain
+  contract, and canonical five-label workflow under `AGENTS.md` and `docs/agents/`; the four
+  missing labels were created while the existing `wontfix` label was retained.
+- Completed canonical phase: `to-tickets` for Braincrew Issue #30 and AX Issue #32. AX Issues
+  [#33](https://github.com/DHChe/AX_portfolio/issues/33) through
+  [#37](https://github.com/DHChe/AX_portfolio/issues/37) and Braincrew Issues
+  [#31](https://github.com/DHChe/braincrew-datateam-portfolio/issues/31) through
+  [#38](https://github.com/DHChe/braincrew-datateam-portfolio/issues/38) are native sub-issues
+  with the approved dependency graph and explicit cross-repository prerequisite links.
+- Completed AX prerequisites: AX #33 published the reviewed generic schema and no-write dry-run
+  through PR #39 (`47673b83a9fb431f2bad550781db18c7bee8b67e`); AX #34 published typed
+  evaluation-principal validation through PR #40
+  (`72805930d9addd8ea41743d1922acf8de621c3f8`); and AX #35 published the atomic apply path
+  through PR #41 (`6bfc27a7bf170172a20dd470d6fd877858c9fb80`). All three issues are closed.
+- Current implementation frontier: Braincrew #31 and #34 now have their external AX prerequisites
+  closed, and AX #36 has AX #35 closed. None of these child tickets currently carries a
+  `ready-for-agent` label. Preserve one active implementation frontier at a time.
+- Active next stage: fresh-context Braincrew #31 handoff after this documentation-only PR #29
+  synchronization. Braincrew #31 is first because it vendors the reviewed AX schema and opens the
+  longest corpus-authoring and qualification path. No Issue #31 branch, worktree, baseline, RED
+  test, implementation, corpus bytes, database operation, or service mutation has started.
+- AX #33-#35 changed importer and evaluation-boundary code only through their reviewed merges.
+  No independently authored Braincrew pack, operator snapshot, target-database load, renewed
+  preflight, baseline, or candidate exists yet.
 - Completed local slice: `ax-sut-http-v1` now pins merged AX SHA `a5391ae8aa2b0d1342809f3599283b7759d6e4e3`, strictly validates local/test parse-observation and corpus-identity responses, requires both operations in capability evidence, checks the SUT corpus digest, and blocks unproven dataset-to-corpus provenance.
 - Blocked canonical phase: Issue #15 live baseline/candidate Verification execution. No baseline, candidate, comparison, or manual case-review result exists because the mandatory preflight is not `READY`.
 - Active artifact contract: create-only `live-verification-preflight-artifact-v2`. Earlier v1 preflight files remain historical but cannot authorize a dataset-v2 run; no new formal v2 artifact has been published from the dirty producer.
-- Entry condition status: satisfied on 2026-07-20; blocker Issues #7, #12, and #13 are all `CLOSED/COMPLETED`, Issue #15 carries `ready-for-agent`, and `feat/issue-15-live-verification` plus its merge base start exactly from fetched `origin/develop@e33de765dc54ac76159f249525456d5ab4e63667`.
+- Entry condition status: withdrawn on 2026-07-21. Blocker Issues #7, #12, and #13 remain `CLOSED/COMPLETED`, but open Issue #30 is now a native GitHub blocker of Issue #15 and `ready-for-agent` was removed from Issue #15. The branch and merge-base evidence remains unchanged.
 - Active worktree: `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-15-live-verification`.
 - Scope exclusions: no AX behavior change during execution, no Calibration retuning after Verification results, no dashboard or Issue #13 gate-semantics change, and no Agent trajectory evaluation.
-- Preflight evidence: `braincrew-evaluation-dataset@2.0.0` preserves exactly 30 Verification cases and freezes digest `sha256:bf29c2c18c66afb24bba546b8f7f32471dc744ba640f64a9d7901117c28c3448`; v1 remains unchanged at its original digest. The plan remains `top_k=5`, baseline `evidence_limit=3`, candidate `evidence_limit=5`; the Evaluation Plane is intentionally dirty until review and an authorized commit.
+- Preflight evidence: `braincrew-evaluation-dataset@2.0.0` preserves exactly 30 Verification cases and freezes digest `sha256:bf29c2c18c66afb24bba546b8f7f32471dc744ba640f64a9d7901117c28c3448`; v1 remains unchanged at its original digest. The plan remains `top_k=5`, baseline `evidence_limit=3`, candidate `evidence_limit=5`. The latest clean preflight producer remains `1185ba8a9e6bab038743531a56f8f2c5ce2b44eb`; this documentation-only publication does not create or authorize a new preflight.
 - Local authority/configuration evidence: the isolated AX API is `READY`; the local/test tenant and all three required roles respond; prompt `ax-answer-instructions-v1` and `openai/gpt-5.4-mini` identities remain frozen without exposing a credential value.
 - Capability evidence: role-isolated discovery SUT-verifies different B-prime inventories: `Employee` 10 records at `sha256:ccc37f7d85306e13d6e18d725b9afd2c60f2a9504fd4168d888b45b49d8d4647`, `Executive` 134 at `sha256:9ecffe846c41a6edd674bc791869c7eb147892d66897d165c467e2e72b4a3d68`, and `HRPractitioner` 119 at `sha256:e1d2c986edb048a8afd893fea7bc5eb31bdd9f56257cc36e3bd2e60be66fde9b`.
 - Current blockers: the prospective v2 capability pass returns one `LIVE_CORPUS_DATASET_PROVENANCE_MISMATCH` per role because all three contribute only `bprime-2026-07-04`, not `braincrew-evaluation-dataset@2.0.0`, and its first strict parse probe returns `LIVE_PARSE_OBSERVATION_FAILED` after HTTP 503 retries are exhausted. The formal create-only dirty-producer artifact also records `LIVE_CAPABILITY_EVIDENCE_MISSING` and `LIVE_EVALUATION_PLANE_DIRTY`; no 30-case execution is authorized.
-- Parsing authority progress: the six synthetic documents had previously reached parsed state, but fresh strict calls now return HTTP `503` with `audit_persistence_failed` and exhaust three transient retries. This operational failure must be resolved and reverified; no parsing-quality result is claimed.
+- Parsing root cause: the six documents and audit database are healthy. The configured map uses
+  nonexistent placeholder attachment UUIDs, which enters the denied-access audit path; the
+  configured user ID `evaluation-plane` is not a UUID, so denied-audit persistence raises
+  `ValueError` during UUID conversion and is surfaced as HTTP `503 audit_persistence_failed`.
+  The existing six attachment UUIDs return strict observations with owner UUID
+  `22222222-2222-2222-2222-222222222222` and `HRPractitioner`. Mapping/principal correction and
+  an AX local/test UUID validation guard are required; no parser or database repair is indicated.
+  AX #34 has now merged the server-side principal-validation prerequisite, but Braincrew #34 still
+  must consume the typed failures and freeze the reviewed mapping before a renewed preflight.
 - Role authority decision: the proposed minimum-permission crosswalk was withdrawn. Dataset v2 independently stores exact AX `authorization_role` and explanatory `persona`; current Verification cases require `Employee`, `Executive`, and `HRPractitioner`, and preflight derives no authority from persona.
-- Resume condition: provision and review role-visible public or synthetic AX corpora that each prove `braincrew-evaluation-dataset@2.0.0`, freeze the three corpus identities and six attachment UUIDs, then require a new create-only preflight from clean Evaluation Plane and AX commits to report `READY` before either 30-case run starts.
+- Resume condition: complete Braincrew #31, then the #32/#33/#35/#36/#37 corpus path; complete
+  Braincrew #34 and AX #36; stop at every ticket's Git lifecycle gate; then use Braincrew #37 to
+  unblock the operator-gated AX #37 snapshot/load. Braincrew #38 may renew the create-only
+  preflight only after #34, #37, and AX #37 close. That preflight must freeze the three corpus
+  identities and six attachment UUIDs and replay as `READY` from clean Evaluation Plane and AX
+  commits before either 30-case run starts.
 - Completion condition: after resume, compatible baseline/candidate artifacts cover and replay all 30 cases, comparison gates execute, and critical failures plus provenance receive manual review; until then Issue #15 remains open and no live quality claim is permitted.
 - Clean baseline: `uv sync --frozen --all-groups`, Ruff format and lint, strict mypy, full pytest (`207 passed in 11.69s`), and `git diff --check` succeeded before the first RED.
 - Review status: the new dataset-v2 and strict parse-probing preflight slice completed RED/GREEN coverage, documentation synchronization, and ticket-level Standards/Spec review. Fresh full gates pass (`ruff format`, `ruff check`, `mypy`, `git diff --check`, and 241 pytest tests). Dataset v1/v2 and the current BLOCKED create-only preflight replay reproduce their stored digests. Result-level replay and comparison remain unrun because no baseline or candidate artifact is authorized or exists.
 - Authorized progress completed: Lore commit `f2c60b91623563ce7dd223b36fbd9bba41c0bac7` was pushed without force, PR #29 was synchronized and remains draft, and its Python/frontend checks passed.
-- Workflow gate: the dataset-v2 and role-isolated preflight changes are uncommitted. Any next commit, push, PR #29 modification, ready transition, merge, and Issue #15 closure require a new Git Lifecycle Proposal Gate.
+- Workflow gate: on 2026-07-22 the user authorized one documentation-only Lore commit and
+  force-free push of these six synchronized files to the existing draft PR #29. That authorization
+  does not cover code, corpus, database, service, label, ready transition, merge, Issue #15
+  closure, or any baseline/candidate action.
 
 ## Transition history
+
+### 2026-07-22 — AX #35 merged and the Braincrew implementation frontier returned
+
+- Remote evidence: AX PRs #39, #40, and #41 are merged; AX Issues #33, #34, and #35 are closed;
+  AX `develop` contains merge `6bfc27a7bf170172a20dd470d6fd877858c9fb80`; and PR #41's
+  required checks completed successfully.
+- Frontier evidence: Braincrew #31's external AX #33 prerequisite and Braincrew #34's external
+  AX #34 prerequisite are closed. AX #36's native AX #35 blocker is closed. Braincrew #31 is the
+  selected next ticket because it unlocks both Braincrew #32 and #33 and therefore the longest
+  remaining path to a qualified corpus.
+- Preserved blocker: Braincrew Issue #30 remains open as a native blocker of Issue #15. PR #29
+  remains draft, the last clean preflight remains `BLOCKED`, and no baseline/candidate execution
+  or live quality claim exists.
+- Documentation publication: the user authorized one Lore commit and force-free push containing
+  only the four synchronized canonical documents and two approved provisioning documents. PR #29
+  must remain draft after publication.
+- Next action: start Braincrew #31 in a fresh session from newly verified `origin/develop`, apply
+  the single-frontier readiness policy, run the complete clean baseline before the first RED,
+  implement only schema vendoring and immutable pack sealing, review it, and stop at the Braincrew
+  Git Lifecycle Proposal Gate.
+- Completion condition for Braincrew #31: exact AX schema bytes/digests, strict pack validation,
+  immutable create-only sealing, sanitized receipts, targeted tests, full repository gates, and
+  ticket-level review all pass with zero unresolved blocker; no commit, push, PR, or downstream
+  ticket begins without its own proposal decision.
+
+### 2026-07-21 — Two-repository `to-tickets` graph published and verified
+
+- Approval: the user approved the recommended thirteen-ticket breakdown, dependency graph, and
+  frontier/operational label policy without changes.
+- AX sub-issues: #33 no-write dry-run, #34 evaluation-principal validation, #35 atomic apply,
+  #36 disposable-PostgreSQL idempotency/concurrency proof, and #37 operator-controlled load are
+  native children of AX parent #32.
+- Braincrew sub-issues: #31 schema pinning/sealing, #32 authoring isolation, #33 qualification
+  implementation, #34 principal/attachment recovery, #35 authoring brief, #36 restricted corpus
+  authoring, #37 actual pack qualification, and #38 READY preflight renewal are native children
+  of Braincrew parent #30.
+- Native dependency evidence: AX records three same-repository blocked-by edges and Braincrew
+  records eight. The graph is acyclic and every body names the same blockers as GitHub.
+- Cross-repository prerequisites: AX #33 unblocks Braincrew #31; AX #34 unblocks Braincrew #34;
+  Braincrew #37 unblocks AX #37; and AX #37 unblocks Braincrew #38. Each relationship is linked
+  from the blocked ticket and reciprocally from its external blocker.
+- Label evidence: only immediate frontier tickets AX #33 and #34 carry `ready-for-agent`.
+  Blocked tickets carry no readiness label; AX #37 and Braincrew #36 require an explicit future
+  operational/data gate and `ready-for-human` handling when they reach the frontier.
+- Parent preservation: AX #32 and Braincrew #30 remain open with their original body, state, and
+  `ready-for-agent` label. Braincrew #30 remains the open native blocker of Issue #15, whose
+  readiness label remains absent.
+- Stop evidence: no implementation, corpus authoring, database or service mutation, baseline or
+  candidate execution, commit, push, PR modification, ready transition, merge, or issue closure
+  occurred during ticket publication.
+- Next action: start AX #33 in a fresh session from a newly verified latest AX `develop`, run the
+  full clean backend baseline before the first RED, implement only the no-write dry-run slice,
+  review it, and stop at the AX Git Lifecycle Proposal Gate.
+- Completion condition for the next ticket: strict schema generation and the installed no-write
+  dry-run pass targeted plus full backend gates with zero unresolved review blocker; no commit,
+  push, PR, or downstream ticket starts without the next explicit proposal decision.
+
+### 2026-07-21 — Two-repository `to-tickets` decomposition reached the approval quiz
+
+- Active skill: `to-tickets`.
+- Read-only evidence: both parent issue bodies and comments, both approved design documents, the
+  AX tracker/domain contracts and relevant importer/evaluation seams, and the Braincrew
+  pack/preflight seams were inspected before slicing.
+- Draft shape: five AX tickets cover no-write validation, evaluation-principal validation,
+  atomic apply, disposable-PostgreSQL concurrency/idempotency proof, and an operator-gated load;
+  eight Braincrew tickets cover schema pinning/sealing, authoring isolation, qualification,
+  parse-principal recovery, the restricted authoring brief and corpus run, final qualification,
+  and preflight renewal.
+- Required gate: the user must approve ticket granularity, genuine blocking edges, and the
+  frontier/operational label policy before any GitHub child issue is published.
+- Current stop: no code, corpus, database, service, commit, push, PR, baseline/candidate, child
+  issue, sub-issue, dependency, or tracker-label mutation was performed in this decomposition
+  round.
+- Completion condition: publish the approved tickets in blocker-first order, add native
+  same-repository sub-issue/dependency relationships and explicit cross-repository prerequisite
+  links, synchronize this workflow status, verify the graph, and stop before implementation.
+
+### 2026-07-21 — AX workflow setup and two-repository `to-spec` publication completed
+
+- Authorization: the user approved the publication proposal covering AX Matt workflow setup,
+  canonical triage labels, both parent-spec publications, their cross-link, and the Braincrew
+  Issue #15 blocker-state correction.
+- AX setup evidence: `AGENTS.md` routes agents to `docs/agents/issue-tracker.md`,
+  `docs/agents/domain.md`, and `docs/agents/triage-labels.md`; GitHub reports the canonical
+  `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix` labels with the
+  approved descriptions and colors.
+- Published specs: [AX Issue #32](https://github.com/DHChe/AX_portfolio/issues/32) and
+  [Braincrew Issue #30](https://github.com/DHChe/braincrew-datateam-portfolio/issues/30) are open,
+  carry `ready-for-agent`, and link to each other as companion specifications.
+- Dependency evidence: GitHub's native issue-dependency API records Braincrew Issue #30 as an open
+  blocker of Issue #15. Issue #15 remains open and no longer carries `ready-for-agent`.
+- Current stop: `to-tickets` publication, commit, push, PR #29 modification, ready transition,
+  merge, code change, corpus or database change, and service-state change were not performed.
+- Next canonical phase: `to-tickets` in both repositories. Completion requires bounded vertical
+  tickets, native dependency edges, cross-repository prerequisite links, and a fresh-context
+  implementation handoff without starting implementation in the decomposition session.
+
+### 2026-07-21 — External-blocker designs approved; `to-spec` synthesis started
+
+- Approval evidence: the user approved both independently reviewed written design files.
+- Active skill: `to-spec`.
+- Expected artifacts: separate local tracker-ready parent-spec drafts for Braincrew corpus
+  provisioning and the AX generic importer, preserving the approved ownership, security,
+  atomicity, TDD, and stop boundaries without reopening design.
+- Test-seam evidence: the approved Braincrew seam is installed CLI through sealed-pack
+  qualification, create-only receipts, AX Adapter evidence, and preflight replay; the approved AX
+  seam is command through real PostgreSQL/pgvector transaction behavior and evaluation HTTP
+  responses.
+- Historical stop: this transition authorized local draft and documentation synchronization only.
+  The later publication transition above separately authorized and completed AX workflow setup,
+  parent-issue publication, labels, and dependencies while retaining the code, Git, data, and
+  service exclusions.
+- Completion condition: both drafts reproduce the approved designs, pass read-only review and
+  diff validation, and reach a proposal gate for AX setup plus tracker publication.
+- Completion evidence: both drafts contain every required `to-spec` section, retain the approved
+  typed blockers, TDD seams, scope exclusions, and stop gates, contain no implementation file
+  paths or secret-pattern matches, and pass trailing-whitespace plus repository `git diff --check`
+  validation.
+- Gate result: authorization was granted and the publication transition above completed. No
+  `to-tickets` publication began at this gate.
+
+### 2026-07-20 — Issue #15 external-blocker design passed independent review
+
+- Braincrew design: `docs/superpowers/specs/2026-07-20-independent-evaluation-corpus-provisioning-design.md` locks independent synthetic authoring, filesystem isolation, post-seal cross-validation, two-manifest provenance, role/parse recovery, TDD, and the READY stop gate.
+- AX design: `docs/superpowers/specs/2026-07-20-generic-synthetic-seed-pack-importer-design.md` locks the benchmark-agnostic importer, exact digest/audit contracts, tenant-wide advisory serialization, provider-before-transaction preparation, one-transaction load, principal errors, and minimum privileges.
+- Review evidence: first-round findings were incorporated; second-round independent read-only reviews returned `OKAY` for both repositories with no material design blocker to canonical routing review.
+- Stop at that transition: user written-spec approval, completed on 2026-07-21. No code, corpus, database, service, commit, push, PR, or merge action was authorized by that transition.
 
 ### 2026-07-20 — Issue #15 role crosswalk withdrawn; dataset v2 created
 
