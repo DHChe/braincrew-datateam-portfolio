@@ -907,3 +907,72 @@ compatibility remained green, and the sealed input tree was unchanged. No retry,
 import, database, service, snapshot, preflight, or experiment execution was performed. The next
 operator-controlled step is AX Issue #37; PR #29 and `feat/issue-15-live-verification` remain
 untouched and read only.
+
+### Issue #56 AX-canonical publication-byte boundary
+
+Braincrew Issue #56 repairs a serialization-contract mismatch without changing qualification
+identity. PR #55 published `import-manifest.json` as strict canonical JSON followed by one trailing
+line feed. AX PR #42 accepts only the exact canonical JSON bytes, so the historical file is rejected
+with `AX_SEED_PACK_CANONICAL_BYTES_INVALID` even though its parsed content and logical
+`import_digest` are correct.
+
+Newly created import manifests therefore use newline-free canonical JSON bytes. The qualification
+receipt contract remains unchanged: receipt files still use canonical JSON plus exactly one trailing
+line feed. The identity split is explicit:
+
+- Qualification receipt logical digest remains
+  `sha256:c564b1442c135fef5d5430b313914951e2b5ab4cc7e0fd0bbbdefb0b928ea6ce`.
+- Qualification receipt file digest remains
+  `sha256:8843c87597db779ece932585445bae9dbdf9b5f26f4f81a7b9d069a1699968ed`.
+- Import logical digest remains
+  `sha256:9df8dbd212c6e0253b3c58feb392869bffb226d816805ee7ed166072596003bd`.
+- Historical PR #55 import file digest with one trailing line feed is
+  `sha256:b1899d6be6017a2485d93c67066023a87f8aaa78b0b63012fb9f8d8a040f3821`.
+- The locally generated AX-canonical candidate file digest is
+  `sha256:e00c7036bd67f93347957215fddc4185a18eb2e62e90bfb58657f0b7598f20ac`.
+
+Replay remains backward compatible with receipt-v1 and with both the historical PR #55
+canonical-plus-one-line-feed import representation and the new exact-canonical representation.
+Leading or trailing spaces, pretty-printed JSON, multiple line feeds, and every other
+non-canonical representation fail closed.
+
+Rejected alternative:
+: Loosen AX to normalize whitespace. This would weaken AX's exact publication-byte and tamper
+  boundary while moving a producer defect into the consumer.
+
+Trade-off:
+: Replay carries one narrow historical exception for PR #55 canonical JSON plus exactly one line
+  feed. That small compatibility branch is preferable to invalidating already published evidence,
+  but it must never expand into general whitespace normalization.
+
+Failure modes:
+: A new import manifest with any trailing byte remains unusable by AX; a changed receipt byte would
+  alter qualification evidence; and accepting any representation beyond the two digest-known import
+  forms would hide non-canonical or tampered artifacts.
+
+Validation evidence:
+: Acceptance TDD reproduced the trailing-line-feed mismatch, preserved the receipt and logical
+  digests, replayed receipt-v1 and both receipt-v2 import forms, and rejected all other tested
+  whitespace forms. Exact AX SHA `e25f333b55fca34118a954a17e5e0cd88dc7ea39` accepted the locally
+  generated canonical candidate read only with 14 sources and 11,528 total source bytes while
+  database and provider settings were absent.
+
+Likely follow-ups:
+
+- "Does this authorize publication?" — No. It proves the producer implementation only.
+- "What must the later operator proposal bind?" — The clean execution SHA, immutable inputs, output
+  path, one-run boundary, and independent digest reviewer.
+- "When may AX resume?" — Only after that separately approved create-only publication completes and
+  its digest is independently verified.
+
+This is an implementation contract, not an operational execution record. The existing external
+Issue #37 qualification artifacts remain immutable. No pack was republished or requalified, and no
+AX code, database, provider, snapshot, dry-run, apply, service verification, baseline, or candidate
+path ran. Read-only compatibility at exact AX SHA
+`e25f333b55fca34118a954a17e5e0cd88dc7ea39` accepted the new canonical bytes with 14 sources and
+11,528 total source bytes while database and provider settings were absent.
+
+Actual create-only republish remains blocked on a separate proposal that fixes the clean execution
+SHA, immutable inputs, output path, one-run boundary, and independent digest reviewer. AX Issue #37
+remains blocked until that republish is complete and reviewed. Braincrew Issue #38 remains blocked
+until AX Issue #37 completes its own operator-controlled load and verification gates.

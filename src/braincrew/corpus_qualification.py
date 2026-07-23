@@ -204,7 +204,7 @@ def qualify_corpus_pack(
         tenant_slug=tenant_slug,
         demo_company_id=demo_company_id,
     )
-    import_bytes = canonical_json_bytes(import_manifest.model_dump(mode="json")) + b"\n"
+    import_bytes = canonical_json_bytes(import_manifest.model_dump(mode="json"))
 
     receipt_created = False
     try:
@@ -267,6 +267,7 @@ def replay_qualification_receipt(receipt_path: Path) -> dict[str, str]:
     receipt_bytes, receipt_payload = _read_canonical_model(
         receipt_path,
         receipt_model,
+        byte_policy="trailing-lf-required",
         error_message="qualification receipt is not strict canonical JSON",
     )
     receipt = receipt_model.model_validate(receipt_payload)
@@ -315,6 +316,7 @@ def replay_qualification_receipt(receipt_path: Path) -> dict[str, str]:
     _, import_payload = _read_canonical_model(
         import_path,
         import_model,
+        byte_policy="ax-import",
         error_message="import manifest is not strict canonical JSON",
     )
     import_manifest = import_model.model_validate(import_payload)
@@ -777,6 +779,7 @@ def _read_canonical_model(
     path: Path,
     model: type[BaseModel],
     *,
+    byte_policy: Literal["trailing-lf-required", "ax-import"],
     error_message: str,
 ) -> tuple[bytes, dict[str, Any]]:
     try:
@@ -785,7 +788,12 @@ def _read_canonical_model(
         validated = model.model_validate(payload)
     except (OSError, UnicodeError, json.JSONDecodeError, ValidationError) as exc:
         raise CorpusQualificationError("CORPUS_PACK_SCHEMA_INVALID", error_message) from exc
-    canonical = canonical_json_bytes(validated.model_dump(mode="json")) + b"\n"
-    if raw_bytes != canonical:
+    canonical = canonical_json_bytes(validated.model_dump(mode="json"))
+    accepted_bytes = (
+        (canonical + b"\n",)
+        if byte_policy == "trailing-lf-required"
+        else (canonical, canonical + b"\n")
+    )
+    if raw_bytes not in accepted_bytes:
         raise CorpusQualificationError("CORPUS_PACK_DIGEST_MISMATCH", error_message)
     return raw_bytes, payload

@@ -577,6 +577,59 @@ import, database, service, snapshot, preflight, or experiment execution was perf
 operator-controlled step is AX Issue #37; no renewed preflight, baseline, candidate, comparison,
 or live quality claim exists.
 
+### 14.6 Issue #56 qualification-identity and publication-byte boundary
+
+Braincrew and AX use two related but distinct contracts. Braincrew qualification identity is bound
+to normalized logical content, while AX import requires the manifest file to equal its canonical
+JSON bytes exactly. PR #55 added one trailing line feed to the import file; exact AX PR #42 code at
+SHA `e25f333b55fca34118a954a17e5e0cd88dc7ea39` correctly rejects that representation with
+`AX_SEED_PACK_CANONICAL_BYTES_INVALID`.
+
+Issue #56 changes only newly created `import-manifest.json` publication bytes to newline-free
+canonical JSON. The receipt logical digest
+`sha256:c564b1442c135fef5d5430b313914951e2b5ab4cc7e0fd0bbbdefb0b928ea6ce`, receipt file digest
+`sha256:8843c87597db779ece932585445bae9dbdf9b5f26f4f81a7b9d069a1699968ed`, and import logical digest
+`sha256:9df8dbd212c6e0253b3c58feb392869bffb226d816805ee7ed166072596003bd` remain unchanged. Only the
+import file digest changes from historical PR #55
+`sha256:b1899d6be6017a2485d93c67066023a87f8aaa78b0b63012fb9f8d8a040f3821` to AX-canonical
+`sha256:e00c7036bd67f93347957215fddc4185a18eb2e62e90bfb58657f0b7598f20ac`.
+
+Replay accepts exactly two import representations: newline-free canonical JSON and the historical
+canonical JSON plus one trailing line feed. Receipt serialization remains canonical JSON plus one
+trailing line feed, receipt-v1 replay remains supported, and all other whitespace or non-canonical
+representations fail closed.
+
+Rejected alternative:
+: Normalize import bytes in AX. That would weaken the consumer's exact-byte integrity check and
+  would conceal a producer serialization defect.
+
+Trade-off:
+: Braincrew replay retains one narrow historical representation so PR #55 evidence remains
+  verifiable. New publication is stricter, and the exception does not permit arbitrary whitespace.
+
+Failure modes:
+: Adding any byte to a newly created import manifest makes it non-canonical for AX; changing receipt
+  bytes changes qualification evidence; broad normalization makes tampering indistinguishable from
+  historical compatibility.
+
+Validation evidence:
+: Acceptance tests first failed on the exact trailing line feed, then passed after only new import
+  publication changed. They preserve receipt-v1, receipt-v2, both known import representations, and
+  fail-closed behavior for all other tested whitespace forms. The exact AX read-only proof accepted
+  14 sources and 11,528 total source bytes without database or provider access.
+
+Likely follow-ups:
+
+- "Why can replay read old bytes that AX rejects?" — Replay verifies historical evidence; AX
+  consumes a new operational artifact and correctly requires its current exact-byte contract.
+- "Does the new file digest prove publication?" — No. It is a locally generated candidate digest
+  until a separately approved create-only republish records and independently reviews it.
+
+The exact-AX compatibility proof was read only and used no database or provider. It accepted 14
+sources totaling 11,528 source bytes. No existing external qualification artifact was modified; no
+actual republish, requalification, AX change, snapshot, dry-run, apply, service verification,
+baseline, candidate, or renewed quality claim occurred.
+
 ## 15. Testing strategy
 
 Required layers are schema tests, hand-calculated metric goldens, claim atomization and proposition-matcher tests, relevant property tests, Adapter HTTP contracts, state and storage invariants, fixture-mode E2E, live AX smoke and Verification, dashboard export and browser checks, and clean Docker reproduction.
