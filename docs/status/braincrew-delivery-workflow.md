@@ -182,13 +182,64 @@ research and AX_portfolio context
   `sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d`.
   No retry, repair, AX import, database, service, snapshot, preflight, or experiment execution was
   performed.
-- Active gate: **Issue #37 Git Lifecycle Proposal Gate.** Local implementation, actual
-  qualification, replay, ticket review, and documentation are complete. Commit, push, pull
-  request, merge, Issue closure, and branch/worktree cleanup remain separate actions. The next
-  operator-controlled workflow after Braincrew publication is AX Issue #37; Issue #15 and PR #29
-  remain untouched.
+- Active implementation: **Issue #56 AX-canonical import publication bytes.** Braincrew PR #55's
+  import manifest has the correct logical identity but a trailing line feed that exact AX PR #42
+  rejects. Newly created import manifests now use newline-free canonical JSON; qualification
+  receipts retain canonical JSON plus one trailing line feed.
+- Preserved identities: receipt logical
+  `sha256:c564b1442c135fef5d5430b313914951e2b5ab4cc7e0fd0bbbdefb0b928ea6ce`,
+  receipt file
+  `sha256:8843c87597db779ece932585445bae9dbdf9b5f26f4f81a7b9d069a1699968ed`, and
+  import logical
+  `sha256:9df8dbd212c6e0253b3c58feb392869bffb226d816805ee7ed166072596003bd`.
+  The import file digest changes only from historical PR #55
+  `sha256:b1899d6be6017a2485d93c67066023a87f8aaa78b0b63012fb9f8d8a040f3821`
+  to AX-canonical
+  `sha256:e00c7036bd67f93347957215fddc4185a18eb2e62e90bfb58657f0b7598f20ac`.
+- Compatibility boundary: receipt-v1 and both the historical PR #55 import bytes and new exact
+  canonical import bytes replay successfully. Other whitespace and non-canonical representations
+  fail closed. Exact AX SHA `e25f333b55fca34118a954a17e5e0cd88dc7ea39` accepted the new bytes
+  read only with 14 sources and 11,528 total source bytes; no database or provider was available.
+- Active gate: **Issue #56 Git Lifecycle Proposal Gate.** Local implementation, documentation,
+  full verification, and independent Standards/Spec review are complete. The existing external
+  Issue #37 artifacts remain immutable. No actual republish, qualification, AX change,
+  database/provider access, snapshot, dry-run, apply, service verification, baseline, candidate,
+  or Braincrew Issue #38 work is authorized. Commit, push, pull request, merge, Issue closure,
+  operational publication, and branch/worktree cleanup remain separate actions.
+- Next operator proposal: actual create-only republish remains blocked until a separate proposal
+  fixes the clean execution SHA, immutable inputs, output path, one-run boundary, and independent
+  digest reviewer. AX Issue #37 remains blocked until that publication and review complete.
+  Braincrew Issue #38 remains blocked until AX Issue #37 completes its separate load and service
+  verification gates.
 
 ## Transition history
+
+### 2026-07-23 — Issue #56 AX-canonical publication-byte repair entered TDD
+
+- Repository gate: `origin/develop` was verified at
+  `e9a512dbb5ff3de0a0367632f169f91cc8817d81`; all Braincrew branches/worktrees and the AX checkout
+  were inspected before the dedicated `feat/issue-56-ax-canonical-pack` worktree was created.
+- Clean baseline: formatting, lint, mypy, and all 343 tests passed before the acceptance RED.
+- Acceptance RED: a generated import manifest ended in `0a`, while AX's exact canonical bytes ended
+  at the closing brace. That single trailing line feed reproduced the consumer rejection boundary.
+- Minimal GREEN: only new import publication dropped the line feed. Receipt serialization and all
+  qualification identities remain unchanged.
+- Replay boundary: receipt-v1, PR #55 receipt-v2/import artifacts, and the new exact import bytes
+  remain supported; spaces, pretty printing, multiple line feeds, and newline-free receipts fail
+  closed.
+- Read-only consumer proof: exact AX SHA
+  `e25f333b55fca34118a954a17e5e0cd88dc7ea39` accepted 14 sources and 11,528 source bytes without a
+  database or provider. No operational path ran.
+- Independent review: Standards found two actionable documentation defects and Spec found one
+  operator-gate omission. A new document-contract RED reproduced all three, minimal documentation
+  GREEN repaired them, and the independent Standards and Spec re-reviews each reported zero
+  actionable findings. The accepted test-setup duplication remains an explicit readability
+  judgement, not a required repair.
+- Full verification: locked dependencies, Ruff formatting and lint, mypy, all 352 tests, and
+  `git diff --check` pass in the Issue #56 worktree.
+- Stop condition reached: present the clean uncommitted diff at the Issue #56 Git Lifecycle
+  Proposal Gate. Do not commit, push, open or modify a pull request, publish artifacts, or begin
+  operational work without the separate required authorization.
 
 ### 2026-07-23 — Issue #37 successor corpus qualification succeeded once
 

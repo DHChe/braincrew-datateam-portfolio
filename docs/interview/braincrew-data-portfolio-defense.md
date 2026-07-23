@@ -1070,6 +1070,58 @@ Stop:
   performed. The next operator-controlled step is AX Issue #37; Braincrew baseline/candidate work
   remains unauthorized.
 
+### D8.9 Keep qualification identity separate from consumer file bytes
+
+Decision:
+: Newly created `import-manifest.json` files use newline-free canonical JSON because AX imports
+  require byte-for-byte canonical form. Qualification receipts keep their existing canonical JSON
+  plus one trailing line feed contract.
+
+What was wrong:
+: Braincrew PR #55 appended one trailing line feed to the import manifest. The parsed payload was
+  correct, but AX PR #42 compares the file to exact canonical JSON bytes and therefore rejected it
+  with `AX_SEED_PACK_CANONICAL_BYTES_INVALID`.
+
+Why this does not change qualification identity:
+: The qualification receipt logical digest remains
+  `sha256:c564b1442c135fef5d5430b313914951e2b5ab4cc7e0fd0bbbdefb0b928ea6ce`;
+  its file digest remains
+  `sha256:8843c87597db779ece932585445bae9dbdf9b5f26f4f81a7b9d069a1699968ed`;
+  and the import logical digest remains
+  `sha256:9df8dbd212c6e0253b3c58feb392869bffb226d816805ee7ed166072596003bd`.
+  Only the import file digest changes from historical PR #55
+  `sha256:b1899d6be6017a2485d93c67066023a87f8aaa78b0b63012fb9f8d8a040f3821`
+  to AX-canonical
+  `sha256:e00c7036bd67f93347957215fddc4185a18eb2e62e90bfb58657f0b7598f20ac`.
+
+Compatibility and failure modes:
+: Replay accepts the new exact-canonical import bytes and the historical canonical-plus-one-line-feed
+  PR #55 bytes. Receipt-v1 remains supported. Leading or trailing spaces, pretty printing, multiple
+  line feeds, a newline-free receipt, and every other non-canonical form fail closed.
+
+Validation:
+: TDD first reproduced the trailing-line-feed mismatch. Read-only loading through exact AX SHA
+  `e25f333b55fca34118a954a17e5e0cd88dc7ea39` then accepted the repaired manifest with 14 sources
+  and 11,528 total source bytes while database and provider configuration were absent.
+
+Rejected alternative:
+: Loosen AX to normalize whitespace. That would weaken AX's tamper-evident publication contract and
+  would move a Braincrew producer defect into the consumer.
+
+Stop:
+: The existing external qualification artifacts are immutable. This implementation did not
+  republish or requalify a pack and did not run AX changes, database or provider access, snapshots,
+  dry-run, apply, service verification, baseline, or candidate work.
+
+Likely follow-ups:
+
+- "Why support the old import bytes at all?" — Replay is evidence verification, so it must continue
+  to verify the already published PR #55 artifact while new publication follows AX's exact contract.
+- "Why is one line feed allowed for imports but not arbitrary whitespace?" — It is the single known,
+  digest-pinned historical representation. Accepting any broader normalization would hide tampering.
+- "Why keep the receipt line feed?" — AX does not consume that file, its byte digest is already part
+  of qualification evidence, and changing it would unnecessarily change qualification identity.
+
 ### D9. Use layered verification and an evidence-driven ten-day sequence
 
 Decision:

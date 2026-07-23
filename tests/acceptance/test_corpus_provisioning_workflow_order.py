@@ -249,6 +249,40 @@ def test_issue_47_documents_independent_review_and_portable_replay() -> None:
         ) in normalized_document
 
 
+def test_issue_56_docs_lock_identity_preserving_bytes_and_the_next_operator_gate() -> None:
+    provisioning_design = DESIGN_PATH.read_text(encoding="utf-8")
+    evaluation_design = CANONICAL_DESIGN_PATH.read_text(encoding="utf-8")
+    status = STATUS_PATH.read_text(encoding="utf-8")
+
+    assert "Newly published AX-canonical import file digest" not in provisioning_design
+
+    decision_record_facts = (
+        "Rejected alternative:",
+        "Trade-off:",
+        "Failure modes:",
+        "Validation evidence:",
+        "Likely follow-ups:",
+    )
+    for document in (provisioning_design, evaluation_design):
+        issue_56_section = document.split("Issue #56", maxsplit=1)[1]
+        missing_facts = [fact for fact in decision_record_facts if fact not in issue_56_section]
+        assert not missing_facts, f"Issue #56 decision record is incomplete: {missing_facts}"
+
+    next_gate_facts = (
+        "clean execution SHA",
+        "immutable inputs",
+        "output path",
+        "one-run boundary",
+        "independent digest reviewer",
+        "AX Issue #37 remains blocked",
+        "Braincrew Issue #38 remains blocked",
+    )
+    for document in (provisioning_design, status):
+        issue_56_section = " ".join(document.split("Issue #56", maxsplit=1)[1].split())
+        missing_facts = [fact for fact in next_gate_facts if fact not in issue_56_section]
+        assert not missing_facts, f"Issue #56 next gate is incomplete: {missing_facts}"
+
+
 def test_issue_46_locks_source_first_freeze_and_successor_version_boundary() -> None:
     documents = (
         DESIGN_PATH.read_text(encoding="utf-8"),
