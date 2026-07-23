@@ -536,8 +536,8 @@ def qualify_corpus(
     typer.echo(
         json.dumps(
             {
-                "receipt_path": str(result.receipt_path),
-                "import_manifest_path": str(result.import_manifest_path),
+                "receipt_path": result.receipt_path.name,
+                "import_manifest_path": result.import_manifest_path.name,
                 "receipt_digest": result.receipt.receipt_digest,
                 "qualification_receipt_digest": result.qualification_receipt_digest,
                 "import_digest": result.import_manifest.import_digest,
@@ -584,7 +584,7 @@ def replay_fixture(
     typer.echo(
         json.dumps(
             {
-                "artifact_path": str(artifact_path),
+                "artifact_path": artifact_path.name,
                 **replay_summary,
             },
             ensure_ascii=False,
