@@ -224,12 +224,15 @@ be explicitly `reviewed`; `pending` or missing provenance blocks sealing.
 successful post-seal cross-validation, Braincrew creates `import-manifest.json` under the strict
 generic `ax-synthetic-seed-pack-v1` contract. That non-content envelope references the sealed
 corpus ID, version, `sealed_content_digest`, source manifest, tenant/demo-company target, and
-cross-validation receipt digest. The reviewed AX identifier grammar does not permit `@`, so the
-strict envelope sets `seed_version = braincrew-evaluation-dataset-2.0.0`. The qualification
-receipt separately binds exact dataset ID `braincrew-evaluation-dataset`, semantic version
-`2.0.0`, integrated digest, component digests, and 100-case count. AX therefore receives the
-dataset version only after actual content alignment is proven without weakening its generic schema.
-A failed cross-validation cannot produce an import manifest, which prevents an arbitrary version
+cross-validation receipt digest. Historical replay continues to accept the original
+`corpus-qualification-receipt-v1` contract bound to dataset `2.0.0`. New qualification accepts
+only the exact frozen successor dataset `3.0.0`, emits `corpus-qualification-receipt-v2`, and uses
+`seed_version = braincrew-evaluation-dataset-3.0.0` because the reviewed AX identifier grammar does
+not permit `@`. The successor receipt separately binds exact dataset ID
+`braincrew-evaluation-dataset`, semantic version `3.0.0`, integrated digest, component digests,
+predecessor corpus identity and digests, and 100-case count. AX therefore receives the dataset
+version only after actual content alignment is proven without weakening its generic schema. A
+failed cross-validation cannot produce an import manifest, which prevents an arbitrary version
 string from masquerading as provenance.
 
 ## 6. Canonical identity and tamper behavior
@@ -857,6 +860,25 @@ digest `sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4`
 provenance digest `sha256:eb43fc824cd54bf10e8805b5fdeb1915bcaac368cb458ce8981a481cd7d4fce1`,
 and replayed receipt digest
 `sha256:bc508b6001facbef67bacd7e0c1d4d5123f04bc1e33d2849b5e7d455183df62b`.
-No qualification receipt, successor dataset freeze, operator snapshot, target load, renewed Issue
-#38 preflight, READY artifact, baseline, candidate, comparison, or live quality claim exists. PR
-#29 and `feat/issue-15-live-verification` remain untouched and read only.
+Issue #53 then produced the source-first successor **candidate**
+`braincrew-evaluation-dataset@3.0.0` in `datasets/dataset_manifest_v3.json`,
+`datasets/DATASET_CARD_V3.md`, and the three v2 component files. It rebinds every case to the
+immutable `braincrew-independent-hr-corpus@1.0.0` above while preserving the locked 100-case
+identity: 20/30/40/10 primary-focus allocation, 70/30 Calibration/Verification split, and
+unchanged evaluator semantics, metric applicability, risk policy, and threshold policy. Its
+integrated digest is
+`sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d`, with component digests
+`sha256:33e17fbb4d3f5485df1482de37e472e1b20fceef922c9b1dda90f8d9dfc25f73` (parsing),
+`sha256:9687ead24590cab1b9d244ef876f226545a1fb1aa2013c50e4be7a63430c8408` (retrieval), and
+`sha256:f76a9a1fa9a6a4b467f76ce7649dc7c15f5ad7c615d6cbb20ed3394e486d94b2` (grounded). Thirteen of
+the 14 sealed sources are cited; `demo-lifecycle-checklist-014` remains an uncited distractor.
+`braincrew-evaluation-dataset@2.0.0` and its receipt-v1 replay remain byte-for-byte unchanged.
+
+The candidate was bound to the
+`docs/reviews/2026-07-23-issue-53-successor-dataset-review.md` checklist with external approval
+authority. On 2026-07-23 `DHChe-successor-dataset-reviewer` confirmed all eight checks and recorded
+`Decision: APPROVED`, freezing the exact integrated/component bytes and predecessor binding above.
+The accepted retrieval-role concentration is a constraint-induced limitation, not evidence of
+multi-role retrieval execution. No qualification receipt, operator snapshot, target load, renewed
+Issue #38 preflight, READY artifact, baseline, candidate run, comparison, or live quality claim
+exists. PR #29 and `feat/issue-15-live-verification` remain untouched and read only.

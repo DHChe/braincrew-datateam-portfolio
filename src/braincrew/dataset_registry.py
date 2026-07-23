@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Literal, cast
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from braincrew.contracts import ParsingDatasetDocument, RetrievalDatasetDocument
 from braincrew.digest import canonical_digest
@@ -100,8 +100,16 @@ class DatasetLeakagePolicy(StrictDatasetContract):
     ]
 
 
+class DatasetSourceCorpus(StrictDatasetContract):
+    id: Literal["braincrew-independent-hr-corpus"]
+    version: Literal["1.0.0"]
+    sealed_content_digest: Digest = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    provenance_digest: Digest = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    sealing_receipt_digest: Digest = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+
+
 class DatasetManifest(StrictDatasetContract):
-    schema_version: Literal["dataset-manifest-v1"]
+    schema_version: Literal["dataset-manifest-v1", "dataset-manifest-v2"]
     dataset_id: Literal["braincrew-evaluation-dataset"]
     dataset_version: str = Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+$")
     case_count: Literal[100]
@@ -113,7 +121,16 @@ class DatasetManifest(StrictDatasetContract):
     dataset_card: DatasetCardStatus
     risk_policy: DatasetRiskPolicy
     leakage_policy: DatasetLeakagePolicy
+    source_corpus: DatasetSourceCorpus | None = None
     content_digest: Digest = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def require_versioned_source_corpus(self) -> DatasetManifest:
+        if self.schema_version == "dataset-manifest-v2" and self.source_corpus is None:
+            raise ValueError("dataset-manifest-v2 requires source_corpus")
+        if self.schema_version == "dataset-manifest-v1" and self.source_corpus is not None:
+            raise ValueError("dataset-manifest-v1 forbids source_corpus")
+        return self
 
 
 class DatasetCaseRecord(StrictDatasetContract):
@@ -262,6 +279,8 @@ def _dataset_digest_payload(
 ) -> dict[str, object]:
     manifest_payload = manifest.model_dump(mode="json")
     manifest_payload.pop("content_digest")
+    if manifest.source_corpus is None:
+        manifest_payload.pop("source_corpus")
     components = cast(dict[str, dict[str, object]], manifest_payload["components"])
     for component in components.values():
         component.pop("content_digest")

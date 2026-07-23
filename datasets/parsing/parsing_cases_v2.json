@@ -1,0 +1,933 @@
+{
+  "schema_version": "parsing-dataset-v1",
+  "dataset": {
+    "id": "braincrew-parsing-quality",
+    "version": "2.0.0",
+    "corpus_id": "braincrew-independent-hr-corpus"
+  },
+  "provenance": {
+    "source_type": "synthetic",
+    "license": "CC0-1.0"
+  },
+  "cases": [
+    {
+      "id": "parsing-001",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-terms-policy-001",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Employment Terms and Worker Responsibilities\n\nThis newly authored policy belongs to Northstar Demo Works, a fictional organization. It is demo material under CC0-1.0 and is not legal or employment advice.\n\n## Scope and authority\n\nThis policy applies to all regular employees in the fictional Northstar Demo Works organization from 2026-01-01. Signed employment terms and applicable rules of the fictional jurisdiction take priority. This policy takes priority over informal team guidance.\n\n## Core responsibilities\n\nEmployees receive a written role statement, reporting line, normal work location, and ordinary working pattern. Managers must discuss material changes before they take effect and record the agreed effective date. Employees must protect organizational records, follow safety controls, disclose conflicts of interest, and raise uncertainty through their manager or the People Operations desk.\n\n## Changes and acknowledgment\n\nA material change to role, location, scheduled hours, or compensation requires written notice and an acknowledgment. Silence is not treated as agreement. If a signed term conflicts with this policy, People Operations records the conflict and applies the higher-authority term until an authorized amendment is completed.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-001-span",
+            "text": "This newly authored policy belongs to Northstar Demo Works, a fictional organization. It is demo material under CC0-1.0 and is not legal or employment advice.",
+            "start_char": 64,
+            "end_char": 222,
+            "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Employment Terms and Worker Responsibilities",
+            "## Scope and authority",
+            "## Core responsibilities",
+            "## Changes and acknowledgment"
+          ]
+        },
+        "metadata": {
+          "document_type": "workplace_policy",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-002",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-terms-guide-002",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Superseded Manager Mobility Guide\n\nThis newly authored CC0-1.0 demo guide belongs to the fictional Northstar Demo Works organization. It was superseded on 2025-12-31 and must not override a current policy or signed employment term.\n\nThe former guide suggested that managers could move an employee between nearby offices after a verbal discussion. That shortcut is no longer valid. Current written terms, the effective Employment Terms and Worker Responsibilities policy, and any higher-authority rule control the decision. Managers may use this document only to understand historical practice.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-002-span",
+            "text": "This newly authored CC0-1.0 demo guide belongs to the fictional Northstar Demo Works organization. It was superseded on 2025-12-31 and must not override a current policy or signed employment term.",
+            "start_char": 53,
+            "end_char": 249,
+            "source_text_digest": "sha256:3e883e36506ea0f7df4256e1e37b6ba11351231cf5a1a32b2f1345e870495add"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Superseded Manager Mobility Guide"
+          ]
+        },
+        "metadata": {
+          "document_type": "manager_guide",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-003",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-time-policy-003",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Working Time, Attendance, Leave, and Flexible Work\n\nThis is newly authored CC0-1.0 demo material for the fictional Northstar Demo Works organization. It is not legal advice.\n\n## Normal pattern\n\nThe standard pattern is thirty-eight hours across five days. Each team publishes its coverage window. Employees record working time by the next business day and correct errors through People Operations. Managers may not ask employees to omit time or record time they did not work.\n\n## Leave\n\nPlanned leave should be requested at least five business days ahead when practical. Unexpected illness or urgent care duties are reported as soon as reasonably possible. A manager may ask only for the minimum information needed to arrange work and apply the correct leave category.\n\n## Flexible work\n\nAn employee may request a temporary or continuing change to location, start time, or work pattern. The manager documents operational needs, accessibility needs, information-security limits, and the review date. A refusal must state the specific operational reason and offer a review through People Operations.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-003-span",
+            "text": "This is newly authored CC0-1.0 demo material for the fictional Northstar Demo Works organization. It is not legal advice.",
+            "start_char": 70,
+            "end_char": 191,
+            "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Working Time, Attendance, Leave, and Flexible Work",
+            "## Normal pattern",
+            "## Leave",
+            "## Flexible work"
+          ]
+        },
+        "metadata": {
+          "document_type": "working_time_policy",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-004",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-time-faq-004",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Legacy Flexible Work FAQ\n\nThis newly authored CC0-1.0 demo reference is for the fictional Northstar Demo Works organization. It is superseded and has no authority over the current working-time policy.\n\nAn older practice treated two remote days each week as the usual ceiling. The current policy does not set that fixed ceiling. Requests are assessed using the documented role needs, accessibility considerations, security limits, and review date. When this FAQ conflicts with the current policy, the current policy controls.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-004-span",
+            "text": "This newly authored CC0-1.0 demo reference is for the fictional Northstar Demo Works organization. It is superseded and has no authority over the current working-time policy.",
+            "start_char": 44,
+            "end_char": 218,
+            "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Legacy Flexible Work FAQ"
+          ]
+        },
+        "metadata": {
+          "document_type": "faq",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-005",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-pay-policy-005",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Compensation, Benefits, Expenses, and Payroll\n\nThis newly authored CC0-1.0 policy describes a fictional Northstar Demo Works process. It is demo material and not financial, tax, or employment advice.\n\n## Payroll\n\nBase pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.\n\n## Benefits\n\nEligibility, waiting periods, and employee contributions are listed in the current benefit schedule. A provider brochure is descriptive only; the approved schedule and signed terms control eligibility.\n\n## Expenses\n\nReasonable business expenses require an itemized record, business purpose, and manager approval. An employee should submit within twenty business days. A missing record requires a written explanation and Finance review, not an invented substitute.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-005-span",
+            "text": "This newly authored CC0-1.0 policy describes a fictional Northstar Demo Works process. It is demo material and not financial, tax, or employment advice.",
+            "start_char": 65,
+            "end_char": 217,
+            "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Compensation, Benefits, Expenses, and Payroll",
+            "## Payroll",
+            "## Benefits",
+            "## Expenses"
+          ]
+        },
+        "metadata": {
+          "document_type": "compensation_policy",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-006",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-pay-brochure-006",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Archived Benefit Highlights\n\nThis newly authored CC0-1.0 brochure is fictional Northstar Demo Works material. It expired on 2025-12-31 and is retained only as a historical reference.\n\nThe brochure described a wellness allowance and immediate benefit enrollment. Those descriptions may be outdated. The current benefit schedule, signed employment terms, and Compensation, Benefits, Expenses, and Payroll Policy determine present eligibility. This brochure cannot create an entitlement or override those sources.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-006-span",
+            "text": "This newly authored CC0-1.0 brochure is fictional Northstar Demo Works material. It expired on 2025-12-31 and is retained only as a historical reference.",
+            "start_char": 47,
+            "end_char": 200,
+            "source_text_digest": "sha256:c70c50dcc91de5bd55f598610d40a75d648eccb9b5035c846db3e966ae70daf6"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Archived Benefit Highlights"
+          ]
+        },
+        "metadata": {
+          "document_type": "benefit_brochure",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-007",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-conduct-policy-007",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Respect, Grievance, Discipline, and Reporting\n\nThis newly authored CC0-1.0 policy belongs to the fictional Northstar Demo Works organization. It is demo material and not legal advice.\n\n## Expected conduct\n\nHarassment, retaliation, intimidation, and discriminatory treatment are prohibited. The rule applies in offices, remote channels, travel, social events connected to work, and interactions with applicants, contractors, and visitors.\n\n## Reporting and support\n\nA concern may be raised with a manager, People Operations, or the designated ethics officer. If one route creates a conflict, another route must remain available. The recipient records the concern, immediate safety needs, requested support, and next update date while limiting access to people with a defined role.\n\n## Fair process\n\nThe organization separates fact finding, decision making, and appeal where practical. A person receives the substance of a concern and a reasonable chance to respond. Outcomes are proportionate, documented, and reviewed for consistency. Retaliation concerns are assessed separately from the original report.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-007-span",
+            "text": "This newly authored CC0-1.0 policy belongs to the fictional Northstar Demo Works organization. It is demo material and not legal advice.",
+            "start_char": 65,
+            "end_char": 201,
+            "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Respect, Grievance, Discipline, and Reporting",
+            "## Expected conduct",
+            "## Reporting and support",
+            "## Fair process"
+          ]
+        },
+        "metadata": {
+          "document_type": "conduct_policy",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-008",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-conduct-notes-008",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Retired Supervisor Conversation Notes\n\nThis newly authored CC0-1.0 demo reference belongs to fictional Northstar Demo Works. It was retired before 2026 and does not control current conduct matters.\n\nThe notes once encouraged supervisors to settle minor concerns within the team. The current policy instead preserves multiple reporting routes and requires conflicts, safety needs, and retaliation risks to be recorded. These notes may explain historical terminology but must never replace the current Respect, Grievance, Discipline, and Reporting Policy.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-008-span",
+            "text": "This newly authored CC0-1.0 demo reference belongs to fictional Northstar Demo Works. It was retired before 2026 and does not control current conduct matters.",
+            "start_char": 57,
+            "end_char": 215,
+            "source_text_digest": "sha256:4c4274a3c23bcdaa3fae87528937d6ba6c6cca6a789cf65bbf23b03e6c92c75b"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Retired Supervisor Conversation Notes"
+          ]
+        },
+        "metadata": {
+          "document_type": "training_notes",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-009",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-safety-policy-009",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Safety, Accommodation, Wellbeing, and Return to Work\n\nThis newly authored CC0-1.0 policy is for fictional Northstar Demo Works and is not medical, safety, or legal advice.\n\n## Immediate safety\n\nAnyone may pause work when they reasonably believe there is an immediate serious risk. They notify the responsible manager or safety contact, who records the hazard, interim control, owner, and review time. No one is penalized for a good-faith safety stop.\n\n## Accommodation\n\nEmployees may request an adjustment through People Operations or their manager. The process focuses on functional needs, feasible controls, confidentiality, and a review date. Medical detail is limited to what is necessary for the decision.\n\n## Return to work\n\nA return plan may include phased hours, temporary duty changes, equipment, or check-ins. The employee, manager, and People Operations record responsibilities and review dates. A wellbeing conversation is supportive and does not replace a formal safety or accommodation process.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-009-span",
+            "text": "This newly authored CC0-1.0 policy is for fictional Northstar Demo Works and is not medical, safety, or legal advice.",
+            "start_char": 72,
+            "end_char": 189,
+            "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Safety, Accommodation, Wellbeing, and Return to Work",
+            "## Immediate safety",
+            "## Accommodation",
+            "## Return to work"
+          ]
+        },
+        "metadata": {
+          "document_type": "safety_policy",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-010",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-safety-poster-010",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Archived Wellbeing Poster\n\nThis newly authored CC0-1.0 demo poster is fictional Northstar Demo Works material. It is archived and lower authority than the current safety and accommodation policy.\n\nThe poster promoted manager check-ins and a quiet room. Those resources may be useful, but they do not satisfy the current hazard-recording, accommodation, confidentiality, or return-plan requirements. The current policy controls whenever the poster is incomplete or inconsistent.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-010-span",
+            "text": "This newly authored CC0-1.0 demo poster is fictional Northstar Demo Works material. It is archived and lower authority than the current safety and accommodation policy.",
+            "start_char": 45,
+            "end_char": 213,
+            "source_text_digest": "sha256:163d9a2447b65f63c5881863e9c820b0294a29ac628ed531288d761797128ad7"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Archived Wellbeing Poster"
+          ]
+        },
+        "metadata": {
+          "document_type": "awareness_poster",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-011",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-growth-policy-011",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Performance, Learning, and Internal Mobility\n\nThis newly authored CC0-1.0 policy belongs to fictional Northstar Demo Works. It is demo material and does not promise promotion or continued employment.\n\n## Performance cycle\n\nManagers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.\n\n## Learning\n\nMandatory learning is completed during paid working time. Role-specific development plans identify the capability, practice opportunity, owner, and target date. Completion alone does not establish proficiency; the manager records observed application.\n\n## Internal mobility\n\nOpen roles state essential criteria and selection steps. Employees may express interest without manager retaliation. The receiving team documents the decision against the published criteria and coordinates a transition date with the current team.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-011-span",
+            "text": "This newly authored CC0-1.0 policy belongs to fictional Northstar Demo Works. It is demo material and does not promise promotion or continued employment.",
+            "start_char": 64,
+            "end_char": 217,
+            "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Performance, Learning, and Internal Mobility",
+            "## Performance cycle",
+            "## Learning",
+            "## Internal mobility"
+          ]
+        },
+        "metadata": {
+          "document_type": "growth_policy",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-012",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-growth-deck-012",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Retired Promotion Workshop Notes\n\nThis newly authored CC0-1.0 reference is fictional Northstar Demo Works material. It is retired and cannot override the current growth policy.\n\nThe notes described time in role as the usual sign of readiness. Current mobility decisions instead use the published essential criteria and documented selection steps. Time in role may provide context but is not a substitute for evidence against those criteria. The current Performance, Learning, and Internal Mobility Policy controls.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-012-span",
+            "text": "This newly authored CC0-1.0 reference is fictional Northstar Demo Works material. It is retired and cannot override the current growth policy.",
+            "start_char": 52,
+            "end_char": 194,
+            "source_text_digest": "sha256:46374630929985ff1585514a196bd94db7c7a609890deaf68a53e1a50f4c31a4"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Retired Promotion Workshop Notes"
+          ]
+        },
+        "metadata": {
+          "document_type": "training_notes",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-013",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-lifecycle-policy-013",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Onboarding, Change, Separation, and Records\n\nThis newly authored CC0-1.0 policy describes fictional Northstar Demo Works. It is demo material and not legal or records-management advice.\n\n## Onboarding\n\nBefore the start date, People Operations records the approved role, manager, work location, equipment owner, required learning, and access start date. The manager provides a first-week plan and confirms which policies apply.\n\n## Organizational change\n\nA change proposal identifies the business reason, roles affected, decision authority, consultation window, selection method when relevant, and effective date. Leaders distinguish a proposal from a final decision and keep a record of material responses.\n\n## Separation and records\n\nPeople Operations confirms the last working day, final payments, property return, access end time, and continuing obligations in writing. Personnel records are accurate, access-limited, retained under the current schedule, and corrected through a traceable amendment rather than silent replacement.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-013-span",
+            "text": "This newly authored CC0-1.0 policy describes fictional Northstar Demo Works. It is demo material and not legal or records-management advice.",
+            "start_char": 63,
+            "end_char": 203,
+            "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Onboarding, Change, Separation, and Records",
+            "## Onboarding",
+            "## Organizational change",
+            "## Separation and records"
+          ]
+        },
+        "metadata": {
+          "document_type": "lifecycle_policy",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-014",
+      "split": "calibration",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span"
+      ],
+      "document": {
+        "id": "demo-terms-policy-001",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Employment Terms and Worker Responsibilities\n\nThis newly authored policy belongs to Northstar Demo Works, a fictional organization. It is demo material under CC0-1.0 and is not legal or employment advice.\n\n## Scope and authority\n\nThis policy applies to all regular employees in the fictional Northstar Demo Works organization from 2026-01-01. Signed employment terms and applicable rules of the fictional jurisdiction take priority. This policy takes priority over informal team guidance.\n\n## Core responsibilities\n\nEmployees receive a written role statement, reporting line, normal work location, and ordinary working pattern. Managers must discuss material changes before they take effect and record the agreed effective date. Employees must protect organizational records, follow safety controls, disclose conflicts of interest, and raise uncertainty through their manager or the People Operations desk.\n\n## Changes and acknowledgment\n\nA material change to role, location, scheduled hours, or compensation requires written notice and an acknowledgment. Silence is not treated as agreement. If a signed term conflicts with this policy, People Operations records the conflict and applies the higher-authority term until an authorized amendment is completed.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-014-span",
+            "text": "## Scope and authority",
+            "start_char": 224,
+            "end_char": 246,
+            "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Employment Terms and Worker Responsibilities",
+            "## Scope and authority",
+            "## Core responsibilities",
+            "## Changes and acknowledgment"
+          ]
+        },
+        "metadata": {
+          "document_type": "workplace_policy",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-015",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span",
+        "verification"
+      ],
+      "document": {
+        "id": "demo-terms-guide-002",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Superseded Manager Mobility Guide\n\nThis newly authored CC0-1.0 demo guide belongs to the fictional Northstar Demo Works organization. It was superseded on 2025-12-31 and must not override a current policy or signed employment term.\n\nThe former guide suggested that managers could move an employee between nearby offices after a verbal discussion. That shortcut is no longer valid. Current written terms, the effective Employment Terms and Worker Responsibilities policy, and any higher-authority rule control the decision. Managers may use this document only to understand historical practice.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-015-span",
+            "text": "The former guide suggested that managers could move an employee between nearby offices after a verbal discussion. That shortcut is no longer valid. Current written terms, the effective Employment Terms and Worker Responsibilities policy, and any higher-authority rule control the decision. Managers may use this document only to understand historical practice.",
+            "start_char": 251,
+            "end_char": 611,
+            "source_text_digest": "sha256:3e883e36506ea0f7df4256e1e37b6ba11351231cf5a1a32b2f1345e870495add"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Superseded Manager Mobility Guide"
+          ]
+        },
+        "metadata": {
+          "document_type": "manager_guide",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-016",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span",
+        "verification"
+      ],
+      "document": {
+        "id": "demo-time-policy-003",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Working Time, Attendance, Leave, and Flexible Work\n\nThis is newly authored CC0-1.0 demo material for the fictional Northstar Demo Works organization. It is not legal advice.\n\n## Normal pattern\n\nThe standard pattern is thirty-eight hours across five days. Each team publishes its coverage window. Employees record working time by the next business day and correct errors through People Operations. Managers may not ask employees to omit time or record time they did not work.\n\n## Leave\n\nPlanned leave should be requested at least five business days ahead when practical. Unexpected illness or urgent care duties are reported as soon as reasonably possible. A manager may ask only for the minimum information needed to arrange work and apply the correct leave category.\n\n## Flexible work\n\nAn employee may request a temporary or continuing change to location, start time, or work pattern. The manager documents operational needs, accessibility needs, information-security limits, and the review date. A refusal must state the specific operational reason and offer a review through People Operations.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-016-span",
+            "text": "## Normal pattern",
+            "start_char": 193,
+            "end_char": 210,
+            "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Working Time, Attendance, Leave, and Flexible Work",
+            "## Normal pattern",
+            "## Leave",
+            "## Flexible work"
+          ]
+        },
+        "metadata": {
+          "document_type": "working_time_policy",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-017",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span",
+        "verification"
+      ],
+      "document": {
+        "id": "demo-time-faq-004",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Legacy Flexible Work FAQ\n\nThis newly authored CC0-1.0 demo reference is for the fictional Northstar Demo Works organization. It is superseded and has no authority over the current working-time policy.\n\nAn older practice treated two remote days each week as the usual ceiling. The current policy does not set that fixed ceiling. Requests are assessed using the documented role needs, accessibility considerations, security limits, and review date. When this FAQ conflicts with the current policy, the current policy controls.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-017-span",
+            "text": "An older practice treated two remote days each week as the usual ceiling. The current policy does not set that fixed ceiling. Requests are assessed using the documented role needs, accessibility considerations, security limits, and review date. When this FAQ conflicts with the current policy, the current policy controls.",
+            "start_char": 220,
+            "end_char": 542,
+            "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Legacy Flexible Work FAQ"
+          ]
+        },
+        "metadata": {
+          "document_type": "faq",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-018",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span",
+        "verification"
+      ],
+      "document": {
+        "id": "demo-pay-policy-005",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Compensation, Benefits, Expenses, and Payroll\n\nThis newly authored CC0-1.0 policy describes a fictional Northstar Demo Works process. It is demo material and not financial, tax, or employment advice.\n\n## Payroll\n\nBase pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.\n\n## Benefits\n\nEligibility, waiting periods, and employee contributions are listed in the current benefit schedule. A provider brochure is descriptive only; the approved schedule and signed terms control eligibility.\n\n## Expenses\n\nReasonable business expenses require an itemized record, business purpose, and manager approval. An employee should submit within twenty business days. A missing record requires a written explanation and Finance review, not an invented substitute.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-018-span",
+            "text": "## Payroll",
+            "start_char": 219,
+            "end_char": 229,
+            "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Compensation, Benefits, Expenses, and Payroll",
+            "## Payroll",
+            "## Benefits",
+            "## Expenses"
+          ]
+        },
+        "metadata": {
+          "document_type": "compensation_policy",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-019",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span",
+        "verification"
+      ],
+      "document": {
+        "id": "demo-pay-brochure-006",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Archived Benefit Highlights\n\nThis newly authored CC0-1.0 brochure is fictional Northstar Demo Works material. It expired on 2025-12-31 and is retained only as a historical reference.\n\nThe brochure described a wellness allowance and immediate benefit enrollment. Those descriptions may be outdated. The current benefit schedule, signed employment terms, and Compensation, Benefits, Expenses, and Payroll Policy determine present eligibility. This brochure cannot create an entitlement or override those sources.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-019-span",
+            "text": "The brochure described a wellness allowance and immediate benefit enrollment. Those descriptions may be outdated. The current benefit schedule, signed employment terms, and Compensation, Benefits, Expenses, and Payroll Policy determine present eligibility. This brochure cannot create an entitlement or override those sources.",
+            "start_char": 202,
+            "end_char": 528,
+            "source_text_digest": "sha256:c70c50dcc91de5bd55f598610d40a75d648eccb9b5035c846db3e966ae70daf6"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Archived Benefit Highlights"
+          ]
+        },
+        "metadata": {
+          "document_type": "benefit_brochure",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "parsing-020",
+      "split": "verification",
+      "primary_focus": "parsing",
+      "tags": [
+        "heading",
+        "evidence-span",
+        "verification"
+      ],
+      "document": {
+        "id": "demo-conduct-policy-007",
+        "version": "1.0.0",
+        "canonical_text": "# Synthetic Demo: Respect, Grievance, Discipline, and Reporting\n\nThis newly authored CC0-1.0 policy belongs to the fictional Northstar Demo Works organization. It is demo material and not legal advice.\n\n## Expected conduct\n\nHarassment, retaliation, intimidation, and discriminatory treatment are prohibited. The rule applies in offices, remote channels, travel, social events connected to work, and interactions with applicants, contractors, and visitors.\n\n## Reporting and support\n\nA concern may be raised with a manager, People Operations, or the designated ethics officer. If one route creates a conflict, another route must remain available. The recipient records the concern, immediate safety needs, requested support, and next update date while limiting access to people with a defined role.\n\n## Fair process\n\nThe organization separates fact finding, decision making, and appeal where practical. A person receives the substance of a concern and a reasonable chance to respond. Outcomes are proportionate, documented, and reviewed for consistency. Retaliation concerns are assessed separately from the original report.\n"
+      },
+      "expected": {
+        "evidence_spans": [
+          {
+            "id": "parsing-020-span",
+            "text": "## Expected conduct",
+            "start_char": 203,
+            "end_char": 222,
+            "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079"
+          }
+        ],
+        "structure": {
+          "headings": [
+            "Synthetic Demo: Respect, Grievance, Discipline, and Reporting",
+            "## Expected conduct",
+            "## Reporting and support",
+            "## Fair process"
+          ]
+        },
+        "metadata": {
+          "document_type": "conduct_policy",
+          "department": "People Operations"
+        },
+        "table": null,
+        "list": null
+      },
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    }
+  ]
+}

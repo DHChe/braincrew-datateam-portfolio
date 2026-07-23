@@ -1,0 +1,1814 @@
+{
+  "schema_version": "retrieval-dataset-v1",
+  "dataset": {
+    "id": "braincrew-retrieval-quality",
+    "version": "2.0.0",
+    "corpus_id": "braincrew-independent-hr-corpus"
+  },
+  "provenance": {
+    "source_type": "synthetic",
+    "license": "CC0-1.0"
+  },
+  "cases": [
+    {
+      "id": "retrieval-001",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Employment Terms and Worker Responsibilities의 현재 원칙을 retrieval-001 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-001-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-terms-policy-001",
+                "evidence_span_id": "retrieval-001-required-001-primary",
+                "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_rule",
+            "record_id": "demo-time-policy-003",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-002",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy의 현재 원칙을 retrieval-002 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-002-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-pay-policy-005",
+                "evidence_span_id": "retrieval-002-required-002-primary",
+                "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-time-faq-004",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-003",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Respect, Grievance, Discipline, and Reporting Policy의 현재 원칙을 retrieval-003 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-003-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-conduct-policy-007",
+                "evidence_span_id": "retrieval-003-required-003-primary",
+                "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-pay-brochure-006",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:c70c50dcc91de5bd55f598610d40a75d648eccb9b5035c846db3e966ae70daf6",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-004",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy의 현재 원칙을 retrieval-004 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-004-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-safety-policy-009",
+                "evidence_span_id": "retrieval-004-required-004-primary",
+                "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-safety-poster-010",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:163d9a2447b65f63c5881863e9c820b0294a29ac628ed531288d761797128ad7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-005",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Performance, Learning, and Internal Mobility Policy의 현재 원칙을 retrieval-005 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-005-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-growth-policy-011",
+                "evidence_span_id": "retrieval-005-required-005-primary",
+                "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                "authority_level": 1
+              }
+            ]
+          },
+          {
+            "id": "required-005-secondary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-lifecycle-policy-013",
+                "evidence_span_id": "retrieval-005-required-005-secondary",
+                "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_rule",
+            "record_id": "demo-time-policy-003",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-006",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Onboarding, Organizational Change, Separation, and Records Policy의 현재 원칙을 retrieval-006 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-006-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-lifecycle-policy-013",
+                "evidence_span_id": "retrieval-006-required-006-primary",
+                "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-time-faq-004",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-007",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Employment Terms and Worker Responsibilities의 현재 원칙을 retrieval-007 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-007-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-terms-policy-001",
+                "evidence_span_id": "retrieval-007-required-007-primary",
+                "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-pay-brochure-006",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:c70c50dcc91de5bd55f598610d40a75d648eccb9b5035c846db3e966ae70daf6",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-008",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy의 현재 원칙을 retrieval-008 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-008-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-pay-policy-005",
+                "evidence_span_id": "retrieval-008-required-008-primary",
+                "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-safety-poster-010",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:163d9a2447b65f63c5881863e9c820b0294a29ac628ed531288d761797128ad7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-009",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Respect, Grievance, Discipline, and Reporting Policy의 현재 원칙을 retrieval-009 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-009-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-conduct-policy-007",
+                "evidence_span_id": "retrieval-009-required-009-primary",
+                "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_rule",
+            "record_id": "demo-time-policy-003",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-010",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy의 현재 원칙을 retrieval-010 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-010-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-safety-policy-009",
+                "evidence_span_id": "retrieval-010-required-010-primary",
+                "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+                "authority_level": 1
+              }
+            ]
+          },
+          {
+            "id": "required-010-secondary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-growth-policy-011",
+                "evidence_span_id": "retrieval-010-required-010-secondary",
+                "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-time-faq-004",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-011",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Performance, Learning, and Internal Mobility Policy의 현재 원칙을 retrieval-011 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-011-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-growth-policy-011",
+                "evidence_span_id": "retrieval-011-required-011-primary",
+                "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-pay-brochure-006",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:c70c50dcc91de5bd55f598610d40a75d648eccb9b5035c846db3e966ae70daf6",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-012",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Onboarding, Organizational Change, Separation, and Records Policy의 현재 원칙을 retrieval-012 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-012-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-lifecycle-policy-013",
+                "evidence_span_id": "retrieval-012-required-012-primary",
+                "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-safety-poster-010",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:163d9a2447b65f63c5881863e9c820b0294a29ac628ed531288d761797128ad7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-013",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Employment Terms and Worker Responsibilities의 현재 원칙을 retrieval-013 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-013-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-terms-policy-001",
+                "evidence_span_id": "retrieval-013-required-013-primary",
+                "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_rule",
+            "record_id": "demo-time-policy-003",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-014",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy의 현재 원칙을 retrieval-014 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-014-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-pay-policy-005",
+                "evidence_span_id": "retrieval-014-required-014-primary",
+                "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-time-faq-004",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-015",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Respect, Grievance, Discipline, and Reporting Policy의 현재 원칙을 retrieval-015 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-015-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-conduct-policy-007",
+                "evidence_span_id": "retrieval-015-required-015-primary",
+                "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+                "authority_level": 1
+              }
+            ]
+          },
+          {
+            "id": "required-015-secondary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-safety-policy-009",
+                "evidence_span_id": "retrieval-015-required-015-secondary",
+                "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-pay-brochure-006",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:c70c50dcc91de5bd55f598610d40a75d648eccb9b5035c846db3e966ae70daf6",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-016",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy의 현재 원칙을 retrieval-016 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-016-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-safety-policy-009",
+                "evidence_span_id": "retrieval-016-required-016-primary",
+                "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-safety-poster-010",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:163d9a2447b65f63c5881863e9c820b0294a29ac628ed531288d761797128ad7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-017",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Performance, Learning, and Internal Mobility Policy의 현재 원칙을 retrieval-017 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-017-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-growth-policy-011",
+                "evidence_span_id": "retrieval-017-required-017-primary",
+                "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_rule",
+            "record_id": "demo-time-policy-003",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-018",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Onboarding, Organizational Change, Separation, and Records Policy의 현재 원칙을 retrieval-018 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-018-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-lifecycle-policy-013",
+                "evidence_span_id": "retrieval-018-required-018-primary",
+                "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-time-faq-004",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-019",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "unresolved-expected-identity",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Employment Terms and Worker Responsibilities의 현재 원칙을 retrieval-019 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-019-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-terms-policy-001",
+                "evidence_span_id": "retrieval-019-required-019-primary",
+                "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-pay-brochure-006",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:c70c50dcc91de5bd55f598610d40a75d648eccb9b5035c846db3e966ae70daf6",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": false,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-020",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "unresolved-expected-identity",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy의 현재 원칙을 retrieval-020 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-020-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-pay-policy-005",
+                "evidence_span_id": "retrieval-020-required-020-primary",
+                "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-safety-poster-010",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:163d9a2447b65f63c5881863e9c820b0294a29ac628ed531288d761797128ad7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": false,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-021",
+      "split": "calibration",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Respect, Grievance, Discipline, and Reporting Policy의 현재 원칙을 retrieval-021 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-021-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-conduct-policy-007",
+                "evidence_span_id": "retrieval-021-required-021-primary",
+                "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_rule",
+            "record_id": "demo-time-policy-003",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-022",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy의 현재 원칙을 retrieval-022 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-022-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-safety-policy-009",
+                "evidence_span_id": "retrieval-022-required-022-primary",
+                "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-time-faq-004",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-023",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Performance, Learning, and Internal Mobility Policy의 현재 원칙을 retrieval-023 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-023-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-growth-policy-011",
+                "evidence_span_id": "retrieval-023-required-023-primary",
+                "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-pay-brochure-006",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:c70c50dcc91de5bd55f598610d40a75d648eccb9b5035c846db3e966ae70daf6",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-024",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Onboarding, Organizational Change, Separation, and Records Policy의 현재 원칙을 retrieval-024 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-024-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-lifecycle-policy-013",
+                "evidence_span_id": "retrieval-024-required-024-primary",
+                "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-safety-poster-010",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:163d9a2447b65f63c5881863e9c820b0294a29ac628ed531288d761797128ad7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-025",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Employment Terms and Worker Responsibilities의 현재 원칙을 retrieval-025 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-025-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-terms-policy-001",
+                "evidence_span_id": "retrieval-025-required-025-primary",
+                "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+                "authority_level": 1
+              }
+            ]
+          },
+          {
+            "id": "required-025-secondary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-pay-policy-005",
+                "evidence_span_id": "retrieval-025-required-025-secondary",
+                "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_rule",
+            "record_id": "demo-time-policy-003",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-026",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy의 현재 원칙을 retrieval-026 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-026-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-pay-policy-005",
+                "evidence_span_id": "retrieval-026-required-026-primary",
+                "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-time-faq-004",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-027",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Respect, Grievance, Discipline, and Reporting Policy의 현재 원칙을 retrieval-027 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-027-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-conduct-policy-007",
+                "evidence_span_id": "retrieval-027-required-027-primary",
+                "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-pay-brochure-006",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:c70c50dcc91de5bd55f598610d40a75d648eccb9b5035c846db3e966ae70daf6",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-028",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy의 현재 원칙을 retrieval-028 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-028-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-safety-policy-009",
+                "evidence_span_id": "retrieval-028-required-028-primary",
+                "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-safety-poster-010",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:163d9a2447b65f63c5881863e9c820b0294a29ac628ed531288d761797128ad7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-029",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Performance, Learning, and Internal Mobility Policy의 현재 원칙을 retrieval-029 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-029-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-growth-policy-011",
+                "evidence_span_id": "retrieval-029-required-029-primary",
+                "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_rule",
+            "record_id": "demo-time-policy-003",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "standard",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    },
+    {
+      "id": "retrieval-030",
+      "split": "verification",
+      "primary_focus": "retrieval",
+      "tags": [
+        "authority-ordering",
+        "visibility-boundary"
+      ],
+      "role": "Executive",
+      "query": "Onboarding, Organizational Change, Separation, and Records Policy의 현재 원칙을 retrieval-030 검토 관점에서 설명해 주세요",
+      "corpus": {
+        "id": "braincrew-independent-hr-corpus",
+        "version": "1.0.0"
+      },
+      "expected": {
+        "source_identity_status": "resolved",
+        "unresolved_identity_policy": "not_applicable",
+        "evidence_groups": [
+          {
+            "id": "required-030-primary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-lifecycle-policy-013",
+                "evidence_span_id": "retrieval-030-required-030-primary",
+                "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+                "authority_level": 1
+              }
+            ]
+          },
+          {
+            "id": "required-030-secondary",
+            "alternatives": [
+              {
+                "record_kind": "company_rule",
+                "record_id": "demo-terms-policy-001",
+                "evidence_span_id": "retrieval-030-required-030-secondary",
+                "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+                "authority_level": 1
+              }
+            ]
+          }
+        ],
+        "preferred_authority_level": 1,
+        "forbidden_sources": [
+          {
+            "record_kind": "company_reference",
+            "record_id": "demo-time-faq-004",
+            "evidence_span_id": null,
+            "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+            "authority_level": null
+          }
+        ]
+      },
+      "applicability": {
+        "recall_at_5": true,
+        "mrr_at_10": true,
+        "authority_ordering": true,
+        "forbidden_visibility": true
+      },
+      "difficulty": "adversarial",
+      "provenance": {
+        "source_type": "synthetic",
+        "license": "CC0-1.0"
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewer": "issue-36-provenance-review"
+      }
+    }
+  ]
+}

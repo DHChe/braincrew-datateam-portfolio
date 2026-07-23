@@ -526,6 +526,31 @@ exact dataset ID, `2.0.0` semantic version, integrated/component digests, and ca
 revalidates the current pack, packaged dataset bundle, receipt, and import bytes and rejects
 tampering. This boundary does not run authoring, sealing, AX import, preflight, or experiments.
 
+### 14.4 Source-first successor dataset candidate boundary
+
+Issue #53 adds the successor candidate `braincrew-evaluation-dataset@3.0.0`. It reuses the frozen
+`dataset-manifest-v2` manifest schema and the existing `parsing-dataset-v1`,
+`retrieval-dataset-v1`, and `grounded-dataset-v1` component schemas, so the successor is a data
+rebinding rather than a contract change. Every case now resolves its evidence against the sealed
+`braincrew-independent-hr-corpus@1.0.0` predecessor, whose sealed-content, provenance, and
+sealing-receipt digests are recorded inside the successor manifest's `source_corpus` block.
+
+The 100-case identity is preserved unchanged: 20/30/40/10 primary-focus allocation, 70/30
+Calibration/Verification split, per-metric minimum Verification denominators, evaluator semantics,
+metric applicability, risk policy, and threshold policy. Component and integrated digests are
+canonical-JSON digests over scoring-relevant normalized content, not raw file bytes, so a
+formatting-only edit does not change identity while any scoring-relevant edit does. Replay rejects
+case, source-digest, visibility, split, and predecessor tampering, and rejects a version-only
+`3.0.0` substitution of the v2 payload. Dataset `2.0.0` bytes, its digests, and `receipt-v1` replay
+remain immutable, and both bundles ship in the wheel.
+
+Freeze is not automatic. The candidate initially published `PENDING_MANUAL_APPROVAL` and bound its
+exact digests to a review checklist that only the `DHChe-successor-dataset-reviewer` authority
+could decide. On 2026-07-23 that authority confirmed all eight checklist items and recorded
+`Decision: APPROVED`; `datasets/DATASET_CARD_V3.md` now records `FROZEN`. This approval freezes only
+the exact dataset bytes and predecessor binding. No qualification receipt, seed pack, AX import,
+preflight, or experiment claim exists.
+
 ## 15. Testing strategy
 
 Required layers are schema tests, hand-calculated metric goldens, claim atomization and proposition-matcher tests, relevant property tests, Adapter HTTP contracts, state and storage invariants, fixture-mode E2E, live AX smoke and Verification, dashboard export and browser checks, and clean Docker reproduction.
