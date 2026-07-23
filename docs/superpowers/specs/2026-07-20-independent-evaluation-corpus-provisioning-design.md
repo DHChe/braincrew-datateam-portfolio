@@ -879,6 +879,31 @@ The candidate was bound to the
 authority. On 2026-07-23 `DHChe-successor-dataset-reviewer` confirmed all eight checks and recorded
 `Decision: APPROVED`, freezing the exact integrated/component bytes and predecessor binding above.
 The accepted retrieval-role concentration is a constraint-induced limitation, not evidence of
-multi-role retrieval execution. No qualification receipt, operator snapshot, target load, renewed
-Issue #38 preflight, READY artifact, baseline, candidate run, comparison, or live quality claim
-exists. PR #29 and `feat/issue-15-live-verification` remain untouched and read only.
+multi-role retrieval execution.
+
+### Issue #37 terminal qualification evidence
+
+Issue #37 actual qualification: **SUCCEEDED_ONCE**.
+
+On 2026-07-23 the read-only qualifier ran exactly once against the unchanged
+`braincrew-independent-hr-corpus@1.0.0` sealed content digest
+`sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4` and exact
+`braincrew-evaluation-dataset@3.0.0` integrated digest
+`sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d`.
+The parsing, retrieval, and grounded component digests remained
+`sha256:33e17fbb4d3f5485df1482de37e472e1b20fceef922c9b1dda90f8d9dfc25f73`,
+`sha256:9687ead24590cab1b9d244ef876f226545a1fb1aa2013c50e4be7a63430c8408`, and
+`sha256:f76a9a1fa9a6a4b467f76ce7649dc7c15f5ad7c615d6cbb20ed3394e486d94b2`.
+The create-only pair uses `corpus-qualification-receipt-v2` and
+`braincrew-evaluation-dataset-3.0.0`.
+
+- Receipt logical digest: `sha256:c564b1442c135fef5d5430b313914951e2b5ab4cc7e0fd0bbbdefb0b928ea6ce`
+- Qualification receipt file digest: `sha256:8843c87597db779ece932585445bae9dbdf9b5f26f4f81a7b9d069a1699968ed`
+- Import logical digest: `sha256:9df8dbd212c6e0253b3c58feb392869bffb226d816805ee7ed166072596003bd`
+- Import manifest file digest: `sha256:b1899d6be6017a2485d93c67066023a87f8aaa78b0b63012fb9f8d8a040f3821`
+
+Replay reproduced the receipt and import digests, redaction checks passed, historical receipt-v1
+compatibility remained green, and the sealed input tree was unchanged. No retry, repair, AX
+import, database, service, snapshot, preflight, or experiment execution was performed. The next
+operator-controlled step is AX Issue #37; PR #29 and `feat/issue-15-live-verification` remain
+untouched and read only.

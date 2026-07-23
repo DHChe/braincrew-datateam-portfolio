@@ -166,14 +166,51 @@ research and AX_portfolio context
 - Completed verification: independent Standards review found zero actionable findings. Independent
   Spec review found two documentation-contract defects; both were reproduced by a new failing
   contract test and repaired before all 22 successor tests and all 342 repository tests passed.
-- Active gate: **Git Lifecycle Proposal Gate.** The exact successor dataset freeze and local Issue
-  #53 implementation are complete. Commit, push, pull request, and merge remain separate actions.
-  Qualification receipt publication, seed-pack import, AX/DB/service calls, preflight, experiments,
-  and Issue #15 changes remain unauthorized. Issue #37 may begin later from the unchanged sealed
-  content digest only after its own dependency, readiness, and authorization checks; qualification
-  or dataset-review feedback must never return to corpus authoring.
+- Completed phase: **Issue #37 read-only successor qualification.**
+  Issue #37 actual qualification: **SUCCEEDED_ONCE**. The create-only
+  `corpus-qualification-receipt-v2` and
+  `braincrew-evaluation-dataset-3.0.0` import manifest bind the exact sealed corpus and frozen
+  dataset bytes. Replay, redaction, sealed-tree immutability, and historical receipt-v1
+  compatibility checks pass.
+- Receipt logical digest: `sha256:c564b1442c135fef5d5430b313914951e2b5ab4cc7e0fd0bbbdefb0b928ea6ce`
+- Qualification receipt file digest: `sha256:8843c87597db779ece932585445bae9dbdf9b5f26f4f81a7b9d069a1699968ed`
+- Import logical digest: `sha256:9df8dbd212c6e0253b3c58feb392869bffb226d816805ee7ed166072596003bd`
+- Import manifest file digest: `sha256:b1899d6be6017a2485d93c67066023a87f8aaa78b0b63012fb9f8d8a040f3821`
+- Exact inputs: sealed content
+  `sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4`;
+  dataset integrated digest
+  `sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d`.
+  No retry, repair, AX import, database, service, snapshot, preflight, or experiment execution was
+  performed.
+- Active gate: **Issue #37 Git Lifecycle Proposal Gate.** Local implementation, actual
+  qualification, replay, ticket review, and documentation are complete. Commit, push, pull
+  request, merge, Issue closure, and branch/worktree cleanup remain separate actions. The next
+  operator-controlled workflow after Braincrew publication is AX Issue #37; Issue #15 and PR #29
+  remain untouched.
 
 ## Transition history
+
+### 2026-07-23 — Issue #37 successor corpus qualification succeeded once
+
+- Readiness evidence: PR #54 is merged at
+  `e6cfb561349ebcd5f14b2dbe051274b23700557e`; native blockers #33, #36, and #53 are closed; Issue
+  #37 is `OPEN/READY` with `ready-for-agent` and publishes the exact frozen input digests.
+- TDD evidence: the clean baseline passed all 342 tests. Acceptance RED first exposed private
+  absolute paths in qualification and replay stdout; minimal GREEN retained safe file names only.
+- Qualification evidence: the actual read-only qualifier ran exactly once and created only
+  `corpus-qualification-receipt-v2` plus the
+  `seed_version=braincrew-evaluation-dataset-3.0.0` import manifest. The exact logical and file
+  digests are recorded in the current checkpoint above.
+- Replay evidence: replay reproduced receipt
+  `sha256:c564b1442c135fef5d5430b313914951e2b5ab4cc7e0fd0bbbdefb0b928ea6ce`,
+  qualification file
+  `sha256:8843c87597db779ece932585445bae9dbdf9b5f26f4f81a7b9d069a1699968ed`, and import
+  `sha256:9df8dbd212c6e0253b3c58feb392869bffb226d816805ee7ed166072596003bd`.
+  Redaction passed and the sealed input tree remained unchanged.
+- Scope evidence: no retry, repair, corpus/dataset mutation, AX import, database, service,
+  snapshot, preflight, experiment, baseline, candidate, or live quality claim occurred.
+- Next gate: stop before commit. AX Issue #37 may begin only after the Braincrew result is
+  separately published and its own operator-controlled proposal gate is approved.
 
 ### 2026-07-23 — Issue #53 successor dataset candidate published; manual review gate opened
 

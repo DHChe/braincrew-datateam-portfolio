@@ -44,8 +44,8 @@ def test_cli_qualifies_all_100_cases_and_creates_sanitized_bound_outputs(
     import_path = sealed_dir / "import-manifest.json"
     receipt = read_json(receipt_path)
     import_manifest = read_json(import_path)
-    assert summary["receipt_path"] == str(receipt_path)
-    assert summary["import_manifest_path"] == str(import_path)
+    assert summary["receipt_path"] == "qualification-receipt.json"
+    assert summary["import_manifest_path"] == "import-manifest.json"
     assert receipt["schema_version"] == "corpus-qualification-receipt-v2"
     assert receipt["dataset"] == {
         "case_count": 100,
@@ -74,8 +74,10 @@ def test_cli_qualifies_all_100_cases_and_creates_sanitized_bound_outputs(
     for relative_path, original_bytes in sealed_inputs.items():
         assert (sealed_dir / relative_path).read_bytes() == original_bytes
 
-    retained_text = receipt_path.read_text(encoding="utf-8") + import_path.read_text(
-        encoding="utf-8"
+    retained_text = (
+        result.stdout
+        + receipt_path.read_text(encoding="utf-8")
+        + import_path.read_text(encoding="utf-8")
     )
     for forbidden in (
         "즉시 해고할 수 있나요?",
@@ -119,6 +121,8 @@ def test_replay_reproduces_qualification_and_rejects_import_tampering(
 
     assert replay.returncode == 0, replay.stderr
     replay_summary = json.loads(replay.stdout)
+    assert replay_summary["artifact_path"] == "qualification-receipt.json"
+    assert str(tmp_path) not in replay.stdout
     assert replay_summary["receipt_digest"] == summary["receipt_digest"]
     assert replay_summary["qualification_receipt_digest"] == summary["qualification_receipt_digest"]
     assert replay_summary["import_digest"] == summary["import_digest"]

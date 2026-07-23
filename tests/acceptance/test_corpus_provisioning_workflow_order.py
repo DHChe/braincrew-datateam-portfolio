@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -31,6 +32,8 @@ PROVENANCE_SIDECAR_PATH = f"{AUTHORING_ROOT}/review/provenance-review.json"
 SEALED_OUTPUT_PATH = f"{AUTHORING_ROOT}/sealed"
 SCHEMA_DECLARATION_DIGEST = "c9dae9c47ce20f2e4b5c954dbd467e051ebf33081e13a033cc23f9b418897dff"
 INPUT_INVENTORY_DIGEST = "e707333d28fb9452b2823d1b6c125a1b6dcc3a0d5b118069e8bf7b502854061e"
+ISSUE_37_CORPUS_DIGEST = "5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4"
+ISSUE_37_DATASET_DIGEST = "c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d"
 
 
 def _section(document: str, heading: str, next_heading: str) -> str:
@@ -368,9 +371,38 @@ def test_delivery_status_records_the_published_review_repair_and_new_frontier() 
         current_checkpoint
     )
     assert "14 exact source digests" in current_checkpoint
-    assert "Qualification remains unstarted" in current_checkpoint
+    assert "Issue #37 actual qualification: **SUCCEEDED_ONCE**." in current_checkpoint
     assert "7 passed" in current_checkpoint
     assert "publish this status-only commit" not in current_checkpoint
 
     assert "8,531-byte brief" not in current_checkpoint
     assert "only the clean-commit" not in current_checkpoint.casefold()
+
+
+def test_issue_37_records_terminal_qualification_evidence_and_ax_gate() -> None:
+    documents = (
+        DESIGN_PATH.read_text(encoding="utf-8"),
+        CANONICAL_DESIGN_PATH.read_text(encoding="utf-8"),
+        INTERVIEW_PATH.read_text(encoding="utf-8"),
+        STATUS_PATH.read_text(encoding="utf-8"),
+    )
+    digest_evidence = (
+        re.compile(r"Receipt logical digest: `sha256:[0-9a-f]{64}`"),
+        re.compile(r"Qualification receipt file digest: `sha256:[0-9a-f]{64}`"),
+        re.compile(r"Import logical digest: `sha256:[0-9a-f]{64}`"),
+        re.compile(r"Import manifest file digest: `sha256:[0-9a-f]{64}`"),
+    )
+
+    for document in documents:
+        assert "Issue #37 actual qualification: **SUCCEEDED_ONCE**." in document
+        assert ISSUE_37_CORPUS_DIGEST in document
+        assert ISSUE_37_DATASET_DIGEST in document
+        assert "`corpus-qualification-receipt-v2`" in document
+        assert "`braincrew-evaluation-dataset-3.0.0`" in document
+        assert "AX Issue #37" in document
+        assert (
+            "No retry, repair, AX import, database, service, snapshot, preflight, or experiment "
+            "execution was performed."
+        ) in " ".join(document.split())
+        for evidence_pattern in digest_evidence:
+            assert evidence_pattern.search(document)
