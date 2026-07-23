@@ -4,19 +4,21 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
+from ..contract.test_successor_dataset_freeze import (
+    DATASET_V3_MANIFEST,
+    _seal_exact_issue_36_pack,
+)
 from ..corpus_qualification_v2_fixture import (
-    DATASET_ID,
-    DATASET_VERSION,
-    SEED_VERSION,
     canonical_json_bytes,
     import_digest,
     qualification_command,
     run_cli,
-    seal_qualification_pack,
     sha256_digest,
-    stage_dataset_v2_bundle,
-    stage_qualification_pack,
 )
+
+DATASET_ID = "braincrew-evaluation-dataset"
+DATASET_VERSION = "3.0.0"
+SEED_VERSION = "braincrew-evaluation-dataset-3.0.0"
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -26,10 +28,8 @@ def read_json(path: Path) -> dict[str, Any]:
 def test_cli_qualifies_all_100_cases_and_creates_sanitized_bound_outputs(
     tmp_path: Path,
 ) -> None:
-    dataset_manifest = stage_dataset_v2_bundle(tmp_path / "dataset")
-    staging_dir = tmp_path / "staging"
-    stage_qualification_pack(staging_dir)
-    sealed_dir = seal_qualification_pack(staging_dir, tmp_path / "sealed")
+    dataset_manifest = DATASET_V3_MANIFEST
+    sealed_dir = _seal_exact_issue_36_pack(tmp_path / "staging", tmp_path / "sealed")
     sealed_inputs = {
         path.relative_to(sealed_dir): path.read_bytes()
         for path in sealed_dir.rglob("*")
@@ -46,7 +46,7 @@ def test_cli_qualifies_all_100_cases_and_creates_sanitized_bound_outputs(
     import_manifest = read_json(import_path)
     assert summary["receipt_path"] == str(receipt_path)
     assert summary["import_manifest_path"] == str(import_path)
-    assert receipt["schema_version"] == "corpus-qualification-receipt-v1"
+    assert receipt["schema_version"] == "corpus-qualification-receipt-v2"
     assert receipt["dataset"] == {
         "case_count": 100,
         "component_digests": receipt["dataset"]["component_digests"],
@@ -90,10 +90,8 @@ def test_cli_qualifies_all_100_cases_and_creates_sanitized_bound_outputs(
 
 
 def test_cli_qualification_outputs_are_create_only(tmp_path: Path) -> None:
-    dataset_manifest = stage_dataset_v2_bundle(tmp_path / "dataset")
-    staging_dir = tmp_path / "staging"
-    stage_qualification_pack(staging_dir)
-    sealed_dir = seal_qualification_pack(staging_dir, tmp_path / "sealed")
+    dataset_manifest = DATASET_V3_MANIFEST
+    sealed_dir = _seal_exact_issue_36_pack(tmp_path / "staging", tmp_path / "sealed")
     arguments = qualification_command(sealed_dir, dataset_manifest)
     first = run_cli(*arguments)
     assert first.returncode == 0, first.stderr
@@ -110,10 +108,8 @@ def test_cli_qualification_outputs_are_create_only(tmp_path: Path) -> None:
 def test_replay_reproduces_qualification_and_rejects_import_tampering(
     tmp_path: Path,
 ) -> None:
-    dataset_manifest = stage_dataset_v2_bundle(tmp_path / "dataset")
-    staging_dir = tmp_path / "staging"
-    stage_qualification_pack(staging_dir)
-    sealed_dir = seal_qualification_pack(staging_dir, tmp_path / "sealed")
+    dataset_manifest = DATASET_V3_MANIFEST
+    sealed_dir = _seal_exact_issue_36_pack(tmp_path / "staging", tmp_path / "sealed")
     qualified = run_cli(*qualification_command(sealed_dir, dataset_manifest))
     assert qualified.returncode == 0, qualified.stderr
     summary = json.loads(qualified.stdout)

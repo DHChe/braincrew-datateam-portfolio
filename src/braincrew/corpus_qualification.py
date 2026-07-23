@@ -23,9 +23,21 @@ from braincrew.corpus_sealing import (
 from braincrew.dataset_registry import DatasetBundleSnapshot, validate_dataset_bundle
 
 DATASET_ID = "braincrew-evaluation-dataset"
-DATASET_VERSION = "2.0.0"
-DATASET_V2_DIGEST = "sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a"
-SEED_VERSION = "braincrew-evaluation-dataset-2.0.0"
+HISTORICAL_DATASET_VERSION = "2.0.0"
+HISTORICAL_DATASET_DIGEST = (
+    "sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a"
+)
+DATASET_VERSION = "3.0.0"
+DATASET_V3_DIGEST = "sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d"
+DATASET_V3_COMPONENT_DIGESTS = {
+    "grounded": "sha256:f76a9a1fa9a6a4b467f76ce7649dc7c15f5ad7c615d6cbb20ed3394e486d94b2",
+    "parsing": "sha256:33e17fbb4d3f5485df1482de37e472e1b20fceef922c9b1dda90f8d9dfc25f73",
+    "retrieval": "sha256:9687ead24590cab1b9d244ef876f226545a1fb1aa2013c50e4be7a63430c8408",
+}
+HISTORICAL_SEED_VERSION: Literal["braincrew-evaluation-dataset-2.0.0"] = (
+    "braincrew-evaluation-dataset-2.0.0"
+)
+SEED_VERSION: Literal["braincrew-evaluation-dataset-3.0.0"] = "braincrew-evaluation-dataset-3.0.0"
 QUALIFICATION_RECEIPT_NAME = "qualification-receipt.json"
 IMPORT_MANIFEST_NAME = "import-manifest.json"
 _SEALED_EXTRA_FILES = {
@@ -56,7 +68,7 @@ class _StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
 
-class QualificationDatasetIdentity(_StrictModel):
+class QualificationDatasetIdentityV1(_StrictModel):
     id: Literal["braincrew-evaluation-dataset"]
     version: Literal["2.0.0"]
     content_digest: Digest
@@ -64,11 +76,23 @@ class QualificationDatasetIdentity(_StrictModel):
     case_count: Literal[100]
 
 
-class QualificationCorpusIdentity(_StrictModel):
+class QualificationDatasetIdentityV2(_StrictModel):
+    id: Literal["braincrew-evaluation-dataset"]
+    version: Literal["3.0.0"]
+    content_digest: Digest
+    component_digests: dict[str, Digest]
+    case_count: Literal[100]
+
+
+class QualificationCorpusIdentityV1(_StrictModel):
     id: str = Field(min_length=1, max_length=160)
     version: str = Field(min_length=1, max_length=80)
     sealed_content_digest: Digest
     sealing_receipt_digest: Digest
+
+
+class QualificationCorpusIdentityV2(QualificationCorpusIdentityV1):
+    provenance_digest: Digest
 
 
 class QualifiedSource(_StrictModel):
@@ -79,10 +103,10 @@ class QualifiedSource(_StrictModel):
     forbidden_roles: list[VisibilityRole]
 
 
-class CorpusQualificationReceipt(_StrictModel):
+class CorpusQualificationReceiptV1(_StrictModel):
     schema_version: Literal["corpus-qualification-receipt-v1"]
-    corpus: QualificationCorpusIdentity
-    dataset: QualificationDatasetIdentity
+    corpus: QualificationCorpusIdentityV1
+    dataset: QualificationDatasetIdentityV1
     required_source_count: int = Field(ge=1)
     distractor_source_count: int = Field(ge=1)
     required_role_counts: dict[VisibilityRole, int]
@@ -90,11 +114,21 @@ class CorpusQualificationReceipt(_StrictModel):
     receipt_digest: Digest
 
 
-class AxImportManifest(_StrictModel):
+class CorpusQualificationReceiptV2(_StrictModel):
+    schema_version: Literal["corpus-qualification-receipt-v2"]
+    corpus: QualificationCorpusIdentityV2
+    dataset: QualificationDatasetIdentityV2
+    required_source_count: int = Field(ge=1)
+    distractor_source_count: int = Field(ge=1)
+    required_role_counts: dict[VisibilityRole, int]
+    sources: list[QualifiedSource] = Field(min_length=1)
+    receipt_digest: Digest
+
+
+class _AxImportManifestBase(_StrictModel):
     schema_version: Literal["ax-synthetic-seed-pack-v1"]
     corpus_id: str = Field(min_length=1, max_length=160)
     corpus_version: Identifier80
-    seed_version: Literal["braincrew-evaluation-dataset-2.0.0"]
     tenant_slug: Identifier80
     demo_company_id: Identifier80
     corpus_manifest_path: Literal["corpus-manifest.json"]
@@ -106,12 +140,20 @@ class AxImportManifest(_StrictModel):
     import_digest: Digest
 
 
+class AxImportManifestV1(_AxImportManifestBase):
+    seed_version: Literal["braincrew-evaluation-dataset-2.0.0"]
+
+
+class AxImportManifestV2(_AxImportManifestBase):
+    seed_version: Literal["braincrew-evaluation-dataset-3.0.0"]
+
+
 @dataclass(frozen=True)
 class CorpusQualificationResult:
     receipt_path: Path
     import_manifest_path: Path
-    receipt: CorpusQualificationReceipt
-    import_manifest: AxImportManifest
+    receipt: CorpusQualificationReceiptV2
+    import_manifest: AxImportManifestV2
     qualification_receipt_digest: str
 
 
@@ -138,19 +180,25 @@ def qualify_corpus_pack(
             "qualification outputs are create-only",
         )
 
+    snapshot = _validate_dataset(dataset_manifest_path)
     validated, sealing_receipt_digest = _validate_pack(
         sealed_dir,
         allowed_extra_files=_SEALED_EXTRA_FILES,
     )
-    snapshot = _validate_dataset(dataset_manifest_path)
-    receipt = _build_qualification_receipt(
+    _validate_source_corpus_binding(
+        sealed_dir=sealed_dir,
+        validated=validated,
+        sealing_receipt_digest=sealing_receipt_digest,
+        snapshot=snapshot,
+    )
+    receipt = _build_qualification_receipt_v2(
         validated=validated,
         sealing_receipt_digest=sealing_receipt_digest,
         snapshot=snapshot,
     )
     receipt_bytes = canonical_json_bytes(receipt.model_dump(mode="json")) + b"\n"
     qualification_receipt_digest = sha256_digest(receipt_bytes)
-    import_manifest = _build_import_manifest(
+    import_manifest = _build_import_manifest_v2(
         receipt=receipt,
         qualification_receipt_digest=qualification_receipt_digest,
         tenant_slug=tenant_slug,
@@ -190,12 +238,38 @@ def qualify_corpus_pack(
 
 
 def replay_qualification_receipt(receipt_path: Path) -> dict[str, str]:
+    try:
+        untrusted = json.loads(receipt_path.read_text("utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise CorpusQualificationError(
+            "CORPUS_PACK_SCHEMA_INVALID",
+            "qualification receipt is not strict canonical JSON",
+        ) from exc
+    if not isinstance(untrusted, dict):
+        raise CorpusQualificationError(
+            "CORPUS_PACK_SCHEMA_INVALID",
+            "qualification receipt is not strict canonical JSON",
+        )
+    schema_version = untrusted.get("schema_version")
+    if schema_version == "corpus-qualification-receipt-v1":
+        receipt_model: type[CorpusQualificationReceiptV1 | CorpusQualificationReceiptV2] = (
+            CorpusQualificationReceiptV1
+        )
+        import_model: type[AxImportManifestV1 | AxImportManifestV2] = AxImportManifestV1
+    elif schema_version == "corpus-qualification-receipt-v2":
+        receipt_model = CorpusQualificationReceiptV2
+        import_model = AxImportManifestV2
+    else:
+        raise CorpusQualificationError(
+            "CORPUS_PACK_SCHEMA_INVALID",
+            "qualification receipt schema version is unsupported",
+        )
     receipt_bytes, receipt_payload = _read_canonical_model(
         receipt_path,
-        CorpusQualificationReceipt,
+        receipt_model,
         error_message="qualification receipt is not strict canonical JSON",
     )
-    receipt = CorpusQualificationReceipt.model_validate(receipt_payload)
+    receipt = receipt_model.model_validate(receipt_payload)
     receipt_semantic_payload = receipt.model_dump(mode="json")
     declared_receipt_digest = receipt_semantic_payload.pop("receipt_digest")
     if sha256_digest(canonical_json_bytes(receipt_semantic_payload)) != declared_receipt_digest:
@@ -209,12 +283,28 @@ def replay_qualification_receipt(receipt_path: Path) -> dict[str, str]:
         sealed_dir,
         allowed_extra_files=_SEALED_EXTRA_FILES,
     )
-    snapshot = _validate_dataset(_dataset_v2_manifest_path())
-    expected_receipt = _build_qualification_receipt(
-        validated=validated,
-        sealing_receipt_digest=sealing_receipt_digest,
-        snapshot=snapshot,
-    )
+    if isinstance(receipt, CorpusQualificationReceiptV1):
+        snapshot = _validate_historical_dataset(_dataset_manifest_path("2.0.0"))
+        expected_receipt: CorpusQualificationReceiptV1 | CorpusQualificationReceiptV2 = (
+            _build_qualification_receipt_v1(
+                validated=validated,
+                sealing_receipt_digest=sealing_receipt_digest,
+                snapshot=snapshot,
+            )
+        )
+    else:
+        snapshot = _validate_dataset(_dataset_manifest_path("3.0.0"))
+        _validate_source_corpus_binding(
+            sealed_dir=sealed_dir,
+            validated=validated,
+            sealing_receipt_digest=sealing_receipt_digest,
+            snapshot=snapshot,
+        )
+        expected_receipt = _build_qualification_receipt_v2(
+            validated=validated,
+            sealing_receipt_digest=sealing_receipt_digest,
+            snapshot=snapshot,
+        )
     if expected_receipt != receipt:
         raise CorpusQualificationError(
             "CORPUS_PACK_DIGEST_MISMATCH",
@@ -224,17 +314,25 @@ def replay_qualification_receipt(receipt_path: Path) -> dict[str, str]:
     import_path = sealed_dir / IMPORT_MANIFEST_NAME
     _, import_payload = _read_canonical_model(
         import_path,
-        AxImportManifest,
+        import_model,
         error_message="import manifest is not strict canonical JSON",
     )
-    import_manifest = AxImportManifest.model_validate(import_payload)
+    import_manifest = import_model.model_validate(import_payload)
     qualification_receipt_digest = sha256_digest(receipt_bytes)
-    expected_import = _build_import_manifest(
-        receipt=receipt,
-        qualification_receipt_digest=qualification_receipt_digest,
-        tenant_slug=import_manifest.tenant_slug,
-        demo_company_id=import_manifest.demo_company_id,
-    )
+    if isinstance(receipt, CorpusQualificationReceiptV1):
+        expected_import: AxImportManifestV1 | AxImportManifestV2 = _build_import_manifest_v1(
+            receipt=receipt,
+            qualification_receipt_digest=qualification_receipt_digest,
+            tenant_slug=import_manifest.tenant_slug,
+            demo_company_id=import_manifest.demo_company_id,
+        )
+    else:
+        expected_import = _build_import_manifest_v2(
+            receipt=receipt,
+            qualification_receipt_digest=qualification_receipt_digest,
+            tenant_slug=import_manifest.tenant_slug,
+            demo_company_id=import_manifest.demo_company_id,
+        )
     if expected_import != import_manifest:
         raise CorpusQualificationError(
             "CORPUS_PACK_DIGEST_MISMATCH",
@@ -245,6 +343,7 @@ def replay_qualification_receipt(receipt_path: Path) -> dict[str, str]:
         "qualification_receipt_digest": qualification_receipt_digest,
         "import_digest": import_manifest.import_digest,
         "sealed_content_digest": receipt.corpus.sealed_content_digest,
+        "receipt_schema_version": receipt.schema_version,
     }
 
 
@@ -318,7 +417,9 @@ def _validate_dataset(manifest_path: Path) -> DatasetBundleSnapshot:
         or snapshot.manifest.dataset_id != DATASET_ID
         or snapshot.manifest.dataset_version != DATASET_VERSION
         or snapshot.manifest.case_count != 100
-        or snapshot.dataset_digest != DATASET_V2_DIGEST
+        or snapshot.manifest.schema_version != "dataset-manifest-v2"
+        or snapshot.dataset_digest != DATASET_V3_DIGEST
+        or snapshot.component_digests != DATASET_V3_COMPONENT_DIGESTS
     ):
         raise CorpusQualificationError(
             "CORPUS_PACK_SCHEMA_INVALID",
@@ -327,23 +428,83 @@ def _validate_dataset(manifest_path: Path) -> DatasetBundleSnapshot:
     return snapshot
 
 
-def _dataset_v2_manifest_path() -> Path:
-    repository_manifest = Path(__file__).resolve().parents[2] / "datasets/dataset_manifest_v2.json"
+def _validate_historical_dataset(manifest_path: Path) -> DatasetBundleSnapshot:
+    try:
+        report = validate_dataset_bundle(manifest_path)
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise CorpusQualificationError(
+            "CORPUS_PACK_SCHEMA_INVALID",
+            f"historical replay requires {DATASET_ID}@{HISTORICAL_DATASET_VERSION}",
+        ) from exc
+    snapshot = report.snapshot
+    if (
+        report.state != "VALID"
+        or snapshot is None
+        or snapshot.manifest.schema_version != "dataset-manifest-v1"
+        or snapshot.manifest.dataset_id != DATASET_ID
+        or snapshot.manifest.dataset_version != HISTORICAL_DATASET_VERSION
+        or snapshot.dataset_digest != HISTORICAL_DATASET_DIGEST
+    ):
+        raise CorpusQualificationError(
+            "CORPUS_PACK_SCHEMA_INVALID",
+            f"historical replay requires exact {DATASET_ID}@{HISTORICAL_DATASET_VERSION} bytes",
+        )
+    return snapshot
+
+
+def _dataset_manifest_path(version: Literal["2.0.0", "3.0.0"]) -> Path:
+    filename = "dataset_manifest_v2.json" if version == "2.0.0" else "dataset_manifest_v3.json"
+    repository_manifest = Path(__file__).resolve().parents[2] / "datasets" / filename
     if repository_manifest.is_file():
         return repository_manifest
     package_manifest = resources.files("braincrew").joinpath(
         "datasets",
-        "dataset_manifest_v2.json",
+        filename,
     )
     return Path(str(package_manifest))
 
 
-def _build_qualification_receipt(
+def _validate_source_corpus_binding(
+    *,
+    sealed_dir: Path,
+    validated: ValidatedCorpus,
+    sealing_receipt_digest: str,
+    snapshot: DatasetBundleSnapshot,
+) -> None:
+    binding = snapshot.manifest.source_corpus
+    if binding is None:
+        raise CorpusQualificationError(
+            "CORPUS_PACK_SCHEMA_INVALID",
+            "successor dataset is missing its predecessor binding",
+        )
+    try:
+        sealing_receipt = json.loads((sealed_dir / "sealing-receipt.json").read_text("utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise CorpusQualificationError(
+            "CORPUS_PACK_SCHEMA_INVALID",
+            "sealed corpus receipt is unavailable",
+        ) from exc
+    observed = {
+        "id": validated.manifest.corpus_id,
+        "version": validated.manifest.corpus_version,
+        "sealed_content_digest": validated.manifest.sealed_content_digest,
+        "provenance_digest": sealing_receipt.get("provenance_digest"),
+        "sealing_receipt_digest": sealing_receipt_digest,
+    }
+    if observed != binding.model_dump(mode="json"):
+        raise CorpusQualificationError(
+            "CORPUS_PACK_DIGEST_MISMATCH",
+            "sealed corpus does not match the successor predecessor binding",
+        )
+
+
+def _qualification_receipt_payload(
     *,
     validated: ValidatedCorpus,
     sealing_receipt_digest: str,
     snapshot: DatasetBundleSnapshot,
-) -> CorpusQualificationReceipt:
+    schema_version: Literal["corpus-qualification-receipt-v1", "corpus-qualification-receipt-v2"],
+) -> dict[str, Any]:
     requirements = _dataset_requirements(snapshot)
     source_by_id = {source.source_id: source for source in validated.manifest.sources}
     blockers: list[tuple[str, str]] = []
@@ -392,7 +553,7 @@ def _build_qualification_receipt(
 
     required_role_counts.pop("HRAdmin")
     payload: dict[str, Any] = {
-        "schema_version": "corpus-qualification-receipt-v1",
+        "schema_version": schema_version,
         "corpus": {
             "id": validated.manifest.corpus_id,
             "version": validated.manifest.corpus_version,
@@ -401,7 +562,7 @@ def _build_qualification_receipt(
         },
         "dataset": {
             "id": DATASET_ID,
-            "version": DATASET_VERSION,
+            "version": snapshot.manifest.dataset_version,
             "content_digest": snapshot.dataset_digest,
             "component_digests": dict(sorted(snapshot.component_digests.items())),
             "case_count": len(snapshot.case_records),
@@ -411,8 +572,48 @@ def _build_qualification_receipt(
         "required_role_counts": required_role_counts,
         "sources": qualified_sources,
     }
+    if schema_version == "corpus-qualification-receipt-v2":
+        source_corpus = snapshot.manifest.source_corpus
+        if source_corpus is None:
+            raise CorpusQualificationError(
+                "CORPUS_PACK_SCHEMA_INVALID",
+                "successor dataset is missing its predecessor binding",
+            )
+        payload["corpus"]["provenance_digest"] = source_corpus.provenance_digest
     payload["receipt_digest"] = sha256_digest(canonical_json_bytes(payload))
-    return CorpusQualificationReceipt.model_validate(payload)
+    return payload
+
+
+def _build_qualification_receipt_v1(
+    *,
+    validated: ValidatedCorpus,
+    sealing_receipt_digest: str,
+    snapshot: DatasetBundleSnapshot,
+) -> CorpusQualificationReceiptV1:
+    return CorpusQualificationReceiptV1.model_validate(
+        _qualification_receipt_payload(
+            validated=validated,
+            sealing_receipt_digest=sealing_receipt_digest,
+            snapshot=snapshot,
+            schema_version="corpus-qualification-receipt-v1",
+        )
+    )
+
+
+def _build_qualification_receipt_v2(
+    *,
+    validated: ValidatedCorpus,
+    sealing_receipt_digest: str,
+    snapshot: DatasetBundleSnapshot,
+) -> CorpusQualificationReceiptV2:
+    return CorpusQualificationReceiptV2.model_validate(
+        _qualification_receipt_payload(
+            validated=validated,
+            sealing_receipt_digest=sealing_receipt_digest,
+            snapshot=snapshot,
+            schema_version="corpus-qualification-receipt-v2",
+        )
+    )
 
 
 def _dataset_requirements(
@@ -496,18 +697,21 @@ def _qualification_role(raw_role: str) -> VisibilityRole:
     return "HRPractitioner"
 
 
-def _build_import_manifest(
+def _build_import_manifest_payload(
     *,
-    receipt: CorpusQualificationReceipt,
+    receipt: CorpusQualificationReceiptV1 | CorpusQualificationReceiptV2,
     qualification_receipt_digest: str,
     tenant_slug: str,
     demo_company_id: str,
-) -> AxImportManifest:
+    seed_version: Literal[
+        "braincrew-evaluation-dataset-2.0.0", "braincrew-evaluation-dataset-3.0.0"
+    ],
+) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "schema_version": "ax-synthetic-seed-pack-v1",
         "corpus_id": receipt.corpus.id,
         "corpus_version": receipt.corpus.version,
-        "seed_version": SEED_VERSION,
+        "seed_version": seed_version,
         "tenant_slug": tenant_slug,
         "demo_company_id": demo_company_id,
         "corpus_manifest_path": "corpus-manifest.json",
@@ -518,8 +722,50 @@ def _build_import_manifest(
         "chunking_contract_version": "ax-seed-chunking-v1",
     }
     payload["import_digest"] = sha256_digest(canonical_json_bytes(payload))
+    return payload
+
+
+def _build_import_manifest_v1(
+    *,
+    receipt: CorpusQualificationReceiptV1,
+    qualification_receipt_digest: str,
+    tenant_slug: str,
+    demo_company_id: str,
+) -> AxImportManifestV1:
     try:
-        return AxImportManifest.model_validate(payload)
+        return AxImportManifestV1.model_validate(
+            _build_import_manifest_payload(
+                receipt=receipt,
+                qualification_receipt_digest=qualification_receipt_digest,
+                tenant_slug=tenant_slug,
+                demo_company_id=demo_company_id,
+                seed_version=HISTORICAL_SEED_VERSION,
+            )
+        )
+    except ValidationError as exc:
+        raise CorpusQualificationError(
+            "CORPUS_PACK_SCHEMA_INVALID",
+            "AX import target identifiers are invalid",
+        ) from exc
+
+
+def _build_import_manifest_v2(
+    *,
+    receipt: CorpusQualificationReceiptV2,
+    qualification_receipt_digest: str,
+    tenant_slug: str,
+    demo_company_id: str,
+) -> AxImportManifestV2:
+    try:
+        return AxImportManifestV2.model_validate(
+            _build_import_manifest_payload(
+                receipt=receipt,
+                qualification_receipt_digest=qualification_receipt_digest,
+                tenant_slug=tenant_slug,
+                demo_company_id=demo_company_id,
+                seed_version=SEED_VERSION,
+            )
+        )
     except ValidationError as exc:
         raise CorpusQualificationError(
             "CORPUS_PACK_SCHEMA_INVALID",
@@ -529,7 +775,7 @@ def _build_import_manifest(
 
 def _read_canonical_model(
     path: Path,
-    model: type[_StrictModel],
+    model: type[BaseModel],
     *,
     error_message: str,
 ) -> tuple[bytes, dict[str, Any]]:

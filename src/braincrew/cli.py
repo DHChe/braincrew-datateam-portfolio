@@ -522,7 +522,7 @@ def qualify_corpus(
     tenant_slug: Annotated[str, typer.Option("--tenant-slug")],
     demo_company_id: Annotated[str, typer.Option("--demo-company-id")],
 ) -> None:
-    """Read-only qualify one sealed corpus against the exact dataset v2 identity."""
+    """Read-only qualify one sealed corpus against the exact successor dataset identity."""
     try:
         result = qualify_corpus_pack(
             sealed_dir=sealed_dir,
@@ -566,9 +566,10 @@ def replay_fixture(
             "corpus-sealing-receipt-v2",
         }:
             replay_summary = replay_sealing_receipt(artifact_path)
-        elif isinstance(payload, dict) and payload.get("schema_version") == (
-            "corpus-qualification-receipt-v1"
-        ):
+        elif isinstance(payload, dict) and payload.get("schema_version") in {
+            "corpus-qualification-receipt-v1",
+            "corpus-qualification-receipt-v2",
+        }:
             replay_summary = replay_qualification_receipt(artifact_path)
         elif isinstance(payload, dict) and payload.get("schema_version") in {
             "live-preflight-evidence-v1",

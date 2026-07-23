@@ -969,6 +969,73 @@ Likely follow-ups:
 - "Did Issue #35 create a corpus or manifest?" — No. It created only the generic brief, its
   digest declaration, contract tests, and leakage-review evidence.
 
+### D8.7 Gate the successor dataset freeze on a separate human reviewer
+
+Decision:
+: Publish `braincrew-evaluation-dataset@3.0.0` first as a candidate, not an automatic freeze. Bind its integrated
+  digest `sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d`, its three
+  component digests, and the sealed `braincrew-independent-hr-corpus@1.0.0` predecessor digests to
+  `docs/reviews/2026-07-23-issue-53-successor-dataset-review.md`, and keep the card and checklist
+  at `PENDING_MANUAL_APPROVAL` until the `DHChe-successor-dataset-reviewer` authority records an
+  approve or reject decision on those exact bytes. On 2026-07-23 that authority confirmed all eight
+  checks and recorded `Decision: APPROVED`, so the exact candidate is now `FROZEN`.
+
+Why:
+: Contract tests can prove that the successor is internally consistent — 100 unique cases, the
+  20/30/40/10 allocation, the 70/30 split, unchanged evaluator semantics, closed source digests,
+  and rejection of case, source, visibility, split, predecessor, and version-only tampering. They
+  cannot prove that the rebound evidence actually answers each query, that role visibility matches
+  intent, or that a distractor is genuinely unhelpful. Those are semantic judgments, so the freeze
+  authority is a human and is deliberately separate from the authoring and corpus-provenance
+  authorities used in D8.2 and D8.6.
+
+  Making approval external to the candidate bytes also removes the self-approval loop: the
+  implementing agent cannot both produce the bytes and declare them frozen.
+
+Rejected alternative:
+: Treat a fully green contract suite as the freeze condition. It would convert "the agent's own
+  invariants hold" into "the ground truth is correct", which is exactly the substitution this
+  portfolio argues against.
+
+Trade-off:
+: The dataset stays unusable for qualification, seed-pack import, preflight, and experiments until
+  a human finishes the checklist. Schedule risk is accepted in exchange for an auditable freeze.
+
+Failure modes:
+: an agent claiming freeze from green tests; approval recorded against a digest that no longer
+  matches the bytes; the reviewer approving structure without opening the component files; and
+  review feedback leaking back into the sealed corpus authoring lane.
+
+Validation evidence:
+: `tests/contract/test_successor_dataset_freeze.py` proves manifest-component-predecessor binding,
+  dataset `2.0.0` immutability, preserved evaluator/metric/risk/split semantics, complete source
+  digest and visibility closure with `demo-lifecycle-checklist-014` retained as an uncited
+  distractor, six tampering rejections, version-only substitution rejection, create-only
+  qualification receipt-v2 and seed v3 with rollback, `receipt-v1` replay support, v1/v2 dispatch
+  separation, wheel packaging of both bundles, and that the checklist quotes the exact candidate
+  digests.
+
+Reviewer resolution:
+: All 30 retrieval cases carry `role: Executive`, while the grounded cases span `employee`,
+  `Executive`, and `hr_manager`. The reviewer accepted this as a constraint-induced limitation:
+  `retrieval-dataset-v1` permits only `Executive` or `HRManager`, `HRManager` maps to
+  `HRPractitioner`, and all 14 sealed sources are visible to `HRPractitioner`, so no valid forbidden
+  source exists for that role while forbidden-visibility applicability remains unchanged. This
+  freeze therefore claims Executive retrieval visibility fixtures, not multi-role retrieval
+  execution evidence.
+
+Likely follow-ups:
+
+- "Why not freeze automatically once tests pass?" — Green tests prove internal consistency, not
+  ground-truth correctness. Freezing on them would let the evaluation system certify itself.
+- "What stops an approval from drifting off the bytes?" — The checklist quotes the integrated
+  digest, all three component digests, and the three predecessor digests, and a contract test
+  asserts those exact strings are present.
+- "Is dataset 2.0.0 affected?" — No. Its bytes, digests, and `receipt-v1` replay are asserted
+  immutable, and both bundles ship in the wheel.
+- "Why a third distinct authority?" — Authoring owner, corpus-provenance reviewer, and successor
+  dataset reviewer answer different questions; collapsing them would recreate self-approval.
+
 ### D9. Use layered verification and an evidence-driven ten-day sequence
 
 Decision:

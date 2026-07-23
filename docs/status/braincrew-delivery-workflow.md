@@ -154,15 +154,75 @@ research and AX_portfolio context
 - RED contract tests must first prove the entry pins, restricted inputs, create-only targets,
   distinct owner/reviewer authority, exact order, and every stop condition before any source-byte
   authoring attempt.
-- Active gate: Issue #36 external authoring, manual review, sealing, and replay are complete. The
-  synchronized repository documents are local and uncommitted; commit, push, pull request, and
-  merge remain separate Git Lifecycle Proposal Gate actions. Qualification, AX/DB/service calls,
-  preflight, experiments, and Issue #15 changes remain unauthorized.
-- Workflow gate: publish and review only this Issue #36 documentation synchronization. Issue #37
-  may begin later from the unchanged sealed content digest only after its own dependency, readiness,
-  and authorization checks; qualification feedback must never return to authoring.
+- Completed phase: Issue #36 external authoring, manual review, sealing, and replay.
+- Completed gate: **Issue #53 successor dataset review gate.** The source-first successor candidate
+  `braincrew-evaluation-dataset@3.0.0` exists as local uncommitted bytes with integrated digest
+  `sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d`. Its card and
+  `docs/reviews/2026-07-23-issue-53-successor-dataset-review.md` checklist now read `FROZEN` and
+  `APPROVED`, respectively. All eight checklist items are checked and `Decision: APPROVED` is
+  recorded. The freeze authority is
+  `DHChe-successor-dataset-reviewer`, which is distinct from the authoring owner and from
+  `DHChe-corpus-provenance-reviewer`.
+- Completed verification: independent Standards review found zero actionable findings. Independent
+  Spec review found two documentation-contract defects; both were reproduced by a new failing
+  contract test and repaired before all 22 successor tests and all 342 repository tests passed.
+- Active gate: **Git Lifecycle Proposal Gate.** The exact successor dataset freeze and local Issue
+  #53 implementation are complete. Commit, push, pull request, and merge remain separate actions.
+  Qualification receipt publication, seed-pack import, AX/DB/service calls, preflight, experiments,
+  and Issue #15 changes remain unauthorized. Issue #37 may begin later from the unchanged sealed
+  content digest only after its own dependency, readiness, and authorization checks; qualification
+  or dataset-review feedback must never return to corpus authoring.
 
 ## Transition history
+
+### 2026-07-23 — Issue #53 successor dataset candidate published; manual review gate opened
+
+- Candidate evidence: `datasets/dataset_manifest_v3.json`, `datasets/DATASET_CARD_V3.md`, and the
+  three v2 component files publish `braincrew-evaluation-dataset@3.0.0` with integrated digest
+  `sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d` and component digests
+  `sha256:33e17fbb4d3f5485df1482de37e472e1b20fceef922c9b1dda90f8d9dfc25f73` (parsing, 20 cases),
+  `sha256:9687ead24590cab1b9d244ef876f226545a1fb1aa2013c50e4be7a63430c8408` (retrieval, 30 cases),
+  and `sha256:f76a9a1fa9a6a4b467f76ce7649dc7c15f5ad7c615d6cbb20ed3394e486d94b2` (grounded, 50
+  cases covering 40 `grounded_answer` plus 10 `visibility_abstention`).
+- Identity-preservation evidence: 100 globally unique case identifiers, the 20/30/40/10 allocation,
+  the 70/30 Calibration/Verification split, per-metric minimum Verification denominators, evaluator
+  semantics, metric applicability, risk policy, and threshold policy are unchanged from `2.0.0`.
+- Rebinding evidence: the manifest `source_corpus` block pins the sealed predecessor
+  `braincrew-independent-hr-corpus@1.0.0` by sealed-content digest
+  `sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4`, provenance digest
+  `sha256:eb43fc824cd54bf10e8805b5fdeb1915bcaac368cb458ce8981a481cd7d4fce1`, and receipt digest
+  `sha256:bc508b6001facbef67bacd7e0c1d4d5123f04bc1e33d2849b5e7d455183df62b`. Thirteen of the 14
+  sealed sources are cited; `demo-lifecycle-checklist-014` remains an uncited distractor.
+- Test evidence: `tests/contract/test_successor_dataset_freeze.py` reports 21 passed, covering
+  manifest-component-predecessor binding, dataset `2.0.0` byte immutability, preserved evaluator
+  and split semantics, complete source-digest and visibility closure, six tampering rejections,
+  version-only `3.0.0` substitution rejection, create-only qualification receipt-v2 and seed v3
+  with rollback, `receipt-v1` replay support, v1/v2 dispatch separation, wheel packaging of both
+  bundles, and exact digest binding in the review checklist.
+- Documentation-synchronization evidence: the corpus-provisioning design checkpoint, evaluation
+  plane design section 14.4, interview defense card D8.7, and this status file now record the
+  successor contract and its review authority.
+- Review decision: on 2026-07-23 `DHChe-successor-dataset-reviewer` confirmed all eight checklist
+  items and recorded `Decision: APPROVED` against the exact candidate and predecessor digests.
+- Reviewer resolution: all 30 retrieval cases carry `role: Executive`. The reviewer accepted this
+  as a constraint-induced limitation because `HRManager` maps to `HRPractitioner` and all 14 sealed
+  sources are visible to `HRPractitioner`, leaving no valid forbidden source while unchanged
+  forbidden-visibility applicability is required. This is not a multi-role retrieval execution
+  claim.
+- Scope evidence: the exact successor dataset freeze is the only newly approved lifecycle claim.
+  No actual qualification receipt publication, seed-pack import, AX/DB/service call, preflight,
+  experiment, baseline, candidate run, comparison, or live quality claim occurred. Dataset `2.0.0`
+  was not modified.
+- Ticket-review evidence: the independent Standards axis approved with zero actionable findings.
+  The independent Spec axis found a stale historical `seed_version` in the operative provisioning
+  contract and a contradictory pre-approval scope statement. A new contract test first failed, both
+  statements were corrected to the successor v2 receipt/seed and approved freeze boundaries, and
+  all 22 successor tests then passed. Unresolved findings: zero.
+- Verification evidence: frozen dependency sync, Ruff format and lint, strict mypy, all 342
+  repository tests, Git whitespace validation, and working-tree inspection pass on
+  `feat/issue-53-successor-dataset-freeze`.
+- Completion condition: satisfied locally; work is stopped before commit at the Git Lifecycle
+  Proposal Gate. Commit, push, pull request, and merge remain separately unauthorized.
 
 ### 2026-07-23 — Issue #36 restricted authoring, manual review, sealing, and replay completed
 

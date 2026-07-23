@@ -19,9 +19,9 @@ from ..corpus_qualification_v2_fixture import (
     rewrite_manifest,
     run_cli,
     seal_qualification_pack,
-    stage_dataset_v2_bundle,
     stage_qualification_pack,
 )
+from .test_successor_dataset_freeze import DATASET_V3_MANIFEST, _seal_exact_issue_36_pack
 
 REPOSITORY_ROOT = Path(__file__).parents[2]
 
@@ -70,10 +70,7 @@ def test_qualification_rolls_back_both_outputs_if_pair_publication_fails(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    dataset_manifest = stage_dataset_v2_bundle(tmp_path / "dataset")
-    staging_dir = tmp_path / "staging"
-    stage_qualification_pack(staging_dir)
-    sealed_dir = seal_qualification_pack(staging_dir, tmp_path / "sealed")
+    sealed_dir = _seal_exact_issue_36_pack(tmp_path / "staging", tmp_path / "sealed")
     qualification_os = cast(Any, qualification_module).os
     real_link = qualification_os.link
 
@@ -90,7 +87,7 @@ def test_qualification_rolls_back_both_outputs_if_pair_publication_fails(
     ):
         qualify_corpus_pack(
             sealed_dir=sealed_dir,
-            dataset_manifest_path=dataset_manifest,
+            dataset_manifest_path=DATASET_V3_MANIFEST,
             tenant_slug="braincrew-demo-tenant",
             demo_company_id="braincrew-demo-company",
         )
@@ -149,13 +146,12 @@ def _manifest_mutation(change: Callable[[dict[str, Any]], None]) -> Mutation:
         ({}, _source_mutation("sources/synthetic-rule-001.md"), "CORPUS_PACK_DIGEST_MISMATCH"),
     ],
 )
-def test_qualification_fails_closed_with_typed_blockers_and_no_outputs(
+def test_historical_replay_builder_fails_closed_with_typed_blockers_and_no_outputs(
     tmp_path: Path,
     pack_options: dict[str, Any],
     mutate: Mutation | None,
     expected_blocker: str,
 ) -> None:
-    dataset_manifest = stage_dataset_v2_bundle(tmp_path / "dataset")
     staging_dir = tmp_path / "staging"
     stage_qualification_pack(staging_dir, **pack_options)
     sealed_dir = seal_qualification_pack(staging_dir, tmp_path / "sealed")
@@ -167,10 +163,18 @@ def test_qualification_fails_closed_with_typed_blockers_and_no_outputs(
         if path.is_file()
     }
 
-    result = run_cli(*qualification_command(sealed_dir, dataset_manifest))
-
-    assert result.returncode == 2
-    assert expected_blocker in result.stderr
+    with pytest.raises(CorpusQualificationError, match=expected_blocker):
+        validated, sealing_receipt_digest = qualification_module._validate_pack(
+            sealed_dir,
+            allowed_extra_files=qualification_module._SEALED_EXTRA_FILES,
+        )
+        historical = validate_dataset_bundle(DATASET_V2_MANIFEST)
+        assert historical.snapshot is not None
+        qualification_module._build_qualification_receipt_v1(
+            validated=validated,
+            sealing_receipt_digest=sealing_receipt_digest,
+            snapshot=historical.snapshot,
+        )
     assert not (sealed_dir / "qualification-receipt.json").exists()
     assert not (sealed_dir / "import-manifest.json").exists()
     assert {
@@ -189,6 +193,6 @@ def test_qualification_rejects_the_wrong_dataset_identity(tmp_path: Path) -> Non
 
     assert result.returncode == 2
     assert "CORPUS_PACK_SCHEMA_INVALID" in result.stderr
-    assert "braincrew-evaluation-dataset@2.0.0" in result.stderr
+    assert "braincrew-evaluation-dataset@3.0.0" in result.stderr
     assert not (sealed_dir / "qualification-receipt.json").exists()
     assert not (sealed_dir / "import-manifest.json").exists()
