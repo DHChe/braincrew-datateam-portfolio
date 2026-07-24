@@ -758,6 +758,113 @@ Likely follow-ups:
 - "Did Issue #34 make the system READY?" — No. It implements and tests the policy collector. Issue
   #38 alone may perform the actual renewed preflight and publish READY.
 
+### D8.5a Split missing AX principal state from missing parse-source state
+
+Decision:
+: Preserve AX `validated_evaluation_principal` and split the follow-up into two dependent AX
+  contracts. AX-A provisions one deterministic active local/test subject in the imported target
+  tenant. AX-B then uses that subject to create one conversation and re-provision the six reviewed
+  `.txt` sources through upload, scan, parse, approval, and materialization before it emits the new
+  attachment mapping. Braincrew Issue #38 consumes the two sanitized receipts, repins the reviewed
+  identities, runs the strict probes, and remains the only owner of a new `READY` artifact.
+
+Why:
+: Read-only evidence changed the earlier assumption. The target corpus tenant
+  `ae09ec7f-a7bc-5bf8-a645-8b3f1e623850` has no user, and the inspected database has no
+  `ThreadAttachment` or `AttachmentExtraction` row in any tenant. A principal-only repair would
+  therefore change the first failure from tenant/subject 401 to attachment 404 without producing
+  one parse observation. Keeping repair inside AX preserves the SUT/Evaluation Plane boundary:
+  the product creates its own user and attachment state, while Braincrew verifies only versioned
+  receipts and HTTP facts.
+
+Identity and dataset lock:
+: The new subject is
+  `26d7eebf-e4a1-583d-a43c-4bff0b5bb7fe`, the literal result of
+  `uuid5(NAMESPACE_URL,
+  "ax-evaluation-principal:braincrew-demo-tenant:braincrew-live-evaluation-v1")`.
+  AX-A creates exactly that one active target-tenant `User` in local/test and no persisted role or
+  membership state. Requests still carry one exact role through `x-ax-roles`, and AX derives
+  permissions from its existing static mapping: `HRPractitioner` owns, uploads, and reads the
+  parse sources; `HRAdmin` approves them; the three evaluation roles are probed separately for
+  corpus identity. The imported corpus contribution is `braincrew-evaluation-dataset-3.0.0`,
+  while the six parse cases retain the historical v2 component contract inside integrated dataset
+  bundle `braincrew-evaluation-dataset@3.0.0`.
+
+Rejected alternatives:
+: Relaxing the joined active-user validation was rejected because it weakens tenant isolation.
+  Reusing or moving user `22222222-2222-2222-2222-222222222222` was rejected because the user is
+  bound to another tenant. A principal-only issue was rejected because no attachment exists. One
+  combined AX issue was rejected because user provisioning and blob/job/provider lifecycle have
+  different permissions, tests, and recovery points. Moving upload or direct database repair into
+  Braincrew #38 was rejected because a verifier must not manufacture its own SUT evidence.
+  Caller-forced historical attachment UUIDs and extraction-only success were rejected because they
+  bypass lifecycle ownership and cannot produce the stored non-empty spans required by the strict
+  response.
+
+Trade-offs and failure modes:
+: AX-A deliberately provisions only one synthetic local/test `User`. Singleton-role probes stay
+  reviewable because each request records one exact `x-ax-roles` value and AX applies the existing
+  static permission mapping; no persisted membership is required. This is not a production
+  identity pattern. AX-B locks approval to `company_reference`, `hr_only`, and policy version 1 to
+  reduce grounding authority and exposure, but materialization still adds six source documents,
+  chunks, and spans plus twelve vectors. The imported seed-table counts therefore move from
+  `14/77/77/154` to `20/83/83/166`, and the HRPractitioner corpus identity gains six
+  `tenant-upload-v1:<approval_id>` contributors. Counts and digests must be captured after AX-B,
+  not copied from the import receipt.
+
+: The normal tenant-upload lifecycle stores `synthetic=false`, `demo_company=false`, and
+  `corpus_mode=tenant` even though the external six-file bundle has reviewed synthetic
+  provenance. The handoff must retain both facts as a representational limitation and must not
+  relabel the materialized rows as seed-generated synthetic data. Any UUID, `x-ax-roles` request
+  value, seed-run, source byte, parser, digest, approval, provider, row-count, tenant, owner, HTTP
+  schema, or receipt mismatch stops the operation. The lifecycle crosses database, blob, worker,
+  provider, and HTTP boundaries, so partial failure never authorizes automatic retry, cleanup,
+  deletion, snapshot restore, or re-import.
+
+Operational safety:
+: The Issue #37 database snapshot predates the successful import and is not an acceptable recovery
+  point for later writes. A fresh post-import/pre-A restricted database dump with digest and
+  restore-list readability must precede AX-A apply. After AX-A, a second database dump and a
+  digest-bound blob inventory plus restricted checkpoint must precede AX-B. These checkpoints do
+  not authorize restore. Recovery is a separately reviewed proposal naming exact state. The
+  previously exposed `OPENAI_API_KEY` response is recorded as resolved by user-confirmed rotation;
+  neither this decision nor later verification may inspect or retain the replacement secret.
+
+Validation evidence:
+: Repository inspection confirms the current joined principal query, target-bound user model,
+  normal upload role matrix, scan/parse job, approval permission, materializer, and strict
+  parse-observation data flow. In particular, the strict response reads evidence spans from
+  materialized `TenantSourceDocument`, `SeedSourceChunk`, and `SeedEvidenceSpan` rows; it cannot
+  obtain them from `AttachmentExtraction` alone. Braincrew code inspection confirms that the
+  current AX SHA, owner UUID, six attachment IDs, and v2 dataset identity are hard-coded and
+  replay-validated. SELECT-only evidence supplies the zero-user and zero-attachment state. No
+  AX-A/AX-B code, database mutation, HTTP call, live parse response, role-visible corpus identity,
+  snapshot recovery, or Braincrew `READY` was produced by this scope lock.
+
+Likely follow-ups:
+
+- "Why not fix the 401 by removing the tenant join?" — The 401 proves the isolation check works.
+  The missing target-tenant state must be provisioned; authentication must not be weakened to fit
+  stale test data.
+- "Why does AX-B need materialization if parsing already succeeded?" — Extraction proves parser
+  output, but the strict observation obtains non-empty stored EvidenceSpans from materialized
+  source/chunk/span rows. Extraction alone cannot satisfy that evidence contract.
+- "Does adding parse sources change the corpus being evaluated?" — Yes, for roles that can see
+  `hr_only` tenant uploads. That is why all three corpus identities are re-measured after AX-B and
+  why the handoff freezes the actual counts, digests, and contributing versions rather than
+  reusing pre-B values.
+- "Why keep v2 language at all after loading v3?" — The integrated successor bundle and imported
+  corpus are v3, but the component files preserve version 2.0.0 semantics and the six parsing
+  Verification cases remain that historical component. The decision states both identities
+  instead of collapsing them.
+- "Can the old artifacts still replay?" — Yes. Replay uses immutable artifact bytes and does not
+  query current AX rows. Only the new live-preflight contract repins the principal, tenant, AX SHA,
+  and generated attachment IDs.
+- "Did key rotation or a snapshot prove the system is safe and ready?" — No. Rotation resolves one
+  credential-response action, and snapshots are recovery evidence. `READY` still requires merged
+  AX code, separately authorized operations, six strict responses, three post-B corpus identities,
+  sanitized receipt replay, and Braincrew #38 verification.
+
 ### D8.6 Approve exact evaluation-blind authoring guidance before corpus bytes exist
 
 Decision:

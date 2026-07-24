@@ -207,18 +207,59 @@ research and AX_portfolio context
   at AX SHA `e25f333b55fca34118a954a17e5e0cd88dc7ea39`. Steps 1 through 6 of the AX importer
   design's operational sequence are complete; steps 7 through 9 are deferred with a recorded
   reason.
-- Active gate: **AX Issue #37 follow-up scope.** HTTP boundary verification, the strict parse
-  observations, and the Braincrew preflight handoff did not run, so
+- Completed phase: **AX Issue #37 follow-up scope lock.** The canonical decision
+  `docs/decisions/2026-07-24-ax-evaluation-principal-and-parse-restoration-scope-lock.md`
+  records two dependent AX contracts: AX-A provisions one deterministic target-tenant local/test
+  evaluation subject, and AX-B re-provisions the six reviewed parse sources through the normal
+  attachment lifecycle. It preserves `validated_evaluation_principal`, tenant isolation, and
+  Braincrew Issue #38 as a receipt consumer.
+- Active gate: **AX-A and AX-B issue publication and later implementation.** HTTP boundary
+  verification, the strict parse observations, and the Braincrew preflight handoff did not run, so
   `braincrew_preflight_ready` is `false` and Braincrew Issue #38 remains blocked. The recorded
-  cause is a principal/tenant binding conflict: AX's
+  causes are both the principal/tenant binding conflict and absent live parse state:
+  SELECT-only review found zero users in the imported tenant and zero rows in
+  `thread_attachments` plus `attachment_extractions`. AX's
   `validated_evaluation_principal` requires one query to satisfy `Tenant.id`, `User.id`, and
   `User.is_active` together, while the Braincrew live preflight pins a fixed owner user that
-  belongs to a different tenant. This is a deferred structural dependency, not a failed import.
-- Next operator proposal: open a follow-up issue for the principal/tenant binding conflict before
-  attempting HTTP boundary verification. Independent operational review of the applied state, the
-  AX-side commit lifecycle, and Braincrew Issue #38 remain separate actions.
+  belongs to a different tenant and six stale attachment UUIDs. These are deferred structural and
+  state dependencies, not a failed import.
+- Security status: `OPENAI_API_KEY` rotation is **RESOLVED** by user confirmation. No secret was
+  inspected or retained during the scope-lock work.
+- Next workflow action: publish AX-A and AX-B as two dependent issues from the copy-ready bodies in
+  the canonical decision, then implement each in a fresh AX session with TDD and independent code
+  review. The later shared operational proposal must require a fresh post-import/pre-A database
+  snapshot plus post-A/pre-B database and blob checkpoints. Braincrew Issue #38 starts only after
+  both sanitized AX receipts and live observations pass independent review.
 
 ## Transition history
+
+### 2026-07-24 — AX principal and parse-restoration scope locked
+
+- Branch/worktree gate: clean Braincrew `develop` and `origin/develop` were both verified at
+  `8242003f9ed30a4df4889c1c30abe6a36470bff0` before the isolated
+  `docs/ax-evaluation-boundary-scope-lock` worktree was created.
+- Cross-review decision: a principal-only issue cannot unblock Braincrew #38 because the six
+  reviewed attachment and extraction rows are absent. The selected dependency is AX-A
+  tenant-scoped subject provisioning followed by AX-B six-source normal-lifecycle restoration.
+  A combined issue and Braincrew-owned repair were rejected.
+- Identity lock: AX-A uses deterministic subject
+  `26d7eebf-e4a1-583d-a43c-4bff0b5bb7fe`, derived from the reviewed UUIDv5 name, and creates
+  exactly one active target-tenant `User`. Local/test roles remain request-scoped through
+  `x-ax-roles` and AX's existing static permission mapping; AX-A creates no persisted role or
+  membership state and never moves or reactivates the historical subject.
+- Dataset lock: the live corpus contribution is
+  `braincrew-evaluation-dataset-3.0.0`; the six parse cases retain the historical v2 component
+  contract inside the integrated `braincrew-evaluation-dataset@3.0.0` bundle.
+- Lifecycle lock: strict non-empty spans require approval and materialization, not extraction
+  alone. AX-B therefore expects exact `company_reference` / `hr_only` materialization and bounded
+  seed-table additions from `14/77/77/154` to `20/83/83/166`, then freezes actual post-B
+  role-visible corpus identities.
+- Operational safety: the pre-import Issue #37 dump is not the recovery point for new writes.
+  A fresh post-import/pre-A dump and post-A/pre-B database plus blob checkpoints precede later
+  operations. Any failure preserves evidence and stops without automatic retry, cleanup, restore,
+  deletion, or re-import.
+- Evidence boundary: this phase changed documentation only. It did not create GitHub issues, modify
+  AX, access a database/service/container/credential, execute HTTP, or publish `READY`.
 
 ### 2026-07-24 — AX Issue #37 sealed-pack import applied once into the local AX database
 
@@ -256,12 +297,13 @@ research and AX_portfolio context
 - Exclusions: HTTP boundary verification, the six strict parse observations, and the Braincrew
   preflight handoff did not run. `braincrew_preflight_ready` is `false`. No quality, retrieval, or
   answer claim is made from this import; it establishes corpus presence only.
-- Open operator action: an `OPENAI_API_KEY` value was exposed in tool output by a
+- Resolved operator action: an `OPENAI_API_KEY` value was exposed in tool output by a
   `docker compose config` invocation during review. The key value was never recorded in evidence,
-  and rotation remains `PENDING` with the user.
-- Next gate: open a follow-up issue for the principal/tenant binding conflict before attempting
-  HTTP boundary verification. Braincrew Issue #38 remains blocked until that verification and its
-  own approval gate complete.
+  and the user confirmed rotation complete on 2026-07-24. Later agents must not inspect the
+  replacement secret.
+- Next gate: publish and implement the locked AX-A and AX-B contracts before attempting HTTP
+  boundary verification. Braincrew Issue #38 remains blocked until both receipts, the live
+  observations, and its own approval gate complete.
 
 ### 2026-07-23 — Issue #56 AX-canonical publication-byte repair entered TDD
 
