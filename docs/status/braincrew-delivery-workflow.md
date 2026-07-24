@@ -213,7 +213,15 @@ research and AX_portfolio context
   evaluation subject, and AX-B re-provisions the six reviewed parse sources through the normal
   attachment lifecycle. It preserves `validated_evaluation_principal`, tenant isolation, and
   Braincrew Issue #38 as a receipt consumer.
-- Active gate: **AX-A and AX-B issue publication and later implementation.** HTTP boundary
+- Completed phase: the two locked contracts were published as
+  [AX-A Issue #44](https://github.com/DHChe/AX_portfolio/issues/44) and dependent
+  [AX-B Issue #45](https://github.com/DHChe/AX_portfolio/issues/45).
+  [Braincrew Issue #38](https://github.com/DHChe/braincrew-datateam-portfolio/issues/38) now records
+  both blockers and remains a receipt consumer only.
+- Review result: **[Braincrew PR #59](https://github.com/DHChe/braincrew-datateam-portfolio/pull/59)
+  passed the two-axis documentation review, and the user authorized its merge.** If the PR is still
+  open, merging it is the only remaining Braincrew documentation action; once merged, the active
+  delivery gate becomes AX-A Issue #44. HTTP boundary
   verification, the strict parse observations, and the Braincrew preflight handoff did not run, so
   `braincrew_preflight_ready` is `false` and Braincrew Issue #38 remains blocked. The recorded
   causes are both the principal/tenant binding conflict and absent live parse state:
@@ -225,13 +233,79 @@ research and AX_portfolio context
   state dependencies, not a failed import.
 - Security status: `OPENAI_API_KEY` rotation is **RESOLVED** by user confirmation. No secret was
   inspected or retained during the scope-lock work.
-- Next workflow action: publish AX-A and AX-B as two dependent issues from the copy-ready bodies in
-  the canonical decision, then implement each in a fresh AX session with TDD and independent code
-  review. The later shared operational proposal must require a fresh post-import/pre-A database
+- Next workflow action: if PR #59 remains open, complete its authorized merge after required checks
+  pass. After the merged state is verified, implement AX-A Issue #44 in a fresh AX session with
+  `test-driven-development`, independent code review, and local verification. Only after AX-A is
+  reviewed and merged may a second fresh AX session start dependent AX-B Issue #45. The later
+  shared operational proposal remains separate and must require a fresh post-import/pre-A database
   snapshot plus post-A/pre-B database and blob checkpoints. Braincrew Issue #38 starts only after
   both sanitized AX receipts and live observations pass independent review.
 
+### Copy-ready fresh-session handoff — AX-A Issue #44
+
+Use this prompt only after PR #59's merged state is verified and the user starts a fresh AX
+implementation session:
+
+```text
+$test-driven-development
+
+Work in repository DHChe/AX_portfolio at /Users/astralpig/portfolio/AX_portfolio. Read AGENTS.md,
+verify the latest origin/develop without modifying shared state, then create the dedicated branch
+feat/issue-44-evaluation-principal from that verified base.
+
+Implement https://github.com/DHChe/AX_portfolio/issues/44 exactly. Required sources are AX
+AGENTS.md; Issue #44; backend/src/ax_engine/api/routes/evaluation.py, especially
+validated_evaluation_principal; backend/tests/integration/test_evaluation_api.py; and the immutable
+Braincrew scope lock at
+https://github.com/DHChe/braincrew-datateam-portfolio/blob/fc1302d54ab3f3735800d31a321b6f70e947572e/docs/decisions/2026-07-24-ax-evaluation-principal-and-parse-restoration-scope-lock.md.
+
+In scope: only the local/test dry-run/apply evaluation-subject provisioning CLI, its create-only
+sanitized receipt/replay contract, and tests/documentation required by Issue #44. Preserve
+validated_evaluation_principal, tenant isolation, the deterministic subject UUID, exactly one
+active target-tenant User, request-scoped x-ax-roles, and the existing static permission mapping.
+Out of scope: persisted Role/UserRole state, permission/auth/evaluation-route changes, AX-B
+attachments, live apply, DB/service/container/provider/credential operations, Braincrew changes,
+and remote Git actions.
+
+Follow RED-GREEN-REFACTOR and record the expected failing reason before minimal implementation.
+Run:
+uv lock --project backend --check
+uv sync --project backend --locked --group dev
+uv run --project backend ruff format --check backend/src/ax_engine/evaluation backend/tests
+uv run --project backend ruff check backend/src backend/tests
+uv run --project backend python -m compileall -q backend/src backend/tests backend/alembic
+uv run --project backend pytest -q backend/tests/unit/test_evaluation_principal_provisioning.py backend/tests/integration/test_evaluation_principal_cli.py backend/tests/integration/test_evaluation_api.py
+uv run --project backend pytest -q backend/tests
+git diff --check
+git status --short
+
+Keep AX durable implementation/status documentation synchronized with the locked rationale,
+failure modes, exclusions, and verification evidence; do not claim live proof. Request independent
+code review after local GREEN. Stop at the AX Git Lifecycle Proposal Gate with no commit, push, PR,
+merge, live apply, or operational receipt. Report changed files, RED/GREEN evidence, verification,
+remaining risks, and the exact reviewed HEAD SHA.
+```
+
+프롬프트의 핵심은 세 가지다. 첫째, `test-driven-development`를 명시해 계약을 먼저 실패로
+증명한 뒤 최소 구현으로 통과시킨다. 둘째, 구현 범위와 금지 범위를 함께 적어
+`validated_evaluation_principal` 및 테넌트 격리를 우회하지 못하게 한다. 셋째, 로컬 검증과
+독립 리뷰 뒤 Git 수명주기 제안 게이트에서 멈추게 하므로 구현 승인과 커밋·푸시·PR·운영
+승인이 섞이지 않는다. PR #59 병합 결과가 확인되면 사용자는 새 세션을 열어 이 프롬프트를
+전달하고, 다음 에이전트는 안전한 로컬 TDD·문서화·검증을 자동 수행한다.
+AX-A의 리뷰와 병합이 끝나면 그 실제 병합 SHA와 영수증 계약을 고정한 별도 AX-B
+Issue #45 새 세션 프롬프트를 작성한다.
+
 ## Transition history
+
+### 2026-07-24 — PR #59 documentation review passed and merge was authorized
+
+- The contract/spec axis passed without findings.
+- The standards axis found stale workflow-gate wording and cross-repository relative verification
+  paths. Both were corrected locally, then independently re-reviewed as PASS.
+- The user authorized the corrective commit, push, AX Issue #44/#45 body synchronization, and PR #59
+  merge. Required checks and a final remote contract comparison remain fail-closed merge gates.
+- After the merged state is verified, the next workflow action is a fresh AX session for Issue #44.
+  Issue #45 remains dependent on the reviewed and merged AX-A result.
 
 ### 2026-07-24 — AX principal and parse-restoration scope locked
 

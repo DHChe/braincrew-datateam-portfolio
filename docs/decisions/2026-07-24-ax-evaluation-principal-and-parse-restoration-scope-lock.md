@@ -825,8 +825,26 @@ actions without separate authorization.
 
 ### Verification
 
-Use the AX-A commands in the canonical Braincrew decision:
-`docs/decisions/2026-07-24-ax-evaluation-principal-and-parse-restoration-scope-lock.md`.
+Run from the AX_portfolio repository:
+
+```bash
+uv lock --project backend --check
+uv sync --project backend --locked --group dev
+uv run --project backend ruff format --check backend/src/ax_engine/evaluation backend/tests
+uv run --project backend ruff check backend/src backend/tests
+uv run --project backend python -m compileall -q backend/src backend/tests backend/alembic
+uv run --project backend pytest -q \
+  backend/tests/unit/test_evaluation_principal_provisioning.py \
+  backend/tests/integration/test_evaluation_principal_cli.py \
+  backend/tests/integration/test_evaluation_api.py
+uv run --project backend pytest -q backend/tests
+git diff --check
+git status --short
+```
+
+These commands verify code contracts only. They do not prove a live subject or Braincrew `READY`.
+The immutable cross-repository scope reference is
+[Braincrew decision at `fc1302d54ab3f3735800d31a321b6f70e947572e`](https://github.com/DHChe/braincrew-datateam-portfolio/blob/fc1302d54ab3f3735800d31a321b6f70e947572e/docs/decisions/2026-07-24-ax-evaluation-principal-and-parse-restoration-scope-lock.md).
 
 ## 12. Copy-ready GitHub issue body — AX-B
 
@@ -932,5 +950,25 @@ Git actions without separate authorization.
 
 ### Verification
 
-Use the AX-B commands in the canonical Braincrew decision:
-`docs/decisions/2026-07-24-ax-evaluation-principal-and-parse-restoration-scope-lock.md`.
+Run from the AX_portfolio repository:
+
+```bash
+uv lock --project backend --check
+uv sync --project backend --locked --group dev
+uv run --project backend ruff format --check backend/src/ax_engine/evaluation backend/tests
+uv run --project backend ruff check backend/src backend/tests
+uv run --project backend python -m compileall -q backend/src backend/tests backend/alembic
+uv run --project backend pytest -q \
+  backend/tests/unit/test_evaluation_parse_source_bundle.py \
+  backend/tests/integration/test_evaluation_parse_source_cli.py \
+  backend/tests/integration/test_evaluation_parse_source_lifecycle.py \
+  backend/tests/integration/test_evaluation_api.py
+uv run --project backend pytest -q backend/tests
+git diff --check
+git status --short
+```
+
+These commands verify code contracts only. They do not prove a live attachment, corpus identity,
+parse observation, snapshot recovery, or Braincrew `READY`. The immutable cross-repository scope
+reference is
+[Braincrew decision at `fc1302d54ab3f3735800d31a321b6f70e947572e`](https://github.com/DHChe/braincrew-datateam-portfolio/blob/fc1302d54ab3f3735800d31a321b6f70e947572e/docs/decisions/2026-07-24-ax-evaluation-principal-and-parse-restoration-scope-lock.md).
