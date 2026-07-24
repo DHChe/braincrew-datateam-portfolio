@@ -812,6 +812,16 @@ Trade-offs and failure modes:
   `tenant-upload-v1:<approval_id>` contributors. Counts and digests must be captured after AX-B,
   not copied from the import receipt.
 
+: AX-A cannot make a database commit and filesystem receipt one atomic operation. It reserves the
+  create-only path before mutation, validates the exact user before and after the commit attempt,
+  and writes success evidence only after the post-commit read. A pre-commit failure rolls back and
+  removes the reservation. A lost commit response or failed post-commit confirmation returns
+  `EVALUATION_PRINCIPAL_COMMIT_INDETERMINATE` and retains the empty reserved path; a receipt write
+  failure returns `EVALUATION_PRINCIPAL_RECEIPT_UNAVAILABLE` and also retains that path. The
+  reservation blocks an unreviewed retry without pretending the database rolled back. Adding an
+  `AuditEvent` was rejected because the locked AX-A acceptance contract permits exactly one new
+  `User` and no other database row.
+
 : The normal tenant-upload lifecycle stores `synthetic=false`, `demo_company=false`, and
   `corpus_mode=tenant` even though the external six-file bundle has reviewed synthetic
   provenance. The handoff must retain both facts as a representational limitation and must not
@@ -837,9 +847,17 @@ Validation evidence:
   materialized `TenantSourceDocument`, `SeedSourceChunk`, and `SeedEvidenceSpan` rows; it cannot
   obtain them from `AttachmentExtraction` alone. Braincrew code inspection confirms that the
   current AX SHA, owner UUID, six attachment IDs, and v2 dataset identity are hard-coded and
-  replay-validated. SELECT-only evidence supplies the zero-user and zero-attachment state. No
-  AX-A/AX-B code, database mutation, HTTP call, live parse response, role-visible corpus identity,
-  snapshot recovery, or Braincrew `READY` was produced by this scope lock.
+  replay-validated. SELECT-only evidence supplies the zero-user and zero-attachment state. AX PR
+  #46 at reviewed head `6499e1b42730f72bf03db769a3f95cb186f1fb07` passed all five required
+  checks with zero unresolved review threads and squash-merged into `develop` as
+  `fe16c0cedc1e64856d9e107e111665d0ba2e444d`; Issue #44 closed. Review-driven tests cover
+  destination reservation, exact receipt replay including JSON types, concurrent exact insertion,
+  pre- and post-commit confirmation, lost commit responses, and repository-anchored Git evidence;
+  `63` targeted tests and the full backend suite (`1553 passed, 75 skipped`) passed locally. The
+  repository-wide Ruff format baseline still reports `62` unrelated pre-existing files, while all
+  changed files and full Ruff lint pass. No live database mutation, HTTP call, AX-B implementation,
+  parse response, role-visible corpus identity, snapshot recovery, or Braincrew `READY` was
+  produced.
 
 Likely follow-ups:
 
@@ -849,6 +867,12 @@ Likely follow-ups:
 - "Why does AX-B need materialization if parsing already succeeded?" — Extraction proves parser
   output, but the strict observation obtains non-empty stored EvidenceSpans from materialized
   source/chunk/span rows. Extraction alone cannot satisfy that evidence contract.
+- "What if the database commits but the receipt cannot be finalized?" — AX-A retains the
+  create-only reserved path and returns a typed failure. It does not claim rollback or authorize a
+  retry; an operator must inspect the exact stored state and propose recovery separately.
+- "Why not add an audit row with the new user?" — Auditability matters, but Issue #44 deliberately
+  locks AX-A to one `User` and no other database row. Changing that invariant requires a new
+  reviewed contract rather than silently widening this provisioning transaction.
 - "Does adding parse sources change the corpus being evaluated?" — Yes, for roles that can see
   `hr_only` tenant uploads. That is why all three corpus identities are re-measured after AX-B and
   why the handoff freezes the actual counts, digests, and contributing versions rather than

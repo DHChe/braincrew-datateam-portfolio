@@ -191,8 +191,9 @@ The command has two modes:
 
 - **dry-run** validates environment, tenant, completed seed run, deterministic subject identity,
   and user absence/exact idempotent state with zero writes;
-- **apply** repeats all checks in one transaction, creates exactly one active target-tenant user,
-  and writes a receipt only after direct commit confirmation.
+- **apply** reserves the create-only receipt path, repeats all checks in one transaction, validates
+  the exact user before commit, attempts the commit, validates the exact stored user again, and
+  writes a receipt only after that post-commit confirmation.
 
 ### Inputs
 
@@ -217,8 +218,9 @@ The receipt contains:
 
 - schema version and state: `ELIGIBLE`, `PROVISIONED`, or `ALREADY_PROVISIONED`;
 - exact AX commit SHA and clean/dirty status;
-- target tenant ID, slug, and demo-company ID;
-- completed seed version and observed `DemoSeedRun` state;
+- target tenant ID, slug, demo-company ID, and visible `demo_company=true`;
+- completed seed version, observed `DemoSeedRun` state, `corpus_mode=demo`, and visible
+  `synthetic=true`;
 - subject UUID, active state, authority revision, purpose label, and a digest of fixed metadata;
 - created/existing user-row count;
 - direct commit confirmation for apply;
@@ -240,12 +242,21 @@ fixed constant without retaining a contact-shaped identifier.
 | `EVALUATION_PRINCIPAL_TENANT_CONFLICT` | The UUID already belongs to another tenant. |
 | `EVALUATION_PRINCIPAL_STATE_CONFLICT` | Same-tenant user is inactive or its fixed metadata or authority revision differs. |
 | `EVALUATION_PRINCIPAL_RECEIPT_EXISTS` | Create-only receipt path already exists. |
+| `EVALUATION_PRINCIPAL_RECEIPT_UNAVAILABLE` | The receipt destination cannot be reserved or a reserved receipt cannot be written. |
 | `EVALUATION_PRINCIPAL_COMMIT_INDETERMINATE` | Transaction outcome cannot be proven. |
 | `EVALUATION_PRINCIPAL_DATABASE_UNAVAILABLE` | Read or write dependency fails before a proven commit. |
 
 Any failure rolls back the current database transaction when its state is known. It preserves
 evidence and stops. It does not change an existing row, select a new UUID, overwrite a receipt, or
 restore a snapshot automatically.
+
+The database transaction and filesystem receipt cannot be one atomic operation. AX-A therefore
+reserves the create-only receipt path before any database mutation. A failure before commit removes
+that reservation after rollback. A lost commit response or failed post-commit confirmation returns
+`EVALUATION_PRINCIPAL_COMMIT_INDETERMINATE` and retains the empty reserved path. A later receipt
+write failure returns `EVALUATION_PRINCIPAL_RECEIPT_UNAVAILABLE` and also retains the reservation.
+Neither path claims rollback; the retained path prevents an unreviewed retry from overwriting the
+evidence boundary.
 
 ### Backward compatibility
 
@@ -278,10 +289,11 @@ restore a snapshot automatically.
 
 | Layer | Required proof |
 | --- | --- |
-| Unit | UUIDv5 literal reproduction, fixed metadata digest, canonical receipt digest, and secret/raw-field scan. |
+| Unit | UUIDv5 literal reproduction, fixed metadata digest, exact receipt shape and JSON types, canonical digest, and secret/raw-field scan. |
 | Service | Dry-run is no-write; apply creates exactly one active target-tenant user; exact rerun is `ALREADY_PROVISIONED`. |
-| Conflict | Wrong tenant, cross-tenant UUID, inactive same-tenant row, metadata drift, wrong seed run, and existing receipt all fail closed. |
-| Transaction | Flush/commit failure leaves no partial user state and emits no success receipt. |
+| Conflict | Wrong tenant, cross-tenant UUID, inactive same-tenant row, metadata drift, wrong seed run, existing receipt, and non-exact concurrent insert all fail closed. An exact concurrent insert is reread once and returns `ALREADY_PROVISIONED`. |
+| Transaction | Pre-commit failure leaves no user or receipt. An unprovable commit or post-commit confirmation preserves the empty reserved path and emits no success receipt. |
+| Filesystem | An unavailable destination fails before mutation; a write failure returns the dedicated typed code and preserves the reserved path. |
 | API regression | Malformed, unknown, cross-tenant, and inactive evaluation subjects retain current 400/401 behavior and zero denied-access audit for invalid subjects. |
 | CLI | Registration, help, dry-run, apply, receipt creation, create-only collision, and unsupported environment. |
 
@@ -306,9 +318,12 @@ backend/tests/unit/test_evaluation_principal_cli_registration.py
    inactive subjects.
 6. `validated_evaluation_principal`, routes, visibility, shared auth, and production bearer code
    have no semantic diff.
-7. Receipt replay reproduces its logical digest and a raw/secret scan passes.
+7. Receipt replay requires the exact locked tenant, subject, state, row counts, confirmation mode,
+   visible demo labels, JSON types, and logical digest; a raw/secret scan passes.
 8. Targeted tests and the full AX quality gate pass on a clean reviewed SHA.
-9. No attachment, provider, live corpus, or Braincrew `READY` claim is made.
+9. Receipt reservation, write failure, concurrent exact insert, post-commit confirmation, and lost
+   commit-response behavior all fail closed with the documented evidence semantics.
+10. No attachment, provider, live corpus, or Braincrew `READY` claim is made.
 
 ### Definition of done
 
@@ -798,8 +813,15 @@ direct commit confirmation, and emits a sanitized create-only receipt.
 - `EVALUATION_PRINCIPAL_TENANT_CONFLICT`
 - `EVALUATION_PRINCIPAL_STATE_CONFLICT`
 - `EVALUATION_PRINCIPAL_RECEIPT_EXISTS`
+- `EVALUATION_PRINCIPAL_RECEIPT_UNAVAILABLE`
 - `EVALUATION_PRINCIPAL_COMMIT_INDETERMINATE`
 - `EVALUATION_PRINCIPAL_DATABASE_UNAVAILABLE`
+
+Reserve the create-only receipt path before database mutation. A pre-commit failure rolls back and
+removes the reservation. An unprovable commit or post-commit confirmation retains the empty
+reserved path and returns `EVALUATION_PRINCIPAL_COMMIT_INDETERMINATE`. A receipt write failure
+retains the reservation and returns `EVALUATION_PRINCIPAL_RECEIPT_UNAVAILABLE`; neither case claims
+cross-resource atomicity or rollback.
 
 On failure, preserve evidence and stop. No alternate UUID, auto-repair, cleanup, restore, or retry
 with changed state.
@@ -813,6 +835,8 @@ with changed state.
 - [ ] Existing malformed, unknown, cross-tenant, and inactive subject behavior is unchanged.
 - [ ] `(target tenant, historical user 2222...)` remains 401.
 - [ ] No semantic diff to evaluation routes, shared auth, bearer auth, visibility, or tenant joins.
+- [ ] Receipt reservation/write failure, exact replay shape and JSON types, concurrent insertion,
+      post-commit confirmation, and indeterminate commit evidence are tested.
 - [ ] Receipt replay and raw/secret scan pass.
 - [ ] Targeted and full AX gates pass on a clean SHA.
 - [ ] No live apply, attachment, corpus, or Braincrew `READY` claim is part of code completion.
