@@ -25,11 +25,12 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **AX-A Issue #44 pull-request review gate.** The reviewed local/test
-  `ax-evaluation-principal` implementation is published as draft
-  [AX PR #46](https://github.com/DHChe/AX_portfolio/pull/46) from Lore commit
-  `99c6300e02498f18763806002c748dd58fe64c04`. Merge, live apply, and any Braincrew `READY`
-  claim remain separately gated and are not authorized by the completed publication.
+- Active phase: **AX-A Issue #44 pull-request required-check and merge gate.** The reviewed
+  local/test `ax-evaluation-principal` implementation is published in
+  [AX PR #46](https://github.com/DHChe/AX_portfolio/pull/46) at head
+  `6499e1b42730f72bf03db769a3f95cb186f1fb07`. The user authorized review repairs and merge, but
+  merge still requires the replacement remote checks to pass and every review thread to be
+  resolved. Live apply and any Braincrew `READY` claim remain separate and excluded.
 - Completed phase: research, role comparison, and Data Team red-team assessment.
 - Completed phase: portfolio direction and evaluation boundaries locked.
 - Completed phase: `brainstorming` design loop, independent specification review, and PR #1 merge into `develop`.
@@ -225,10 +226,10 @@ research and AX_portfolio context
   both blockers and remains a receipt consumer only.
 - Review result: **[Braincrew PR #59](https://github.com/DHChe/braincrew-datateam-portfolio/pull/59)
   passed the two-axis documentation review and merged into `develop` as
-  `95826ee95f0ac9a8bd84eed149dff47dc834aa47`.** The active delivery gate is AX-A Issue #44
-  implementation. HTTP boundary verification, the strict parse observations, and the Braincrew
-  preflight handoff did not run, so `braincrew_preflight_ready` is `false` and Braincrew Issue #38
-  remains blocked. The recorded
+  `95826ee95f0ac9a8bd84eed149dff47dc834aa47`.** The active delivery gate is AX PR #46 required
+  checks, review-thread resolution, and authorized merge. HTTP boundary verification, the strict
+  parse observations, and the Braincrew preflight handoff did not run, so
+  `braincrew_preflight_ready` is `false` and Braincrew Issue #38 remains blocked. The recorded
   causes are both the principal/tenant binding conflict and absent live parse state:
   SELECT-only review found zero users in the imported tenant and zero rows in
   `thread_attachments` plus `attachment_extractions`. AX's
@@ -239,54 +240,71 @@ research and AX_portfolio context
 - Completed local phase: **AX-A Issue #44 `test-driven-development` and independent code
   review.** The implementation keeps the fixed evaluation-principal UUID
   `26d7eebf-e4a1-583d-a43c-4bff0b5bb7fe`, creates only one active target-tenant `User`, and does
-  not add `Role`/`UserRole` persistence, a migration, or evaluation route/auth changes. Review
-  required six fail-closed public-contract proofs: forbidden environment, dirty repository,
-  existing receipt, indeterminate confirmation with no residual user or receipt, CLI `--apply`,
-  and console-script registration/help. The review-driven repair moved confirmation before
-  commit (`flush -> confirm -> commit`) so a confirmation failure rolls back without persisting
-  the user. Fresh verification passed the 40 targeted tests and the full AX backend suite
-  (`1530 passed, 75 skipped`). No live apply or database/service/container/credential operation
-  occurred during implementation or review.
+  not add `Role`/`UserRole` persistence, an `AuditEvent`, a migration, or evaluation route/auth
+  changes. The final review repairs reserve the receipt path before mutation, require exact locked
+  replay fields and JSON types, recover only an exact concurrent insert, bind Git evidence to the
+  AX checkout, and validate the stored user both before and after the commit attempt. A
+  pre-commit failure rolls back and removes the reservation; an unprovable commit or post-commit
+  confirmation retains the empty reserved path as evidence. Fresh verification passed `63`
+  targeted tests and the full AX backend suite (`1553 passed, 75 skipped`), plus changed-file
+  format, full Ruff lint, compile, and whitespace checks. The broad format baseline still reports
+  `62` unrelated pre-existing files. No live apply or database/service/container/credential
+  operation occurred.
 - Completed Git publication: the reviewed AX-A change was committed as
-  `99c6300e02498f18763806002c748dd58fe64c04`, pushed to
-  `origin/DHChe/issue-44-evaluation-principal`, and opened as draft
+  original implementation `99c6300e02498f18763806002c748dd58fe64c04`, demo-label repair
+  `6dc396638787a87f681dac77992deb0760c73a33`, and final fail-closed repair
+  `6499e1b42730f72bf03db769a3f95cb186f1fb07`, pushed to
+  `origin/DHChe/issue-44-evaluation-principal` in
   [AX PR #46](https://github.com/DHChe/AX_portfolio/pull/46) against `develop`. No merge or remote
-  issue closure is claimed.
+  issue closure is claimed yet.
 - Security status: `OPENAI_API_KEY` rotation is **RESOLVED** by user confirmation. No secret was
   inspected or retained during the scope-lock work.
-- Next workflow action: review AX PR #46 and its required checks. A separate merge proposal and
-  explicit authorization are required before merge. Only after the reviewed AX-A result is merged
-  may a second fresh AX session start dependent AX-B Issue #45.
+- Next workflow action: wait for AX PR #46's replacement checks, resolve every review thread with
+  evidence, and execute the user-authorized squash merge only if all required checks pass. Only
+  after the reviewed AX-A result is merged may a second fresh AX session start dependent AX-B
+  Issue #45.
   The later shared operational proposal remains separate and must require a fresh post-import/pre-A
   database snapshot plus post-A/pre-B database and blob checkpoints. Braincrew Issue #38 starts
   only after both sanitized AX receipts and live observations pass independent review.
 
-### Copy-ready fresh-session handoff — AX-A Issue #44 (historical recovery only)
+### Copy-ready fresh-session handoff — AX-B Issue #45
 
-AX-A local implementation and independent review are published in draft AX PR #46. Use this prompt
-only to recover a lost AX-A implementation context; the current action is PR #46 review and a
-separately authorized merge, not a second implementation pass. PR #59's merged state is verified:
+Do not launch this fresh session until AX PR #46 is merged, Issue #44 is closed, and this status
+file records the exact AX-A merge SHA. At that point AX-B is a new bounded implementation ticket,
+so a fresh context reduces accidental reuse of AX-A assumptions and keeps live operational
+execution outside code completion:
 
 ```text
 $test-driven-development
 
 Work in repository DHChe/AX_portfolio at /Users/astralpig/portfolio/AX_portfolio. Read AGENTS.md,
-verify the latest origin/develop without modifying shared state, then create the dedicated branch
-feat/issue-44-evaluation-principal from that verified base.
+fetch origin, verify that origin/develop contains the recorded AX-A merge SHA and is clean, then
+create feat/issue-45-evaluation-parse-sources from that verified base.
 
-Implement https://github.com/DHChe/AX_portfolio/issues/44 exactly. Required sources are AX
-AGENTS.md; Issue #44; backend/src/ax_engine/api/routes/evaluation.py, especially
-validated_evaluation_principal; backend/tests/integration/test_evaluation_api.py; and the immutable
-Braincrew scope lock at
-https://github.com/DHChe/braincrew-datateam-portfolio/blob/fc1302d54ab3f3735800d31a321b6f70e947572e/docs/decisions/2026-07-24-ax-evaluation-principal-and-parse-restoration-scope-lock.md.
+Implement https://github.com/DHChe/AX_portfolio/issues/45 exactly. Required sources are AX
+AGENTS.md; Issue #45 and its dependency Issue #44; the merged AX-A provisioning and receipt code;
+the existing upload, scan/extract, approval, materialization, strict parse-observation, and corpus
+identity paths; backend/tests/integration/test_evaluation_api.py; and
+docs/decisions/2026-07-24-ax-evaluation-principal-and-parse-restoration-scope-lock.md in the
+Braincrew repository.
 
-In scope: only the local/test dry-run/apply evaluation-subject provisioning CLI, its create-only
-sanitized receipt/replay contract, and tests/documentation required by Issue #44. Preserve
-validated_evaluation_principal, tenant isolation, the deterministic subject UUID, exactly one
-active target-tenant User, request-scoped x-ax-roles, and the existing static permission mapping.
-Out of scope: persisted Role/UserRole state, permission/auth/evaluation-route changes, AX-B
-attachments, live apply, DB/service/container/provider/credential operations, Braincrew changes,
-and remote Git actions.
+In scope: local/test-only ax-evaluation-parse-sources orchestration,
+ax-evaluation-parse-source-handoff-v1, the exact six reviewed .txt names and SHA-256 digests from
+Issue #45, one target-owned conversation, six AX-generated attachment IDs, exact utf8-text /
+stdlib-1 extraction, company_reference / hr_only / policy-version-1 approval, fake-deterministic
+materialization, expected 20/83/83/166 counts, six strict HRPractitioner parse responses, three
+singleton-role corpus identities, sanitized create-only replay, and contract tests.
+
+Preserve tenant/owner isolation, the merged AX-A subject, request-scoped singleton x-ax-roles,
+existing HTTP/services/jobs as the only mutation boundary, and the distinction between external
+reviewed_synthetic provenance and AX tenant-upload synthetic=false, demo_company=false,
+corpus_mode=tenant classification.
+
+Out of scope: direct table writes, caller-forced attachment IDs, migrations, parser/chunker/
+visibility/provider/auth changes, provenance-flag rewrites, corpus re-import, automatic cleanup or
+restore, live operational execution, Braincrew scoring or READY, credentials, and remote Git
+actions. Do not access a live database, service, container, blob store, provider, or secret during
+code completion.
 
 Follow RED-GREEN-REFACTOR and record the expected failing reason before minimal implementation.
 Run:
@@ -295,28 +313,40 @@ uv sync --project backend --locked --group dev
 uv run --project backend ruff format --check backend/src/ax_engine/evaluation backend/tests
 uv run --project backend ruff check backend/src backend/tests
 uv run --project backend python -m compileall -q backend/src backend/tests backend/alembic
-uv run --project backend pytest -q backend/tests/unit/test_evaluation_principal_provisioning.py backend/tests/integration/test_evaluation_principal_cli.py backend/tests/integration/test_evaluation_api.py
+uv run --project backend pytest -q backend/tests/unit/test_evaluation_parse_source_bundle.py backend/tests/integration/test_evaluation_parse_source_cli.py backend/tests/integration/test_evaluation_parse_source_lifecycle.py backend/tests/integration/test_evaluation_api.py
 uv run --project backend pytest -q backend/tests
 git diff --check
 git status --short
 
-Keep AX durable implementation/status documentation synchronized with the locked rationale,
-failure modes, exclusions, and verification evidence; do not claim live proof. Request independent
-code review after local GREEN. Stop at the AX Git Lifecycle Proposal Gate with no commit, push, PR,
-merge, live apply, or operational receipt. Report changed files, RED/GREEN evidence, verification,
-remaining risks, and the exact reviewed HEAD SHA.
+Synchronize any locked design decision with the Braincrew decision and interview defense dossier.
+Do not claim live attachment, corpus identity, parse observation, snapshot recovery, or Braincrew
+READY. Request independent code review after local GREEN. Stop at the AX Git Lifecycle Proposal
+Gate with no commit, push, PR, merge, live apply, checkpoint, or operational receipt. Report
+changed files, RED/GREEN evidence, verification, remaining risks, and the exact reviewed HEAD SHA.
 ```
 
-프롬프트의 핵심은 세 가지다. 첫째, `test-driven-development`를 명시해 계약을 먼저 실패로
-증명한 뒤 최소 구현으로 통과시킨다. 둘째, 구현 범위와 금지 범위를 함께 적어
-`validated_evaluation_principal` 및 테넌트 격리를 우회하지 못하게 한다. 셋째, 로컬 검증과
-독립 리뷰 뒤 Git 수명주기 제안 게이트에서 멈추게 하므로 구현 승인과 커밋·푸시·PR·운영
-승인이 섞이지 않는다. PR #59 병합 결과가 확인되면 사용자는 새 세션을 열어 이 프롬프트를
-전달하고, 다음 에이전트는 안전한 로컬 TDD·문서화·검증을 자동 수행한다.
-AX-A의 리뷰와 병합이 끝나면 그 실제 병합 SHA와 영수증 계약을 고정한 별도 AX-B
-Issue #45 새 세션 프롬프트를 작성한다.
+이 프롬프트는 먼저 AX-A 병합 SHA를 기저로 확인해 의존성을 고정하고, 여섯 파일의 입력
+계약과 정상 AX 수명주기만 구현 범위에 둔다. 동시에 live DB·blob·worker 실행과 자동 복구를
+금지해 코드 완성과 운영 적용을 분리한다. 사용자가 해야 할 일은 AX-A 병합 기록 뒤 새
+세션을 여는 것뿐이며, 다음 에이전트는 로컬 TDD·독립 리뷰·검증을 자동 수행하고 Git
+수명주기 제안 게이트에서 멈춘다. 완료 조건은 Issue #45 계약 테스트와 전체 AX 게이트가
+통과하고 독립 리뷰 차단점이 0개인 상태다. 그 다음 단계는 별도 승인된 커밋·PR이며,
+live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-24 — AX PR #46 review blockers repaired; replacement checks pending
+
+- GitHub review exposed receipt-destination, exact-replay, concurrent-insert, commit-confirmation,
+  and repository-evidence gaps. The demo-label requirement was also repaired.
+- AuditEvent creation was rejected because Issue #44 requires exactly one new `User` and no other
+  database row.
+- Independent final review passed with zero blockers at AX head
+  `6499e1b42730f72bf03db769a3f95cb186f1fb07`. Local evidence is `63` targeted tests and
+  `1553 passed, 75 skipped` for the full backend suite; no live apply occurred.
+- Issue #44 now records `EVALUATION_PRINCIPAL_RECEIPT_UNAVAILABLE`, create-only reservation, and
+  indeterminate-commit evidence semantics. AX merge still waits for replacement CI and resolved
+  review threads.
 
 ### 2026-07-24 — PR #59 merge verified; AX-A Issue #44 local TDD and review completed
 
