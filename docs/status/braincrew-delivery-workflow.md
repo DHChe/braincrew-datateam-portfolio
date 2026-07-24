@@ -25,6 +25,11 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- Active phase: **AX-A Issue #44 pull-request review gate.** The reviewed local/test
+  `ax-evaluation-principal` implementation is published as draft
+  [AX PR #46](https://github.com/DHChe/AX_portfolio/pull/46) from Lore commit
+  `99c6300e02498f18763806002c748dd58fe64c04`. Merge, live apply, and any Braincrew `READY`
+  claim remain separately gated and are not authorized by the completed publication.
 - Completed phase: research, role comparison, and Data Team red-team assessment.
 - Completed phase: portfolio direction and evaluation boundaries locked.
 - Completed phase: `brainstorming` design loop, independent specification review, and PR #1 merge into `develop`.
@@ -219,11 +224,11 @@ research and AX_portfolio context
   [Braincrew Issue #38](https://github.com/DHChe/braincrew-datateam-portfolio/issues/38) now records
   both blockers and remains a receipt consumer only.
 - Review result: **[Braincrew PR #59](https://github.com/DHChe/braincrew-datateam-portfolio/pull/59)
-  passed the two-axis documentation review, and the user authorized its merge.** If the PR is still
-  open, merging it is the only remaining Braincrew documentation action; once merged, the active
-  delivery gate becomes AX-A Issue #44. HTTP boundary
-  verification, the strict parse observations, and the Braincrew preflight handoff did not run, so
-  `braincrew_preflight_ready` is `false` and Braincrew Issue #38 remains blocked. The recorded
+  passed the two-axis documentation review and merged into `develop` as
+  `95826ee95f0ac9a8bd84eed149dff47dc834aa47`.** The active delivery gate is AX-A Issue #44
+  implementation. HTTP boundary verification, the strict parse observations, and the Braincrew
+  preflight handoff did not run, so `braincrew_preflight_ready` is `false` and Braincrew Issue #38
+  remains blocked. The recorded
   causes are both the principal/tenant binding conflict and absent live parse state:
   SELECT-only review found zero users in the imported tenant and zero rows in
   `thread_attachments` plus `attachment_extractions`. AX's
@@ -231,20 +236,36 @@ research and AX_portfolio context
   `User.is_active` together, while the Braincrew live preflight pins a fixed owner user that
   belongs to a different tenant and six stale attachment UUIDs. These are deferred structural and
   state dependencies, not a failed import.
+- Completed local phase: **AX-A Issue #44 `test-driven-development` and independent code
+  review.** The implementation keeps the fixed evaluation-principal UUID
+  `26d7eebf-e4a1-583d-a43c-4bff0b5bb7fe`, creates only one active target-tenant `User`, and does
+  not add `Role`/`UserRole` persistence, a migration, or evaluation route/auth changes. Review
+  required six fail-closed public-contract proofs: forbidden environment, dirty repository,
+  existing receipt, indeterminate confirmation with no residual user or receipt, CLI `--apply`,
+  and console-script registration/help. The review-driven repair moved confirmation before
+  commit (`flush -> confirm -> commit`) so a confirmation failure rolls back without persisting
+  the user. Fresh verification passed the 40 targeted tests and the full AX backend suite
+  (`1530 passed, 75 skipped`). No live apply or database/service/container/credential operation
+  occurred during implementation or review.
+- Completed Git publication: the reviewed AX-A change was committed as
+  `99c6300e02498f18763806002c748dd58fe64c04`, pushed to
+  `origin/DHChe/issue-44-evaluation-principal`, and opened as draft
+  [AX PR #46](https://github.com/DHChe/AX_portfolio/pull/46) against `develop`. No merge or remote
+  issue closure is claimed.
 - Security status: `OPENAI_API_KEY` rotation is **RESOLVED** by user confirmation. No secret was
   inspected or retained during the scope-lock work.
-- Next workflow action: if PR #59 remains open, complete its authorized merge after required checks
-  pass. After the merged state is verified, implement AX-A Issue #44 in a fresh AX session with
-  `test-driven-development`, independent code review, and local verification. Only after AX-A is
-  reviewed and merged may a second fresh AX session start dependent AX-B Issue #45. The later
-  shared operational proposal remains separate and must require a fresh post-import/pre-A database
-  snapshot plus post-A/pre-B database and blob checkpoints. Braincrew Issue #38 starts only after
-  both sanitized AX receipts and live observations pass independent review.
+- Next workflow action: review AX PR #46 and its required checks. A separate merge proposal and
+  explicit authorization are required before merge. Only after the reviewed AX-A result is merged
+  may a second fresh AX session start dependent AX-B Issue #45.
+  The later shared operational proposal remains separate and must require a fresh post-import/pre-A
+  database snapshot plus post-A/pre-B database and blob checkpoints. Braincrew Issue #38 starts
+  only after both sanitized AX receipts and live observations pass independent review.
 
-### Copy-ready fresh-session handoff — AX-A Issue #44
+### Copy-ready fresh-session handoff — AX-A Issue #44 (historical recovery only)
 
-Use this prompt only after PR #59's merged state is verified and the user starts a fresh AX
-implementation session:
+AX-A local implementation and independent review are published in draft AX PR #46. Use this prompt
+only to recover a lost AX-A implementation context; the current action is PR #46 review and a
+separately authorized merge, not a second implementation pass. PR #59's merged state is verified:
 
 ```text
 $test-driven-development
@@ -297,15 +318,18 @@ Issue #45 새 세션 프롬프트를 작성한다.
 
 ## Transition history
 
-### 2026-07-24 — PR #59 documentation review passed and merge was authorized
+### 2026-07-24 — PR #59 merge verified; AX-A Issue #44 local TDD and review completed
 
 - The contract/spec axis passed without findings.
 - The standards axis found stale workflow-gate wording and cross-repository relative verification
   paths. Both were corrected locally, then independently re-reviewed as PASS.
 - The user authorized the corrective commit, push, AX Issue #44/#45 body synchronization, and PR #59
-  merge. Required checks and a final remote contract comparison remain fail-closed merge gates.
-- After the merged state is verified, the next workflow action is a fresh AX session for Issue #44.
-  Issue #45 remains dependent on the reviewed and merged AX-A result.
+  merge. Remote verification confirms that PR #59 merged into `develop` as
+  `95826ee95f0ac9a8bd84eed149dff47dc834aa47`.
+- A fresh AX worktree completed Issue #44 `test-driven-development`, including a review-driven
+  atomicity repair and independent PASS review. Lore commit
+  `99c6300e02498f18763806002c748dd58fe64c04` was pushed and opened as draft AX PR #46; merge
+  remains separately gated. Issue #45 remains dependent on the reviewed and merged AX-A result.
 
 ### 2026-07-24 — AX principal and parse-restoration scope locked
 
