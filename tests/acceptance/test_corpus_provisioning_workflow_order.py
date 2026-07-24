@@ -277,10 +277,14 @@ def test_issue_56_docs_lock_identity_preserving_bytes_and_the_next_operator_gate
         "AX Issue #37 remains blocked",
         "Braincrew Issue #38 remains blocked",
     )
-    for document in (provisioning_design, status):
-        issue_56_section = " ".join(document.split("Issue #56", maxsplit=1)[1].split())
-        missing_facts = [fact for fact in next_gate_facts if fact not in issue_56_section]
-        assert not missing_facts, f"Issue #56 next gate is incomplete: {missing_facts}"
+    # The durable design document is the permanent Issue #56 decision record and must retain
+    # every next-gate fact. The rolling delivery-status checkpoint is intentionally allowed to
+    # advance past the completed Issue #56 gate once AX Issue #37 has been applied, so it is not
+    # required to keep echoing the now-satisfied blocked-gate language.
+    issue_56_section = " ".join(provisioning_design.split("Issue #56", maxsplit=1)[1].split())
+    missing_facts = [fact for fact in next_gate_facts if fact not in issue_56_section]
+    assert not missing_facts, f"Issue #56 next gate is incomplete: {missing_facts}"
+    assert status  # status doc is locked to the current frontier by the frontier-record test
 
 
 def test_issue_46_locks_source_first_freeze_and_successor_version_boundary() -> None:
@@ -392,7 +396,7 @@ def test_delivery_status_records_the_published_review_repair_and_new_frontier() 
     status = STATUS_PATH.read_text(encoding="utf-8")
     current_checkpoint = _section(status, "## Current checkpoint", "## Transition history")
 
-    assert "Last updated: 2026-07-23" in status
+    assert "Last updated: 2026-07-24" in status
     assert ISSUE_47_MERGE_COMMIT in current_checkpoint
     assert APPROVED_BRIEF_DIGEST in current_checkpoint
     assert "10,680-byte brief" in current_checkpoint
@@ -404,6 +408,10 @@ def test_delivery_status_records_the_published_review_repair_and_new_frontier() 
     assert "Issue #36 authoring, manual review, sealing, and replay are complete" in (
         current_checkpoint
     )
+    # Current frontier: AX Issue #37 sealed-pack import applied; steps 7-9 deferred with cause.
+    assert "AX Issue #37 sealed-pack import applied once" in current_checkpoint
+    assert "principal/tenant binding conflict" in current_checkpoint
+    assert "`braincrew_preflight_ready` is `false`" in current_checkpoint
     assert "14 exact source digests" in current_checkpoint
     assert "Issue #37 actual qualification: **SUCCEEDED_ONCE**." in current_checkpoint
     assert "7 passed" in current_checkpoint
