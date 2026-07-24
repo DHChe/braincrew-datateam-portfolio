@@ -25,12 +25,12 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **AX-A Issue #44 pull-request required-check and merge gate.** The reviewed
-  local/test `ax-evaluation-principal` implementation is published in
-  [AX PR #46](https://github.com/DHChe/AX_portfolio/pull/46) at head
-  `6499e1b42730f72bf03db769a3f95cb186f1fb07`. The user authorized review repairs and merge, but
-  merge still requires the replacement remote checks to pass and every review thread to be
-  resolved. Live apply and any Braincrew `READY` claim remain separate and excluded.
+- Active phase: **AX-B Issue #45 fresh-session readiness gate.** AX-A
+  [PR #46](https://github.com/DHChe/AX_portfolio/pull/46) passed all five required checks with zero
+  unresolved review threads and squash-merged into `develop` as
+  `fe16c0cedc1e64856d9e107e111665d0ba2e444d`; Issue #44 is closed. AX-B has not started. Its
+  copy-ready handoff below is now eligible for a separate fresh session. Live apply and any
+  Braincrew `READY` claim remain separate and excluded.
 - Completed phase: research, role comparison, and Data Team red-team assessment.
 - Completed phase: portfolio direction and evaluation boundaries locked.
 - Completed phase: `brainstorming` design loop, independent specification review, and PR #1 merge into `develop`.
@@ -226,9 +226,9 @@ research and AX_portfolio context
   both blockers and remains a receipt consumer only.
 - Review result: **[Braincrew PR #59](https://github.com/DHChe/braincrew-datateam-portfolio/pull/59)
   passed the two-axis documentation review and merged into `develop` as
-  `95826ee95f0ac9a8bd84eed149dff47dc834aa47`.** The active delivery gate is AX PR #46 required
-  checks, review-thread resolution, and authorized merge. HTTP boundary verification, the strict
-  parse observations, and the Braincrew preflight handoff did not run, so
+  `95826ee95f0ac9a8bd84eed149dff47dc834aa47`.** AX-A later passed its required checks and merged;
+  the active delivery gate is now the separate AX-B Issue #45 fresh-session handoff. HTTP boundary
+  verification, the strict parse observations, and the Braincrew preflight handoff did not run, so
   `braincrew_preflight_ready` is `false` and Braincrew Issue #38 remains blocked. The recorded
   causes are both the principal/tenant binding conflict and absent live parse state:
   SELECT-only review found zero users in the imported tenant and zero rows in
@@ -250,29 +250,28 @@ research and AX_portfolio context
   format, full Ruff lint, compile, and whitespace checks. The broad format baseline still reports
   `62` unrelated pre-existing files. No live apply or database/service/container/credential
   operation occurred.
-- Completed Git publication: the reviewed AX-A change was committed as
+- Completed Git integration: the reviewed AX-A change was committed as
   original implementation `99c6300e02498f18763806002c748dd58fe64c04`, demo-label repair
   `6dc396638787a87f681dac77992deb0760c73a33`, and final fail-closed repair
-  `6499e1b42730f72bf03db769a3f95cb186f1fb07`, pushed to
-  `origin/DHChe/issue-44-evaluation-principal` in
-  [AX PR #46](https://github.com/DHChe/AX_portfolio/pull/46) against `develop`. No merge or remote
-  issue closure is claimed yet.
+  `6499e1b42730f72bf03db769a3f95cb186f1fb07`. All five required checks passed, six review threads
+  were resolved with evidence, and
+  [AX PR #46](https://github.com/DHChe/AX_portfolio/pull/46) squash-merged into `develop` as
+  `fe16c0cedc1e64856d9e107e111665d0ba2e444d`. Issue #44 closed automatically.
 - Security status: `OPENAI_API_KEY` rotation is **RESOLVED** by user confirmation. No secret was
   inspected or retained during the scope-lock work.
-- Next workflow action: wait for AX PR #46's replacement checks, resolve every review thread with
-  evidence, and execute the user-authorized squash merge only if all required checks pass. Only
-  after the reviewed AX-A result is merged may a second fresh AX session start dependent AX-B
-  Issue #45.
+- Next workflow action: open a separate fresh AX session with the copy-ready AX-B Issue #45 prompt
+  below. That action is not part of the current PR-merge task; AX-B implementation has not started.
   The later shared operational proposal remains separate and must require a fresh post-import/pre-A
   database snapshot plus post-A/pre-B database and blob checkpoints. Braincrew Issue #38 starts
   only after both sanitized AX receipts and live observations pass independent review.
 
 ### Copy-ready fresh-session handoff — AX-B Issue #45
 
-Do not launch this fresh session until AX PR #46 is merged, Issue #44 is closed, and this status
-file records the exact AX-A merge SHA. At that point AX-B is a new bounded implementation ticket,
-so a fresh context reduces accidental reuse of AX-A assumptions and keeps live operational
-execution outside code completion:
+AX PR #46 is merged, Issue #44 is closed, and this status file records the exact AX-A merge SHA
+`fe16c0cedc1e64856d9e107e111665d0ba2e444d`. The handoff is therefore eligible, but opening the
+fresh session is a separate user action. AX-B is a new bounded implementation ticket, so fresh
+context reduces accidental reuse of AX-A assumptions and keeps live operational execution outside
+code completion:
 
 ```text
 $test-driven-development
@@ -335,7 +334,7 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
-### 2026-07-24 — AX PR #46 review blockers repaired; replacement checks pending
+### 2026-07-24 — AX PR #46 reviewed and squash-merged; AX-B handoff eligible
 
 - GitHub review exposed receipt-destination, exact-replay, concurrent-insert, commit-confirmation,
   and repository-evidence gaps. The demo-label requirement was also repaired.
@@ -345,8 +344,9 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
   `6499e1b42730f72bf03db769a3f95cb186f1fb07`. Local evidence is `63` targeted tests and
   `1553 passed, 75 skipped` for the full backend suite; no live apply occurred.
 - Issue #44 now records `EVALUATION_PRINCIPAL_RECEIPT_UNAVAILABLE`, create-only reservation, and
-  indeterminate-commit evidence semantics. AX merge still waits for replacement CI and resolved
-  review threads.
+  indeterminate-commit evidence semantics. All five replacement checks passed, all six review
+  threads were resolved with evidence, and PR #46 squash-merged as
+  `fe16c0cedc1e64856d9e107e111665d0ba2e444d`; Issue #44 closed.
 
 ### 2026-07-24 — PR #59 merge verified; AX-A Issue #44 local TDD and review completed
 

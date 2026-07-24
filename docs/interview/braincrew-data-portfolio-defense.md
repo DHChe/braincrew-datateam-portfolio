@@ -848,14 +848,16 @@ Validation evidence:
   obtain them from `AttachmentExtraction` alone. Braincrew code inspection confirms that the
   current AX SHA, owner UUID, six attachment IDs, and v2 dataset identity are hard-coded and
   replay-validated. SELECT-only evidence supplies the zero-user and zero-attachment state. AX PR
-  #46 at reviewed head `6499e1b42730f72bf03db769a3f95cb186f1fb07` adds the local/test AX-A
-  code. Review-driven tests cover destination reservation, exact receipt replay including JSON
-  types, concurrent exact insertion, pre- and post-commit confirmation, lost commit responses, and
-  repository-anchored Git evidence; `63` targeted tests and the full backend suite
-  (`1553 passed, 75 skipped`) passed locally. The repository-wide Ruff format baseline still
-  reports `62` unrelated pre-existing files, while all changed files and full Ruff lint pass. No
-  live database mutation, HTTP call, AX-B implementation, parse response, role-visible corpus
-  identity, snapshot recovery, or Braincrew `READY` was produced.
+  #46 at reviewed head `6499e1b42730f72bf03db769a3f95cb186f1fb07` passed all five required
+  checks with zero unresolved review threads and squash-merged into `develop` as
+  `fe16c0cedc1e64856d9e107e111665d0ba2e444d`; Issue #44 closed. Review-driven tests cover
+  destination reservation, exact receipt replay including JSON types, concurrent exact insertion,
+  pre- and post-commit confirmation, lost commit responses, and repository-anchored Git evidence;
+  `63` targeted tests and the full backend suite (`1553 passed, 75 skipped`) passed locally. The
+  repository-wide Ruff format baseline still reports `62` unrelated pre-existing files, while all
+  changed files and full Ruff lint pass. No live database mutation, HTTP call, AX-B implementation,
+  parse response, role-visible corpus identity, snapshot recovery, or Braincrew `READY` was
+  produced.
 
 Likely follow-ups:
 
