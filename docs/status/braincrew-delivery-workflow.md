@@ -1,6 +1,6 @@
 # Braincrew Portfolio Delivery Workflow Status
 
-Last updated: 2026-07-23
+Last updated: 2026-07-24
 
 ## Purpose
 
@@ -200,19 +200,68 @@ research and AX_portfolio context
   canonical import bytes replay successfully. Other whitespace and non-canonical representations
   fail closed. Exact AX SHA `e25f333b55fca34118a954a17e5e0cd88dc7ea39` accepted the new bytes
   read only with 14 sources and 11,528 total source bytes; no database or provider was available.
-- Active gate: **Issue #56 Git Lifecycle Proposal Gate.** Local implementation, documentation,
-  full verification, and independent Standards/Spec review are complete. The existing external
-  Issue #37 artifacts remain immutable. No actual republish, qualification, AX change,
-  database/provider access, snapshot, dry-run, apply, service verification, baseline, candidate,
-  or Braincrew Issue #38 work is authorized. Commit, push, pull request, merge, Issue closure,
-  operational publication, and branch/worktree cleanup remain separate actions.
-- Next operator proposal: actual create-only republish remains blocked until a separate proposal
-  fixes the clean execution SHA, immutable inputs, output path, one-run boundary, and independent
-  digest reviewer. AX Issue #37 remains blocked until that publication and review complete.
-  Braincrew Issue #38 remains blocked until AX Issue #37 completes its separate load and service
-  verification gates.
+- Completed phase: Issue #56 was merged into `develop` as
+  `508c8674ea055c024d76e0535d5d7e27a068fc50` through PR #57, releasing the AX-canonical import
+  bytes for operational use.
+- Completed phase: **AX Issue #37 sealed-pack import applied once** into the local AX PostgreSQL
+  at AX SHA `e25f333b55fca34118a954a17e5e0cd88dc7ea39`. Steps 1 through 6 of the AX importer
+  design's operational sequence are complete; steps 7 through 9 are deferred with a recorded
+  reason.
+- Active gate: **AX Issue #37 follow-up scope.** HTTP boundary verification, the strict parse
+  observations, and the Braincrew preflight handoff did not run, so
+  `braincrew_preflight_ready` is `false` and Braincrew Issue #38 remains blocked. The recorded
+  cause is a principal/tenant binding conflict: AX's
+  `validated_evaluation_principal` requires one query to satisfy `Tenant.id`, `User.id`, and
+  `User.is_active` together, while the Braincrew live preflight pins a fixed owner user that
+  belongs to a different tenant. This is a deferred structural dependency, not a failed import.
+- Next operator proposal: open a follow-up issue for the principal/tenant binding conflict before
+  attempting HTTP boundary verification. Independent operational review of the applied state, the
+  AX-side commit lifecycle, and Braincrew Issue #38 remain separate actions.
 
 ## Transition history
+
+### 2026-07-24 — AX Issue #37 sealed-pack import applied once into the local AX database
+
+- Scope boundary: this transition records operational work performed against the AX_portfolio
+  checkout and its local PostgreSQL. No Braincrew source, dataset, or artifact changed. All
+  operational evidence lives outside both repositories in
+  `~/ax-seed-issue-37-evidence/` and is not committed.
+- Staged gates: role provisioning, filesystem and credential preflight, dry-run, provider lineage,
+  snapshot, and apply each ran behind a separate approval, with independent review sessions between
+  stages. Two independent reviews returned `REJECT` and were cleared before the destructive step.
+- Dry-run evidence: the eligibility receipt reported `state=ELIGIBLE` at file digest
+  `sha256:ee114a695f76f4be8f43df94bdfcf0d1a5a6bacd30e8b926859bb537e4906eae`, and the target
+  tenant `ae09ec7f-a7bc-5bf8-a645-8b3f1e623850` held zero rows in every seed table and in
+  `audit_events`. The no-write claim was confirmed from the database, not from the receipt alone.
+- Least-privilege evidence: `ax_seed_import` holds SELECT on seven tables and INSERT on six, with
+  no read-only transaction default; `ax_seed_operator` holds `pg_read_all_data` with
+  `default_transaction_read_only=on`. The database contains zero `SECURITY DEFINER` functions, so
+  retaining PostgreSQL's default `PUBLIC` EXECUTE creates no escalation path.
+- Provider lineage evidence: the sealed pack expects `fake-deterministic`, while
+  `build_embedding_provider()` returns the OpenAI adapter unless `EMBEDDING_PROVIDER=fake` is set.
+  The lineage step caught this before apply; without it the mismatch would have surfaced only as
+  `AX_SEED_EMBEDDING_PROVIDER_MISMATCH` at the destructive step. The provider was selected per
+  command; `.env` was not modified.
+- Snapshot evidence: a full custom-format dump was written outside both repositories at
+  `sha256:6d85e86c51e8195d4fce3bed5472e1f87a7ede602f9b2c20c37ddb52c0e61101`, and `pg_restore
+  --list` parsed all 812 catalog entries without error, including every seed table definition and
+  its ACL. No restore was performed, so post-restore data integrity and ownership compatibility
+  remain unproven.
+- Apply evidence: the importer ran exactly once and returned `state=LOADED` with
+  `commit_confirmation=direct`. Measured row counts match the planned counts exactly: 14 source
+  documents, 77 chunks, 77 evidence spans, and 154 vector records, all 154 embedded with non-null
+  vectors. The database recorded `provider.embedding.used` with adapter `fake-deterministic` at
+  1536 dimensions under the `text-embedding-3-small` label, which is the documented B-prime
+  condition rather than a real provider call.
+- Exclusions: HTTP boundary verification, the six strict parse observations, and the Braincrew
+  preflight handoff did not run. `braincrew_preflight_ready` is `false`. No quality, retrieval, or
+  answer claim is made from this import; it establishes corpus presence only.
+- Open operator action: an `OPENAI_API_KEY` value was exposed in tool output by a
+  `docker compose config` invocation during review. The key value was never recorded in evidence,
+  and rotation remains `PENDING` with the user.
+- Next gate: open a follow-up issue for the principal/tenant binding conflict before attempting
+  HTTP boundary verification. Braincrew Issue #38 remains blocked until that verification and its
+  own approval gate complete.
 
 ### 2026-07-23 — Issue #56 AX-canonical publication-byte repair entered TDD
 
