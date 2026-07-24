@@ -854,8 +854,9 @@ Re-provision six reviewed parsing attachments through the target-tenant AX lifec
 
 ### Dependency
 
-Blocked by AX-A implementation/review/merge. Operational execution also requires fresh post-import
-pre-A and post-A pre-B database checkpoints plus a pre-B blob checkpoint.
+Blocked by AX-A implementation/review/merge:
+https://github.com/DHChe/AX_portfolio/issues/44. Operational execution also requires fresh
+post-import pre-A and post-A pre-B database checkpoints plus a pre-B blob checkpoint.
 
 ### Problem
 
