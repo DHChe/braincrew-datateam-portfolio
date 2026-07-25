@@ -5,6 +5,20 @@ Status: LOCKED FOR ISSUE AUTHORING; NOT IMPLEMENTED OR LIVE-VERIFIED
 Braincrew decision baseline: `8242003f9ed30a4df4889c1c30abe6a36470bff0`  
 AX investigation baseline: `e25f333b55fca34118a954a17e5e0cd88dc7ea39`
 
+> **SUPERSEDED IN PART — 2026-07-25.** The requirement that the six reviewed `.txt` sources enter AX
+> through **one** multipart request is not executable: AX enforces `MAX_FILES_PER_OPERATION = 5` per
+> upload request (`backend/src/ax_engine/attachments/intake.py:12,54`, applied at
+> `backend/src/ax_engine/attachments/service.py:64`), and
+> `backend/tests/unit/test_attachment_intake.py:25` pins the six-file rejection. The authorized
+> replacement is **two bounded requests of five and one into one target-owned thread**, which needs
+> no AX source change. See
+> [`2026-07-25-ax-b-bounded-upload-request-split.md`](./2026-07-25-ax-b-bounded-upload-request-split.md).
+>
+> Affected passages, by line number at pinned commit `fc1302d54ab3f3735800d31a321b6f70e947572e`:
+> 376-377, 470, 522, 543-544, 866, 914. Their original wording is retained verbatim below.
+> **Every other locked element of this document remains in force**, including the preserved
+> invariant "one target-owned thread and six AX-generated attachment IDs".
+
 ## 1. Decision
 
 Braincrew Issue #38 cannot truthfully reach `READY` through a principal-only AX repair. Read-only
@@ -390,6 +404,9 @@ The command orchestrates existing AX boundaries:
 2. create one conversation owned by the AX-A subject under singleton `HRPractitioner`;
 3. upload all six files in one multipart request through
    `POST /v1/conversations/{thread_id}/attachments`;
+   **[Superseded 2026-07-25 — not executable; `MAX_FILES_PER_OPERATION = 5` is enforced per
+   request. Read as two bounded requests of five and one into the same thread, preserving reviewed
+   bundle order. See [the request-split decision](./2026-07-25-ax-b-bounded-upload-request-split.md).]**
 4. wait for each scan/parse job to reach clean `parsed` state and for exactly one succeeded
    `AttachmentExtraction`;
 5. approve each attachment as `source_class=company_reference`,
@@ -557,6 +574,9 @@ backend/tests/unit/test_evaluation_parse_source_cli_registration.py
 1. AX-B rejects any source bundle other than the exact reviewed six-file contract.
 2. It creates one target-tenant thread owned by the AX-A subject and obtains six new AX-generated
    attachment IDs through one normal upload.
+   **[Superseded 2026-07-25 — "through two bounded normal uploads of five and one into that one
+   thread". The thread count and the six AX-generated IDs are unchanged; see
+   [the request-split decision](./2026-07-25-ax-b-bounded-upload-request-split.md).]**
 3. All six scan/parse jobs succeed with exact `utf8-text` / `stdlib-1` and matching source digest.
 4. All six receive exact `company_reference`, `hr_only`, policy version 1 approval under
    `HRAdmin`.

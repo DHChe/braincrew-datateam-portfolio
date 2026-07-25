@@ -396,7 +396,7 @@ def test_delivery_status_records_the_published_review_repair_and_new_frontier() 
     status = STATUS_PATH.read_text(encoding="utf-8")
     current_checkpoint = _section(status, "## Current checkpoint", "## Transition history")
 
-    assert "Last updated: 2026-07-24" in status
+    assert "Last updated: 2026-07-25" in status
     assert ISSUE_47_MERGE_COMMIT in current_checkpoint
     assert APPROVED_BRIEF_DIGEST in current_checkpoint
     assert "10,680-byte brief" in current_checkpoint
