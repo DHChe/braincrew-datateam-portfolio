@@ -25,9 +25,47 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **none in AX-B code delivery.** AX-B Issue #45 is merged and closed, so the AX code
-  track has no open implementation phase. The next gated activity is the separately authorized live
-  operational apply, which **has not started** and is not scheduled by this file.
+- Active phase: **none in AX code delivery; live operational preparation is complete and the live
+  apply has not started.** AX-B Issue #45 and the AX-B dry-run contract Issue #48 are both merged and
+  closed. Authorized operational *preparation* — snapshot, globals capture, blob observation, live
+  baseline measurement, and an isolated restore rehearsal — has been executed. The live apply itself
+  **has not been performed** and is not scheduled by this file.
+- Completed phase: **AX Issue #48 — the no-write dry-run contract for AX-B.** The contract was
+  authored by independent review, published as a locked ticket, then **audited by its own author**
+  against the question "could an implementation satisfy every acceptance checkbox and still be
+  wrong?". That audit found fourteen items; **six were adopted into a published amendment before
+  implementation landed**, so the semantics were pinned rather than discovered late. The
+  implementation merged as AX PR #49, squash commit
+  `2bcaee3495fd7b3f624398819575cd86a5a15c47`, and AX Issue #48 is now `CLOSED`/`COMPLETED`.
+- Completed phase: **the twelve-stage live apply runbook**, merged as AX PR #50, squash commit
+  `92681d3cb388eb95b7002e2013344914e035b196`. AX PR #51 then merged as squash commit
+  `38a29fae8f90095bf3699bfa8cdab109bd3780fe`, recording that a database dump alone is not a
+  recovery point.
+- Completed phase: **authorized live operational preparation.** Executed by the orchestrator under
+  explicit user authorization, read plus external-write only. Measured results:
+  - The **post-import/pre-A database snapshot now exists**, at sha256
+    `d1b5acb445504f2f22d10c92a19e8ea65967aa543fdc43f4bf3ea59ec296f2b7`.
+  - **Cluster globals were captured**, at sha256
+    `74adc2d0ccbfb44b01ae39bd0ead8ec996a867e2978fee5d8aec3c09a4e53625`.
+  - The **attachment blob volume was observed with zero entries**, establishing the pre-A blob
+    baseline while it is still free to establish.
+  - `tenant_provider_transfer_policies` holds **zero rows**, so a non-`fake` embedding adapter
+    **fails closed** rather than transmitting source text to an external provider.
+  - The **target-tenant baseline was measured live as exactly `14/77/77/154` with zero attachments.**
+    This converts a long-standing *unverified prose assumption* — previously recorded in
+    documentation only — into a **measurement**.
+  - An **isolated restore rehearsal succeeded** in one second with zero errors and reproduced live
+    state on nine verification checks.
+- Material finding from that preparation: **`pg_dump` alone is not a recovery point.** The restored
+  `ax_seed_operator` role lost `SELECT` on the attachment tables, because its access comes from
+  membership in the cluster-level predefined role `pg_read_all_data`, which a database-scoped dump
+  does not capture. The recovery point is therefore an **ordered procedure — apply globals first,
+  restore, reconcile, verify — not a file pair.**
+- Independent audit of that operational evidence: pane-3 review returned **`EVIDENCE OVERSTATED`**,
+  on three specific grounds — an undocumented role pre-creation step the clean restore depended on,
+  a `globals.sql` with no recorded digest, and a live-cluster replay that the fresh-target rehearsal
+  could not surface. **All five corrections were applied.** This is recorded because the honest
+  version of the record includes the correction, not only the result.
 - Completed phase: **AX-B Issue #45 implementation, two-axis review, repair, and merge.** AX-A
   [PR #46](https://github.com/DHChe/AX_portfolio/pull/46) merged as
   `fe16c0cedc1e64856d9e107e111665d0ba2e444d` and closed Issue #44. AX-B
@@ -50,11 +88,14 @@ research and AX_portfolio context
   the superseding decision at Braincrew commit `f411fae5b5feedd7a3fa4bf49ad4f8aed3e0416f`; the
   published body was refetched and verified against the intended text. No amendment remains
   outstanding.
-- Explicit exclusions still in force after this merge: AX-B is **not live-applied**. No live
-  attachment, extraction, approval, materialization, corpus identity, parse observation, database or
-  blob checkpoint, snapshot recovery, or operational receipt exists. `braincrew_preflight_ready`
-  remains `false` and Braincrew Issue #38 remains blocked. No parsing, retrieval, grounded-answer,
-  or any other quality result is claimed by this phase, and no Braincrew `READY` claim is made.
+- Explicit exclusions still in force: **AX-B has not been applied live.** No live attachment,
+  extraction, approval, materialization, corpus identity, parse observation, or operational receipt
+  exists. The corpus is **unchanged at `14/77/77/154`**. `braincrew_preflight_ready` remains `false`
+  and Braincrew Issue #38 remains blocked. No parsing, retrieval, grounded-answer, or any other
+  quality result is claimed, and no Braincrew `READY` claim is made.
+  - Correction to the earlier wording of this bullet: database and blob checkpoints, and a restore
+    rehearsal, **now do exist** — see the operational-preparation phase above. Only the *live apply*
+    remains unperformed. The previous phrasing bundled the two and is no longer accurate.
 - Known gaps carried forward from review (accepted, not defects): the deferred partial-coverage
   rows recorded in the AX verification document — the wrong-SHA half of `PARSE_SOURCE_REPOSITORY_DIRTY`;
   the receipt-invalid, tenant-mismatch, and wrong-`x-ax-roles` triggers of
@@ -293,17 +334,25 @@ research and AX_portfolio context
   `fe16c0cedc1e64856d9e107e111665d0ba2e444d`. Issue #44 closed automatically.
 - Security status: `OPENAI_API_KEY` rotation is **RESOLVED** by user confirmation. No secret was
   inspected or retained during the scope-lock work.
-- Next workflow action: **prepare the separately authorized live operational proposal for the AX-A
-  and AX-B applies.** Both AX code contracts are merged, so nothing further is owed on the AX code
-  track and the Braincrew documentation is committed at
-  `f411fae5b5feedd7a3fa4bf49ad4f8aed3e0416f` with no outstanding amendment. The operational step is
-  a distinct, separately authorized action and **must not** be started from this file. It requires,
-  before any mutation: a fresh post-import/pre-A restricted database snapshot with digest and
-  restore-list readability, then a post-A/pre-B database dump plus a digest-bound blob inventory and
-  restricted checkpoint. These checkpoints are preconditions, not authorization to restore.
-  Braincrew Issue #38 stays blocked and starts only after both sanitized AX receipts and live HTTP
-  observations exist and pass independent review; until then `braincrew_preflight_ready` is `false`
-  and no `READY` artifact may be published.
+- Next workflow action: **decide whether to authorize the live AX-A then AX-B apply, on an accurate
+  statement of what is now proven and what is not.** The eight preconditions recorded in section 7 of
+  the independent recovery analysis are **all resolved**, so the basis for the earlier
+  `NOT SAFE YET` verdict is gone. That verdict rested on two blockers, and both are closed: the
+  missing post-import/pre-A recovery point now exists and has been rehearsed, and the scope lock's
+  ordered AX-B dry-run step — which the merged tool could not perform — is implemented by AX Issue
+  #48. **This is not the same as declaring the operation safe.** Two items remain **explicitly
+  unproven** and must be carried into any authorization decision:
+  1. **Restore into the LIVE cluster.** The rehearsal ran against a fresh, empty target. Replaying
+     `globals.sql` against the live cluster is *not* the operation that was proven: the live cluster
+     already holds all three roles, so every `CREATE ROLE` would conflict. Dropping `ax` also
+     requires zero active connections and a session connected to another database.
+  2. **Blob recovery.** No archive contains blobs. This is trivial today because the volume is
+     empty — and it becomes **permanently non-reconstructable once AX-B runs**, because the blob key
+     is a random UUID whose only mapping is the `thread_attachments` row.
+  The live apply remains a distinct, separately authorized action and **must not** be started from
+  this file. Braincrew Issue #38 stays blocked and starts only after both sanitized AX receipts and
+  live HTTP observations exist and pass independent review; until then `braincrew_preflight_ready`
+  is `false` and no `READY` artifact may be published.
 
 ### Copy-ready fresh-session handoff — AX-B Issue #45
 
@@ -380,6 +429,68 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-25 — AX-B dry-run contract merged, live apply runbook merged, and authorized operational preparation executed
+
+- Scope of this transition: **AX code completion plus authorized operational *preparation*.** No live
+  apply was performed. The exclusions at the end of this entry are binding.
+- **AX Issue #48 — the no-write dry-run contract.** The scope lock's ordered execution named an
+  "AX-B dry-run → independent dry-run review" step that the merged AX-B tool could not perform: its
+  CLI had no dry-run mode and its first invocation was destructive. Rather than amend the ordered
+  execution, the user chose to add the mode. Independent review authored the contract, which was
+  published as a locked ticket.
+- **The contract was audited by its own author before implementation.** The audit asked the
+  adversarial question — could an implementation satisfy every acceptance checkbox and still be
+  wrong? — and found **fourteen items**. **Six were adopted into a published amendment** while
+  implementation was still in progress, so the semantics were pinned rather than discovered late:
+  ordering-dependent database-read classification; no failure code for a receipt-write failure; an
+  `unprovable` list that an empty array would have satisfied; a probe `401` misreported as a
+  corpus-identity failure; a `503` classifiable under two codes; and receipt fields specified in
+  prose rather than schema. The audit also recorded three attack angles that came back **clean**,
+  which is what made it credible rather than performative.
+- **Merge results.** The implementation merged as AX PR #49, squash commit
+  `2bcaee3495fd7b3f624398819575cd86a5a15c47`; AX Issue #48 is `CLOSED`/`COMPLETED`. The twelve-stage
+  live apply runbook merged as AX PR #50, squash commit
+  `92681d3cb388eb95b7002e2013344914e035b196`. **AX PR #51 merged as squash commit
+  `38a29fae8f90095bf3699bfa8cdab109bd3780fe`**, which records the recovery-procedure defect the
+  rehearsal exposed.
+- **Authorized operational preparation was executed**, under explicit user authorization, read plus
+  external-write only:
+  - the **post-import/pre-A database snapshot now exists** at sha256
+    `d1b5acb445504f2f22d10c92a19e8ea65967aa543fdc43f4bf3ea59ec296f2b7`;
+  - **cluster globals were captured** at sha256
+    `74adc2d0ccbfb44b01ae39bd0ead8ec996a867e2978fee5d8aec3c09a4e53625`;
+  - the **attachment blob volume was observed with zero entries**;
+  - `tenant_provider_transfer_policies` holds **zero rows**, so a non-`fake` embedding adapter fails
+    closed rather than transmitting source text externally;
+  - the **target-tenant baseline was measured live as exactly `14/77/77/154` with zero attachments**,
+    converting a long-standing unverified prose assumption into a measurement;
+  - an **isolated restore rehearsal succeeded in one second with zero errors** and reproduced live
+    state on nine verification checks.
+- **Material finding: `pg_dump` alone is not a recovery point.** The restored `ax_seed_operator`
+  role lost `SELECT` on the attachment tables. Its access comes from membership in the cluster-level
+  predefined role `pg_read_all_data`, and a database-scoped dump captures neither role memberships
+  nor role settings. The recovery point is therefore an **ordered procedure — apply globals first,
+  restore, reconcile, verify — not a file pair.** This defect was found *because* the rehearsal was
+  performed; a checklist-style checkpoint would have missed it entirely.
+- **Independent audit of that evidence returned `EVIDENCE OVERSTATED`.** The grounds were specific:
+  the clean restore depended on an undocumented role pre-creation step, so the rehearsal was not
+  reproducible from its own evidence; `globals.sql` carried no recorded digest, leaving half the
+  declared recovery point unbound; and replaying globals against the live cluster is not the
+  operation that was rehearsed. **All five corrections were applied.** The audit also confirmed what
+  held: every recorded digest reproduced exactly, all required table definitions and the vector
+  extension were present, and the `pg_read_all_data` diagnosis was correct and empirically confirmed.
+- **Both blockers behind the earlier `NOT SAFE YET` verdict are now closed** — the missing
+  post-import/pre-A recovery point exists and has been rehearsed, and the unperformable dry-run step
+  is implemented. All eight section-7 preconditions are resolved. This removes the basis for that
+  verdict; it does not by itself declare the operation safe.
+- **Exclusions in force.** AX-B has **not** been applied live. No live attachment, extraction,
+  approval, materialization, corpus identity, parse observation, or operational receipt exists. The
+  corpus is **unchanged at `14/77/77/154`**. `braincrew_preflight_ready` is `false` and Braincrew
+  Issue #38 remains blocked. Two items remain explicitly unproven: **restore into the live cluster**,
+  including the `CREATE ROLE` conflict when replaying globals there, and **blob recovery**, which no
+  archive contains and which becomes permanently non-reconstructable once AX-B runs. No parsing,
+  retrieval, grounded-answer, or `READY` claim is made.
 
 ### 2026-07-25 — AX-B Issue #45 implemented, reviewed, repaired, and merged; both pull requests closed
 
