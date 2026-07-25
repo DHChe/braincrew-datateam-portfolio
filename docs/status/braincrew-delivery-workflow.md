@@ -25,24 +25,46 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **AX-B Issue #45 implementation in progress, with one authorized specification
-  amendment.** AX-A [PR #46](https://github.com/DHChe/AX_portfolio/pull/46) passed all five required
-  checks with zero unresolved review threads and squash-merged into `develop` as
-  `fe16c0cedc1e64856d9e107e111665d0ba2e444d`; Issue #44 is closed. An AX-B implementation session is
-  now running on branch `feat/issue-45-evaluation-parse-sources`, cut from that verified merge SHA.
-  Implementation is **not complete and not reviewed**. Live apply and any Braincrew `READY` claim
-  remain separate and excluded.
-- Active blocker resolved: **the locked "one six-file multipart request" instruction was not
+- Active phase: **none in AX-B code delivery.** AX-B Issue #45 is merged and closed, so the AX code
+  track has no open implementation phase. The next gated activity is the separately authorized live
+  operational apply, which **has not started** and is not scheduled by this file.
+- Completed phase: **AX-B Issue #45 implementation, two-axis review, repair, and merge.** AX-A
+  [PR #46](https://github.com/DHChe/AX_portfolio/pull/46) merged as
+  `fe16c0cedc1e64856d9e107e111665d0ba2e444d` and closed Issue #44. AX-B
+  [PR #47](https://github.com/DHChe/AX_portfolio/pull/47) then squash-merged into AX `develop` as
+  `cf3ae42915833778bc9838780b7d21a5c89327ec`, and AX Issue #45 is now `CLOSED`/`COMPLETED`. The
+  matching Braincrew documentation change squash-merged into `develop` as
+  `f411fae5b5feedd7a3fa4bf49ad4f8aed3e0416f`. All required checks passed on both pull requests:
+  Braincrew Python and frontend; AX Backend Ruff, compile, tests, and `uv` lock; the disposable
+  Docker workflow gates; frontend typecheck, build, and Playwright; the repository command gates;
+  and the routine-rotation PostgreSQL required gate. Both merged feature branches and their remotes
+  are deleted. This is **code completion only** — see the exclusions bullet below.
+- Resolved specification defect: **the locked "one six-file multipart request" instruction was not
   executable.** Pre-implementation review found that AX enforces `MAX_FILES_PER_OPERATION = 5` per
-  upload request, with an existing test pinning the six-file rejection. The authorized resolution is
+  upload request, with an existing test pinning the six-file rejection. The authorized resolution was
   **two bounded requests of five and one into one target-owned thread**, recorded in
-  [the request-split decision](../decisions/2026-07-25-ax-b-bounded-upload-request-split.md). It
-  requires zero AX source change. The AX Issue #45 body amendment was **authorized and applied on
-  2026-07-25** for its Build paragraph, acceptance checkbox 2, and the
-  `PARSE_SOURCE_UPLOAD_FAILED` trigger clarification; the published body was refetched and matches
-  the intended text. One drafted edit is deliberately deferred: the footer pointer to the
-  superseding decision, which needs a pinned Braincrew commit SHA that does not exist until these
-  documentation changes are committed and merged.
+  [the request-split decision](../decisions/2026-07-25-ax-b-bounded-upload-request-split.md) and
+  requiring zero AX source change. The AX Issue #45 body amendment was authorized and applied on
+  2026-07-25 for its Build paragraph, acceptance checkbox 2, and the `PARSE_SOURCE_UPLOAD_FAILED`
+  trigger clarification. The previously deferred footer edit **has now also been applied**, pinning
+  the superseding decision at Braincrew commit `f411fae5b5feedd7a3fa4bf49ad4f8aed3e0416f`; the
+  published body was refetched and verified against the intended text. No amendment remains
+  outstanding.
+- Explicit exclusions still in force after this merge: AX-B is **not live-applied**. No live
+  attachment, extraction, approval, materialization, corpus identity, parse observation, database or
+  blob checkpoint, snapshot recovery, or operational receipt exists. `braincrew_preflight_ready`
+  remains `false` and Braincrew Issue #38 remains blocked. No parsing, retrieval, grounded-answer,
+  or any other quality result is claimed by this phase, and no Braincrew `READY` claim is made.
+- Known gaps carried forward from review (accepted, not defects): the deferred partial-coverage
+  rows recorded in the AX verification document — the wrong-SHA half of `PARSE_SOURCE_REPOSITORY_DIRTY`;
+  the receipt-invalid, tenant-mismatch, and wrong-`x-ax-roles` triggers of
+  `PARSE_SOURCE_PRINCIPAL_INVALID`; the `parser_version` half of `PARSE_SOURCE_PARSER_MISMATCH`; and
+  the untested secondary triggers of `PARSE_SOURCE_APPROVAL_FAILED`,
+  `PARSE_SOURCE_OBSERVATION_FAILED`, and `PARSE_SOURCE_CORPUS_IDENTITY_FAILED`. Each code is
+  implemented and has at least one asserted negative test; only the additional conditions named in
+  the ticket text are untested. Also carried forward: no test couples the orchestrator's assumed HTTP
+  response shapes to AX's real route projections, so a future projection change would not be caught
+  by the AX-B suite.
 - Completed phase: research, role comparison, and Data Team red-team assessment.
 - Completed phase: portfolio direction and evaluation boundaries locked.
 - Completed phase: `brainstorming` design loop, independent specification review, and PR #1 merge into `develop`.
@@ -271,14 +293,17 @@ research and AX_portfolio context
   `fe16c0cedc1e64856d9e107e111665d0ba2e444d`. Issue #44 closed automatically.
 - Security status: `OPENAI_API_KEY` rotation is **RESOLVED** by user confirmation. No secret was
   inspected or retained during the scope-lock work.
-- Next workflow action: complete AX-B implementation and take it through independent ticket-scoped
-  review. The published AX Issue #45 body already matches the request-split decision. The Braincrew
-  documentation changes recording this amendment are prepared but uncommitted and require a separate
-  Git lifecycle authorization; once they are merged, apply the deferred footer edit to AX Issue #45
-  pinning the superseding decision by commit SHA. The later shared
-  operational proposal remains separate and must require a fresh post-import/pre-A database snapshot
-  plus post-A/pre-B database and blob checkpoints. Braincrew Issue #38 starts only after both
-  sanitized AX receipts and live observations pass independent review.
+- Next workflow action: **prepare the separately authorized live operational proposal for the AX-A
+  and AX-B applies.** Both AX code contracts are merged, so nothing further is owed on the AX code
+  track and the Braincrew documentation is committed at
+  `f411fae5b5feedd7a3fa4bf49ad4f8aed3e0416f` with no outstanding amendment. The operational step is
+  a distinct, separately authorized action and **must not** be started from this file. It requires,
+  before any mutation: a fresh post-import/pre-A restricted database snapshot with digest and
+  restore-list readability, then a post-A/pre-B database dump plus a digest-bound blob inventory and
+  restricted checkpoint. These checkpoints are preconditions, not authorization to restore.
+  Braincrew Issue #38 stays blocked and starts only after both sanitized AX receipts and live HTTP
+  observations exist and pass independent review; until then `braincrew_preflight_ready` is `false`
+  and no `READY` artifact may be published.
 
 ### Copy-ready fresh-session handoff — AX-B Issue #45
 
@@ -287,12 +312,13 @@ AX PR #46 is merged, Issue #44 is closed, and this status file records the exact
 context reduces accidental reuse of AX-A assumptions and keeps live operational execution outside
 code completion.
 
-**This prompt has been consumed:** an implementation session is running on
-`feat/issue-45-evaluation-parse-sources`. It is retained as the record of what was dispatched. One
-instruction inside it is now superseded — the six sources are uploaded as **two bounded requests of
-five and one** into one target-owned conversation, per
-[the request-split decision](../decisions/2026-07-25-ax-b-bounded-upload-request-split.md). Any
-re-dispatch must carry that correction:
+**This prompt is spent and is retained only as the historical record of what was dispatched.** The
+work it launched is complete: AX PR #47 squash-merged as
+`cf3ae42915833778bc9838780b7d21a5c89327ec` and Issue #45 is closed. Do not re-dispatch it as
+written. One instruction inside it was superseded during execution — the six sources are uploaded as
+**two bounded requests of five and one** into one target-owned conversation, per
+[the request-split decision](../decisions/2026-07-25-ax-b-bounded-upload-request-split.md) — and the
+published Issue #45 body now carries that correction directly:
 
 ```text
 $test-driven-development
@@ -354,6 +380,76 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-25 — AX-B Issue #45 implemented, reviewed, repaired, and merged; both pull requests closed
+
+- Scope of this transition: **AX code completion only.** It merges reviewed code and documentation.
+  It does not apply anything to a live system. See the exclusions at the end of this entry.
+- Specification defect and authorized resolution: pre-implementation review found that the locked
+  "upload all six files in one multipart request" instruction was **not executable**, because AX
+  enforces `MAX_FILES_PER_OPERATION = 5` per upload request
+  (`backend/src/ax_engine/attachments/intake.py:12,54`, applied at
+  `backend/src/ax_engine/attachments/service.py:64`), with
+  `backend/tests/unit/test_attachment_intake.py` pinning the six-file rejection. Acceptance
+  checkbox 2 was therefore unsatisfiable and checkboxes 3-7 were transitively blocked. The defect was
+  classified as a flaw in the Braincrew-authored ticket and scope lock, not an AX defect. The user
+  authorized **two bounded requests of five and one into one target-owned thread**, which conforms to
+  the platform contract as written because the cap is per request and `stage_files` imposes no
+  per-thread total. Raising the limit and adding an operator-only `stage_files` override were both
+  rejected, with reasons recorded in
+  [the request-split decision](../decisions/2026-07-25-ax-b-bounded-upload-request-split.md).
+- Implementation: AX-B added local/test-only `ax-evaluation-parse-sources` orchestration and the
+  `ax-evaluation-parse-source-handoff-v1` create-only sanitized receipt, reusing the existing
+  conversation, upload, scan/parse, approval, materialization, strict parse-observation, and corpus
+  identity boundaries. Verification confirmed **zero change** to `MAX_FILES_PER_OPERATION`,
+  `validate_file_count`, `backend/src/ax_engine/attachments/service.py`, and
+  `backend/tests/unit/test_attachment_intake.py`.
+- Independent review trail, conducted on two separate axes in a dedicated review context:
+  - First review returned **REQUEST CHANGES on both axes** — 1 Standards blocker and 3 Spec
+    blockers, plus 4 non-blocking findings, for 8 findings total. The blockers were: production code
+    that reported a lost or ambiguous mutation response as a *definite* failure rather than as
+    indeterminate; bounded-wait timeout branches that no test executed; a post-materialization
+    count-delta path that no test executed; and a "no partial-success receipt" assertion that was
+    **vacuous**, because it searched for spaced JSON while the receipt is written with compact
+    separators.
+  - Pane 2 repaired all eight findings. Re-review confirmed each repair reached the branch it
+    claimed rather than asserting around it, and that the added tests were additive, but found **two
+    new defects introduced by the first repair**: `N-1`, connect-phase failures such as a stopped API
+    server were classified as indeterminate although provably never sent, which also made
+    `PARSE_SOURCE_UPLOAD_FAILED` unreachable for the most common conversation-creation failure; and
+    `N-2`, the mutating/read-only decision was a path allow-list, so a future mutating route would
+    silently default to the unsafe classification.
+  - Both were repaired. `URLError` now precedes the timeout arm and inspects `exc.reason`, routing
+    `ConnectionRefusedError` and `socket.gaierror` to the definite path; `mutating` became an
+    explicit keyword-only parameter with **no default**, so omission is a hard error rather than a
+    silent unsafe default. A bounded final check verified the exception ordering end to end against
+    the `HTTPError ⊂ URLError ⊂ OSError` and `TimeoutError ⊂ OSError` hierarchies, confirmed all six
+    client call sites, and confirmed no previously indeterminate case regressed to definite. Verdict:
+    **CLEAR TO PROPOSE**.
+- Independent verification at merge time: Braincrew `develop` is
+  `f411fae5b5feedd7a3fa4bf49ad4f8aed3e0416f` and clean; AX `origin/develop` contains
+  `cf3ae42915833778bc9838780b7d21a5c89327ec`; AX Issue #45 reports `CLOSED`/`COMPLETED`; and the
+  published Issue #45 footer resolves the superseding decision at pinned Braincrew commit
+  `f411fae5b5feedd7a3fa4bf49ad4f8aed3e0416f` rather than a placeholder branch reference.
+- Merge results: Braincrew PR #61 squash-merged into `develop` as
+  `f411fae5b5feedd7a3fa4bf49ad4f8aed3e0416f`; AX PR #47 squash-merged into AX `develop` as
+  `cf3ae42915833778bc9838780b7d21a5c89327ec`. All required checks passed on both — Braincrew Python
+  and frontend, AX Backend Ruff/compile/tests/`uv` lock, the disposable Docker workflow gates,
+  frontend typecheck/build/Playwright, the repository command gates, and the routine-rotation
+  PostgreSQL required gate. Both merged feature branches and their remotes are deleted.
+- Known gaps accepted at merge: the deferred partial-coverage rows are recorded in the AX
+  verification document. Every one of the seventeen `PARSE_SOURCE_*` codes is implemented and has at
+  least one asserted negative test; the untested items are additional per-code conditions named in
+  the ticket text (wrong-SHA, three `PRINCIPAL_INVALID` triggers, `parser_version`, and secondary
+  approval/observation/corpus triggers), plus the absence of a test coupling the orchestrator's
+  assumed HTTP response shapes to AX's real route projections. These were deliberately deferred, not
+  overlooked.
+- Exclusions in force: **no live apply occurred.** No live attachment, extraction, approval,
+  materialization, corpus identity, parse observation, database or blob checkpoint, snapshot
+  recovery, or operational receipt exists. `braincrew_preflight_ready` remains `false`, Braincrew
+  Issue #38 remains blocked, and live operational execution requires its own separately authorized
+  database and blob checkpoints. No parsing, retrieval, grounded-answer, or other quality result is
+  claimed, and no Braincrew `READY` claim is made.
 
 ### 2026-07-25 — AX-B upload contract corrected before implementation reached the upload step
 
