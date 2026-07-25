@@ -1,6 +1,6 @@
 # Braincrew Portfolio Delivery Workflow Status
 
-Last updated: 2026-07-24
+Last updated: 2026-07-25
 
 ## Purpose
 
@@ -25,12 +25,24 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **AX-B Issue #45 fresh-session readiness gate.** AX-A
-  [PR #46](https://github.com/DHChe/AX_portfolio/pull/46) passed all five required checks with zero
-  unresolved review threads and squash-merged into `develop` as
-  `fe16c0cedc1e64856d9e107e111665d0ba2e444d`; Issue #44 is closed. AX-B has not started. Its
-  copy-ready handoff below is now eligible for a separate fresh session. Live apply and any
-  Braincrew `READY` claim remain separate and excluded.
+- Active phase: **AX-B Issue #45 implementation in progress, with one authorized specification
+  amendment.** AX-A [PR #46](https://github.com/DHChe/AX_portfolio/pull/46) passed all five required
+  checks with zero unresolved review threads and squash-merged into `develop` as
+  `fe16c0cedc1e64856d9e107e111665d0ba2e444d`; Issue #44 is closed. An AX-B implementation session is
+  now running on branch `feat/issue-45-evaluation-parse-sources`, cut from that verified merge SHA.
+  Implementation is **not complete and not reviewed**. Live apply and any Braincrew `READY` claim
+  remain separate and excluded.
+- Active blocker resolved: **the locked "one six-file multipart request" instruction was not
+  executable.** Pre-implementation review found that AX enforces `MAX_FILES_PER_OPERATION = 5` per
+  upload request, with an existing test pinning the six-file rejection. The authorized resolution is
+  **two bounded requests of five and one into one target-owned thread**, recorded in
+  [the request-split decision](../decisions/2026-07-25-ax-b-bounded-upload-request-split.md). It
+  requires zero AX source change. The AX Issue #45 body amendment was **authorized and applied on
+  2026-07-25** for its Build paragraph, acceptance checkbox 2, and the
+  `PARSE_SOURCE_UPLOAD_FAILED` trigger clarification; the published body was refetched and matches
+  the intended text. One drafted edit is deliberately deferred: the footer pointer to the
+  superseding decision, which needs a pinned Braincrew commit SHA that does not exist until these
+  documentation changes are committed and merged.
 - Completed phase: research, role comparison, and Data Team red-team assessment.
 - Completed phase: portfolio direction and evaluation boundaries locked.
 - Completed phase: `brainstorming` design loop, independent specification review, and PR #1 merge into `develop`.
@@ -259,19 +271,28 @@ research and AX_portfolio context
   `fe16c0cedc1e64856d9e107e111665d0ba2e444d`. Issue #44 closed automatically.
 - Security status: `OPENAI_API_KEY` rotation is **RESOLVED** by user confirmation. No secret was
   inspected or retained during the scope-lock work.
-- Next workflow action: open a separate fresh AX session with the copy-ready AX-B Issue #45 prompt
-  below. That action is not part of the current PR-merge task; AX-B implementation has not started.
-  The later shared operational proposal remains separate and must require a fresh post-import/pre-A
-  database snapshot plus post-A/pre-B database and blob checkpoints. Braincrew Issue #38 starts
-  only after both sanitized AX receipts and live observations pass independent review.
+- Next workflow action: complete AX-B implementation and take it through independent ticket-scoped
+  review. The published AX Issue #45 body already matches the request-split decision. The Braincrew
+  documentation changes recording this amendment are prepared but uncommitted and require a separate
+  Git lifecycle authorization; once they are merged, apply the deferred footer edit to AX Issue #45
+  pinning the superseding decision by commit SHA. The later shared
+  operational proposal remains separate and must require a fresh post-import/pre-A database snapshot
+  plus post-A/pre-B database and blob checkpoints. Braincrew Issue #38 starts only after both
+  sanitized AX receipts and live observations pass independent review.
 
 ### Copy-ready fresh-session handoff — AX-B Issue #45
 
 AX PR #46 is merged, Issue #44 is closed, and this status file records the exact AX-A merge SHA
-`fe16c0cedc1e64856d9e107e111665d0ba2e444d`. The handoff is therefore eligible, but opening the
-fresh session is a separate user action. AX-B is a new bounded implementation ticket, so fresh
+`fe16c0cedc1e64856d9e107e111665d0ba2e444d`. AX-B is a new bounded implementation ticket, so fresh
 context reduces accidental reuse of AX-A assumptions and keeps live operational execution outside
-code completion:
+code completion.
+
+**This prompt has been consumed:** an implementation session is running on
+`feat/issue-45-evaluation-parse-sources`. It is retained as the record of what was dispatched. One
+instruction inside it is now superseded — the six sources are uploaded as **two bounded requests of
+five and one** into one target-owned conversation, per
+[the request-split decision](../decisions/2026-07-25-ax-b-bounded-upload-request-split.md). Any
+re-dispatch must carry that correction:
 
 ```text
 $test-driven-development
@@ -333,6 +354,48 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-25 — AX-B upload contract corrected before implementation reached the upload step
+
+- Discovery: independent pre-implementation review of AX Issue #45 against the merged AX-A baseline
+  found that the locked instruction "upload all six files in one multipart request" is **not
+  executable**. AX enforces `MAX_FILES_PER_OPERATION = 5`
+  (`backend/src/ax_engine/attachments/intake.py:12`), validated per call (`intake.py:54`) at the
+  single unconditional call site in `stage_files`
+  (`backend/src/ax_engine/attachments/service.py:64`), and
+  `backend/tests/unit/test_attachment_intake.py:25` pins exactly the six-file rejection. Acceptance
+  checkbox 2 of Issue #45 was therefore unsatisfiable, and checkboxes 3 through 7 were transitively
+  blocked because no attachment would have been created.
+- Classification: a design flaw in the Braincrew-authored ticket and the 2026-07-24 scope lock, not
+  an AX defect and not an implementation error. The five-file cap is a deliberate bounded-resource
+  control on a tenant-facing multipart endpoint.
+- Independent verification: the finding was re-verified before escalation, including the decisive
+  fact that the cap is enforced **per request** while `stage_files` (`service.py:51-90`) imposes no
+  per-thread total, so `5 + 1` into one thread conforms to the platform contract as written.
+- Authorized resolution: **two bounded requests of five and one into one target-owned conversation**,
+  through the existing `POST /v1/conversations/{thread_id}/attachments` route, requiring zero AX
+  source change and leaving `test_maximum_five_files_per_operation` intact. Raising
+  `MAX_FILES_PER_OPERATION` and adding an operator-only override to `stage_files` were both
+  rejected; the reasons are recorded in the decision.
+- Records produced: superseding decision
+  `docs/decisions/2026-07-25-ax-b-bounded-upload-request-split.md`; explicit forward pointers added
+  to the 2026-07-24 scope lock at HEAD with its original wording preserved verbatim and its pinned
+  commit `fc1302d54ab3f3735800d31a321b6f70e947572e` untouched; interview defense card D8.5b.
+- Newly recorded failure mode: the split creates a durable partial-batch state, because the commit
+  boundary is per request (`api/routes/attachments.py:191`) and each attachment is enqueued for
+  scan/parse immediately (`service.py:105-115`). A failed second request leaves five committed
+  attachments and five running jobs with no cross-request rollback. The operation must stop, retain
+  evidence, and perform no cleanup or retry. Because `stage_files` de-duplicates by content hash
+  within the thread (`service.py:68-76`), a naive retry would return `201` with the existing IDs and
+  create nothing, so the rerun must be refused by `PARSE_SOURCE_PREEXISTING_STATE` rather than
+  detected after the fact.
+- Evidence boundary: this phase changed Braincrew documentation only. It modified no AX source, ran
+  no AX test, executed no Git mutation, and accessed no database, service, container, blob store,
+  provider, or secret. The AX Issue #45 body amendment was applied separately under its own
+  authorization on 2026-07-25 and verified against the refetched published body; only its footer
+  pointer to the superseding decision is deferred until this documentation is merged and pinnable by
+  commit SHA. AX-B implementation is in progress, unreviewed, and makes no completion, live,
+  parse-quality, or `READY` claim.
 
 ### 2026-07-24 — AX PR #46 reviewed and squash-merged; AX-B handoff eligible
 

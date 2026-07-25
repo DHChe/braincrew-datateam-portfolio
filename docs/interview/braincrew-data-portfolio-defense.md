@@ -889,6 +889,109 @@ Likely follow-ups:
   AX code, separately authorized operations, six strict responses, three post-B corpus identities,
   sanitized receipt replay, and Braincrew #38 verification.
 
+### D8.5b Amend our own ticket instead of weakening the platform's bounded-resource control
+
+Decision:
+: AX-B uploads the six reviewed `.txt` sources as **two bounded requests of five and one** into
+  **one** target-owned conversation, through the existing
+  `POST /v1/conversations/{thread_id}/attachments` route. The superseded instruction — six files in
+  one multipart request — was not executable, because AX enforces `MAX_FILES_PER_OPERATION = 5` per
+  upload request. We amended the Braincrew-authored ticket and left the AX control untouched. This
+  needs zero AX source change. The canonical record is
+  `docs/decisions/2026-07-25-ax-b-bounded-upload-request-split.md`.
+
+Why:
+: Pre-implementation review compared the ticket against the merged AX-A baseline
+  `fe16c0cedc1e64856d9e107e111665d0ba2e444d` and found that our own specification asserted an
+  ingestion shape the product does not permit. `MAX_FILES_PER_OPERATION = 5`
+  (`backend/src/ax_engine/attachments/intake.py:12`) is validated per call
+  (`intake.py:54`) at the single unconditional call site in `stage_files`
+  (`backend/src/ax_engine/attachments/service.py:64`), and
+  `backend/tests/unit/test_attachment_intake.py:25` pins exactly the six-file rejection. Critically,
+  the cap is **per request**, and `stage_files` (`service.py:51-90`) imposes no per-thread total, so
+  `5 + 1` into one thread satisfies the platform contract as written. The Evaluation Plane exists to
+  measure the product, not to reshape the product's controls so that the measurement is more
+  convenient to collect.
+
+Rejected alternatives:
+: Raising `MAX_FILES_PER_OPERATION` was rejected because the constant governs every tenant HTTP
+  caller of a multipart endpoint, not only our local/test operator command; it would weaken a
+  deliberate bounded-resource control for all tenants and require deleting or rewriting an existing
+  test that exists to pin that boundary. An operator-only `max_files=` override on `stage_files` was
+  rejected because it adds a permanent bypass surface to a security-relevant validator while
+  still requiring the same ticket amendment — the locked mutation boundary is the HTTP route, not
+  the service method, so the override buys wording rather than capability. Reclassifying the cap as
+  an AX bug to be fixed was rejected because nothing in AX presents it as defective; calling a
+  working control a defect so our ticket can stand unchanged inverts the SUT/Evaluation Plane
+  relationship.
+
+Trade-offs and failure modes:
+: The split introduces a durable partial-batch state, and this is the real cost. The commit boundary
+  is per request (`backend/src/ax_engine/api/routes/attachments.py:191`), and each staged attachment
+  is flushed and immediately enqueued as a scan/parse job
+  (`backend/src/ax_engine/attachments/service.py:105-115`). If the five-file request commits and the
+  one-file request fails, five attachments and five running jobs are already durable, and no
+  cross-request transaction exists or may be manufactured. The required behavior is to fail with
+  `PARSE_SOURCE_UPLOAD_FAILED`, retain the partial state as evidence, and perform no delete, purge,
+  cancel, rollback, retry, or partial-success receipt.
+
+: The subtle hazard is that a naive retry would appear to succeed. `stage_files` de-duplicates by
+  content hash within the thread (`service.py:68-76`): an attachment with the same
+  `(tenant_id, thread_id, content_hash)` that is not deleted is returned as-is and no new row is
+  created. A retried upload therefore returns HTTP 201 with the existing IDs while creating nothing.
+  The platform will not signal this, so the rerun must be refused up front by
+  `PARSE_SOURCE_PREEXISTING_STATE`, and the count-delta assertion must be computed against a
+  pre-run baseline rather than inferred from HTTP responses.
+
+: The preserved invariant is unchanged: one target-owned thread and six AX-generated attachment IDs,
+  with caller-forced IDs still forbidden. Only the "one multipart request" wording is superseded.
+  The request split is an ingestion detail and is deliberately not visible in the case-to-attachment
+  mapping, which stays ordered by reviewed bundle order.
+
+Validation evidence:
+: Read-only inspection of AX `origin/develop` at `fe16c0cedc1e64856d9e107e111665d0ba2e444d`
+  established the per-request cap, the absence of a per-thread cap, the per-request commit boundary,
+  the per-attachment job enqueue, and the content-hash de-duplication branch, at the exact file and
+  line references above. The finding was independently re-verified before escalation, and the
+  resolution is the user-authorized option. No AX source was modified, no AX test was executed, and
+  no live upload, attachment, extraction, approval, materialization, parse observation, or corpus
+  identity was created or observed for this decision. AX-B implementation was in progress and
+  unreviewed when this card was written; nothing here claims AX-B completion, live readiness, parse
+  quality, or Braincrew `READY`.
+
+Likely follow-ups:
+
+- "Why not just raise the limit? It is one constant." — Because the constant is not scoped to our
+  operation. It bounds every tenant's multipart upload on a public route, and an existing test pins
+  the six-file rejection deliberately. We would be widening a resource control for all callers to
+  save ourselves one HTTP request, and we would be doing it inside a ticket whose own boundary says
+  existing services are the only mutation surface. The cheaper change was to our own sentence.
+- "Is this not just working around a product limitation?" — It is conforming to one. The limit is a
+  policy, not an obstacle; five per request with no per-thread total is a coherent design, and
+  `5 + 1` uses it as intended. A workaround would be the override argument we rejected.
+- "Who found it, and why did it not surface earlier?" — Pre-implementation review, comparing the
+  ticket to the merged AX-A baseline before the implementer reached the upload step. It did not
+  surface during scope-lock authoring because that phase was documentation-only against a
+  pre-AX-A investigation baseline and never executed or code-checked the upload path. That is the
+  process lesson: a lock authored without reading the call site can specify an unexecutable shape.
+- "Does the split change what you are measuring?" — No. The same six byte-exact sources land in the
+  same thread with the same approval, provider lineage, and count deltas. The ingestion request
+  boundary does not appear in the attachment mapping, the parse observations, or the corpus
+  identities.
+- "What breaks if the second request fails?" — Five committed attachments and five running scan
+  jobs, with no cross-request rollback. We stop, keep the evidence, and refuse the rerun by
+  pre-existing-state check. We specifically do not clean up, because deletion is out of scope and
+  because the partial state is the evidence an operator needs.
+- "Why is a retry dangerous rather than merely useless?" — Content-hash de-duplication makes it
+  return 201 with the existing IDs and create nothing, so a retry can look like success while
+  producing no new rows. That is why the guard is a pre-flight state check rather than an error
+  observed after the fact.
+- "You changed a document that was pinned as immutable — how is that safe?" — The pinned commit
+  `fc1302d54ab3f3735800d31a321b6f70e947572e` is untouched, and the original sentences remain verbatim
+  at HEAD. The supersession is a separate dated decision record plus explicit forward pointers, so a
+  reader arriving from either the pin or HEAD reaches the same current answer and can see exactly
+  what changed and why.
+
 ### D8.6 Approve exact evaluation-blind authoring guidance before corpus bytes exist
 
 Decision:
