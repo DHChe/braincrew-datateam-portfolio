@@ -532,6 +532,76 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-07-26 — Issue #67 re-review returned APPROVE; PR #69 published and passed its first remote gate
+
+- Phase: publication of Braincrew Issue #67 from
+  `feat/issue-67-receipt-derived-preflight-binding` into a reviewed pull request. The
+  implementation and review cycles are complete; merge is not yet authorized.
+- Active skill or workflow: the three-pane orchestration cycle recorded in `AGENTS.md`, followed by
+  the Git Lifecycle Proposal Gate. Cycle 50 implemented, Cycle 51 reviewed independently, Cycle 52
+  repaired, Cycle 53 re-reviewed the delta only.
+- Review evidence: Cycle 53 returned **`APPROVE`**. Both Cycle 51 blockers were closed and the
+  closure was proved rather than asserted — **mutation testing** disabled each fail-closed guard in
+  turn and confirmed its test fails, and an assertion-level comparison against the base found all
+  66 existing assertions preserved in order with 3 added, none removed or modified. The reviewer
+  recorded the limits of its own method: the mutations reproduced one refactor shape rather than all
+  possible ones, and the real-subprocess test could not be mutated because the child process imports
+  the installed source.
+- Correction carried forward: the implementing pane reported that synthetic fixture identifiers had
+  replaced retired operational IDs, but the replacement covered only the new contract file. The
+  retired UUID `2c7d525b-…` remains in three other test files as harmless fixture data. The summary
+  was not wholesale, and independent verification is what caught it.
+- Publication evidence: Lore commit `bc20136` is the head of
+  `origin/feat/issue-67-receipt-derived-preflight-binding`, and [PR #69](https://github.com/DHChe/braincrew-datateam-portfolio/pull/69)
+  targets `develop` at `c7431f431d92635b53d91595d1cbad96e011a3ca`. Both remote checks passed —
+  `python` and `frontend` — and GitHub reports `CLEAN` and `MERGEABLE` with zero requested changes,
+  review comments, or unresolved blockers. The pull request was transitioned out of draft only after
+  those checks passed.
+- Authorization: the user approved the commit, push, and pull request with the ready transition
+  conditioned on a passing gate, then approved publishing this status entry before an authorized
+  squash merge. Merge itself remains a separate authorization.
+- Still not proven by this publication: the pinned digest's own correctness, which no in-repository
+  test can establish because copying the receipt in is forbidden — it rests on the Stage 11
+  independent review plus manual SHA-256 recomputation by three separate reviewers, and a typo in
+  that constant would leave all 364 tests green. Live HTTP parse capture remains unexercised because
+  the AX runtime is stopped by Stage 12. `braincrew_preflight_ready` stays **`false`**.
+- Exact next action and entry condition: squash merge PR #69 into `develop` and delete the remote
+  branch, then verify the merged state, the squash commit's ancestry in a fetched `origin/develop`,
+  automatic closure of Issue #67, and remote branch deletion before reporting completion. Do not
+  merge if any required check regresses on the new head.
+
+### 2026-07-26 — Issue #67 receipt-derived preflight binding entered review repair verification
+
+- Phase: implementation of Braincrew Issue #67 on
+  `feat/issue-67-receipt-derived-preflight-binding`; no Git lifecycle action is authorized in this
+  pane.
+- Active skill or workflow: `test-driven-development`. Cycle 50 introduced the receipt-derived
+  binding; Cycle 52 adds regression observations for two previously uncovered fail-closed guards
+  and makes subprocess test execution explicit without redesigning that implementation.
+- Expected artifact and completion condition: `live_preflight` must recompute the independently
+  reviewed handoff receipt SHA-256, derive the reviewed subject and six case-to-attachment probe
+  mapping only from matching bytes, preserve principal-artifact replay validation through Pydantic
+  context, and pass the six repository verification commands without changing the pinned AX commit
+  or frozen dataset version.
+- Review and repair evidence: Cycle 51 pane 3 returned `REQUEST CHANGES`, and pane 1 independently
+  reproduced both blockers. Cycle 52 now observes the missing-validation-context and missing-replay-
+  receipt refusals directly, replaces 14 subprocess-looking in-process calls with an explicitly named
+  `_replay_in_process` helper, and runs one real `uv run braincrew-eval` subprocess that returns exit
+  code 2 when a principal artifact omits `--handoff-receipt`. The receipt contract set reports
+  `11 passed`, the combined principal contract set reports `34 passed`, and the CLI acceptance set
+  reports `3 passed`. Synthetic fixture identifiers no longer reuse retired operational IDs, both
+  five- and seven-attachment counts are rejected, and the digest-pin monkeypatch uses its default
+  symbol-existence check.
+- Completion evidence: the Cycle 52 repository gates report `65 files already formatted`,
+  `All checks passed!`, no mypy issues in 65 source files, `364 passed`, and a clean
+  `git diff --check`. Correctness of the pinned receipt value is not established by a self-pinned
+  test; it rests on the Stage 11 result plus independent receipt-byte SHA-256 recomputation by panes
+  1, 2, and 3. `braincrew_preflight_ready` remains **`false`** because the live runtime is stopped
+  and the receipt's applied AX commit is not the currently reviewed evaluation SUT commit.
+- Exact next action and entry condition: after the Cycle 52 six-command rerun, hand the uncommitted
+  diff to panes 1 and 3 for independent re-review; both blockers must be closed and the repository
+  gates reproduced before any separately authorized Git proposal.
+
 ### 2026-07-26 — the twelve-stage live apply executed end to end; AX-B is applied and verified
 
 - Phase: live operational execution, Stages 1 through 12, each separately authorized by the user.

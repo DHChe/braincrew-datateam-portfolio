@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -33,6 +33,7 @@ APPROVED_ATTACHMENTS = {
 }
 HOSTILE_CORRELATION_ID = "Bearer secret-material"
 HOSTILE_CORRELATION_DIGEST = "sha256:" + hashlib.sha256(HOSTILE_CORRELATION_ID.encode()).hexdigest()
+REVIEWED_RECEIPT_PATH: Path | None = None
 
 
 @pytest.fixture(scope="module")
@@ -41,6 +42,20 @@ def dataset_validation() -> DatasetValidationReport:
     assert validation.state == "VALID"
     assert validation.snapshot is not None
     return validation
+
+
+@pytest.fixture(autouse=True)
+def reviewed_receipt_binding(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[None]:
+    global REVIEWED_RECEIPT_PATH
+    receipt_path = _write_reviewed_receipt(tmp_path)
+    digest = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+    monkeypatch.setattr(live_preflight, "REVIEWED_HANDOFF_RECEIPT_SHA256", digest)
+    REVIEWED_RECEIPT_PATH = receipt_path
+    yield
+    REVIEWED_RECEIPT_PATH = None
 
 
 def test_adapter_config_rejects_noncanonical_tenant_and_user_uuids() -> None:
@@ -255,7 +270,10 @@ def test_nonexistent_attachment_is_a_mapping_blocker_without_retry(
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
     with pytest.raises(ValueError, match="contradicts its terminal attempt"):
-        live_preflight.replay_live_preflight_artifact(artifact_path)
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
 
 
 def test_inaccessible_attachment_preserves_the_live_operation_blocker(
@@ -302,7 +320,10 @@ def test_request_error_attempt_cannot_claim_a_response_correlation(
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
     with pytest.raises(ValueError, match="cannot declare a response correlation"):
-        live_preflight.replay_live_preflight_artifact(artifact_path)
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
 
 
 def test_unavailable_parse_preserves_the_existing_typed_live_blocker(
@@ -478,7 +499,10 @@ def test_exhausted_parse_retries_are_retained_with_the_blocker(
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
     with pytest.raises(ValueError, match="three exhausted attempts"):
-        live_preflight.replay_live_preflight_artifact(artifact_path)
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
 
 
 def test_retries_are_retained_when_recovered_response_evidence_is_rejected(
@@ -581,6 +605,7 @@ def _capture(
         user_id=user_id,
         attachment_mapping=mapping,
         dataset_validation=validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
         transport=transport,
     )
 
@@ -600,6 +625,35 @@ def _attachment_documents() -> dict[str, str]:
     return {
         attachment_id: document_id for document_id, attachment_id in APPROVED_ATTACHMENTS.items()
     }
+
+
+def _reviewed_receipt_path() -> Path:
+    assert REVIEWED_RECEIPT_PATH is not None
+    return REVIEWED_RECEIPT_PATH
+
+
+def _write_reviewed_receipt(tmp_path: Path) -> Path:
+    receipt_path = tmp_path / "synthetic-reviewed-handoff.json"
+    receipt_path.write_text(
+        json.dumps(
+            {
+                "repository": {"commit_sha": PINNED_AX_SHA},
+                "target": {"subject_id": OWNER_USER_ID},
+                "state": "COMPLETED",
+                "completion_confirmed": True,
+                "attachments": [
+                    {
+                        "case_id": case_id,
+                        "attachment_id": attachment_id,
+                    }
+                    for case_id, attachment_id in APPROVED_ATTACHMENTS.items()
+                ],
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    return receipt_path
 
 
 def _requested_attachment(request: httpx.Request) -> str:
