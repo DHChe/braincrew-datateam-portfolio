@@ -532,6 +532,44 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-07-26 — Issue #67 re-review returned APPROVE; PR #69 published and passed its first remote gate
+
+- Phase: publication of Braincrew Issue #67 from
+  `feat/issue-67-receipt-derived-preflight-binding` into a reviewed pull request. The
+  implementation and review cycles are complete; merge is not yet authorized.
+- Active skill or workflow: the three-pane orchestration cycle recorded in `AGENTS.md`, followed by
+  the Git Lifecycle Proposal Gate. Cycle 50 implemented, Cycle 51 reviewed independently, Cycle 52
+  repaired, Cycle 53 re-reviewed the delta only.
+- Review evidence: Cycle 53 returned **`APPROVE`**. Both Cycle 51 blockers were closed and the
+  closure was proved rather than asserted — **mutation testing** disabled each fail-closed guard in
+  turn and confirmed its test fails, and an assertion-level comparison against the base found all
+  66 existing assertions preserved in order with 3 added, none removed or modified. The reviewer
+  recorded the limits of its own method: the mutations reproduced one refactor shape rather than all
+  possible ones, and the real-subprocess test could not be mutated because the child process imports
+  the installed source.
+- Correction carried forward: the implementing pane reported that synthetic fixture identifiers had
+  replaced retired operational IDs, but the replacement covered only the new contract file. The
+  retired UUID `2c7d525b-…` remains in three other test files as harmless fixture data. The summary
+  was not wholesale, and independent verification is what caught it.
+- Publication evidence: Lore commit `bc20136` is the head of
+  `origin/feat/issue-67-receipt-derived-preflight-binding`, and [PR #69](https://github.com/DHChe/braincrew-datateam-portfolio/pull/69)
+  targets `develop` at `c7431f431d92635b53d91595d1cbad96e011a3ca`. Both remote checks passed —
+  `python` and `frontend` — and GitHub reports `CLEAN` and `MERGEABLE` with zero requested changes,
+  review comments, or unresolved blockers. The pull request was transitioned out of draft only after
+  those checks passed.
+- Authorization: the user approved the commit, push, and pull request with the ready transition
+  conditioned on a passing gate, then approved publishing this status entry before an authorized
+  squash merge. Merge itself remains a separate authorization.
+- Still not proven by this publication: the pinned digest's own correctness, which no in-repository
+  test can establish because copying the receipt in is forbidden — it rests on the Stage 11
+  independent review plus manual SHA-256 recomputation by three separate reviewers, and a typo in
+  that constant would leave all 364 tests green. Live HTTP parse capture remains unexercised because
+  the AX runtime is stopped by Stage 12. `braincrew_preflight_ready` stays **`false`**.
+- Exact next action and entry condition: squash merge PR #69 into `develop` and delete the remote
+  branch, then verify the merged state, the squash commit's ancestry in a fetched `origin/develop`,
+  automatic closure of Issue #67, and remote branch deletion before reporting completion. Do not
+  merge if any required check regresses on the new head.
+
 ### 2026-07-26 — Issue #67 receipt-derived preflight binding entered review repair verification
 
 - Phase: implementation of Braincrew Issue #67 on
