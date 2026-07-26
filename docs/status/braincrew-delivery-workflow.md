@@ -25,11 +25,69 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **none in AX code delivery; live operational preparation is complete and the live
-  apply has not started.** AX-B Issue #45 and the AX-B dry-run contract Issue #48 are both merged and
-  closed. Authorized operational *preparation* — snapshot, globals capture, blob observation, live
-  baseline measurement, and an isolated restore rehearsal — has been executed. The live apply itself
-  **has not been performed** and is not scheduled by this file.
+- Active phase: **none. The twelve-stage live apply ran to completion on 2026-07-26 and the runtime
+  boundary is stopped.** AX-B was applied against the live cluster under explicit stage-by-stage user
+  authorization. The corpus moved from `14/77/77/154` to `20/83/83/166`; six tenant sources, six
+  approvals, one conversation, and six blobs now exist. No quality claim of any kind follows from
+  this — see the exclusions bullet.
+- Completed phase: **Stage 10 — the AX-B live apply.** Handoff receipt
+  `10-ax-b-handoff.json`, schema `ax-evaluation-parse-source-handoff-v1`, `state=COMPLETED`,
+  `completion_confirmed=true`, logical digest
+  `sha256:33108cb53fa12c7167bd33af9f2256a420afd7576b535d9debb2b89ffcd20977`, executed at pinned AX
+  commit `2bcaee3495fd7b3f624398819575cd86a5a15c47` with a clean checkout. One conversation, six
+  ordered AX-generated attachment IDs, six unique approval IDs, all six `scan=clean`,
+  `parser=utf8-text/stdlib-1`, `materialized`, provider `fake-deterministic` at 1536 dimensions.
+  - **The one unprovable precondition held.** `HRAdmin` approval permission could not be pre-probed —
+    the corpus-identity probe exercises a different authorization path — so it was first verified by
+    the real first approval request, after durable upload and extraction state already existed. All
+    six approvals succeeded. Had it failed, the only authorized response was to stop the worker and
+    preserve the partial state.
+- Completed phase: **Stage 11 — independent post-apply verification, `PASS`.**
+  `11-post-b-verification.json`, schema `ax-ab-post-b-verification-v1`. Deltas measured directly in
+  the database, not inferred from the receipt: `+6` seed sources, chunks, spans, tenant sources,
+  attachments and extractions, and `+12` vectors (one chunk plus one evidence span per source, each
+  embedded). The six new `tenant-upload-v1:<approval_id>` version rows are exactly the receipt's six
+  AX-generated approval IDs — set difference empty in both directions. Provider containment
+  confirmed: `tenant_provider_transfer_policies` still holds zero rows, and the only provider adapter
+  in today's audit events is `fake-deterministic`.
+  - Review finding carried forward: **the seven-delta table is not a complete account of what the
+    apply changed.** It omits one `conversation_threads` row, twelve `background_jobs`, six
+    `tenant_source_approvals`, thirty-seven `audit_events`, and six blob files totalling 514 bytes.
+    All are expected for a correct apply; all are now recorded in the artifact, because an auditor
+    reading the delta table alone would miss them.
+  - Review finding carried forward: **the Stage 8 provider-coverage query is no longer a valid
+    post-B invariant.** It now reports twelve uncovered vectors, which is an artifact of the query's
+    scope rather than provider drift — the new tenant vectors are attributed through `provider.use`
+    events the query does not count. Containment was confirmed by the checks that do bind.
+- Completed phase: **Stage 9 and Stage 12 — the runtime boundary was started and stopped.** Stage 9
+  brought up `backend`, `worker` and `clamav` with the external override, verified the attachment
+  blob bind, loopback-only API, both required worker job types, and zero policies that could
+  authorize `openai`. Stage 12 stopped the worker first, then backend and ClamAV, with PostgreSQL,
+  Redis and Neo4j left running at restart count zero and the Docker volume set unchanged at 114.
+  `database_or_blob_cleanup_performed` and `volume_removal_performed` are both `false`.
+- Completed phase: **three AX runbook and test defects found and repaired mid-flight**, each
+  independently adjudicated before the fix and re-reviewed after it:
+  - AX [PR #53](https://github.com/DHChe/AX_portfolio/pull/53), `db2b4454e66e6d46e9708ebdcaa3b1f5e56cfc8b` —
+    the Stage 7 evidence scope did not close. A blob inventory had been produced by *reimplementing*
+    the runbook's generator instead of running it, embedding an absolute path the privacy rule
+    forbids, and its regeneration check passed only because it compared that script against itself.
+    The superseding inventory was produced by the runbook's own generator and confirmed by an
+    independent second-party run.
+  - AX [PR #54](https://github.com/DHChe/AX_portfolio/pull/54), `da4078c` — `develop` had gone
+    permanently red at `2026-07-26T03:00:00Z`. Tests built state on a frozen clock, requested a
+    fourteen-day activation, then executed against the real clock; that expiry passed. The same
+    commit passed at 00:23Z and failed at 05:39Z. Follow-ups filed as AX
+    [#55](https://github.com/DHChe/AX_portfolio/issues/55) and
+    [#56](https://github.com/DHChe/AX_portfolio/issues/56).
+  - AX [PR #57](https://github.com/DHChe/AX_portfolio/pull/57), `d793097` — Stage 9's bind-mount
+    assertion could not pass on Docker Desktop for macOS, which reports a `/host_mnt` prefix. The
+    configuration was correct; the assertion was wrong. Path identity was proved read-only by
+    directory metadata rather than by writing a marker into a blob root that had to stay empty.
+- Completed phase: **the conforming Stage 8 independent review**, `08c-ax-b-dry-run-review.json`,
+  schema `ax-ab-ax-b-dry-run-review-v1`, `decision=APPROVED`, written by a reviewer other than the
+  operator. Two earlier review artifacts are retained unmodified: a `FAIL`, and a `PASS` that used
+  the wrong contract vocabulary. Neither was edited or translated; the conforming review supersedes
+  them at a distinct create-only path.
 - Completed phase: **AX Issue #48 — the no-write dry-run contract for AX-B.** The contract was
   authored by independent review, published as a locked ticket, then **audited by its own author**
   against the question "could an implementation satisfy every acceptance checkbox and still be
@@ -88,14 +146,26 @@ research and AX_portfolio context
   the superseding decision at Braincrew commit `f411fae5b5feedd7a3fa4bf49ad4f8aed3e0416f`; the
   published body was refetched and verified against the intended text. No amendment remains
   outstanding.
-- Explicit exclusions still in force: **AX-B has not been applied live.** No live attachment,
-  extraction, approval, materialization, corpus identity, parse observation, or operational receipt
-  exists. The corpus is **unchanged at `14/77/77/154`**. `braincrew_preflight_ready` remains `false`
-  and Braincrew Issue #38 remains blocked. No parsing, retrieval, grounded-answer, or any other
-  quality result is claimed, and no Braincrew `READY` claim is made.
-  - Correction to the earlier wording of this bullet: database and blob checkpoints, and a restore
-    rehearsal, **now do exist** — see the operational-preparation phase above. Only the *live apply*
-    remains unperformed. The previous phrasing bundled the two and is no longer accurate.
+- Explicit exclusions still in force. This bullet previously said "AX-B has not been applied live";
+  **that is now superseded** and the corrected state is recorded here rather than by rewriting
+  history:
+  - **The apply happened.** Live attachments, extractions, approvals, materializations, corpus
+    identities, parse observations, and an operational handoff receipt all now exist. The corpus is
+    `20/83/83/166`, not `14/77/77/154`.
+  - **No quality result is claimed.** Nothing about parsing accuracy, retrieval quality,
+    grounded-answer quality, or any benchmark follows from a successful apply. The apply proves that
+    six reviewed files traversed the real lifecycle and produced the exact expected rows — nothing
+    about how well the system answers anything.
+  - **`braincrew_preflight_ready` has not been re-evaluated.** The precondition that blocked it is
+    satisfied, but the flag itself has not been measured since the apply, so it must not be reported
+    as `true`. Braincrew Issue #38 is unblocked in principle and unverified in fact.
+  - **The embedding vectors are deterministic fakes.** The provider adapter was
+    `fake-deterministic` throughout, by design and verified. The model string
+    `text-embedding-3-small` and the 1536 dimensions are contract values, not evidence that any
+    external embedding service was used or is usable.
+  - **The recovery path remains unproven against the live cluster.** The Stage 2 rehearsal restored
+    into a prepared fresh target. Replaying `globals.sql` against a cluster that already has those
+    roles would error, so the remedy proven on a fresh target is not the remedy live would need.
 - Known gaps carried forward from review (accepted, not defects): the deferred partial-coverage
   rows recorded in the AX verification document — the wrong-SHA half of `PARSE_SOURCE_REPOSITORY_DIRTY`;
   the receipt-invalid, tenant-mismatch, and wrong-`x-ax-roles` triggers of
@@ -429,6 +499,44 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-26 — the twelve-stage live apply executed end to end; AX-B is applied and verified
+
+- Phase: live operational execution, Stages 1 through 12, each separately authorized by the user.
+- Authorization shape: Stage 9 authorization carried the failure-freeze authority the runbook
+  requires — the power to stop exactly the Compose `worker` service on a first post-mutation
+  failure, because the CLI stopping does not stop the worker. Stage 10 authorization carried the
+  acknowledgement that `HRAdmin` approval permission had not been pre-probed and would first be
+  verified after durable state existed. Neither was ever exercised as a freeze; both were required
+  before starting.
+- Completion evidence, measured rather than inferred:
+  - handoff receipt `state=COMPLETED`, `completion_confirmed=true`, logical digest
+    `sha256:33108cb53fa12c7167bd33af9f2256a420afd7576b535d9debb2b89ffcd20977`;
+  - corpus `14/77/77/154` → `20/83/83/166`, with `+6` attachments, extractions and tenant sources
+    and `+12` vectors, each delta re-measured in the database rather than taken from the receipt;
+  - the six new upload-version rows equal exactly the receipt's six AX-generated approval IDs;
+  - blob root holds six files totalling 514 bytes, the exact sum of the six reviewed bundle files;
+  - `Employee` sees inventory 130 while `Executive` and `HRPractitioner` see 166 — the `hr_only`
+    visibility policy working, not asserted;
+  - Stage 11 independent verification returned `PASS`; Stage 12 stopped the worker first and left
+    PostgreSQL, Redis and Neo4j untouched at restart count zero with the volume set unchanged.
+- Blockers found and cleared mid-flight, in the order they surfaced: the Stage 7 evidence scope did
+  not close (AX PR #53); `develop` went permanently red on a wall-clock time bomb unrelated to this
+  work (AX PR #54, follow-ups AX #55 and #56); a redis container came up with no network attached
+  and reported `healthy` anyway; and Stage 9's bind-mount assertion could not pass on Docker Desktop
+  for macOS (AX PR #57). Each was adjudicated independently before any fix, and in two cases the
+  adjudication overturned the orchestrator's first reading.
+- Corrections the orchestrator applied to its own reporting, recorded because the honest version of
+  the record includes them: a JSON census counted intended paths rather than the filesystem and
+  missed a seventh file; a baseline query omitted the tenant scope and returned all-tenant totals; a
+  content-hash query used a column name that does not exist; a claim that an amended assertion was
+  "not more permissive" was false and was replaced with a truth table; and `dead_letter` job dates
+  conflated `created_at` with `updated_at`.
+- Explicit exclusion: **no quality result is claimed.** A successful apply proves the lifecycle
+  executed and produced the exact expected rows. It says nothing about parsing accuracy, retrieval
+  quality, or grounded-answer quality, and `braincrew_preflight_ready` has not been re-measured.
+- Next action: re-evaluate `braincrew_preflight_ready` against the applied corpus before any
+  Braincrew Issue #38 work begins. That measurement is the entry condition, not the apply itself.
 
 ### 2026-07-25 — AX-B dry-run contract merged, live apply runbook merged, and authorized operational preparation executed
 
