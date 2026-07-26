@@ -77,6 +77,24 @@ The canonical delivery route is the locked Ask Matt flow documented in `docs/dec
 - End every handoff with the next step's completion condition and the skill or review stage that follows it, so the user can recognize when to advance the workflow.
 - A Git lifecycle action is not a workflow phase transition. Continue to follow the separate Git Lifecycle Proposal Gate for commits, pushes, pull requests, and merges.
 
+## Multi-Agent Orchestration Topology
+
+This project runs as a persistent three-pane cmux team, not as a single agent. The topology is a standing configuration and survives session boundaries; it is not re-decided per task.
+
+- pane 1 is the orchestrator: requirement analysis, work decomposition, conflict prevention, and final integration judgment. It owns the user-facing answer.
+- pane 2 implements. pane 3 reviews and performs QA, and is read-only unless a contract explicitly requires it to write one named artifact.
+- The cycle is: orchestrator brief, implementation, independent review, integration judgment, next cycle design. Record which files changed in each cycle.
+
+Rules that apply to every cycle:
+
+- Never let two panes edit the same file. Separate the scopes in the brief, before dispatch.
+- Write each brief to be self-sufficient. Name the authoritative source documents and state that the brief is direction, not authority, because a worker may have lost prior context.
+- Do not accept a worker's report as evidence. Independently reproduce its load-bearing claims before acting on them.
+- Pair every dispatch with a harness-tracked completion watcher. A human must never have to notice that a pane finished and re-prompt the orchestrator.
+- Do not silently resolve a contested judgment the orchestrator has an interest in. When the question is whether a check is wrong rather than the thing it checks, route it to independent adjudication first.
+
+Every handoff prompt written under the Skill Workflow Navigation Contract must address the incoming orchestrator and instruct it to adopt the existing panes rather than work alone. A handoff that omits the topology silently discards this configuration, and that omission has already happened once.
+
 ## Git Lifecycle Proposal Gate
 
 For this repository, agents must actively propose the next Git lifecycle action whenever it is warranted; they must not silently leave completed work uncommitted or remotely unintegrated.
