@@ -1395,6 +1395,37 @@ Likely follow-ups:
 - "Why does Day 8 not pin a new candidate SHA?" — The frozen first comparison changes only `evidence_limit`; both runs must record the same AX SHA. A code-change candidate requires a new candidate-plan version and a separate comparison.
 - "How do two engineers get the same metric?" — Metric contract v2 freezes case-level formulas, the claim-proposition catalog, exact alternative matching, macro aggregation, duplicate and rank rules, zero-denominator behavior, and unrounded gate comparison, with hand-calculated goldens for every primary metric.
 
+### D10. Bind the evaluation plane to the SUT through the receipt contract, not through pinned identifiers
+
+Decision:
+: The live preflight derives the evaluation principal and the case-to-attachment mapping from the AX handoff receipt, pinning one value — the independently reviewed receipt's SHA-256 — instead of seven literals. Braincrew Issue #38's recorded "receipt consumer only" role is confirmed as a binding architectural commitment. Locked in [the receipt-derived binding decision](../decisions/2026-07-26-preflight-receipt-derived-binding.md).
+
+Why:
+: The pinned literals were not stale, they were wrong by construction. AX generates attachment IDs and the contract forbids caller-forcing them, so a Braincrew constant naming an AX-generated identifier is wrong at authoring time and stays wrong. Measured on 2026-07-26 against the applied corpus: zero of six pinned attachment UUIDs existed, and the pinned owner resolved to a demo Executive in a different tenant who had never been an evaluation principal. Pinning the receipt digest makes the binding right by construction rather than right by accident of today's data.
+
+Rejected alternative:
+: Re-pin the seven literals to today's values. It buys one green run and re-arms the same failure on any future provisioning, and it quietly contradicts the receipt-consumer-only role. Also rejected: harvesting the mapping from the live database, which is the tautology below; adding a caller-forced attachment ID to AX, which weakens a safety property in the system under test to make a flag flip; and committing a copy of the receipt, which creates a second artifact that can drift from the reviewed original.
+
+Trade-off:
+: Deriving at run time is an abstraction, and the textbook objection is abstraction for a single use case. Accepted because it makes the code match an architecture that is already written down — Issue #38 is already recorded as a receipt consumer and the SUT Adapter contract is already the documented connection between the repositories. The cost is a run-time input and a digest check; the alternative's cost is a guaranteed repeat failure.
+
+Known failure modes:
+: Reading the receipt without verifying its digest would have all of this design's complexity and none of its safety. Any fallback to the previous literals on a missing or mismatched receipt would silently restore the behaviour being removed. Treating "the six UUIDs" as one set would fix the wrong half, because `attachment_id` is a probe address while `approval_id` is a provenance stamp and the two sets are disjoint.
+
+Validation evidence produced:
+: The receipt is create-only, passed Stage 11 independent review with its digests bound, and carries every value the design consumes. Live measurement confirmed the mismatch on all three axes, and `git merge-base` confirmed the pinned SUT commit is a superseded ancestor rather than a fictional value.
+
+Validation evidence still required:
+: `live_preflight` captures live HTTP parse observations and the AX runtime was stopped by Stage 12, so neither this design nor any alternative can be validated end to end without a separately authorized runtime start. Controlled tests can proceed without one; the live capture cannot.
+
+Likely follow-ups:
+
+- "Isn't deriving from a file just moving the hardcoding?" — What is pinned changes from seven values that are wrong by construction to one digest that is verified at run time. The literals were never checked against anything; the digest is.
+- "What stops this from being self-confirming?" — The receipt's digest is committed into Braincrew source **before** the observation, and the receipt itself is create-only and independently reviewed. Binding the digest is the control; reading the file is not. This project met the self-comparison failure twice before catching it a third time here — a regenerated inventory compared against its own generator, and a `cmp -s` between two runs by the same party.
+- "Why not derive the SUT commit too, since the receipt carries it?" — Because it would delete a real check. `receipt.repository.commit_sha` is an observed fact; `PINNED_AX_SHA` is a Braincrew-side review decision. Requiring them to match fails when someone presents a receipt produced at an unreviewed commit.
+- "Why is the flag still `false`?" — It is a prose claim, not a computed value; it appears nowhere in `src/`. This decision supplies the mechanism for two of the five things a `true` flag would have to prove, and the runtime needed for the rest is stopped.
+- "Was anything deliberately left broken?" — `FROZEN_DATASET_VERSION = "2.0.0"` sits beside an AX corpus labelled `3.0.0`. That is a name collision, not a mismatch: the preflight validates Braincrew's own manifest. It is recorded as explicitly out of scope so a well-meaning constants sweep cannot silently re-point the evaluation plane at a different case set.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.
