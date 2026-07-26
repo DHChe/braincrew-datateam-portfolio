@@ -156,9 +156,41 @@ research and AX_portfolio context
     grounded-answer quality, or any benchmark follows from a successful apply. The apply proves that
     six reviewed files traversed the real lifecycle and produced the exact expected rows — nothing
     about how well the system answers anything.
-  - **`braincrew_preflight_ready` has not been re-evaluated.** The precondition that blocked it is
-    satisfied, but the flag itself has not been measured since the apply, so it must not be reported
-    as `true`. Braincrew Issue #38 is unblocked in principle and unverified in fact.
+  - **`braincrew_preflight_ready` is `false`, re-measured against the applied corpus on 2026-07-26.**
+    An earlier draft of this bullet said the flag "has not been re-evaluated"; it has now been
+    measured, and that softer wording was wrong. Of the two recorded blocking causes, exactly one
+    cleared:
+    - **Cleared — absent live parse state.** `thread_attachments` and `attachment_extractions` both
+      moved 0 → 6, and the evaluation subject `26d7eebf-…` exists and is active in the AX tenant.
+    - **Not cleared — the principal/tenant binding conflict.** `live_preflight.py` pins
+      `ACTIVE_OWNER_USER_ID = 22222222-…`, which resolves to `executive@hanbit.example` in tenant
+      `11111111-…` — a demo Executive in a **different tenant**, never an evaluation principal. Of
+      the six pinned attachment UUIDs, **zero** exist live: AX generates attachment IDs and the
+      contract forbids caller-forcing them, so those literals were wrong before the apply and remain
+      wrong after it. Re-running the apply would not fix this and is separately forbidden, because
+      `stage_files` de-duplicates by content hash and a retry returns existing IDs while creating no
+      rows.
+    - **A third pin, not previously recorded, also blocks.** `PINNED_AX_SHA = 72805930…` is enforced
+      in the `LivePreflightArtifact` validator, so **no preflight artifact captured against today's
+      substrate can even be constructed.** That commit is a real ancestor of the applied
+      `2bcaee34…` — superseded, not fictional — and it appears in 36 places across 13 files, several
+      of them contract tests. Re-pinning it is its own reviewed change, not a line in a constants
+      refresh.
+    - **The flag is a prose claim, not a computed value.** It appears nowhere in `src/`. Making it
+      `true` is therefore an assertion about evidence, and the only machinery that could justify it
+      is `live_preflight.py`, which captures **live HTTP** parse observations — impossible while the
+      AX runtime is stopped by Stage 12. Braincrew Issue #38 remains blocked.
+    - **What `true` would have to prove**, recorded so a future refresh cannot lower the bar: a live
+      runtime answered real parse probes; the evaluation principal was accepted and authorized for
+      parsing as a principal chosen for that purpose; the six reviewed sources parsed to the frozen
+      **expected** evidence rather than merely to something; the capture was bound to a reviewed,
+      pinned SUT commit; and the artifact passed independent review. A mapping harvested from
+      whatever the database currently holds and then compared against itself would go green while
+      proving only that the code can read its own inputs.
+    - **Explicitly out of scope of any such refresh:** `FROZEN_DATASET_VERSION = "2.0.0"`. It sits
+      beside an AX corpus labelled `braincrew-evaluation-dataset-3.0.0`, which is a **name
+      collision, not a mismatch** — the preflight validates Braincrew's own manifest. Bumping it
+      would silently re-point the evaluation plane at a different case set.
   - **The embedding vectors are deterministic fakes.** The provider adapter was
     `fake-deterministic` throughout, by design and verified. The model string
     `text-embedding-3-small` and the 1536 dimensions are contract values, not evidence that any
@@ -535,8 +567,15 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 - Explicit exclusion: **no quality result is claimed.** A successful apply proves the lifecycle
   executed and produced the exact expected rows. It says nothing about parsing accuracy, retrieval
   quality, or grounded-answer quality, and `braincrew_preflight_ready` has not been re-measured.
-- Next action: re-evaluate `braincrew_preflight_ready` against the applied corpus before any
-  Braincrew Issue #38 work begins. That measurement is the entry condition, not the apply itself.
+- Next action, completed same day: `braincrew_preflight_ready` was re-evaluated against the applied
+  corpus and is **`false`** — one of two recorded causes cleared, and a third pin was discovered.
+  See the exclusions bullet in the current checkpoint. A scope analysis of what it would take to make
+  it true returned **Reconsider Scope**: the flag is a prose claim rather than a computed value,
+  three independent pins are stale, the identifier a constants refresh would update is not the
+  identifier the version rows use, and the runtime required to validate any option has been stopped.
+  The open decision is whether Issue #38's recorded "receipt consumer only" role is a binding
+  architectural commitment or merely descriptive; that single answer determines whether the binding
+  is re-pinned or derived from the receipt contract.
 
 ### 2026-07-25 — AX-B dry-run contract merged, live apply runbook merged, and authorized operational preparation executed
 
