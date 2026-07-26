@@ -532,6 +532,106 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-07-26 — Cycle 55 returned REQUEST CHANGES; two of the three blocking defects were the orchestrator's own
+
+- Phase: review of the cycle-54 artifacts. Cycle 56 repairs them. Nothing is committed; `HEAD` is
+  still `dfc41ff`.
+- Review evidence: the independent reviewer **approved the central judgment** — `2bcaee34…` is
+  acceptable as the evaluation SUT commit — after confirming the classification criterion, the
+  per-commit evidence, the negative-test warning, and the blast-radius figures. It then raised three
+  blocking defects, **two of them against the orchestrator's own authored documents.**
+- **Orchestrator error 1, corrected.** The interview dossier repeated the claim that
+  `FROZEN_DATASET_VERSION = "2.0.0"` beside an AX corpus labelled `3.0.0` is a "name collision, not a
+  mismatch". That reasoning is **wrong**: `corpus_qualification.py` declares the AX label as a literal
+  alongside Braincrew's **own** `DATASET_ID` and `DATASET_VERSION = "3.0.0"`, pointing at Braincrew's own
+  `dataset_manifest_v3.json`. Same namespace, same authority — a real representation defect, not a
+  collision. The dossier now records it as a defect and gives the measured reason it stayed out of
+  Issue #67's scope: integrated v2's parsing component is `parsing_cases_v1.json`
+  (`synthetic-rule-015…020`) and integrated v3's is `parsing_cases_v2.json` (all `demo-*`), sharing
+  **no document at all**, so raising one constant changes the case set. The digest comparison blocks
+  the mismatch fail-closed, so "silently" was also an overstatement.
+- **Orchestrator error 2, corrected.** The dossier reported "2 of 33" principal-path tests running
+  against the real pinned digest. Measured: **37 total, 33 override, 4 do not**, and of those 4 only
+  **one** reaches a comparison against the real pinned value. The "33" was a pre-repair count;
+  the arithmetic is consistent with it going stale when the repair cycle added four tests, but that
+  causal step is **inferred rather than verified** — the cycle-level history is not recoverable from
+  Git after the squash merge. The error understated the orchestrator's own coverage rather than
+  inflating it, but a document that offers numbers as evidence cannot carry wrong ones.
+- **Orchestrator error 3, in a brief rather than an artifact.** The cycle-55 brief told the reviewer
+  that `datasets/parsing/parsing_cases_v2.json` "carries no version field at all", so the
+  implementer's citation was "unsupported by the file". **The file does carry it**, nested under the
+  `dataset` object: `"version": "2.0.0"`. The orchestrator had inspected only top-level scalar keys.
+  The implementer's citation was accurate.
+  - This matters beyond the fact. It was the **one** input that undercut the implementer's side of a
+    dispute the orchestrator had an interest in, and it was presented to the adjudicator as a
+    verified fact. Recusal alone was not sufficient protection; the inputs a recusing party supplies
+    must themselves be independently checked, including the ones that favour the other side. The
+    reviewer caught it only because the recusal disclosed the interest and explicitly invited a
+    charge of biased framing. **The safeguard worked, and it was needed.**
+- **Orchestrator error 4, corrected — inside the correction itself.** The annotation added to the
+  locked decision to fix its wrong claims introduced a new wrong claim: it marked the original's
+  "canonical text for cases 015–020 is byte-identical to the AX-B bundle" as refuted. **That claim is
+  true**, re-measured byte for byte against the six AX-B bundle files, and it is the reason today's
+  binding (integrated v2 → parsing v1 → the six `synthetic-rule-*` documents) is coherent at all. The
+  supposed refutation compared integrated v2's parsing component against integrated **v3's** — a
+  comparison the original never made. The annotation now records the claim as confirmed true and
+  names the adjacent false claim it is easily confused with.
+  - **The pattern is worth more than the fact.** Twice in this review chain the orchestrator declared
+    a true statement refuted after comparing the wrong pair of things — first by reading only
+    top-level JSON keys and missing a nested one, then by checking a different pair than the sentence
+    named. Both times the error ran in the orchestrator's own favour. The habit that catches it:
+    before recording any claim as refuted, copy out the two things the claim itself compares, and
+    confirm the refuting evidence compares **those same two things**.
+- Non-blocking finding now recorded: **Issue #38's acceptance criteria contradict themselves.** One
+  criterion requires nested parsing component `2.0.0` **and** "the six reviewed historical parsing
+  Verification cases" in the same sentence, and no repository state satisfies both — the six reviewed
+  cases live under integrated v2, whose parsing component is `1.0.0`. This is a **specification
+  defect**, not a code defect, and it blocks the follow-up dataset-identity work until resolved.
+- Exact next action and entry condition: cycle 56 repairs the implementer's §9 (replace a guess with
+  a measurement, strengthen a prescription that breaks if implemented literally, record the Issue #38
+  contradiction) while the orchestrator's two document errors are corrected in parallel. Cycle 57
+  re-reviews the delta. No implementation and no Git lifecycle action until that review passes and is
+  separately authorized.
+
+### 2026-07-26 — Issue #67 merged and closed; the "automatic closure" expectation is corrected, and the SUT-commit review opens
+
+- Phase: Issue #67 complete. Cycle 54 opens two parallel scopes — the AX SUT-commit-for-evaluation
+  review, and this record plus the interview defence dossier.
+- Merge evidence: PR #69 squash-merged into `develop` as **`dfc41ff`**, parent `c7431f4`. The remote
+  and local branches were deleted. Gates re-run on the merged `develop`: `ruff format`, `ruff check`,
+  `mypy` over 65 source files, **364 passed**, clean tree. Both pinned values survive the merge
+  unchanged.
+- **Correction, general and reusable: a `develop`-targeted merge never closes an issue
+  automatically.** The prior entry named "automatic closure of Issue #67" as a completion condition;
+  it did not fire, and Issue #67 stayed `OPEN` after the merge. GitHub's closing keywords act only
+  when a pull request merges into the repository's **default branch**, which here is `main`, not
+  `develop`. The `Closes #67` line in PR #69 therefore had no effect. Issue #67 was closed manually
+  as `COMPLETED` with the merge commit cited.
+  - The same expectation appears in the 2026-07-19 Issue #7 entry. **That entry is left unedited on
+    purpose** — it records what was planned at the time, and rewriting past records to match present
+    knowledge destroys the audit trail. Checking that issue's timeline shows it too was closed by a
+    person, not by a merge event, so the expectation was never satisfied in this repository. Future
+    entries should state manual closure, or defer closure to the `develop` to `main` release where
+    the keyword does fire.
+- Interview defence dossier updated, as `AGENTS.md` requires when a decision locks. Card D10 carried
+  the decision but stopped at the decision, so its implementation-stage material was missing: the
+  Pydantic validator authority gap and why carrying the derived mapping inside the artifact was
+  rejected as self-certifying; the mutation-testing evidence; the fact that the two guard tests are
+  load-bearing only through their `match=` strings; and that most principal-path tests necessarily
+  override the pinned digest. The count first recorded here was wrong and was corrected the same day —
+  measured, 33 of 37 override it, 4 do not, and only one of those four reaches a comparison against
+  the real pinned value.
+- Measurement correction for the next ticket: the receipt-derived binding decision states the
+  `PINNED_AX_SHA` re-pin touches "36 occurrences across 13 files". Measured today it is **50
+  occurrences across 15 files** — Issue #67 added references in two test files. The decision
+  document's figure is stale, not wrong at the time it was written.
+- Exact next action and entry condition: cycle 54 produces a decision document reviewing whether
+  `2bcaee3495fd7b3f624398819575cd86a5a15c47` is acceptable as the SUT commit **for evaluation**
+  rather than as the **provisioning** execution commit it was already reviewed as. Re-pinning is not
+  the assumed outcome. Cycle 55 reviews that decision and this dossier update independently. No
+  implementation, and no Git lifecycle action, until the decision is locked and separately
+  authorized.
+
 ### 2026-07-26 — Issue #67 re-review returned APPROVE; PR #69 published and passed its first remote gate
 
 - Phase: publication of Braincrew Issue #67 from
@@ -1781,6 +1881,7 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 - Authorization: the user approved the proposed squash merge into `develop` and removal of the remote `feat/issue-7-ax-http-contract` branch.
 - Exclusion: local worktree cleanup and any Issue #8 implementation remain outside this merge transaction.
 - Completion condition: verify the merged PR state, returned squash commit ancestry in fetched `origin/develop`, automatic Issue #7 closure, and remote branch deletion before reporting completion.
+  - Forward reference added 2026-07-26, text above deliberately unchanged: the "automatic closure" expectation is **wrong in this repository** and was never satisfied — closing keywords fire only on merges into the default branch, which is `main`, not `develop`. Issue #7 was in fact closed by a person. See the 2026-07-26 entry "Issue #67 merged and closed; the 'automatic closure' expectation is corrected" at the top of this history. This bullet is preserved as the record of what was planned at the time; only this pointer is new.
 
 ## Transition record format
 
