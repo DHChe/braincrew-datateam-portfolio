@@ -123,6 +123,34 @@ preflight validates Braincrew's own manifest, and v2 maps to `parsing_cases_v1`,
 for cases 015–020 is byte-identical to the AX-B bundle. A sweep that "updates the stale constants"
 would plausibly bump this one and silently re-point the evaluation plane at a different case set.
 
+> **[Annotation added 2026-07-26 — the paragraph above is preserved verbatim and was not edited.]**
+> Its **scope judgement stands**: this constant was correctly left out of Issue #67's scope. Independent
+> review later found **one** of its supporting claims wrong and **one** overstated, while a third — the
+> byte-identity claim — was **confirmed true**. All three are recorded here because this paragraph has
+> twice been cited as authority for instructing that any change to the constant be treated as a defect,
+> and because an earlier version of this very annotation mislabelled the true claim as refuted.
+>
+> - **"name collision, not a mismatch" is wrong.** The AX label is not a foreign name that happens to
+>   coincide: `corpus_qualification.py` declares `braincrew-evaluation-dataset-3.0.0` as a literal
+>   alongside its own `DATASET_ID` and `DATASET_VERSION = "3.0.0"`, pointing at Braincrew's own
+>   `dataset_manifest_v3.json`. Same namespace, same authority — a **real representation defect**.
+> - **"byte-identical … to the AX-B bundle" is TRUE and was never refuted.** Re-measured: the
+>   canonical text for cases 015–020 in `parsing_cases_v1.json` matches the six AX-B bundle files
+>   **byte for byte**, and integrated v2's parsing component really is `parsing_cases_v1.json`. This
+>   is precisely why today's binding — integrated v2 → parsing v1 → the six `synthetic-rule-*`
+>   documents — is coherent and why the six probes resolve.
+>   **Do not confuse it with a different, false claim**: that cases 015–020 are byte-identical
+>   *inside parsing component v2*. That one fails, because `parsing_cases_v2.json` contains no
+>   `synthetic-rule-*` document at all. The trap that makes them easy to conflate: the case `id`
+>   values are `parsing-015…020` in *both* files, and the distinction lives one level down in
+>   `document.id`.
+> - **"silently re-point" overstates the risk.** The digest comparison blocks the mismatch fail-closed.
+>
+> The correct reason to leave the constant alone is therefore not that its value is right, but that
+> raising it changes the **case set** the evaluation runs against. Replacement reasoning:
+> [`2026-07-26-ax-sut-commit-for-evaluation-review.md`](./2026-07-26-ax-sut-commit-for-evaluation-review.md) §9,
+> which also records that Braincrew Issue #38's acceptance criteria contradict themselves on this point.
+
 ## 6. Identifiers: two sets doing two jobs
 
 Any implementation that treats "the six UUIDs" as one thing will fix the wrong half.
