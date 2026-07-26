@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
@@ -11,7 +12,7 @@ from typing import Literal
 from uuid import UUID
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validator
 
 from braincrew.ax_http_adapter import (
     AxCanonicalRequest,
@@ -34,7 +35,7 @@ COMMIT_SHA_PATTERN = r"^[0-9a-f]{40}$"
 SAFE_ID_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$"
 SAFE_DETAIL_PATTERN = r"^[A-Za-z0-9_.:-]{1,160}$"
 PINNED_AX_SHA = "72805930d9addd8ea41743d1922acf8de621c3f8"
-ACTIVE_OWNER_USER_ID = "22222222-2222-2222-2222-222222222222"
+REVIEWED_HANDOFF_RECEIPT_SHA256 = "8d59a7907894532d702d0b7c658b8b28bc8370670b69f04884c42d8d1843c767"
 PARSING_AUTHORIZATION_ROLE = "HRPractitioner"
 EXPECTED_PARSER_IDENTITY = ("utf8-text", "stdlib-1")
 PRINCIPAL_PARSE_TIMEOUT_SECONDS = 10.0
@@ -49,16 +50,6 @@ FROZEN_COMPONENT_DIGESTS: Mapping[str, str] = MappingProxyType(
         "parsing": "sha256:a4ce3d2381853288e92cc2fd21df5cfcd9629db39ea134d8314594e146b48127",
         "retrieval": "sha256:5364cb7d7919304f5ebe78e4b7bd9bf2ed073c5e9f1e84c36f48697c2759fca8",
         "grounded": "sha256:f3a6f6848cccb4c5bddea8f5f9df9151b08b61b8537054c46afb7855957d3fbe",
-    }
-)
-REVIEWED_PARSING_ATTACHMENT_IDS: Mapping[str, str] = MappingProxyType(
-    {
-        "synthetic-rule-015": "2c7d525b-7463-463e-8893-0d37009775de",
-        "synthetic-rule-016": "e2d16eeb-c86e-45be-994f-fe3aecfc3f8d",
-        "synthetic-rule-017": "87dcebfe-f3cf-47cd-8e0c-c03a6a28270f",
-        "synthetic-rule-018": "816b01c3-a571-4f02-9f14-32e71d7fb2ee",
-        "synthetic-rule-019": "07b849ea-5e0a-44f7-87c9-600f539d7d9a",
-        "synthetic-rule-020": "569dc67a-5ba8-4a00-a0d8-e03a8ac43449",
     }
 )
 REVIEWED_PARSING_SOURCE_EVIDENCE: Mapping[str, tuple[str, str]] = MappingProxyType(
@@ -94,6 +85,37 @@ REVIEWED_PARSING_SOURCE_EVIDENCE: Mapping[str, tuple[str, str]] = MappingProxyTy
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class _ReceiptModel(BaseModel):
+    model_config = ConfigDict(extra="ignore", frozen=True)
+
+
+class _ReceiptRepository(_ReceiptModel):
+    commit_sha: str
+
+
+class _ReceiptTarget(_ReceiptModel):
+    subject_id: str
+
+
+class _ReceiptAttachment(_ReceiptModel):
+    case_id: str
+    attachment_id: str
+
+
+class _ReviewedHandoffReceipt(_ReceiptModel):
+    repository: _ReceiptRepository
+    target: _ReceiptTarget
+    state: str
+    completion_confirmed: bool
+    attachments: tuple[_ReceiptAttachment, ...]
+
+
+@dataclass(frozen=True)
+class _ReviewedHandoffBinding:
+    subject_id: str
+    attachment_mapping: Mapping[str, str]
 
 
 class LivePreflightBlocker(StrictModel):
@@ -205,7 +227,7 @@ class LivePreflightArtifact(StrictModel):
     logical_digest: str = Field(pattern=SHA256_PATTERN)
 
     @model_validator(mode="after")
-    def require_aware_capture_time(self) -> LivePreflightArtifact:
+    def require_aware_capture_time(self, info: ValidationInfo) -> LivePreflightArtifact:
         if self.captured_at.tzinfo is None or self.captured_at.utcoffset() is None:
             raise ValueError("captured_at must include a timezone")
         if self.sut_commit_sha != PINNED_AX_SHA:
@@ -239,7 +261,10 @@ class LivePreflightArtifact(StrictModel):
                 raise ValueError("principal attachment schema requires its capture contract")
             if self.dataset_identity is None:
                 raise ValueError("principal attachment capture requires frozen dataset identity")
-            _validate_principal_attachment_capture(self)
+            _validate_principal_attachment_capture(
+                self,
+                reviewed_binding=_reviewed_binding_from_context(info),
+            )
         else:
             if self.capture_contract is not None:
                 raise ValueError("generic live preflight schema cannot declare a capture contract")
@@ -261,24 +286,30 @@ def build_live_preflight_artifact(
     blockers: tuple[LivePreflightBlocker, ...],
     dataset_identity: DatasetIdentityEvidence | None = None,
     capture_contract: Literal["principal-attachment-preflight-v1"] | None = None,
+    _reviewed_handoff_binding: _ReviewedHandoffBinding | None = None,
 ) -> LivePreflightArtifact:
-    artifact = LivePreflightArtifact(
-        schema_version=(
-            "principal-attachment-preflight-evidence-v1"
-            if capture_contract is not None
-            else "live-preflight-evidence-v1"
-        ),
-        capture_state="captured",
-        capture_contract=capture_contract,
-        run_id=run_id,
-        captured_at=captured_at,
-        evaluation_plane_sha=evaluation_plane_sha,
-        sut_commit_sha=sut_commit_sha,
-        dataset_identity=dataset_identity,
-        corpus_observations=tuple(_sanitize_corpus(item) for item in corpus_observations),
-        parse_observations=tuple(_sanitize_parse(item) for item in parse_observations),
-        blockers=tuple(_sanitize_blocker(item) for item in blockers),
-        logical_digest="sha256:" + "0" * 64,
+    # Pydantic __init__ cannot carry validation context; model_validate keeps the
+    # independently reviewed receipt binding attached to principal validation.
+    artifact = LivePreflightArtifact.model_validate(
+        {
+            "schema_version": (
+                "principal-attachment-preflight-evidence-v1"
+                if capture_contract is not None
+                else "live-preflight-evidence-v1"
+            ),
+            "capture_state": "captured",
+            "capture_contract": capture_contract,
+            "run_id": run_id,
+            "captured_at": captured_at,
+            "evaluation_plane_sha": evaluation_plane_sha,
+            "sut_commit_sha": sut_commit_sha,
+            "dataset_identity": dataset_identity,
+            "corpus_observations": tuple(_sanitize_corpus(item) for item in corpus_observations),
+            "parse_observations": tuple(_sanitize_parse(item) for item in parse_observations),
+            "blockers": tuple(_sanitize_blocker(item) for item in blockers),
+            "logical_digest": "sha256:" + "0" * 64,
+        },
+        context={"reviewed_handoff_binding": _reviewed_handoff_binding},
     )
     return artifact.model_copy(
         update={"logical_digest": canonical_digest(_logical_payload(artifact))}
@@ -296,8 +327,10 @@ def capture_principal_attachment_preflight(
     user_id: str,
     attachment_mapping: Mapping[str, str],
     dataset_validation: DatasetValidationReport,
+    handoff_receipt_path: Path,
     transport: httpx.BaseTransport | None = None,
 ) -> LivePreflightArtifact:
+    reviewed_binding = _load_reviewed_handoff_binding(handoff_receipt_path)
     accepted_dataset_identity: DatasetIdentityEvidence | None = None
 
     def blocked(
@@ -317,6 +350,7 @@ def capture_principal_attachment_preflight(
                 if accepted_dataset_identity is not None
                 else None
             ),
+            reviewed_handoff_binding=reviewed_binding,
         )
 
     if not _is_canonical_uuid(tenant_id) or not _is_canonical_uuid(user_id):
@@ -326,7 +360,7 @@ def capture_principal_attachment_preflight(
                 detail="tenant_or_user_uuid_invalid",
             )
         )
-    if user_id != ACTIVE_OWNER_USER_ID:
+    if user_id != reviewed_binding.subject_id:
         return blocked(
             LivePreflightBlocker(
                 code="EVALUATION_PRINCIPAL_SUBJECT_INVALID",
@@ -342,7 +376,11 @@ def capture_principal_attachment_preflight(
             )
         )
     verification_cases = _verification_cases(dataset_validation)
-    if not _approved_mapping(attachment_mapping, verification_cases):
+    if not _approved_mapping(
+        attachment_mapping,
+        verification_cases,
+        reviewed_binding.attachment_mapping,
+    ):
         return blocked(
             LivePreflightBlocker(
                 code="PARSE_ATTACHMENT_MAPPING_INVALID",
@@ -423,6 +461,7 @@ def capture_principal_attachment_preflight(
         blockers=(),
         dataset_identity=accepted_dataset_identity,
         capture_contract=PRINCIPAL_ATTACHMENT_CAPTURE_CONTRACT,
+        _reviewed_handoff_binding=reviewed_binding,
     )
 
 
@@ -442,8 +481,25 @@ def write_live_preflight_artifact(
     return path
 
 
-def replay_live_preflight_artifact(path: Path) -> dict[str, str | int]:
-    artifact = LivePreflightArtifact.model_validate_json(path.read_text(encoding="utf-8"))
+def replay_live_preflight_artifact(
+    path: Path,
+    *,
+    handoff_receipt_path: Path | None = None,
+) -> dict[str, str | int]:
+    raw_artifact = path.read_text(encoding="utf-8")
+    payload = json.loads(raw_artifact)
+    reviewed_binding: _ReviewedHandoffBinding | None = None
+    if (
+        isinstance(payload, dict)
+        and payload.get("schema_version") == "principal-attachment-preflight-evidence-v1"
+    ):
+        if handoff_receipt_path is None:
+            raise ValueError("principal attachment replay requires the reviewed handoff receipt")
+        reviewed_binding = _load_reviewed_handoff_binding(handoff_receipt_path)
+    artifact = LivePreflightArtifact.model_validate(
+        payload,
+        context={"reviewed_handoff_binding": reviewed_binding},
+    )
     recomputed_digest = canonical_digest(_logical_payload(artifact))
     if artifact.logical_digest != recomputed_digest:
         raise ValueError("artifact logical content does not reproduce its stored digest")
@@ -550,6 +606,7 @@ def _blocked_capture(
     parse_observations: tuple[ParseObservation, ...] = (),
     dataset_identity: DatasetIdentityEvidence | None = None,
     capture_contract: Literal["principal-attachment-preflight-v1"] | None = None,
+    reviewed_handoff_binding: _ReviewedHandoffBinding | None = None,
 ) -> LivePreflightArtifact:
     return build_live_preflight_artifact(
         run_id=run_id,
@@ -561,6 +618,7 @@ def _blocked_capture(
         blockers=(blocker,),
         dataset_identity=dataset_identity,
         capture_contract=capture_contract,
+        _reviewed_handoff_binding=reviewed_handoff_binding,
     )
 
 
@@ -594,11 +652,63 @@ def _classify_parse_failure(error: AxHttpFailure) -> tuple[str, str]:
     return "LIVE_PARSE_OBSERVATION_FAILED", error.failure_code
 
 
-def _validate_principal_attachment_capture(artifact: LivePreflightArtifact) -> None:
+def _load_reviewed_handoff_binding(path: Path) -> _ReviewedHandoffBinding:
+    try:
+        receipt_bytes = path.read_bytes()
+    except OSError as error:
+        raise ValueError("reviewed handoff receipt is unreadable") from error
+
+    actual_digest = hashlib.sha256(receipt_bytes).hexdigest()
+    if actual_digest != REVIEWED_HANDOFF_RECEIPT_SHA256:
+        raise ValueError("reviewed handoff receipt digest does not match the pinned digest")
+
+    try:
+        receipt = _ReviewedHandoffReceipt.model_validate_json(receipt_bytes)
+    except ValueError as error:
+        raise ValueError("reviewed handoff receipt is invalid") from error
+
+    if receipt.state != "COMPLETED" or receipt.completion_confirmed is not True:
+        raise ValueError("reviewed handoff receipt is not completed")
+    if receipt.repository.commit_sha != PINNED_AX_SHA:
+        raise ValueError("reviewed handoff receipt was produced from an unreviewed AX commit")
+    if len(receipt.attachments) != 6:
+        raise ValueError("reviewed handoff receipt must contain exactly six attachments")
+
+    attachment_mapping = {
+        attachment.case_id: attachment.attachment_id for attachment in receipt.attachments
+    }
+    if set(attachment_mapping) != set(REVIEWED_PARSING_SOURCE_EVIDENCE):
+        raise ValueError("reviewed handoff receipt reviewed case mapping is incomplete")
+    if len(attachment_mapping) != len(receipt.attachments) or not all(
+        _is_canonical_uuid(attachment_id) for attachment_id in attachment_mapping.values()
+    ):
+        raise ValueError("reviewed handoff receipt attachment mapping is invalid")
+    if not _is_canonical_uuid(receipt.target.subject_id):
+        raise ValueError("reviewed handoff receipt subject is invalid")
+
+    return _ReviewedHandoffBinding(
+        subject_id=receipt.target.subject_id,
+        attachment_mapping=MappingProxyType(attachment_mapping),
+    )
+
+
+def _reviewed_binding_from_context(info: ValidationInfo) -> _ReviewedHandoffBinding:
+    context = info.context
+    binding = context.get("reviewed_handoff_binding") if isinstance(context, Mapping) else None
+    if not isinstance(binding, _ReviewedHandoffBinding):
+        raise ValueError("principal attachment capture requires reviewed handoff binding")
+    return binding
+
+
+def _validate_principal_attachment_capture(
+    artifact: LivePreflightArtifact,
+    *,
+    reviewed_binding: _ReviewedHandoffBinding,
+) -> None:
     if artifact.corpus_observations:
         raise ValueError("principal attachment capture cannot contain corpus observations")
 
-    expected_probes = tuple(sorted(REVIEWED_PARSING_ATTACHMENT_IDS.items()))
+    expected_probes = tuple(sorted(reviewed_binding.attachment_mapping.items()))
     if len(artifact.parse_observations) > len(expected_probes):
         raise ValueError("principal attachment capture has too many parse observations")
 
@@ -614,6 +724,7 @@ def _validate_principal_attachment_capture(artifact: LivePreflightArtifact) -> N
             artifact_run_id=artifact.run_id,
             document_id=document_id,
             attachment_id=attachment_id,
+            subject_id=reviewed_binding.subject_id,
         )
         if observation.response.attachment_id != attachment_id:
             raise ValueError("principal attachment capture must use the reviewed probe mapping")
@@ -678,6 +789,7 @@ def _validate_principal_attachment_capture(artifact: LivePreflightArtifact) -> N
         artifact_run_id=artifact.run_id,
         document_id=expected_case_id,
         attachment_id=expected_attachment_id,
+        subject_id=reviewed_binding.subject_id,
     )
     tenant_ids.add(blocker.request.tenant_id)
     if len(tenant_ids) != 1:
@@ -730,6 +842,7 @@ def _validate_principal_parse_request(
     artifact_run_id: str,
     document_id: str,
     attachment_id: str,
+    subject_id: str,
 ) -> None:
     if (
         request.operation != "parse"
@@ -739,7 +852,7 @@ def _validate_principal_parse_request(
         or request.attachment_id != attachment_id
     ):
         raise ValueError("principal attachment capture must use the reviewed probe mapping")
-    if request.user_id != ACTIVE_OWNER_USER_ID or request.roles != (PARSING_AUTHORIZATION_ROLE,):
+    if request.user_id != subject_id or request.roles != (PARSING_AUTHORIZATION_ROLE,):
         raise ValueError("principal attachment capture must use the reviewed owner role")
     if not _is_canonical_uuid(request.tenant_id):
         raise ValueError("principal attachment capture must use a canonical tenant UUID")
@@ -882,10 +995,11 @@ def _frozen_dataset_identity(
 def _approved_mapping(
     mapping: Mapping[str, str],
     verification_cases: Mapping[str, ParsingCase],
+    reviewed_mapping: Mapping[str, str],
 ) -> bool:
-    if set(verification_cases) != set(REVIEWED_PARSING_ATTACHMENT_IDS):
+    if set(verification_cases) != set(reviewed_mapping):
         return False
-    if dict(mapping) != dict(REVIEWED_PARSING_ATTACHMENT_IDS):
+    if dict(mapping) != dict(reviewed_mapping):
         return False
     return all(_is_canonical_uuid(value) for value in mapping.values())
 

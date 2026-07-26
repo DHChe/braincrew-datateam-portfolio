@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from datetime import UTC, datetime
@@ -7,8 +8,11 @@ from pathlib import Path
 from typing import Any, cast
 
 import httpx
+import pytest
+from typer.testing import CliRunner
 
 import braincrew.live_preflight as live_preflight
+from braincrew.cli import app
 from braincrew.contracts import ParsingCase
 from braincrew.dataset_registry import validate_dataset_bundle
 from braincrew.digest import canonical_digest
@@ -30,7 +34,9 @@ APPROVED_ATTACHMENTS = {
 
 def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
     validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v2.json")
     assert validation.state == "VALID"
     assert validation.snapshot is not None
@@ -66,6 +72,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
         user_id=OWNER_USER_ID,
         attachment_mapping=APPROVED_ATTACHMENTS,
         dataset_validation=validation,
+        handoff_receipt_path=receipt_path,
         transport=httpx.MockTransport(handler),
     )
 
@@ -119,13 +126,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     assert '"extracted_text"' not in retained
     assert '"text"' not in retained
 
-    replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    replay = _replay_in_process(artifact_path, receipt_path)
 
     assert replay.returncode == 0, replay.stderr
     summary = cast(dict[str, Any], json.loads(replay.stdout))
@@ -146,13 +147,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    invalid_span_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    invalid_span_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert invalid_span_replay.returncode == 2
     assert "Invalid artifact" in invalid_span_replay.stderr
@@ -168,13 +163,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    unsafe_span_id_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    unsafe_span_id_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert unsafe_span_id_replay.returncode == 2
     assert "Invalid artifact" in unsafe_span_id_replay.stderr
@@ -188,13 +177,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    inconsistent_tenant_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    inconsistent_tenant_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert inconsistent_tenant_replay.returncode == 2
     assert "Invalid artifact" in inconsistent_tenant_replay.stderr
@@ -208,13 +191,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    non_parse_payload_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    non_parse_payload_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert non_parse_payload_replay.returncode == 2
     assert "Invalid artifact" in non_parse_payload_replay.stderr
@@ -229,13 +206,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    semantically_invalid_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    semantically_invalid_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert semantically_invalid_replay.returncode == 2
     assert "Invalid artifact" in semantically_invalid_replay.stderr
@@ -248,13 +219,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    incomplete_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    incomplete_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert incomplete_replay.returncode == 2
     assert "Invalid artifact" in incomplete_replay.stderr
@@ -267,13 +232,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    missing_identity_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    missing_identity_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert missing_identity_replay.returncode == 2
     assert "Invalid artifact" in missing_identity_replay.stderr
@@ -286,13 +245,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    tampered_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    tampered_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert tampered_replay.returncode == 2
     assert "Invalid artifact" in tampered_replay.stderr
@@ -300,7 +253,9 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
 
 def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_identity(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
     validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v2.json")
     assert validation.state == "VALID"
 
@@ -317,6 +272,7 @@ def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_iden
         user_id=OWNER_USER_ID,
         attachment_mapping=APPROVED_ATTACHMENTS,
         dataset_validation=validation,
+        handoff_receipt_path=receipt_path,
         transport=httpx.MockTransport(handler),
     )
 
@@ -343,13 +299,7 @@ def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_iden
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    inconsistent_principal_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    inconsistent_principal_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert inconsistent_principal_replay.returncode == 2
     assert "Invalid artifact" in inconsistent_principal_replay.stderr
@@ -364,13 +314,7 @@ def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_iden
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    inconsistent_blocker_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    inconsistent_blocker_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert inconsistent_blocker_replay.returncode == 2
     assert "Invalid artifact" in inconsistent_blocker_replay.stderr
@@ -383,13 +327,7 @@ def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_iden
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    attemptless_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    attemptless_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert attemptless_replay.returncode == 2
     assert "Invalid artifact" in attemptless_replay.stderr
@@ -401,13 +339,7 @@ def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_iden
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    incomplete_replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    incomplete_replay = _replay_in_process(artifact_path, receipt_path)
 
     assert incomplete_replay.returncode == 2
     assert "Invalid artifact" in incomplete_replay.stderr
@@ -420,16 +352,45 @@ def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_iden
     )
     artifact_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    replay = subprocess.run(
-        ["uv", "run", "braincrew-eval", "replay", "--artifact", str(artifact_path)],
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    replay = _replay_in_process(artifact_path, receipt_path)
 
     assert replay.returncode == 2
     assert "Invalid artifact" in replay.stderr
+
+
+def test_real_cli_principal_replay_without_handoff_receipt_refuses(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
+    validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v2.json")
+    assert validation.state == "VALID"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("synthetic endpoint unavailable", request=request)
+
+    artifact = live_preflight.capture_principal_attachment_preflight(
+        run_id="issue-67-real-cli-missing-receipt",
+        captured_at=datetime(2026, 7, 26, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=validation,
+        handoff_receipt_path=receipt_path,
+        transport=httpx.MockTransport(handler),
+    )
+    artifact_path = live_preflight.write_live_preflight_artifact(
+        artifact,
+        tmp_path / "principal-artifact-without-receipt.json",
+    )
+
+    replay = _run_cli_subprocess("replay", "--artifact", str(artifact_path))
+
+    assert replay.returncode == 2
+    assert "requires the reviewed handoff receipt" in replay.stderr
 
 
 def _parse_response(case: ParsingCase, *, attachment_id: str) -> dict[str, Any]:
@@ -454,3 +415,62 @@ def _parse_response(case: ParsingCase, *, attachment_id: str) -> dict[str, Any]:
         "list": None if expected.list is None else expected.list.model_dump(mode="json"),
         "unavailable_fields": [],
     }
+
+
+def _install_reviewed_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Path:
+    receipt_path = tmp_path / "synthetic-reviewed-handoff.json"
+    receipt_path.write_text(
+        json.dumps(
+            {
+                "repository": {"commit_sha": PINNED_AX_SHA},
+                "target": {"subject_id": OWNER_USER_ID},
+                "state": "COMPLETED",
+                "completion_confirmed": True,
+                "attachments": [
+                    {
+                        "case_id": case_id,
+                        "attachment_id": attachment_id,
+                    }
+                    for case_id, attachment_id in APPROVED_ATTACHMENTS.items()
+                ],
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    digest = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+    monkeypatch.setattr(live_preflight, "REVIEWED_HANDOFF_RECEIPT_SHA256", digest)
+    return receipt_path
+
+
+def _replay_in_process(
+    artifact_path: Path,
+    receipt_path: Path,
+) -> subprocess.CompletedProcess[str]:
+    arguments = [
+        "replay",
+        "--artifact",
+        str(artifact_path),
+        "--handoff-receipt",
+        str(receipt_path),
+    ]
+    result = CliRunner().invoke(app, arguments)
+    return subprocess.CompletedProcess(
+        args=arguments,
+        returncode=result.exit_code,
+        stdout=result.stdout,
+        stderr=result.stderr,
+    )
+
+
+def _run_cli_subprocess(*arguments: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["uv", "run", "braincrew-eval", *arguments],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )

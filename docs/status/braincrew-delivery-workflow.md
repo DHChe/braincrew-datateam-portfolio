@@ -532,6 +532,38 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-07-26 — Issue #67 receipt-derived preflight binding entered review repair verification
+
+- Phase: implementation of Braincrew Issue #67 on
+  `feat/issue-67-receipt-derived-preflight-binding`; no Git lifecycle action is authorized in this
+  pane.
+- Active skill or workflow: `test-driven-development`. Cycle 50 introduced the receipt-derived
+  binding; Cycle 52 adds regression observations for two previously uncovered fail-closed guards
+  and makes subprocess test execution explicit without redesigning that implementation.
+- Expected artifact and completion condition: `live_preflight` must recompute the independently
+  reviewed handoff receipt SHA-256, derive the reviewed subject and six case-to-attachment probe
+  mapping only from matching bytes, preserve principal-artifact replay validation through Pydantic
+  context, and pass the six repository verification commands without changing the pinned AX commit
+  or frozen dataset version.
+- Review and repair evidence: Cycle 51 pane 3 returned `REQUEST CHANGES`, and pane 1 independently
+  reproduced both blockers. Cycle 52 now observes the missing-validation-context and missing-replay-
+  receipt refusals directly, replaces 14 subprocess-looking in-process calls with an explicitly named
+  `_replay_in_process` helper, and runs one real `uv run braincrew-eval` subprocess that returns exit
+  code 2 when a principal artifact omits `--handoff-receipt`. The receipt contract set reports
+  `11 passed`, the combined principal contract set reports `34 passed`, and the CLI acceptance set
+  reports `3 passed`. Synthetic fixture identifiers no longer reuse retired operational IDs, both
+  five- and seven-attachment counts are rejected, and the digest-pin monkeypatch uses its default
+  symbol-existence check.
+- Completion evidence: the Cycle 52 repository gates report `65 files already formatted`,
+  `All checks passed!`, no mypy issues in 65 source files, `364 passed`, and a clean
+  `git diff --check`. Correctness of the pinned receipt value is not established by a self-pinned
+  test; it rests on the Stage 11 result plus independent receipt-byte SHA-256 recomputation by panes
+  1, 2, and 3. `braincrew_preflight_ready` remains **`false`** because the live runtime is stopped
+  and the receipt's applied AX commit is not the currently reviewed evaluation SUT commit.
+- Exact next action and entry condition: after the Cycle 52 six-command rerun, hand the uncommitted
+  diff to panes 1 and 3 for independent re-review; both blockers must be closed and the repository
+  gates reproduced before any separately authorized Git proposal.
+
 ### 2026-07-26 — the twelve-stage live apply executed end to end; AX-B is applied and verified
 
 - Phase: live operational execution, Stages 1 through 12, each separately authorized by the user.

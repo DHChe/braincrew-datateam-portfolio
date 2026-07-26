@@ -556,6 +556,15 @@ def replay_fixture(
         Path,
         typer.Option("--artifact", exists=True, dir_okay=False, readable=True),
     ],
+    handoff_receipt_path: Annotated[
+        Path | None,
+        typer.Option(
+            "--handoff-receipt",
+            exists=True,
+            dir_okay=False,
+            readable=True,
+        ),
+    ] = None,
 ) -> None:
     """Recompute a stored fixture artifact's logical result and digest."""
     replay_summary: Mapping[str, object]
@@ -575,7 +584,10 @@ def replay_fixture(
             "live-preflight-evidence-v1",
             "principal-attachment-preflight-evidence-v1",
         }:
-            replay_summary = replay_live_preflight_artifact(artifact_path)
+            replay_summary = replay_live_preflight_artifact(
+                artifact_path,
+                handoff_receipt_path=handoff_receipt_path,
+            )
         else:
             replay_summary = replay_run_artifact(artifact_path)
     except (UnicodeError, ValueError) as error:
