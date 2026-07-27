@@ -1557,6 +1557,35 @@ Likely follow-ups:
 - "Your two panes disagreed about whether the suite passed — how do you know which was right?" — Both were. The test asserted on framework-rendered output that Typer splits into separately styled fragments, so it passed where Rich emitted no escapes and failed where it did. The instructive part is the **wrong inference**: colour was blamed, but `NO_COLOR=1` suppresses colour and **not bold**, so the coupling survives it. Measured across three environments. The fix strips CSI sequences unconditionally, which removes a dependency `NO_COLOR` never would have.
 - "What stops the next test from being environment-coupled?" — The rule this produced: every pre-existing CLI test in this repository asserts on **application-emitted** strings from `typer.echo`, which are plain. This was the first to assert on **framework-generated** output. They are different classes, and only the second needs the strip.
 
+### D15. Run the live capture once, hold it against pre-existing records, and let the reviewer own the verdict
+
+Decision:
+: Phase 1 of the runtime plan executed once on 2026-07-27 under stage-by-stage user authorization: read-only preconditions, `docker compose start` of the exact Stage 9 containers, one committed-command capture (`READY`, digest `sha256:fe38499e…e128e3`), Stage 12-order stop, and an independent review of the artifact itself — the fifth condition `braincrew_preflight_ready` requires. The flag moved to `true` only after that review returned `APPROVE`.
+
+Why:
+: The capturing pane must not accept its own capture as evidence — the same rule the team applies to worker reports. And the artifact's numbers cannot warrant themselves: replay proves integrity and contract validity, not the corpus figures. Their warrant is the cross-check against **Stage 11 records that predate the capture** — the six approval IDs match exactly, 166 matches the post-B total, and Employee's 130 is the `employee_visibility_invariant` re-observed at a byte-identical corpus digest.
+
+Rejected alternative:
+: Flipping the flag on capture success alone — it would make the capturing party the judge of its own evidence. Also rejected: recreating containers with `docker compose up`, which would have broken container-identity continuity with the recorded Stage 9 boundary; `start` reuses the same containers, and all three IDs matched byte-for-byte.
+
+Trade-off:
+: Holding the run until the exposed `OPENAI_API_KEY` was revoked cost minutes on an idle runtime; accepted because revocation, not replacement, closes an exposure, and the capture needed no OpenAI path. The one-shot `migrate` container starting as a compose dependency was a plan deviation, reported with evidence it applied nothing rather than absorbed into the success.
+
+Known failure modes:
+: A capture-side overclaim survived into the evidence set — "never observed before" for a fact Stage 11 had observed a day earlier — and was caught by the reviewer, not the author. Corrected in a supplementary file without rewriting the reviewed originals. An opened precondition (the key hold) was closed in conversation but initially recorded nowhere; an auditor could not close the loop until the disposition was written down.
+
+Validation evidence produced:
+: Reviewer-independent replay; exact set-match of the six `tenant-upload-v1` approval IDs against the receipt and Stage 11; the 36-record Employee gap reconciled to zero (12 tenant records + 24 pre-existing invisible demo records); sanitation checked twice by different methods (longest string 107 chars, no paths, no tokens, no raw text); create-only verified against the live artifact (duplicate capture exits 2).
+
+Validation evidence still required:
+: **No baseline or candidate has run and no quality claim exists.** Issue #15 remains separately authorized. The artifact does not verify its own corpus numbers, does not bind the tenant in-contract, and asserts rather than observes `sut_commit_sha` — each limit is recorded where the flag is defined.
+
+Likely follow-ups:
+
+- "You finally got `READY` — what does it actually license?" — Running Issue #15's pinned baseline/candidate experiment, and nothing else. It is a preflight verdict: the substrate, principal, dataset identity and probe evidence are in the reviewed state. It says nothing about answer quality, and the workflow stopped at `READY` by construction.
+- "What would have happened if a role had been missing the seed version?" — A create-only `NOT_READY` artifact with one typed blocker, preserved and analyzed — and the work would have moved to AX. The negative verdict exists precisely so that outcome is evidence, not a traceback, and repairing inputs mid-run to convert it is the failure mode both governing tickets name.
+- "Why believe the runtime you started is the code you reviewed?" — Three legs: the AX checkout was verified clean at the pinned SHA read-only before start; the containers were the byte-identical Stage 9 set, not recreations; and the schema version matched the pre-B archived dump. The artifact's `sut_commit_sha` alone would not carry this — that is written down as a limit, not discovered later.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

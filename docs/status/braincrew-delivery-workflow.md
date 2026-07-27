@@ -25,11 +25,37 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **[Issue #82](https://github.com/DHChe/braincrew-datateam-portfolio/issues/82) is
-  implemented, reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE` (scoped) with no blocking
-  finding, and published for merge into `develop` under explicit user authorization** (commit → push
-  → pull request → squash merge). Branch `feat/issue-82-capture-command`, cut from
-  `7f3f1bf`. This is **Phase 0** of the authorized live runtime capture: a committed
+- Active phase: **Phase 1 of the authorized live runtime capture executed on 2026-07-27, and
+  `braincrew_preflight_ready` is now `true`.** Under explicit stage-by-stage user authorization, the
+  stopped AX runtime was started (the same containers Stage 9 created — all three container IDs
+  byte-identical), the committed `capture-live-verification` command ran **once** against
+  `http://127.0.0.1:18000`, and the runtime was stopped again in the Stage 12 order with the volume
+  set unchanged at 114.
+  - **Result: exit 0, `readiness=READY`, 3 corpus + 6 parse observations, 0 blockers.** Logical
+    digest `sha256:fe38499e27215c23a43bfeb0f0893f152d18613ef5188fdfeba46ec207e128e3`, reproduced
+    through the committed CLI replay by the capturing pane **and independently by the reviewer**.
+    All three roles truthfully include `braincrew-evaluation-dataset-3.0.0` in
+    `contributing_versions`; Employee's narrower 130-record view is Stage 11's
+    `employee_visibility_invariant` re-observed at the same byte-identical corpus digest. Artifact
+    and evidence live **outside** the repository (`ax-live-verification-evidence/`, 9 files); the
+    repository records this digest and outcome, not the bytes.
+  - **All five conditions the flag requires now hold**, the fifth — independent review of the
+    captured artifact — by the cycle-88 `APPROVE` with no blocking finding. The reviewer corrected
+    the evidence set's one overclaim: the seed-in-all-three-roles *fact* was first observed by Stage
+    11 on 2026-07-26; what is first here is its capture through a committed command into a
+    contract-validated, replayable artifact.
+  - **Scope of the claim, exactly:** replay proves integrity and contract validity, **not** the
+    corpus numbers (their warrant is the Stage 11 cross-check); the tenant is bound by the capture
+    path, not the artifact contract; `sut_commit_sha` is an assertion whose warrant is the Step 1
+    read-only checkout verification. No baseline or candidate ran; **no quality claim exists**;
+    Issue #15 remains separately authorized. One deviation is recorded, not hidden: the one-shot
+    `migrate` container started as a compose dependency and applied nothing (zero alembic upgrade
+    lines; schema version byte-identical to the pre-B archived dump).
+  - AX topology after this: **AX #43 and AX #37 are `CLOSED`** with the evidence; Braincrew #38's
+    formal blocker list is empty and its seven criteria are being assessed for closure.
+- Preceding phase, merged as **`6ec3abc`** (PR #83): **[Issue #82](https://github.com/DHChe/braincrew-datateam-portfolio/issues/82)**
+  — reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE` (scoped). Branch
+  `feat/issue-82-capture-command`, cut from `7f3f1bf`. **Phase 0** of the capture: a committed
   `capture-live-verification` command, so the AX runtime start happens **once** rather than twice.
   Locked in
   [the capture command decision](../decisions/2026-07-27-live-verification-capture-command.md),
@@ -630,6 +656,42 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-27 — Issue #82 merged as `6ec3abc`; Phase 1 executed once, the first live artifact reported READY, and the readiness flag was earned
+
+- Phase: the five-step runtime plan ran under explicit user authorization. Step 1 verified both
+  checkouts clean at their pins, the receipt digest, the volume count (114), and — for the first
+  time by direct read-only query rather than inference — the AX #44 principal row (`is_active=t`,
+  exactly one user in the target tenant). Step 2 started `backend`/`worker`/`clamav` via
+  `docker compose start` deliberately, so Stage 9's containers were **reused, not recreated** — all
+  three container IDs byte-identical to the recorded runtime boundary. Step 3 ran the committed
+  capture once: exit 0, `READY`, digest `sha256:fe38499e…e128e3`, replayed clean. Step 4 stopped
+  the runtime in the Stage 12 order; volumes unchanged. Step 5: AX #43 and AX #37 closed with the
+  evidence; independent review of the artifact returned **`APPROVE`, no blocking finding**.
+- **An incident, reported before proceeding:** the orchestrator printed the live `OPENAI_API_KEY`
+  into the session transcript while inspecting container environment — a BSD-`sed` masking flag
+  failed silently and the output was emitted without confirming the mask. Blast radius: transcript
+  only (verified absent from both repositories at `HEAD`). The run was **held at the operator's
+  choice** until the key was revoked; the capture itself exercises no OpenAI path (six parse +
+  three `corpus_identity` reads, verified in source).
+- **A deviation, reported rather than absorbed:** the plan said three services; **four ran** — the
+  one-shot `migrate` container started as a compose dependency. Evidence it applied nothing: zero
+  alembic `Running upgrade` lines, and the schema version extracted read-only from the **pre-B
+  archived dump** is byte-identical to the current one. Correction recorded for the next run:
+  `docker start <container>` or `--no-deps`.
+- **The review corrected the orchestrator twice more.** The evidence set claimed the
+  seed-in-all-three-roles fact "had never been observed" — Stage 11 observed it a day earlier; the
+  true claim is narrower (first capture through a committed command into a contract-validated
+  artifact). And the brief's arithmetic hint for Employee's 130 was wrong in two places; the
+  reviewer reconciled it exactly (36 = 12 tenant records + 24 pre-existing Employee-invisible demo
+  records) and corroborated it with Stage 11's byte-identical `employee_visibility_invariant`
+  digest. Corrections recorded in `05-independent-review.json` without rewriting the reviewed
+  files.
+- `braincrew_preflight_ready` moved to **`true`** — earned by all five conditions, not by a
+  documentation change: the dated `false` measurements above this entry are preserved unchanged.
+- Not proven: **no baseline or candidate ran, and no quality claim exists.** Issue #15 remains
+  separately authorized. Replay proves integrity, not the corpus numbers; the tenant is bound by
+  the capture path; `sut_commit_sha` is an assertion warranted by the Step 1 checkout check.
 
 ### 2026-07-27 — Issue #80 merged as `7f3f1bf`; Phase 0 of the runtime capture built, and a worker report disagreed with measurement for the first time
 
