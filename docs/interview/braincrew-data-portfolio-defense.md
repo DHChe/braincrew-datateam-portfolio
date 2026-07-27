@@ -1616,6 +1616,36 @@ Likely follow-ups:
 - "Why revert the parsing widening instead of binding version to execution_mode?" — Because the capture does not need it. Six of the thirty Verification cases are parsing and are deliberately fixture-carried, so the only state the widening enabled was a false one. Reverting removes the reachable falsehood; a validator would have preserved an axis nothing uses.
 - "You found a blocker for the very ticket this unblocks — is that a planning failure?" — It is the planning working. #86 is a contradiction between the design specification and its own implementation, invisible until something tried to produce a real mixed-category run. The specification supplies both the contradiction and its resolution: it declares per-case metric *applicability* as a first-class field and fixes Recall@5's Verification denominator at nine, while one function demands that metric from all thirty cases.
 
+### D17. Carry applicability instead of inferring it, and recognise conformance rather than call it a contract change
+
+Decision:
+: `ExperimentCaseResult` carries `applicability: RetrievalApplicability` — required, no default — and the confound check skips a metric only when **both** runs declare it inapplicable. An explicit `Literal`-keyed map resolves `authority_priority` → `authority_ordering`, a validator refuses an inapplicable metric that still carries a value, and applicability drift between runs raises its own mismatch error. Locked in [the conformance decision](../decisions/2026-07-27-confound-applicability-conformance.md); carried out by Issue #86.
+
+Why:
+: The confound check demanded three retrieval metrics from all 30 Verification case pairs, which the 21 non-retrieval cases structurally cannot supply, so a real comparison was `INVALID` by construction and Issue #15 could not produce a decision. **The evaluator's correct behaviour was what triggered it** — the evaluator computes a metric only when the case declares it applicable, and the comparison layer read that deliberate omission as missing. Two layers disagreed about what an absent metric means, and the layer that knew never told the layer that asked.
+
+Rejected alternative:
+: Inferring applicability from the absence of a metric — that would let a genuinely missing metric masquerade as a non-retrieval case, destroying the control while looking like a fix. Also rejected: fixing only the function, leaving the design-document sentence that produced the defect standing for the next implementer.
+
+Trade-off:
+: A required field was added while `schema_version` stayed `experiment-run-summary-v1`. My first justification was that no stored artifact breaks; **independent review rejected that reasoning** — it is a *migration* fact showing the change is cheap now, and it would not justify keeping a version name if the contract's meaning had changed. The correct reason is stronger: the specification's unchanged description of v1 **already** required comparison to fail closed on differing per-case applicability. The code was under-implementing a contract it already had, so this is conformance, not redefinition.
+
+Known failure modes:
+: The confound metric is named `authority_priority` while the applicability field is `authority_ordering`. A silent key miss would make that metric **permanently inapplicable** — a disabled control wearing the appearance of a fix. Both sides of the map are now `Literal`-typed so a rename fails type-checking rather than skipping quietly.
+: A metric declared inapplicable could still carry a value, and the skip meant a difference in that value was never compared. Closed by a validator; neutering it turns three tests red.
+
+Validation evidence produced:
+: A realistic mixed pair — 6 parsing + 9 retrieval + 15 grounded, with the 21 non-retrieval cases declaring the retrieval metrics inapplicable — now produces **`FAIL`**: a gate outcome computed from evidence, with the confound control **still armed on all 9 retrieval cases**. Each of the three states was established by mutation, not reading. Gates: **449 passed**, mypy over 67 source files.
+
+Validation evidence still required:
+: That `FAIL` is arithmetic over synthetic fixture values, not a measurement. **No experiment has run and no quality claim exists.** Phase 1 of Issue #15 remains a separate decision.
+
+Likely follow-ups:
+
+- "You removed a check — how is the comparison not weaker?" — The check was never removed; it was scoped to the cases it can apply to, using a field the dataset already declares and the evaluator already honours. On the 9 retrieval cases it fires exactly as before, verified by mutation on both the missing-value branch and the differing-value branch. What changed is that 21 cases which cannot have a retrieval metric are no longer failed for not having one.
+- "Why amend the specification rather than just the code?" — Because the specification is where the defect came from. One sentence declared the metrics mandatory per case; the code implemented that faithfully. Leaving it standing would recreate the defect the next time someone implemented from the spec. The same document already contained its own resolution — applicability as a first-class per-case field, and a Recall@5 Verification denominator of nine rather than thirty.
+- "How did a contradiction survive in a frozen specification?" — Because nothing had ever tried to produce a real mixed-category run. The fixtures exercised retrieval-bearing cases only, so the contradiction was unreachable until a live capture forced the question. That is an argument for building the thing that produces the evidence early, which is what the two preceding tickets did.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

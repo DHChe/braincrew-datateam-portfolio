@@ -113,6 +113,12 @@ def _run_payload(
                     "mrr_at_10": metric_value,
                     "authority_priority": metric_value,
                 },
+                "applicability": {
+                    "recall_at_5": True,
+                    "mrr_at_10": True,
+                    "authority_ordering": True,
+                    "forbidden_visibility": False,
+                },
                 "latency_ms": latency_ms,
                 "cost_usd": cost_usd,
                 "failures": [],
@@ -120,6 +126,74 @@ def _run_payload(
             for index in range(1, 16)
         ],
     }
+
+
+def _mixed_run_payload(*, role: str, evidence_limit: int) -> dict[str, Any]:
+    payload = _run_payload(role=role, evidence_limit=evidence_limit)
+    inapplicable = {
+        "recall_at_5": False,
+        "mrr_at_10": False,
+        "authority_ordering": False,
+        "forbidden_visibility": False,
+    }
+    retrieval_applicable = {
+        "recall_at_5": True,
+        "mrr_at_10": True,
+        "authority_ordering": True,
+        "forbidden_visibility": False,
+    }
+    parsing_cases = [
+        {
+            "case_id": f"P-VERIFY-{index:03d}",
+            "metrics": {"evidence_span_recovery": "0.80"},
+            "retrieval_metrics": {},
+            "applicability": inapplicable,
+            "latency_ms": "100",
+            "cost_usd": "0.010",
+            "failures": [],
+        }
+        for index in range(1, 7)
+    ]
+    retrieval_cases = [
+        {
+            "case_id": f"R-VERIFY-{index:03d}",
+            "metrics": {"recall_at_5": "0.80"},
+            "retrieval_metrics": {
+                "mrr_at_10": "0.80",
+                "authority_priority": "0.80",
+            },
+            "applicability": retrieval_applicable,
+            "latency_ms": "100",
+            "cost_usd": "0.010",
+            "failures": [],
+        }
+        for index in range(1, 10)
+    ]
+    grounded_cases = []
+    for index in range(1, 16):
+        metrics = {"answer_mode_accuracy": "0.80"}
+        if index <= 10:
+            metrics.update(
+                {
+                    "claim_support_precision": "0.80",
+                    "citation_precision": "0.80",
+                }
+            )
+        if index <= 5:
+            metrics["abstention_accuracy"] = "0.80"
+        grounded_cases.append(
+            {
+                "case_id": f"A-VERIFY-{index:03d}",
+                "metrics": metrics,
+                "retrieval_metrics": {},
+                "applicability": inapplicable,
+                "latency_ms": "100",
+                "cost_usd": "0.010",
+                "failures": [],
+            }
+        )
+    payload["cases"] = [*parsing_cases, *retrieval_cases, *grounded_cases]
+    return payload
 
 
 def test_compare_runs_passes_on_compatible_positive_quality_evidence() -> None:
@@ -166,6 +240,40 @@ def test_run_summary_rejects_non_finite_metric_values(
     payload["cases"][0][field_name][metric_name] = non_finite
 
     with pytest.raises(ValidationError, match="finite number"):
+        ExperimentRunSummary.model_validate(payload)
+
+
+def test_run_summary_requires_declared_retrieval_applicability() -> None:
+    from braincrew.comparison import ExperimentRunSummary
+
+    payload = _run_payload(role="baseline", evidence_limit=3)
+    del payload["cases"][0]["applicability"]
+
+    with pytest.raises(ValidationError, match="Field required"):
+        ExperimentRunSummary.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    ("metric_name", "applicability_field"),
+    [
+        ("recall_at_5", "recall_at_5"),
+        ("mrr_at_10", "mrr_at_10"),
+        ("authority_priority", "authority_ordering"),
+    ],
+)
+def test_case_result_rejects_present_inapplicable_confound_metric(
+    metric_name: str,
+    applicability_field: str,
+) -> None:
+    from braincrew.comparison import ExperimentRunSummary
+
+    payload = _run_payload(role="baseline", evidence_limit=3)
+    payload["cases"][0]["applicability"][applicability_field] = False
+
+    with pytest.raises(
+        ValidationError,
+        match=rf"{metric_name} must be absent when declared inapplicable",
+    ):
         ExperimentRunSummary.model_validate(payload)
 
 
@@ -425,8 +533,12 @@ def test_comparison_is_invalid_when_retrieval_confound_changes() -> None:
         comparison_id="confounded",
     )
 
-    assert comparison.decision == "INVALID"
-    assert comparison.confound_violations == ("SYS-CONFOUND-MRR_AT_10:CASE-001",)
+    expected = ("SYS-CONFOUND-MRR_AT_10:CASE-001",)
+    if comparison.decision != "INVALID" or comparison.confound_violations != expected:
+        pytest.fail(
+            "differing applicable retrieval values must remain a confound: "
+            f"decision={comparison.decision}, confounds={comparison.confound_violations}"
+        )
 
 
 def test_comparison_is_invalid_when_retrieval_confound_evidence_is_missing() -> None:
@@ -445,8 +557,69 @@ def test_comparison_is_invalid_when_retrieval_confound_evidence_is_missing() -> 
         comparison_id="missing-confound-evidence",
     )
 
-    assert comparison.decision == "INVALID"
-    assert comparison.confound_violations == ("SYS-CONFOUND-AUTHORITY_PRIORITY-MISSING:CASE-001",)
+    expected = ("SYS-CONFOUND-AUTHORITY_PRIORITY-MISSING:CASE-001",)
+    if comparison.decision != "INVALID" or comparison.confound_violations != expected:
+        pytest.fail(
+            "missing applicable retrieval evidence must remain a confound: "
+            f"decision={comparison.decision}, confounds={comparison.confound_violations}"
+        )
+
+
+def test_realistic_mixed_verification_cases_ignore_inapplicable_retrieval_confounds() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _mixed_run_payload(role="candidate", evidence_limit=5)
+    for case in candidate_payload["cases"]:
+        if "claim_support_precision" in case["metrics"]:
+            case["metrics"]["claim_support_precision"] = "0.83"
+
+    comparison = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="mixed-verification",
+    )
+
+    if comparison.confound_violations:
+        pytest.fail(
+            "declared-inapplicable parsing and grounded cases must not be confound candidates: "
+            f"{comparison.confound_violations}"
+        )
+    if comparison.decision != "PASS":
+        pytest.fail(f"the realistic mixed comparison must reach PASS, got {comparison.decision}")
+
+
+def test_comparison_is_invalid_when_declared_retrieval_applicability_differs() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _run_payload(role="candidate", evidence_limit=5)
+    candidate_payload["cases"][0]["applicability"]["mrr_at_10"] = False
+    del candidate_payload["cases"][0]["retrieval_metrics"]["mrr_at_10"]
+
+    comparison = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="applicability-mismatch",
+    )
+
+    expected = "SYS-COMPARISON-METRIC-APPLICABILITY-MISMATCH:CASE-001"
+    if expected not in comparison.reasons:
+        pytest.fail(f"declared applicability drift must fail closed with {expected}")
+
+
+def test_authority_priority_confound_maps_to_authority_ordering_applicability() -> None:
+    from braincrew import comparison as comparison_module
+
+    expected = {
+        "recall_at_5": "recall_at_5",
+        "mrr_at_10": "mrr_at_10",
+        "authority_priority": "authority_ordering",
+    }
+    if comparison_module.RETRIEVAL_CONFOUND_APPLICABILITY_FIELDS != expected:
+        pytest.fail(
+            "authority_priority must remain explicitly mapped to authority_ordering applicability"
+        )
 
 
 def test_comparison_is_invalid_when_metric_denominators_differ() -> None:

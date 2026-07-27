@@ -12,6 +12,7 @@ from typer.testing import CliRunner
 
 from braincrew.ax_http_adapter import AxHttpFailure
 from braincrew.comparison import ExperimentCaseResult, ExperimentRunSummary, compare_runs
+from braincrew.contracts import RetrievalApplicability
 from braincrew.dataset_registry import validate_dataset_bundle
 from braincrew.repository import RepositoryState
 
@@ -643,6 +644,12 @@ def test_baseline_and_candidate_capture_provenance_passes_the_existing_compatibi
                     "mrr_at_10": Decimal("0.8"),
                     "authority_priority": Decimal("0.8"),
                 },
+                applicability=RetrievalApplicability(
+                    recall_at_5=True,
+                    mrr_at_10=True,
+                    authority_ordering=True,
+                    forbidden_visibility=False,
+                ),
                 latency_ms=Decimal("1"),
                 cost_usd=Decimal("1"),
                 failures=(),
