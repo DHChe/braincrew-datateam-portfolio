@@ -25,10 +25,33 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **[Issue #80](https://github.com/DHChe/braincrew-datateam-portfolio/issues/80) is
-  implemented, reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE` with no blocking finding,
-  and published for merge into `develop` under explicit user authorization** (commit → push → pull
-  request → squash merge). Branch `feat/issue-80-preflight-readiness-verdict`, cut from `87c0fc4`. The v2 preflight now carries
+- Active phase: **[Issue #82](https://github.com/DHChe/braincrew-datateam-portfolio/issues/82) is
+  implemented, reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE` (scoped) with no blocking
+  finding, and published for merge into `develop` under explicit user authorization** (commit → push
+  → pull request → squash merge). Branch `feat/issue-82-capture-command`, cut from
+  `7f3f1bf`. This is **Phase 0** of the authorized live runtime capture: a committed
+  `capture-live-verification` command, so the AX runtime start happens **once** rather than twice.
+  Locked in
+  [the capture command decision](../decisions/2026-07-27-live-verification-capture-command.md),
+  defended as card **D14**.
+  - **Why it was needed.** The two preceding merges built the artifact and gave it a verdict but left
+    no way to run it — no `src/` caller, no CLI command, v2 absent from the replay dispatch. The only
+    way to capture was to type Python into a terminal, and this project has already repaired a defect
+    of exactly that shape (AX PR #53).
+  - **What the cycle caught that a snippet would have carried into the live run.** `--tenant-id` was
+    an unbound operator keystroke: two captures identical except for the tenant, one on a tenant
+    nobody had reviewed, **both returned `READY` and replayed `READY` forever**. And the command ran
+    from a dirty worktree, stamping a `HEAD` that does not describe the code that ran. Both fixed.
+  - **Where the tenant binding lives, and it matters for what #38 may claim.** The tenant is bound at
+    the **entry point** — not a parameter at all, `--tenant-id` gone with a signature-level test
+    preventing its return, receipt bytes pinned. It is **not** bound in the artifact contract the way
+    the subject is. So #38's AC1 "binds the exact tenant identity" is satisfied **by the capture
+    path, not by the artifact in isolation.**
+  - **Verification:** Ruff, mypy over 65 source files, **416 passed**, reproduced independently, plus
+    a colour/width environment matrix.
+- Preceding phase, merged: **[Issue #80](https://github.com/DHChe/braincrew-datateam-portfolio/issues/80)**
+  as squash commit **`7f3f1bf`** (PR #81), closed manually. Branch
+  `feat/issue-80-preflight-readiness-verdict`, cut from `87c0fc4`. The v2 preflight now carries
   `readiness: READY | NOT_READY`, scoped to that schema, and **may retain one typed blocker when the
   verdict is negative**. This **deliberately reverses** the same-day rule that a v2 artifact may not
   retain blockers; the reversal and its reasoning are locked in
@@ -607,6 +630,50 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-27 — Issue #80 merged as `7f3f1bf`; Phase 0 of the runtime capture built, and a worker report disagreed with measurement for the first time
+
+- Phase: Issue #80 merged (PR #81, squash `7f3f1bf`) and closed manually. Issue #82 implemented on
+  `feat/issue-82-capture-command` across cycles 83–87: implementation → `REQUEST CHANGES` → repair →
+  one extra cycle for a failing test → **`APPROVE` (scoped), no blocking finding**. **Nothing is
+  committed** for #82.
+- **The prerequisite the orchestrator had not measured.** After #80 merged, the recommendation was to
+  request authorization for the AX runtime start. Measuring first showed **there was no way to run
+  the capture** — no `src/` caller, no CLI command, v2 absent from the replay dispatch. Running it
+  would have meant typing Python into a terminal, and AX PR #53 already repaired a defect of exactly
+  that shape. So the plan became two phases, and the runtime start moved behind this ticket.
+- **What Phase 0 caught that a typed snippet would have carried into the live run.**
+  - `--tenant-id` was an unbound operator keystroke. Review ran two captures identical except for the
+    tenant — one on a tenant nobody has ever reviewed — and **both returned `READY` and replayed
+    `READY` forever**. The realistic harm was a **false negative** on a once-only run: a
+    mistyped-but-valid UUID yields 404s → `NOT_READY`, and the runtime plan forbids repairing
+    mid-run, so **an operator typo would have become a preserved artifact that reads exactly like AX
+    genuinely failing**, with the single output path burned.
+  - The command ran from a **dirty worktree**, stamping a `HEAD` that does not describe the code that
+    ran — and replay validates the SHA's *format*, never its relationship to a tree. Every other
+    artifact-producing path in this repository records `dirty_worktree`; this one discarded it.
+- **First time a worker report disagreed with orchestrator measurement.** The repair reported
+  `416 passed`; the orchestrator measured `1 failed, 415 passed` on the same tree. **Neither was
+  miscounting** — the test asserted on framework-rendered output that Typer splits into separately
+  styled fragments, so it passed where Rich emitted no escapes and failed where it did.
+  - **The orchestrator's diagnosis was itself wrong in its mechanism**, and review corrected it:
+    colour was blamed, but `NO_COLOR=1` suppresses colour and **not bold**, so the coupling survives
+    it. Only `TERM=dumb` yields plain output. The wrong inference would have made `NO_COLOR=1` look
+    like a sufficient guard in future work.
+  - Rule recorded: this repository's existing CLI tests assert on **application-emitted** strings from
+    `typer.echo`, which are plain. This was the first to assert on **framework-generated** output.
+    Different classes; only the second needs CSI stripping.
+- **Scope discipline in review.** Pane 3's usage window had limited headroom, so cycle 87 was
+  deliberately narrowed to four questions and its verdict **states the reduced scope and what it does
+  not re-assert**. A review that dies halfway is worth nothing; an approval read more broadly than it
+  was earned is worse.
+- Documentation: locked in `docs/decisions/2026-07-27-live-verification-capture-command.md`, defended
+  as card **D14**. Carried forward there: the repository-internal `--output` path, the wrong-`base-url`
+  verdict question, the triple receipt read, provenance the artifact structurally cannot carry, and
+  the `PROJECT_ROOT` wheel-install fragility.
+- Not proven: **nothing was captured.** `braincrew_preflight_ready` stays `false`. Phase 1 — the
+  authorized AX runtime start — remains a separate decision, and AX #37 and AX #43 remain open formal
+  blockers of Issue #38.
 
 ### 2026-07-27 — Issue #77 merged as `87c0fc4`; Issue #80 gave the verdict a negative value, and a coverage justification was found to have expired
 

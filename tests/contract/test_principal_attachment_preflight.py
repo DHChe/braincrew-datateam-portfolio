@@ -1659,7 +1659,10 @@ def _write_reviewed_receipt(tmp_path: Path) -> Path:
         json.dumps(
             {
                 "repository": {"commit_sha": PINNED_AX_SHA},
-                "target": {"subject_id": OWNER_USER_ID},
+                "target": {
+                    "subject_id": OWNER_USER_ID,
+                    "tenant_id": TENANT_ID,
+                },
                 "state": "COMPLETED",
                 "completion_confirmed": True,
                 "attachments": [

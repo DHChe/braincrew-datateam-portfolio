@@ -1527,6 +1527,36 @@ Likely follow-ups:
 - "Why does a `READY` artifact still say nothing about how much corpus AX returned?" — Because `corpus_id`, `corpus_digest`, `inventory_count` and `counts` are runtime-observed and no frozen expectation exists for them. **A `READY` artifact is compatible with an empty inventory**, and that is deliberate: pinning an observation as an expectation converts a measurement into a tautology. Two canary tests hold that line.
 - "How would you catch this class of problem earlier next time?" — By treating a coverage justification that names a structural fact as **expiring when that fact changes**. The rule now written down: adding a call site to a validator whose coverage rests on "the call site is observed" inherits the obligation to observe the new one. Nobody was wrong here; a true statement quietly stopped applying.
 
+### D14. Make the capture runnable before running it, and derive every identity an operator would otherwise type
+
+Decision:
+: A committed `capture-live-verification` command produces the create-only v2 artifact and exits `0` for `READY`, `3` for `NOT_READY` (artifact written), `2` for no artifact. Six inputs are **derived** rather than typed — `captured_at`, the Evaluation Plane SHA, `sut_commit_sha`, the frozen v3 dataset validation, and the **subject, attachment mapping and tenant** from the reviewed receipt. Locked in [the capture command decision](../decisions/2026-07-27-live-verification-capture-command.md); carried out by Issue #82.
+
+Why:
+: The two preceding merges built the artifact and gave it a verdict but left **no way to run it** — no `src/` caller, no CLI command, v2 absent from the replay dispatch. The artifact is meant to be cited as the evidence Issue #38 reached `READY`, and this project has already repaired a defect of exactly that shape: AX PR #53, where evidence was produced by **reimplementing** a runbook's generator instead of running it, and whose check passed only because it compared that script against itself. The authorized runtime start is expensive and manual, so it should happen once — after the entry point exists.
+
+Rejected alternative:
+: Collapsing `NOT_READY` into the CLI's universal exit `2`. All 23 other failure sites mean *we produced nothing*; `NOT_READY` means the artifact **was** written, is valid, and is exactly the evidence the negative verdict was built to produce. Merging them destroys the distinction between "we captured a refusal" and "we failed to capture" — what an operator needs most when the runtime is live. Also rejected: pinning a reviewed-tenant constant, which would be redundant with the receipt-digest pin that already fixes the receipt's bytes.
+
+Trade-off:
+: The tenant is bound at the **entry point**, not in the **artifact contract**. Three barriers close the operator hazard — the tenant is not a parameter at all, `--tenant-id` is gone with a **signature-level** test preventing its return, and altering the receipt's tenant changes bytes the pinned digest refuses. But the *subject* has a validator-level binding the tenant does not, so calling the inner capture directly with an arbitrary tenant still yields an artifact that validates and replays `READY`. Accepted because the ticket put validator changes out of scope, and recorded because **Issue #38's "binds the exact tenant identity" clause is satisfied by the capture path, not by the artifact in isolation.**
+
+Known failure modes:
+: Before the fix, two captures identical except for the tenant — one on a tenant nobody had ever reviewed — **both returned `READY` and replayed `READY` forever**. The realistic harm was a false negative on a once-only run: a mistyped-but-valid UUID yields 404s → `NOT_READY`, and the runtime plan forbids repairing mid-run, so **an operator typo becomes a preserved, create-only, replayable artifact that reads exactly like AX genuinely failing.**
+: The command runs from a dirty worktree unless refused, stamping a `HEAD` that does not describe the code that ran — and replay validates the SHA's *format*, never its relationship to a tree. Every other artifact-producing path in the repository records `dirty_worktree`; this one discarded it. Now refused before capture.
+
+Validation evidence produced:
+: The unreviewed-tenant capture is **impossible to express**: passing a tenant is a `TypeError`, not a rejected value; a signature-level assertion fails on reintroduction even if no behaviour changes; and altering the receipt trips the pinned-digest gate. The dirty-worktree refusal fires before capture and turns a test red when removed. All three exit codes are reachable and mutation-proven. Gates: **416 passed**, mypy over 65 source files.
+
+Validation evidence still required:
+: **Nothing has been captured.** Every observation still comes from `httpx.MockTransport`; no AX runtime was started. `braincrew_preflight_ready` stays `false`. The authorized runtime start remains a separate decision, and AX #37 and AX #43 remain open blockers of Issue #38.
+
+Likely follow-ups:
+
+- "Why spend a whole cycle on a CLI wrapper?" — Because the runtime start is manual, authorized separately, and expensive, and an artifact captured by a typed snippet cannot be cited as the evidence that a gate passed. The cycle also **found two defects that a snippet would have carried into the live run**: an unbound tenant and an unrefused dirty worktree. Neither would have been visible once the artifact existed.
+- "Your two panes disagreed about whether the suite passed — how do you know which was right?" — Both were. The test asserted on framework-rendered output that Typer splits into separately styled fragments, so it passed where Rich emitted no escapes and failed where it did. The instructive part is the **wrong inference**: colour was blamed, but `NO_COLOR=1` suppresses colour and **not bold**, so the coupling survives it. Measured across three environments. The fix strips CSI sequences unconditionally, which removes a dependency `NO_COLOR` never would have.
+- "What stops the next test from being environment-coupled?" — The rule this produced: every pre-existing CLI test in this repository asserts on **application-emitted** strings from `typer.echo`, which are plain. This was the first to assert on **framework-generated** output. They are different classes, and only the second needs the strip.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

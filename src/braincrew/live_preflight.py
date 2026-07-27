@@ -97,6 +97,7 @@ class _ReceiptRepository(_ReceiptModel):
 
 class _ReceiptTarget(_ReceiptModel):
     subject_id: str
+    tenant_id: str
 
 
 class _ReceiptAttachment(_ReceiptModel):
@@ -115,6 +116,7 @@ class _ReviewedHandoffReceipt(_ReceiptModel):
 @dataclass(frozen=True)
 class _ReviewedHandoffBinding:
     subject_id: str
+    tenant_id: str
     attachment_mapping: Mapping[str, str]
 
 
@@ -572,6 +574,33 @@ def capture_live_verification_preflight(
     )
 
 
+def capture_reviewed_live_verification_preflight(
+    *,
+    run_id: str,
+    captured_at: datetime,
+    evaluation_plane_sha: str,
+    sut_commit_sha: str,
+    base_url: str,
+    dataset_validation: DatasetValidationReport,
+    handoff_receipt_path: Path,
+    transport: httpx.BaseTransport | None = None,
+) -> LivePreflightArtifact:
+    reviewed_binding = _load_reviewed_handoff_binding(handoff_receipt_path)
+    return capture_live_verification_preflight(
+        run_id=run_id,
+        captured_at=captured_at,
+        evaluation_plane_sha=evaluation_plane_sha,
+        sut_commit_sha=sut_commit_sha,
+        base_url=base_url,
+        tenant_id=reviewed_binding.tenant_id,
+        user_id=reviewed_binding.subject_id,
+        attachment_mapping=reviewed_binding.attachment_mapping,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=handoff_receipt_path,
+        transport=transport,
+    )
+
+
 def _build_live_verification_artifact(
     *,
     principal_artifact: LivePreflightArtifact,
@@ -835,9 +864,12 @@ def _load_reviewed_handoff_binding(path: Path) -> _ReviewedHandoffBinding:
         raise ValueError("reviewed handoff receipt attachment mapping is invalid")
     if not _is_canonical_uuid(receipt.target.subject_id):
         raise ValueError("reviewed handoff receipt subject is invalid")
+    if not _is_canonical_uuid(receipt.target.tenant_id):
+        raise ValueError("reviewed handoff receipt tenant is invalid")
 
     return _ReviewedHandoffBinding(
         subject_id=receipt.target.subject_id,
+        tenant_id=receipt.target.tenant_id,
         attachment_mapping=MappingProxyType(attachment_mapping),
     )
 

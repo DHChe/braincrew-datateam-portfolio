@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 from datetime import UTC, datetime
+from inspect import signature
 from pathlib import Path
 from typing import Any, cast
 
@@ -11,12 +13,15 @@ import httpx
 import pytest
 from typer.testing import CliRunner
 
+import braincrew.cli as cli
 import braincrew.live_preflight as live_preflight
+from braincrew import corpus_qualification
 from braincrew.cli import app
 from braincrew.contracts import ParsingCase
 from braincrew.dataset_registry import validate_dataset_bundle
 from braincrew.digest import canonical_digest
 from braincrew.parsing_run import load_parsing_dataset
+from braincrew.repository import RepositoryState
 
 PROJECT_ROOT = Path(__file__).parents[2]
 PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
@@ -31,6 +36,7 @@ APPROVED_ATTACHMENTS = {
     "synthetic-rule-019": "07b849ea-5e0a-44f7-87c9-600f539d7d9a",
     "synthetic-rule-020": "569dc67a-5ba8-4a00-a0d8-e03a8ac43449",
 }
+ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
 
 def test_v3_manifest_documents_can_differ_from_reviewed_probes_and_capture_succeeds(
@@ -400,6 +406,290 @@ def test_real_cli_principal_replay_without_handoff_receipt_refuses(
     assert "requires the reviewed handoff receipt" in replay.stderr
 
 
+def test_reviewed_live_verification_capture_derives_receipt_bound_inputs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
+    validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v3.json")
+    capture = getattr(live_preflight, "capture_reviewed_live_verification_preflight", None)
+    if capture is None:
+        pytest.fail("reviewed live verification capture entry point is missing")
+    if "tenant_id" in signature(capture).parameters:
+        pytest.fail("reviewed tenant remains a typed capture input")
+
+    artifact = capture(
+        run_id="issue-82-derived-inputs",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        dataset_validation=validation,
+        handoff_receipt_path=receipt_path,
+        transport=_live_verification_transport(),
+    )
+
+    if artifact.readiness != "READY":
+        pytest.fail(f"receipt-bound capture did not reach READY: {artifact.blockers}")
+    if len(artifact.parse_observations) != 6:
+        pytest.fail("receipt-bound capture did not derive all reviewed attachment mappings")
+    observed_users = {
+        observation.request.user_id
+        for observation in (*artifact.parse_observations, *artifact.corpus_observations)
+    }
+    if observed_users != {OWNER_USER_ID}:
+        pytest.fail(f"receipt-bound capture used unexpected subjects: {sorted(observed_users)}")
+    observed_tenants = {
+        observation.request.tenant_id
+        for observation in (*artifact.parse_observations, *artifact.corpus_observations)
+    }
+    if observed_tenants != {TENANT_ID}:
+        pytest.fail(f"receipt-bound capture used unexpected tenants: {sorted(observed_tenants)}")
+
+
+def test_cli_live_verification_ready_writes_create_only_artifact_and_exits_zero(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
+    output_path = tmp_path / "live-verification-ready.json"
+    capture_calls: list[dict[str, Any]] = []
+
+    def capture_with_mock_transport(**kwargs: Any) -> live_preflight.LivePreflightArtifact:
+        capture_calls.append(kwargs)
+        return live_preflight.capture_live_verification_preflight(
+            **kwargs,
+            tenant_id=TENANT_ID,
+            user_id=OWNER_USER_ID,
+            attachment_mapping=APPROVED_ATTACHMENTS,
+            transport=_live_verification_transport(),
+        )
+
+    monkeypatch.setattr(
+        cli,
+        "capture_reviewed_live_verification_preflight",
+        capture_with_mock_transport,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        cli,
+        "_capture_repository_state",
+        lambda: RepositoryState(commit_sha=EVALUATION_SHA, dirty_worktree=False),
+    )
+
+    result = _capture_live_verification_in_process(
+        output_path=output_path,
+        receipt_path=receipt_path,
+        run_id="issue-82-ready",
+    )
+
+    if result.returncode != 0:
+        pytest.fail(f"READY capture exited {result.returncode}: {result.stderr}")
+    if not output_path.is_file():
+        pytest.fail("READY capture did not write its artifact")
+    summary = cast(dict[str, Any], json.loads(result.stdout))
+    if summary.get("artifact_path") != output_path.name:
+        pytest.fail(f"capture exposed an unexpected artifact path: {summary}")
+    if summary.get("readiness") != "READY":
+        pytest.fail(f"capture summary lost READY: {summary}")
+    if len(capture_calls) != 1:
+        pytest.fail(f"capture command invoked the capture {len(capture_calls)} times")
+    call = capture_calls[0]
+    if call.get("evaluation_plane_sha") != EVALUATION_SHA:
+        pytest.fail("capture command did not derive the current Evaluation Plane SHA")
+    if call.get("sut_commit_sha") != PINNED_AX_SHA:
+        pytest.fail("capture command did not derive the pinned AX SHA")
+    if call.get("handoff_receipt_path") != receipt_path:
+        pytest.fail("capture command did not forward the selected handoff receipt path")
+    dataset_validation = call.get("dataset_validation")
+    if getattr(dataset_validation, "state", None) != "VALID":
+        pytest.fail("capture command did not derive the frozen v3 dataset validation")
+    captured_at = call.get("captured_at")
+    if not isinstance(captured_at, datetime) or captured_at.utcoffset() != UTC.utcoffset(None):
+        pytest.fail("capture command did not derive an aware UTC capture timestamp")
+    if (
+        str(receipt_path) in result.stdout
+        or receipt_path.read_text(encoding="utf-8") in result.stdout
+    ):
+        pytest.fail("capture summary exposed the reviewed receipt path or contents")
+
+    retained = output_path.read_bytes()
+    duplicate = _capture_live_verification_in_process(
+        output_path=output_path,
+        receipt_path=receipt_path,
+        run_id="issue-82-ready",
+    )
+
+    if duplicate.returncode != 2:
+        pytest.fail(f"duplicate capture exited {duplicate.returncode}, expected no-artifact code 2")
+    if output_path.read_bytes() != retained:
+        pytest.fail("duplicate capture overwrote the create-only artifact")
+    if len(capture_calls) != 1:
+        pytest.fail("duplicate output was discovered only after another live capture")
+
+
+def test_cli_live_verification_dirty_worktree_exits_two_before_capture(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
+    output_path = tmp_path / "dirty-worktree-must-not-capture.json"
+
+    def unexpected_capture(**kwargs: Any) -> live_preflight.LivePreflightArtifact:
+        pytest.fail(f"dirty worktree reached capture with arguments: {sorted(kwargs)}")
+
+    monkeypatch.setattr(
+        cli,
+        "capture_reviewed_live_verification_preflight",
+        unexpected_capture,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        cli,
+        "_capture_repository_state",
+        lambda: RepositoryState(commit_sha=EVALUATION_SHA, dirty_worktree=True),
+    )
+
+    result = _capture_live_verification_in_process(
+        output_path=output_path,
+        receipt_path=receipt_path,
+        run_id="issue-82-dirty-worktree",
+    )
+
+    if result.returncode != 2:
+        pytest.fail(f"dirty worktree exited {result.returncode}, expected no-artifact code 2")
+    if output_path.exists():
+        pytest.fail("dirty worktree produced an artifact")
+    if "clean committed Evaluation Plane checkout" not in result.stderr:
+        pytest.fail(f"dirty worktree refusal was not actionable: {result.stderr}")
+
+
+def test_cli_live_verification_output_refuses_a_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
+
+    def unexpected_capture(**kwargs: Any) -> live_preflight.LivePreflightArtifact:
+        pytest.fail(f"directory output reached capture with arguments: {sorted(kwargs)}")
+
+    monkeypatch.setattr(
+        cli,
+        "capture_reviewed_live_verification_preflight",
+        unexpected_capture,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        cli,
+        "_capture_repository_state",
+        lambda: RepositoryState(commit_sha=EVALUATION_SHA, dirty_worktree=False),
+    )
+
+    result = _capture_live_verification_in_process(
+        output_path=tmp_path,
+        receipt_path=receipt_path,
+        run_id="issue-82-directory-output",
+    )
+
+    if result.returncode != 2:
+        pytest.fail(f"directory output exited {result.returncode}, expected usage code 2")
+    if "Invalid value for '--output'" not in result.stderr or "directory" not in result.stderr:
+        pytest.fail(f"directory output was not rejected as an invalid option: {result.stderr}")
+
+
+def test_cli_live_verification_help_has_no_tenant_option() -> None:
+    result = CliRunner().invoke(app, ["capture-live-verification", "--help"])
+
+    if result.exit_code != 0:
+        pytest.fail(f"capture help exited {result.exit_code}: {result.stderr}")
+    if "--tenant-id" in result.stdout:
+        pytest.fail("capture help still exposes the reviewed tenant as an operator input")
+
+
+def test_cli_live_verification_not_ready_writes_artifact_and_exits_three(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
+    output_path = tmp_path / "live-verification-not-ready.json"
+
+    def capture_with_mock_transport(**kwargs: Any) -> live_preflight.LivePreflightArtifact:
+        return live_preflight.capture_live_verification_preflight(
+            **kwargs,
+            tenant_id=TENANT_ID,
+            user_id=OWNER_USER_ID,
+            attachment_mapping=APPROVED_ATTACHMENTS,
+            transport=_live_verification_transport(corpus_failure_status=503),
+        )
+
+    monkeypatch.setattr(
+        cli,
+        "capture_reviewed_live_verification_preflight",
+        capture_with_mock_transport,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        cli,
+        "_capture_repository_state",
+        lambda: RepositoryState(commit_sha=EVALUATION_SHA, dirty_worktree=False),
+    )
+
+    result = _capture_live_verification_in_process(
+        output_path=output_path,
+        receipt_path=receipt_path,
+        run_id="issue-82-not-ready",
+    )
+
+    if result.returncode != 3:
+        pytest.fail(f"NOT_READY capture exited {result.returncode}, expected gate code 3")
+    if not output_path.is_file():
+        pytest.fail("NOT_READY capture did not preserve its artifact")
+    summary = cast(dict[str, Any], json.loads(result.stdout))
+    if summary.get("readiness") != "NOT_READY" or summary.get("blocker_count") != 1:
+        pytest.fail(f"NOT_READY capture summary lost its verdict or blocker: {summary}")
+    replay = live_preflight.replay_live_preflight_artifact(
+        output_path,
+        handoff_receipt_path=receipt_path,
+    )
+    if replay.get("readiness") != "NOT_READY":
+        pytest.fail(f"NOT_READY artifact did not replay its verdict: {replay}")
+
+
+def test_cli_replay_dispatches_live_verification_v2(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
+    validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v3.json")
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-82-v2-replay",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=validation,
+        handoff_receipt_path=receipt_path,
+        transport=_live_verification_transport(),
+    )
+    artifact_path = live_preflight.write_live_preflight_artifact(
+        artifact,
+        tmp_path / "live-verification-v2-replay.json",
+    )
+
+    result = _replay_in_process(artifact_path, receipt_path)
+
+    if result.returncode != 0:
+        pytest.fail(f"v2 CLI replay exited {result.returncode}: {result.stderr}")
+    summary = cast(dict[str, Any], json.loads(result.stdout))
+    if summary.get("readiness") != "READY":
+        pytest.fail(f"v2 CLI replay lost the validated verdict: {summary}")
+    if summary.get("logical_digest") != artifact.logical_digest:
+        pytest.fail(f"v2 CLI replay lost the validated logical digest: {summary}")
+
+
 def _parse_response(case: ParsingCase, *, attachment_id: str) -> dict[str, Any]:
     expected = case.expected
     return {
@@ -442,7 +732,10 @@ def _install_reviewed_receipt(
         json.dumps(
             {
                 "repository": {"commit_sha": PINNED_AX_SHA},
-                "target": {"subject_id": OWNER_USER_ID},
+                "target": {
+                    "subject_id": OWNER_USER_ID,
+                    "tenant_id": TENANT_ID,
+                },
                 "state": "COMPLETED",
                 "completion_confirmed": True,
                 "attachments": [
@@ -490,3 +783,72 @@ def _run_cli_subprocess(*arguments: str) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
     )
+
+
+def _capture_live_verification_in_process(
+    *,
+    output_path: Path,
+    receipt_path: Path,
+    run_id: str,
+) -> subprocess.CompletedProcess[str]:
+    arguments = [
+        "capture-live-verification",
+        "--output",
+        str(output_path),
+        "--run-id",
+        run_id,
+        "--base-url",
+        "https://ax.example.test",
+        "--handoff-receipt",
+        str(receipt_path),
+    ]
+    result = CliRunner().invoke(app, arguments)
+    return subprocess.CompletedProcess(
+        args=arguments,
+        returncode=result.exit_code,
+        stdout=result.stdout,
+        stderr=ANSI_ESCAPE_SEQUENCE.sub("", result.stderr),
+    )
+
+
+def _live_verification_transport(
+    *,
+    corpus_failure_status: int | None = None,
+) -> httpx.MockTransport:
+    cases = _reviewed_probe_cases()
+    attachment_documents = {
+        attachment_id: document_id for document_id, attachment_id in APPROVED_ATTACHMENTS.items()
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/evaluation/corpus-identity":
+            if corpus_failure_status is not None:
+                return httpx.Response(corpus_failure_status, json={"detail": "starting"})
+            role = request.headers["x-ax-roles"]
+            digest_digit = {
+                "Employee": "1",
+                "Executive": "2",
+                "HRPractitioner": "3",
+            }[role]
+            return httpx.Response(
+                200,
+                json={
+                    "schema_version": "ax-corpus-identity-v1",
+                    "corpus_id": f"ax-visible-retrieval:{TENANT_ID}",
+                    "corpus_version": "retrieval-inventory-v1",
+                    "corpus_digest": f"sha256:{digest_digit * 64}",
+                    "principal_roles": [role],
+                    "inventory_count": 6,
+                    "counts": {"record_kind": {"source_chunk": 6}},
+                    "contributing_versions": [corpus_qualification.SEED_VERSION],
+                    "generated_at": "2026-07-27T00:00:00Z",
+                },
+            )
+        attachment_id = request.url.path.split("/")[-2]
+        document_id = attachment_documents[attachment_id]
+        return httpx.Response(
+            200,
+            json=_parse_response(cases[document_id], attachment_id=attachment_id),
+        )
+
+    return httpx.MockTransport(handler)
