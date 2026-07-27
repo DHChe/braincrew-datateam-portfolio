@@ -619,6 +619,124 @@ def test_live_verification_v2_composes_dataset_roles_and_reviewed_probes(
         pytest.fail(f"unexpected parse observation count: {len(artifact.parse_observations)}")
     if artifact.blockers:
         pytest.fail(f"unexpected blockers: {artifact.blockers}")
+    if artifact.readiness != "READY":
+        pytest.fail(f"unexpected readiness verdict: {artifact.readiness}")
+
+
+def test_live_verification_v2_retains_unreviewed_mapping_as_not_ready(
+    dataset_validation: DatasetValidationReport,
+) -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        pytest.fail("unreviewed mapping must block before HTTP")
+
+    mapping = {
+        **APPROVED_ATTACHMENTS,
+        "synthetic-rule-020": "00000000-0000-0000-0000-000000000020",
+    }
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-80-unreviewed-mapping",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=mapping,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=httpx.MockTransport(handler),
+    )
+
+    if requests:
+        pytest.fail(f"unexpected HTTP requests: {requests}")
+    if artifact.readiness != "NOT_READY":
+        pytest.fail(f"unexpected readiness verdict: {artifact.readiness}")
+    if [blocker.code for blocker in artifact.blockers] != ["PARSE_ATTACHMENT_MAPPING_INVALID"]:
+        pytest.fail(f"unexpected blockers: {artifact.blockers}")
+    if artifact.blockers[0].detail != "mapping_missing_malformed_or_unreviewed":
+        pytest.fail(f"unexpected blocker detail: {artifact.blockers[0].detail}")
+
+
+def test_live_verification_v2_retains_unreviewed_subject_as_not_ready(
+    dataset_validation: DatasetValidationReport,
+) -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        pytest.fail("unreviewed subject must block before HTTP")
+
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-80-unreviewed-subject",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=FOREIGN_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=httpx.MockTransport(handler),
+    )
+
+    if requests:
+        pytest.fail(f"unexpected HTTP requests: {requests}")
+    if artifact.readiness != "NOT_READY":
+        pytest.fail(f"unexpected readiness verdict: {artifact.readiness}")
+    if [blocker.code for blocker in artifact.blockers] != ["EVALUATION_PRINCIPAL_SUBJECT_INVALID"]:
+        pytest.fail(f"unexpected blockers: {artifact.blockers}")
+    if artifact.blockers[0].detail != "subject_is_not_reviewed_owner":
+        pytest.fail(f"unexpected blocker detail: {artifact.blockers[0].detail}")
+
+
+def test_live_verification_v2_retains_corpus_transport_failure_as_not_ready(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+) -> None:
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-80-corpus-503",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=_live_verification_transport(corpus_failure_status=503),
+    )
+
+    if artifact.readiness != "NOT_READY":
+        pytest.fail(f"unexpected readiness verdict: {artifact.readiness}")
+    if [blocker.code for blocker in artifact.blockers] != ["LIVE_CORPUS_IDENTITY_FAILED"]:
+        pytest.fail(f"unexpected blockers: {artifact.blockers}")
+    blocker = artifact.blockers[0]
+    if blocker.operation != "corpus_identity" or blocker.case_id != "corpus-Employee":
+        pytest.fail(f"unexpected corpus blocker identity: {blocker}")
+    if blocker.detail != "AX_TRANSIENT_RETRIES_EXHAUSTED":
+        pytest.fail(f"unexpected blocker detail: {blocker.detail}")
+    if [attempt.outcome for attempt in blocker.attempts] != [
+        "retryable_http",
+        "retryable_http",
+        "retryable_http",
+    ]:
+        pytest.fail(f"unexpected blocker attempts: {blocker.attempts}")
+
+    artifact_path = live_preflight.write_live_preflight_artifact(
+        artifact,
+        tmp_path / "not-ready-live-verification-preflight-artifact-v2.json",
+    )
+    replay = live_preflight.replay_live_preflight_artifact(
+        artifact_path,
+        handoff_receipt_path=_reviewed_receipt_path(),
+    )
+    if replay["readiness"] != "NOT_READY":
+        pytest.fail(f"unexpected replay verdict: {replay['readiness']}")
 
 
 def test_live_verification_v2_refuses_role_missing_qualified_seed(
@@ -695,6 +813,7 @@ def test_principal_attachment_schema_still_refuses_corpus_observations(
     )
     payload = artifact.model_dump(mode="json")
     payload["schema_version"] = "principal-attachment-preflight-evidence-v1"
+    payload["readiness"] = None
     payload["capture_contract"] = "principal-attachment-preflight-v1"
     payload["logical_digest"] = canonical_digest(
         {key: value for key, value in payload.items() if key != "logical_digest"}
@@ -710,6 +829,53 @@ def test_principal_attachment_schema_still_refuses_corpus_observations(
             artifact_path,
             handoff_receipt_path=_reviewed_receipt_path(),
         )
+
+
+def test_non_v2_replay_refuses_readiness_verdict(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+) -> None:
+    principal_artifact = live_preflight.capture_principal_attachment_preflight(
+        run_id="issue-80-principal-v1-readiness",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(404, json={"detail": "not_found"})
+        ),
+    )
+    generic_artifact = live_preflight.build_live_preflight_artifact(
+        run_id="issue-80-generic-v1-readiness",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        corpus_observations=(),
+        parse_observations=(),
+        blockers=(live_preflight.LivePreflightBlocker(code="LIVE_VERIFICATION_BLOCKED"),),
+    )
+
+    for schema_name, artifact in (
+        ("principal-v1", principal_artifact),
+        ("generic-v1", generic_artifact),
+    ):
+        artifact_path = _write_tampered_artifact(
+            artifact,
+            tmp_path,
+            name=f"{schema_name}-readiness",
+            mutate=lambda payload: payload.update(readiness="READY"),
+        )
+
+        with pytest.raises(ValueError, match="only live verification schema may declare readiness"):
+            live_preflight.replay_live_preflight_artifact(
+                artifact_path,
+                handoff_receipt_path=_reviewed_receipt_path(),
+            )
 
 
 @pytest.mark.parametrize(
@@ -898,7 +1064,7 @@ def test_live_verification_v2_replay_requires_frozen_dataset_identity(
         )
 
 
-def test_live_verification_v2_replay_refuses_retained_blocker(
+def test_live_verification_v2_replay_refuses_retained_blocker_when_ready(
     dataset_validation: DatasetValidationReport,
     tmp_path: Path,
 ) -> None:
@@ -916,7 +1082,398 @@ def test_live_verification_v2_replay_refuses_retained_blocker(
         mutate=mutate,
     )
 
-    with pytest.raises(ValueError, match="cannot retain blockers"):
+    with pytest.raises(ValueError, match="READY live verification capture cannot retain blockers"):
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("missing_readiness", "requires a readiness verdict"),
+        ("not_ready_without_blocker", "NOT_READY live verification capture requires a blocker"),
+        ("multiple_blockers", "requires at most one terminal blocker"),
+    ],
+)
+def test_live_verification_v2_replay_refuses_readiness_contradictions(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+    mutation: str,
+    message: str,
+) -> None:
+    def mutate(payload: dict[str, Any]) -> None:
+        if mutation == "missing_readiness":
+            payload["readiness"] = None
+        elif mutation == "not_ready_without_blocker":
+            payload["readiness"] = "NOT_READY"
+        else:
+            blocker = live_preflight.LivePreflightBlocker(
+                code="LIVE_VERIFICATION_BLOCKED"
+            ).model_dump(mode="json")
+            payload["readiness"] = "NOT_READY"
+            payload["blockers"] = [blocker, blocker]
+
+    artifact_path = _write_tampered_live_verification_artifact(
+        dataset_validation,
+        tmp_path,
+        name=f"readiness-{mutation}",
+        mutate=mutate,
+    )
+
+    with pytest.raises(ValueError, match=message):
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
+
+
+def test_live_verification_v2_replay_refuses_forged_pre_probe_blocker_detail(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+) -> None:
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-80-forged-pre-probe-blocker",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=FOREIGN_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=httpx.MockTransport(
+            lambda request: pytest.fail(f"unexpected HTTP request: {request}")
+        ),
+    )
+
+    artifact_path = _write_tampered_artifact(
+        artifact,
+        tmp_path,
+        name="forged-pre-probe-blocker",
+        mutate=lambda payload: payload["blockers"][0].update(detail="forged_detail"),
+    )
+
+    with pytest.raises(ValueError, match="pre-probe live verification blocker is inconsistent"):
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
+
+
+def test_live_verification_v2_replay_keeps_principal_blocker_validation(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+) -> None:
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-80-forged-principal-blocker",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(404, json={"detail": "not_found"})
+        ),
+    )
+
+    artifact_path = _write_tampered_artifact(
+        artifact,
+        tmp_path,
+        name="forged-principal-blocker",
+        mutate=lambda payload: payload["blockers"][0].update(detail="forged_detail"),
+    )
+
+    with pytest.raises(ValueError, match="blocker contradicts its terminal attempt"):
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
+
+
+def test_live_verification_v2_replay_refuses_corpus_evidence_after_principal_blocker(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+) -> None:
+    blocked_artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-80-principal-blocked-with-corpus",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=FOREIGN_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=httpx.MockTransport(
+            lambda request: pytest.fail(f"unexpected HTTP request: {request}")
+        ),
+    )
+    ready_artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-80-principal-blocked-with-corpus",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=_live_verification_transport(),
+    )
+
+    artifact_path = _write_tampered_artifact(
+        blocked_artifact,
+        tmp_path,
+        name="principal-blocked-with-corpus",
+        mutate=lambda payload: payload.update(
+            corpus_observations=[
+                observation.model_dump(mode="json")
+                for observation in ready_artifact.corpus_observations
+            ]
+        ),
+    )
+
+    with pytest.raises(ValueError, match="principal-blocked live verification"):
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
+
+
+def test_live_verification_v2_replay_refuses_duplicate_completed_corpus_role(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+) -> None:
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-80-duplicate-completed-corpus-role",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=_live_verification_transport(
+            corpus_failure_status=503,
+            corpus_failure_role="HRPractitioner",
+        ),
+    )
+
+    def mutate(payload: dict[str, Any]) -> None:
+        observation = payload["corpus_observations"][1]
+        request = observation["request"]
+        context = observation["context"]
+        response = observation["response"]
+        request["roles"] = ["Employee"]
+        request["case_id"] = "corpus-Employee"
+        request["eval_correlation_id"] = "issue-80-duplicate-completed-corpus-role-corpus-Employee"
+        context["case_id"] = request["case_id"]
+        context["eval_correlation_id"] = request["eval_correlation_id"]
+        response["principal_roles"] = ["Employee"]
+        observation["response_digest"] = canonical_digest(response)
+
+    artifact_path = _write_tampered_artifact(
+        artifact,
+        tmp_path,
+        name="duplicate-completed-corpus-role",
+        mutate=mutate,
+    )
+
+    with pytest.raises(ValueError, match="completed corpus role prefix is inconsistent"):
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
+
+
+def test_live_verification_v2_replay_requires_blocker_to_name_next_corpus_role(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+) -> None:
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-80-blocker-next-corpus-role",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=_live_verification_transport(
+            corpus_failure_status=503,
+            corpus_failure_role="HRPractitioner",
+        ),
+    )
+
+    def mutate(payload: dict[str, Any]) -> None:
+        blocker = payload["blockers"][0]
+        blocker["case_id"] = "corpus-Employee"
+        blocker["request"]["roles"] = ["Employee"]
+        blocker["request"]["case_id"] = "corpus-Employee"
+        blocker["request"]["eval_correlation_id"] = (
+            "issue-80-blocker-next-corpus-role-corpus-Employee"
+        )
+
+    artifact_path = _write_tampered_artifact(
+        artifact,
+        tmp_path,
+        name="blocker-not-next-corpus-role",
+        mutate=mutate,
+    )
+
+    with pytest.raises(ValueError, match="corpus blocker identity is inconsistent"):
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
+
+
+def test_live_verification_v2_replay_refuses_response_correlation_on_timeout_blocker(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+) -> None:
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-80-timeout-blocker-correlation",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=_live_verification_transport(corpus_failure_status=503),
+    )
+
+    def mutate(payload: dict[str, Any]) -> None:
+        terminal_attempt = payload["blockers"][0]["attempts"][-1]
+        terminal_attempt["outcome"] = "timeout"
+        terminal_attempt["status_code"] = None
+        terminal_attempt["response_correlation_id"] = HOSTILE_CORRELATION_DIGEST
+
+    artifact_path = _write_tampered_artifact(
+        artifact,
+        tmp_path,
+        name="timeout-blocker-with-response-correlation",
+        mutate=mutate,
+    )
+
+    with pytest.raises(ValueError, match="cannot declare a response correlation"):
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
+
+
+def test_live_verification_v2_replay_refuses_foreign_tenant_corpus_blocker(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+) -> None:
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-80-foreign-tenant-corpus-blocker",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=_live_verification_transport(corpus_failure_status=503),
+    )
+
+    artifact_path = _write_tampered_artifact(
+        artifact,
+        tmp_path,
+        name="foreign-tenant-corpus-blocker",
+        mutate=lambda payload: payload["blockers"][0]["request"].update(
+            tenant_id=FOREIGN_TENANT_ID
+        ),
+    )
+
+    with pytest.raises(ValueError, match="one tenant identity"):
+        live_preflight.replay_live_preflight_artifact(
+            artifact_path,
+            handoff_receipt_path=_reviewed_receipt_path(),
+        )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("code", "corpus blocker identity is inconsistent"),
+        ("case_id", "corpus blocker identity is inconsistent"),
+        ("request_case_id", "corpus request identity is inconsistent"),
+        ("missing_request", "corpus blocker requires its canonical request"),
+        ("missing_dataset_identity", "corpus blocker requires frozen dataset identity"),
+        ("terminal_success", "corpus blocker contradicts its terminal attempt"),
+        ("missing_detail", "corpus blocker requires a typed detail"),
+        ("detail", "corpus blocker contradicts its terminal attempt"),
+    ],
+)
+def test_live_verification_v2_replay_refuses_forged_corpus_blocker(
+    dataset_validation: DatasetValidationReport,
+    tmp_path: Path,
+    mutation: str,
+    message: str,
+) -> None:
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id=f"issue-80-forged-corpus-blocker-{mutation}",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=_live_verification_transport(corpus_failure_status=503),
+    )
+
+    def mutate(payload: dict[str, Any]) -> None:
+        blocker = payload["blockers"][0]
+        if mutation == "code":
+            blocker["code"] = "LIVE_VERIFICATION_BLOCKED"
+        elif mutation == "case_id":
+            blocker["case_id"] = "corpus-Executive"
+        elif mutation == "request_case_id":
+            blocker["request"]["case_id"] = "corpus-Executive"
+        elif mutation == "missing_request":
+            blocker["request"] = None
+        elif mutation == "missing_dataset_identity":
+            payload["dataset_identity"] = None
+        elif mutation == "terminal_success":
+            blocker["attempts"][-1]["outcome"] = "success"
+            blocker["attempts"][-1]["status_code"] = 200
+        elif mutation == "missing_detail":
+            blocker["detail"] = None
+        else:
+            blocker["detail"] = "AX_REQUEST_FAILURE"
+
+    artifact_path = _write_tampered_artifact(
+        artifact,
+        tmp_path,
+        name=f"forged-corpus-blocker-{mutation}",
+        mutate=mutate,
+    )
+
+    with pytest.raises(ValueError, match=message):
         live_preflight.replay_live_preflight_artifact(
             artifact_path,
             handoff_receipt_path=_reviewed_receipt_path(),
@@ -931,20 +1488,26 @@ def test_live_verification_capture_aborts_before_corpus_when_parse_is_blocked(
             pytest.fail("blocked parsing probes must abort before corpus capture")
         return httpx.Response(404, json={"detail": "not_found"})
 
-    with pytest.raises(ValueError, match="requires successful parsing probes"):
-        live_preflight.capture_live_verification_preflight(
-            run_id="issue-77-blocked-parse",
-            captured_at=datetime(2026, 7, 27, tzinfo=UTC),
-            evaluation_plane_sha=EVALUATION_SHA,
-            sut_commit_sha=PINNED_AX_SHA,
-            base_url="https://ax.example.test",
-            tenant_id=TENANT_ID,
-            user_id=OWNER_USER_ID,
-            attachment_mapping=APPROVED_ATTACHMENTS,
-            dataset_validation=dataset_validation,
-            handoff_receipt_path=_reviewed_receipt_path(),
-            transport=httpx.MockTransport(handler),
-        )
+    artifact = live_preflight.capture_live_verification_preflight(
+        run_id="issue-77-blocked-parse",
+        captured_at=datetime(2026, 7, 27, tzinfo=UTC),
+        evaluation_plane_sha=EVALUATION_SHA,
+        sut_commit_sha=PINNED_AX_SHA,
+        base_url="https://ax.example.test",
+        tenant_id=TENANT_ID,
+        user_id=OWNER_USER_ID,
+        attachment_mapping=APPROVED_ATTACHMENTS,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=_reviewed_receipt_path(),
+        transport=httpx.MockTransport(handler),
+    )
+
+    if artifact.readiness != "NOT_READY":
+        pytest.fail(f"unexpected readiness verdict: {artifact.readiness}")
+    if [blocker.code for blocker in artifact.blockers] != ["PARSE_ATTACHMENT_MAPPING_INVALID"]:
+        pytest.fail(f"unexpected blockers: {artifact.blockers}")
+    if artifact.blockers[0].detail != "attachment_not_found":
+        pytest.fail(f"unexpected blocker detail: {artifact.blockers[0].detail}")
 
 
 def _write_tampered_live_verification_artifact(
@@ -977,9 +1540,28 @@ def _write_tampered_live_verification_artifact(
     return artifact_path
 
 
+def _write_tampered_artifact(
+    artifact: live_preflight.LivePreflightArtifact,
+    tmp_path: Path,
+    *,
+    name: str,
+    mutate: Callable[[dict[str, Any]], None],
+) -> Path:
+    payload = artifact.model_dump(mode="json")
+    mutate(payload)
+    payload["logical_digest"] = canonical_digest(
+        {key: value for key, value in payload.items() if key != "logical_digest"}
+    )
+    artifact_path = tmp_path / f"{name}.json"
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+    return artifact_path
+
+
 def _live_verification_transport(
     *,
     missing_seed_role: str | None = None,
+    corpus_failure_status: int | None = None,
+    corpus_failure_role: str | None = None,
 ) -> httpx.MockTransport:
     cases = _reviewed_probe_cases()
     attachments = _attachment_documents()
@@ -987,6 +1569,13 @@ def _live_verification_transport(
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/v1/evaluation/corpus-identity":
             role = request.headers["x-ax-roles"]
+            if corpus_failure_status is not None and (
+                corpus_failure_role is None or role == corpus_failure_role
+            ):
+                return httpx.Response(
+                    corpus_failure_status,
+                    json={"detail": "starting"},
+                )
             role_digest_digit = {
                 "Employee": "1",
                 "Executive": "2",

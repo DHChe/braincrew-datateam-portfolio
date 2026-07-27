@@ -1496,6 +1496,37 @@ Likely follow-ups:
 - "How do you know your tests are real and not decoration?" — By deleting the thing they defend. The five-line reuse that carried the reviewed-subject binding, single-tenant rule, frozen timeout, probe-set completeness, and the parse-evidence, span and attempt checks for the **entire** v2 contract could be removed with the suite still at `370 passed`. Reading it would never have shown that; disabling it did. This is the **fifth** instance of that shape recorded here, and every one was found by mutation.
 - "Why is the corpus response barely validated compared with the request?" — Because the request is ours and the response is the SUT's. We can pin every field we send, and we have. Pinning what AX returns for `inventory_count` or `corpus_digest` would freeze an observation into an expectation and turn a genuine measurement into a tautology — the exact failure this repository has recorded four times over.
 
+### D13. Make the readiness verdict a judgment, which meant reversing a decision locked the same day
+
+Decision:
+: The v2 preflight carries `readiness: Literal["READY", "NOT_READY"] | None`, scoped to that schema, and **may retain one typed blocker when the verdict is negative**. Corpus fetch failures become a typed `LIVE_CORPUS_IDENTITY_FAILED` blocker rather than an escaping adapter exception. Locked in [the readiness verdict decision](../decisions/2026-07-27-live-verification-readiness-verdict.md); carried out by Issue #80. This **deliberately reverses** [D12](#d12-compose-the-two-identity-axes-into-a-third-schema-and-bind-both-halves-to-one-principal)'s rule that a v2 artifact may not retain blockers.
+
+Why:
+: Issue #38 asks the artifact to report `READY`. The obvious implementation would have been a **constant, not a judgment**: measured before the work, a v2 artifact could exist *only* on complete success — every failure path produced no artifact at all — so `Literal["READY"]` would have been true in every artifact that could ever exist, unobservable by any test. That is the tautology shape this repository has recorded five times, the most recent one in this very contract two cycles earlier. Criteria 4 and 6 turned out to be one problem: a verdict needs something to say when it is negative, and criterion 4 already named it — a stable typed blocker.
+
+Rejected alternative:
+: A separate report layer computing readiness from the artifact — with no artifact there is nothing to compute from, and "the corpus endpoint was down" still surfaces as a bare traceback. Also rejected: keeping the schema success-only and declaring readiness implicit, which fails criterion 4 and makes the *absence* of evidence the carrier of meaning.
+
+Trade-off:
+: A field on a shared model that serves three schemas needed an explicit scoping rule, which is a clause that exists only to say where a field does *not* belong. Accepted because the repository already had the precedent — `capture_contract` is refused on the generic schema by name — and because the alternative was measured to be worse: a genuinely blocked v1 capture with `"readiness": "READY"` inserted **replayed clean** and reported `{"blocker_count": 1, "readiness": "READY"}`, the exact contradiction v2 refuses.
+
+Known failure modes:
+: **A coverage justification can expire without anyone being wrong.** D12's decision left six attempt-evidence clauses untested and justified it explicitly — *"the validator's call site is observed: detaching it turns three tests red."* This change added a **second** call site, where detaching turned **zero** red. Two of the re-opened clauses were the headline findings of the two prior reviews: the one-tenant-across-both-halves rule, and the privacy clause forbidding a failed request from claiming a response correlation id. Disabling the corpus-blocker tenant fold left the suite **fully green at 405 passed**.
+: The reversal itself is a strict narrowing — `if blockers: raise` became `if readiness == "READY" and blockers: raise` — so a `READY` artifact is still validated by exactly the path D12 locked. The relaxation of `dataset_identity` on the negative side is compensated by three branches, each observed by a test, not dropped.
+
+Validation evidence produced:
+: `NOT_READY` is a **real discriminator**, established by capture rather than by reading the type: four distinct shapes, three negative, all surviving serialization and replay. The strongest is a partial failure — two genuine corpus observations coexisting with a typed blocker for the third role — **a state no success-only schema could represent**. Forcing the verdict positive in source turns **16** tests red, and the logical digest covers the verdict, so a flipped `READY` fails replay.
+: The reversed rule's test was **renamed and re-scoped, not deleted**. Across two review rounds, 30 clauses were disabled one at a time; the three survivors that admitted concrete forgeries were closed by tests, with the source left unchanged because it was already correct.
+
+Validation evidence still required:
+: Everything above comes from `httpx.MockTransport`. **Nothing was captured**; no AX runtime was started. `braincrew_preflight_ready` stays `false` — the preflight can now *report* a verdict, which is not the same as the verdict ever having been `READY` against a live runtime.
+
+Likely follow-ups:
+
+- "You reversed a decision you locked the same day — doesn't that mean the first one was wrong?" — No, and the distinction matters. D12's refusal was **correct for a success-only schema**. What changed was the requirement, not the reasoning. The tell that it was handled as a reversal rather than a mistake is the test: renamed and re-scoped to the new rule, not deleted. Deleting a test whose rule has changed is how a repository loses a protection while its suite stays green.
+- "Why does a `READY` artifact still say nothing about how much corpus AX returned?" — Because `corpus_id`, `corpus_digest`, `inventory_count` and `counts` are runtime-observed and no frozen expectation exists for them. **A `READY` artifact is compatible with an empty inventory**, and that is deliberate: pinning an observation as an expectation converts a measurement into a tautology. Two canary tests hold that line.
+- "How would you catch this class of problem earlier next time?" — By treating a coverage justification that names a structural fact as **expiring when that fact changes**. The rule now written down: adding a call site to a validator whose coverage rests on "the call site is observed" inherits the obligation to observe the new one. Nobody was wrong here; a true statement quietly stopped applying.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

@@ -25,17 +25,33 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **[Issue #77](https://github.com/DHChe/braincrew-datateam-portfolio/issues/77) is
-  implemented, reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE`, and published for merge
-  into `develop` under explicit user authorization** (commit → push → pull request → squash merge).
-  Branch `feat/issue-77-preflight-artifact-v2`, cut from `d429cb1`.
-  `live-verification-preflight-artifact-v2` now exists as a **third** schema, and a `src/` capture
-  path composes the frozen v3 dataset identity, three role corpus observations and the six reviewed
-  parse probes into one create-only artifact.
-  - *This bullet is written to stay true across its own merge.* The previous checkpoint went false
-    the moment its work merged — twice — so this one states the authorized transaction rather than a
-    pre-merge waiting state. The squash commit is recorded in the transition-history entry below
-    once known.
+- Active phase: **[Issue #80](https://github.com/DHChe/braincrew-datateam-portfolio/issues/80) is
+  implemented, reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE` with no blocking finding,
+  and published for merge into `develop` under explicit user authorization** (commit → push → pull
+  request → squash merge). Branch `feat/issue-80-preflight-readiness-verdict`, cut from `87c0fc4`. The v2 preflight now carries
+  `readiness: READY | NOT_READY`, scoped to that schema, and **may retain one typed blocker when the
+  verdict is negative**. This **deliberately reverses** the same-day rule that a v2 artifact may not
+  retain blockers; the reversal and its reasoning are locked in
+  [the readiness verdict decision](../decisions/2026-07-27-live-verification-readiness-verdict.md)
+  and defended as card **D13**.
+  - **Why a verdict could not just be added.** Measured first: a v2 artifact could exist *only* on
+    complete success, so `Literal["READY"]` would have been a **constant, not a judgment** — true in
+    every artifact that could ever exist and unobservable by any test. Issue #38 criteria **4** and
+    **6** turned out to be one problem: a verdict needs something to say when it is negative, and
+    criterion 4 already named it.
+  - **Verification.** Ruff, mypy over 65 source files, **409 passed** (387 → 405 → 409), reproduced
+    independently by the orchestrator. Across two review rounds **30 clauses were disabled one at a
+    time**; the three survivors that admitted concrete forgeries were closed by tests with the source
+    left unchanged. `NOT_READY` is reachable through **three** real capture paths, and forcing the
+    verdict positive in source turns **16** tests red.
+  - **Criteria 4 and 6 are now addressed *in code*. They are not thereby met *in evidence*.**
+- Preceding phase, merged: **[Issue #77](https://github.com/DHChe/braincrew-datateam-portfolio/issues/77)**
+  as squash commit **`87c0fc4`** (PR #79), closed manually. `live-verification-preflight-artifact-v2`
+  exists as a **third** schema and a `src/` capture path composes the frozen v3 dataset identity,
+  three role corpus observations and the six reviewed parse probes into one create-only artifact.
+  - *These bullets are written to stay true across their own merge.* The checkpoint went false the
+    moment its work merged — twice — so it now states the authorized transaction rather than a
+    pre-merge waiting state, and the squash commit is filled in here once known.
   The contract is locked in
   [the v2 contract decision](../decisions/2026-07-27-live-verification-preflight-artifact-v2-contract.md).
   - **What the review cycle actually caught.** The first implementation bound the six parse probes to
@@ -591,6 +607,50 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-27 — Issue #77 merged as `87c0fc4`; Issue #80 gave the verdict a negative value, and a coverage justification was found to have expired
+
+- Phase: Issue #77 merged (PR #79, squash `87c0fc4`) and closed manually. Issue #80 implemented on
+  `feat/issue-80-preflight-readiness-verdict` across cycles 79–82: implementation → `REQUEST
+  CHANGES` → repair → **`APPROVE`, no blocking finding**. **Nothing is committed** for #80.
+- **The ticket existed to prevent a specific mistake.** Issue #38 asks the artifact to report
+  `READY`. Measured before starting: a v2 artifact could exist *only* on complete success, so
+  `Literal["READY"]` would have been a **constant, not a judgment**. Criteria **4** and **6** were
+  therefore one problem — a verdict needs something to say when it is negative, and criterion 4
+  already named it: a stable typed blocker. **Option A** was chosen and the same-day rule that v2 may
+  not retain blockers was **deliberately reversed**, with its test **renamed and re-scoped rather
+  than deleted**.
+- **Blocking finding 1 — a verdict on a shared model is not a bound claim.** `readiness` sat on a
+  model serving three schemas and was validated only in the v2 branch. A **genuinely blocked** v1
+  capture with `"readiness": "READY"` inserted **replayed clean**, reporting
+  `{"blocker_count": 1, "readiness": "READY"}` — the exact contradiction v2 refuses by name. The
+  exposure was inverted: `cli.py` could print the *unvalidated* verdict and could not print the
+  *validated* one. Closed by one clause, following the precedent `capture_contract` already set.
+- **Blocking finding 2 — a coverage justification expired.** #77's decision §8 left six clauses
+  untested and justified it explicitly: *"the validator's call site is observed."* That was true when
+  written. This change added a **second** call site, where detaching turned **zero** tests red. Two
+  of the re-opened clauses were the headline findings of the two prior reviews — the
+  one-tenant-across-both-halves rule and the privacy clause forbidding a failed request from
+  claiming a response correlation id. Disabling the corpus-blocker tenant fold left the suite
+  **fully green at 405 passed**, reproduced independently.
+  - **The rule now written down:** adding a call site to a validator whose coverage rests on "the
+    call site is observed" inherits the obligation to observe the new one. Nobody was wrong; a true
+    statement quietly stopped applying.
+- **Method note — the orchestrator's brief was wrong and the reviewer said so.** Cycle 80's brief
+  listed "`docs/` untouched" as scope discipline to confirm, which conflicts with Issue #80's
+  acceptance criterion 4 requiring a decision document. The reviewer reported it **against the
+  ticket, not against the brief's author**, and correctly separated "does not block the code" from
+  "does block ticket closure." The next brief stated the intended split explicitly. The reviewer also
+  re-ran **all thirty** of its own mutations rather than the two the orchestrator had probed —
+  a repair closing only those two would have looked identical from the orchestrator's side.
+- Documentation: locked in `docs/decisions/2026-07-27-live-verification-readiness-verdict.md`,
+  defended as card **D13**. Carried forward there: nine unobserved clauses (#78), the redundant-pair
+  prefix checks that must not be "simplified" away, the missing v2 CLI surface, the same
+  field-scoping shape on `dataset_identity` for the generic schema, and the fact that the dossier is
+  **load-bearing for two test files**.
+- Not proven: **nothing was captured.** Everything is `httpx.MockTransport`.
+  `braincrew_preflight_ready` stays `false`. A `READY` artifact remains compatible with an empty
+  inventory — deliberate, and in force. AX #37 and AX #43 remain open formal blockers of Issue #38.
 
 ### 2026-07-27 — Issue #77 implemented, rejected, repaired and approved; three errors in the orchestrator's own ticket and briefs were corrected along the way
 
