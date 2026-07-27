@@ -26,7 +26,7 @@ from braincrew.ax_http_adapter import (
     OperationName,
     ParseObservation,
 )
-from braincrew.contracts import ParsingCase
+from braincrew.corpus_qualification import DATASET_V3_COMPONENT_DIGESTS, DATASET_V3_DIGEST
 from braincrew.dataset_registry import DatasetValidationReport
 from braincrew.digest import canonical_digest
 
@@ -43,15 +43,9 @@ PRINCIPAL_ATTACHMENT_CAPTURE_CONTRACT: Literal["principal-attachment-preflight-v
     "principal-attachment-preflight-v1"
 )
 FROZEN_DATASET_ID: Literal["braincrew-evaluation-dataset"] = "braincrew-evaluation-dataset"
-FROZEN_DATASET_VERSION: Literal["2.0.0"] = "2.0.0"
-FROZEN_DATASET_DIGEST = "sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a"
-FROZEN_COMPONENT_DIGESTS: Mapping[str, str] = MappingProxyType(
-    {
-        "parsing": "sha256:a4ce3d2381853288e92cc2fd21df5cfcd9629db39ea134d8314594e146b48127",
-        "retrieval": "sha256:5364cb7d7919304f5ebe78e4b7bd9bf2ed073c5e9f1e84c36f48697c2759fca8",
-        "grounded": "sha256:f3a6f6848cccb4c5bddea8f5f9df9151b08b61b8537054c46afb7855957d3fbe",
-    }
-)
+FROZEN_DATASET_VERSION: Literal["3.0.0"] = "3.0.0"
+FROZEN_DATASET_DIGEST = DATASET_V3_DIGEST
+FROZEN_COMPONENT_DIGESTS: Mapping[str, str] = MappingProxyType(dict(DATASET_V3_COMPONENT_DIGESTS))
 REVIEWED_PARSING_SOURCE_EVIDENCE: Mapping[str, tuple[str, str]] = MappingProxyType(
     {
         "synthetic-rule-015": (
@@ -195,7 +189,7 @@ class DatasetComponentDigests(StrictModel):
 
 class DatasetIdentityEvidence(StrictModel):
     id: Literal["braincrew-evaluation-dataset"]
-    version: Literal["2.0.0"]
+    version: Literal["3.0.0"]
     content_digest: str = Field(pattern=SHA256_PATTERN)
     component_digests: DatasetComponentDigests
 
@@ -375,10 +369,10 @@ def capture_principal_attachment_preflight(
                 detail="dataset_identity_mismatch",
             )
         )
-    verification_cases = _verification_cases(dataset_validation)
+    reviewed_probe_evidence = REVIEWED_PARSING_SOURCE_EVIDENCE
     if not _approved_mapping(
         attachment_mapping,
-        verification_cases,
+        reviewed_probe_evidence,
         reviewed_binding.attachment_mapping,
     ):
         return blocked(
@@ -399,7 +393,7 @@ def capture_principal_attachment_preflight(
         transport=transport,
     )
     observations: list[ParseObservation] = []
-    for document_id in sorted(verification_cases):
+    for document_id in sorted(reviewed_probe_evidence):
         attachment_id = attachment_mapping[document_id]
         try:
             observation = adapter.parse(
@@ -436,7 +430,7 @@ def capture_principal_attachment_preflight(
             )
         evidence_failure = _parse_evidence_failure(
             response=observation,
-            case=verification_cases[document_id],
+            expected_source_digest=reviewed_probe_evidence[document_id][0],
         )
         if evidence_failure is not None:
             code, detail = evidence_failure
@@ -942,21 +936,6 @@ def _validate_principal_parse_attempts(
         raise ValueError("terminal retryable failure requires three exhausted attempts")
 
 
-def _verification_cases(
-    validation: DatasetValidationReport,
-) -> dict[str, ParsingCase]:
-    snapshot = validation.snapshot
-    if validation.state != "VALID" or snapshot is None:
-        return {}
-    if snapshot.manifest.dataset_version != "2.0.0":
-        return {}
-    return {
-        case.document.id: case
-        for case in snapshot.parsing_dataset.cases
-        if case.split == "verification"
-    }
-
-
 def _frozen_dataset_identity(
     validation: DatasetValidationReport,
 ) -> DatasetIdentityEvidence | None:
@@ -994,10 +973,10 @@ def _frozen_dataset_identity(
 
 def _approved_mapping(
     mapping: Mapping[str, str],
-    verification_cases: Mapping[str, ParsingCase],
+    reviewed_probe_evidence: Mapping[str, tuple[str, str]],
     reviewed_mapping: Mapping[str, str],
 ) -> bool:
-    if set(verification_cases) != set(reviewed_mapping):
+    if set(reviewed_probe_evidence) != set(reviewed_mapping):
         return False
     if dict(mapping) != dict(reviewed_mapping):
         return False
@@ -1007,7 +986,7 @@ def _approved_mapping(
 def _parse_evidence_failure(
     *,
     response: ParseObservation,
-    case: ParsingCase,
+    expected_source_digest: str,
 ) -> tuple[str, str] | None:
     parsed = response.response
     if not parsed.parse_available:
@@ -1018,7 +997,6 @@ def _parse_evidence_failure(
         return "LIVE_PARSE_OBSERVATION_FAILED", "parser_identity_missing"
     if (parsed.parser_name, parsed.parser_version) != EXPECTED_PARSER_IDENTITY:
         return "LIVE_PARSE_OBSERVATION_FAILED", "parser_identity_mismatch"
-    expected_source_digest = _text_digest(case.document.canonical_text)
     if (
         parsed.extracted_text is None
         or parsed.extracted_text_digest != expected_source_digest

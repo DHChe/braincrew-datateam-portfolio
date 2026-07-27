@@ -15,7 +15,7 @@ import braincrew.live_preflight as live_preflight
 from braincrew.dataset_registry import DatasetValidationReport, validate_dataset_bundle
 
 PROJECT_ROOT = Path(__file__).parents[2]
-DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v2.json"
+DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v3.json"
 PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
 UNREVIEWED_AX_SHA = "d7930978d7b0cb41668a86acd9fe77c16068801d"
 EVALUATION_SHA = "93c8e8dabab855b7f2f700df73cd04ce38995f29"
@@ -126,7 +126,7 @@ def test_receipt_with_other_than_six_attachments_refuses(
         _capture(dataset_validation, handoff_receipt_path=receipt_path)
 
 
-def test_receipt_missing_a_reviewed_case_refuses_partial_mapping(
+def test_receipt_probe_set_not_matching_reviewed_identity_refuses(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     dataset_validation: DatasetValidationReport,
@@ -139,6 +139,23 @@ def test_receipt_missing_a_reviewed_case_refuses_partial_mapping(
 
     with pytest.raises(ValueError, match="reviewed case mapping is incomplete"):
         _capture(dataset_validation, handoff_receipt_path=receipt_path)
+
+
+def test_approved_mapping_refuses_probe_evidence_not_matching_reviewed_receipt() -> None:
+    mismatched_probe_evidence = {
+        case_id: evidence
+        for case_id, evidence in live_preflight.REVIEWED_PARSING_SOURCE_EVIDENCE.items()
+        if case_id != "synthetic-rule-020"
+    }
+
+    assert (
+        live_preflight._approved_mapping(
+            SYNTHETIC_ATTACHMENTS,
+            mismatched_probe_evidence,
+            SYNTHETIC_ATTACHMENTS,
+        )
+        is False
+    )
 
 
 def test_receipt_subject_different_from_caller_refuses_before_http(
