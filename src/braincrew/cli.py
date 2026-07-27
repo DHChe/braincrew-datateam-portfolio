@@ -4,6 +4,7 @@ import json
 import re
 import subprocess
 from collections.abc import Mapping
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -39,7 +40,12 @@ from braincrew.grounded_run import (
     load_grounded_dataset,
     load_grounded_observations,
 )
-from braincrew.live_preflight import replay_live_preflight_artifact
+from braincrew.live_preflight import (
+    PINNED_AX_SHA,
+    capture_reviewed_live_verification_preflight,
+    replay_live_preflight_artifact,
+    write_live_preflight_artifact,
+)
 from braincrew.parsing_run import (
     execute_parsing_fixture,
     load_parsing_dataset,
@@ -68,6 +74,9 @@ from braincrew.retrieval_run import (
 app = typer.Typer(no_args_is_help=True)
 RUN_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}\Z")
 COMMIT_SHA_PATTERN = re.compile(r"[0-9a-f]{40}\Z")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+FROZEN_DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v3.json"
+NOT_READY_EXIT_CODE = 3
 
 
 def _validate_artifact_id(artifact_id: str, *, label: str) -> None:
@@ -583,6 +592,7 @@ def replay_fixture(
         elif isinstance(payload, dict) and payload.get("schema_version") in {
             "live-preflight-evidence-v1",
             "principal-attachment-preflight-evidence-v1",
+            "live-verification-preflight-artifact-v2",
         }:
             replay_summary = replay_live_preflight_artifact(
                 artifact_path,
@@ -603,6 +613,81 @@ def replay_fixture(
             sort_keys=True,
         )
     )
+
+
+@app.command("capture-live-verification")
+def capture_live_verification(
+    output_path: Annotated[Path, typer.Option("--output", dir_okay=False)],
+    run_id: Annotated[str, typer.Option("--run-id")],
+    base_url: Annotated[str, typer.Option("--base-url")],
+    handoff_receipt_path: Annotated[
+        Path,
+        typer.Option(
+            "--handoff-receipt",
+            exists=True,
+            dir_okay=False,
+            readable=True,
+        ),
+    ],
+) -> None:
+    """Capture the reviewed v2 live preflight artifact create-only.
+
+    Exit 0: READY; replay and record the evidence. Exit 3: NOT_READY artifact
+    created; stop, replay, and inspect its typed blocker. Exit 2: no artifact
+    created; stop and investigate the capture failure before retrying.
+    """
+    _validate_artifact_id(run_id, label="run ID")
+    if output_path.exists():
+        typer.echo(f"Artifact already exists: {output_path.name}", err=True)
+        raise typer.Exit(code=2)
+
+    dataset_validation = validate_dataset_bundle(FROZEN_DATASET_MANIFEST)
+    if dataset_validation.state != "VALID":
+        codes = ",".join(item.code for item in dataset_validation.violations)
+        typer.echo(f"Invalid frozen dataset: {codes}", err=True)
+        raise typer.Exit(code=2)
+
+    evaluation_state = _capture_repository_state()
+    if evaluation_state.dirty_worktree:
+        typer.echo("Capture requires a clean committed Evaluation Plane checkout", err=True)
+        raise typer.Exit(code=2)
+    try:
+        artifact = capture_reviewed_live_verification_preflight(
+            run_id=run_id,
+            captured_at=datetime.now(UTC),
+            evaluation_plane_sha=evaluation_state.commit_sha,
+            sut_commit_sha=PINNED_AX_SHA,
+            base_url=base_url,
+            dataset_validation=dataset_validation,
+            handoff_receipt_path=handoff_receipt_path,
+        )
+        artifact_path = write_live_preflight_artifact(artifact, output_path)
+    except FileExistsError as error:
+        typer.echo(f"Artifact already exists: {output_path.name}", err=True)
+        raise typer.Exit(code=2) from error
+    except ValueError as error:
+        typer.echo(f"Live verification capture rejected: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    except OSError as error:
+        typer.echo("Unable to write live verification artifact", err=True)
+        raise typer.Exit(code=2) from error
+
+    typer.echo(
+        json.dumps(
+            {
+                "artifact_path": artifact_path.name,
+                "blocker_count": len(artifact.blockers),
+                "capture_state": artifact.capture_state,
+                "logical_digest": artifact.logical_digest,
+                "readiness": artifact.readiness,
+                "schema_version": artifact.schema_version,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+    if artifact.readiness == "NOT_READY":
+        raise typer.Exit(code=NOT_READY_EXIT_CODE)
 
 
 @app.command("export-dashboard")
