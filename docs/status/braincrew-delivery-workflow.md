@@ -25,22 +25,24 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **none. [Issue #71](https://github.com/DHChe/braincrew-datateam-portfolio/issues/71)
-  is the next implementable ticket** — re-pin `PINNED_AX_SHA` to the reviewed AX commit. It is
-  labelled `ready-for-agent`, needs no runtime, and is the only fully unblocked item on the critical
-  path.
-- **What the last two merges changed, and what they deliberately did not.** `origin/develop` is
-  `354d5b3`.
+- Active phase: **[Issue #71](https://github.com/DHChe/braincrew-datateam-portfolio/issues/71) is
+  implemented and independently reviewed `APPROVE`, awaiting an authorized Git proposal.**
+  `PINNED_AX_SHA` and the packaged Adapter contract both now name `2bcaee34…`, so **artifacts against
+  today's substrate become constructible once this merges** — they are still not *captured*.
+  - **Next unstarted work is blocked, not queued.** The dataset-identity track needs a human decision
+    plus the AX issue topology below; live capture needs an authorized AX runtime start. There is no
+    fully unblocked implementable ticket after #71 merges.
+- **What the merges before #71 changed, and what they deliberately did not.** `origin/develop` was
+  `354d5b3` when #71 began.
   - `dfc41ff` (#69, Issue #67) — the live preflight now derives the evaluation principal and the
     six-case attachment mapping from the AX handoff receipt, pinning **one** digest that is
     recomputed and refused on mismatch at run time, instead of seven literals that were wrong by
     construction and never checked.
   - `354d5b3` (#70) — `2bcaee3495fd7b3f624398819575cd86a5a15c47` is **reviewed and accepted as the
     SUT commit for evaluation**, which is a different assertion from the provisioning review it
-    already had. The re-pin itself is **not** implemented, so `PINNED_AX_SHA` is still the
-    superseded ancestor `72805930…` and **no artifact captured against today's substrate can be
-    constructed yet.**
-- **`braincrew_preflight_ready` remains `false`, and Issue #71 will not change that.** The re-pin
+    already had. That decision approved the re-pin; **Issue #71 is the change that carries it out**,
+    and until #71 merges `PINNED_AX_SHA` on `develop` is still the superseded ancestor `72805930…`.
+- **`braincrew_preflight_ready` remains `false`, and Issue #71 does not change that.** The re-pin
   makes artifacts *constructible*, not *captured*. Live HTTP parse capture still requires a
   separately authorized AX runtime start, stopped since Stage 12.
 - **Blocked, and blocked on a human decision:** the dataset-identity work. Braincrew
@@ -567,6 +569,47 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-27 — Issue #71 implemented; the re-pin's one real risk turned out to be loud, not silent
+
+- Phase: implementation of Braincrew Issue #71 on `feat/issue-71-repin-evaluation-sut-commit`, based
+  on `931d404`. **Nothing is committed**; independent review is cycle 64 and no Git lifecycle action
+  is authorized.
+- Active skill or workflow: the standing three-pane cycle recorded in `AGENTS.md`. Cycle 63
+  implemented; cycle 64 reviews independently; cycle 65 is integration judgment.
+- Change: `PINNED_AX_SHA` and the packaged Adapter contract's `sut_commit_sha` both move from
+  `72805930…` to `2bcaee34…`, plus seven test files carrying the same assertion. **9 files, 11
+  insertions, 11 deletions** — the whole diff is the value, not its shape. Blast radius re-measured
+  before starting at 39 matching lines across 9 files, unchanged from the ticket's figure.
+- **The ticket's own risk description was wrong, and the correction is worth more than the fix.**
+  Issue #71 warned that a find-and-replace would "silently convert" the unreviewed-commit negative
+  test into something meaningless. Measured: it fails **loudly**. `test_receipt_from_unreviewed_sut_commit_refuses`
+  fed `APPLIED_AX_SHA`, which equals the new pin, so the receipt passes the SUT-commit gate and the
+  assertion reports `DID NOT RAISE`. Reproduced independently by pane 1 in the exact intermediate
+  state: **1 failed, 363 passed.**
+  - So the danger was never detection — it was the **repair decision**. Deleting the test, weakening
+    its `match=`, or re-pointing the constant at the new pin would each have removed the general
+    protection while turning the suite green.
+  - The implementer chose a third SHA, `d7930978…`, which is a **real unreviewed AX commit**
+    ("Assert what the bind mount is, not how Docker spells it"), and renamed the constant
+    `APPLIED_AX_SHA` → `UNREVIEWED_AX_SHA`. The rename is the better half: the old name described
+    what the value *was* at one moment, the new one describes its *role in the test*, which is what
+    stops it rotting the same way again.
+- **Orchestrator error, corrected.** The cycle-63 brief instructed pane 2 to append this status
+  entry, contradicting pane 1's own practice since cycle 54 of owning this file. pane 2 declined,
+  citing the SUT decision's §6, and followed the authority over the brief — which is exactly what
+  "the brief is direction, not authority" exists for. Its citation slightly over-reads §6, whose
+  scope sentence refers to cycle 54 rather than standing policy, but the inconsistency was pane 1's
+  and the entry is written here.
+- Verification: `ruff format --check`, `ruff check`, `mypy` over 65 source files, **364 passed**,
+  clean `git diff --check`, `HEAD` still `931d404`. Run by the implementer and reproduced by pane 1.
+- **`braincrew_preflight_ready` remains `false`.** This makes artifacts *constructible*, not
+  *captured*; live HTTP parse capture still needs a separately authorized AX runtime start. AX #37
+  and #43 also remain open.
+- Exact next action and entry condition: cycle 64 independent review — the negative test still
+  refuses on a genuinely unreviewed SHA, both pinned points moved atomically, the four historical
+  documents are unchanged, and `FROZEN_DATASET_VERSION` and `live_preflight.py:951` are untouched.
+  Only after that does a Git proposal follow.
 
 ### 2026-07-26 — Cycle 55 returned REQUEST CHANGES; two of the three blocking defects were the orchestrator's own
 
