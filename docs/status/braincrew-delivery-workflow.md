@@ -25,44 +25,66 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **[Issue #71](https://github.com/DHChe/braincrew-datateam-portfolio/issues/71) is
-  implemented and independently reviewed `APPROVE`, awaiting an authorized Git proposal.**
-  `PINNED_AX_SHA` and the packaged Adapter contract both now name `2bcaee34…`, so **artifacts against
-  today's substrate become constructible once this merges** — they are still not *captured*.
-  - **Next unstarted work is blocked, not queued.** The dataset-identity track needs a human decision
-    plus the AX issue topology below; live capture needs an authorized AX runtime start. There is no
-    fully unblocked implementable ticket after #71 merges.
-- **What the merges before #71 changed, and what they deliberately did not.** `origin/develop` was
-  `354d5b3` when #71 began.
-  - `dfc41ff` (#69, Issue #67) — the live preflight now derives the evaluation principal and the
-    six-case attachment mapping from the AX handoff receipt, pinning **one** digest that is
-    recomputed and refused on mismatch at run time, instead of seven literals that were wrong by
-    construction and never checked.
-  - `354d5b3` (#70) — `2bcaee3495fd7b3f624398819575cd86a5a15c47` is **reviewed and accepted as the
-    SUT commit for evaluation**, which is a different assertion from the provisioning review it
-    already had. That decision approved the re-pin; **Issue #71 is the change that carries it out**,
-    and until #71 merges `PINNED_AX_SHA` on `develop` is still the superseded ancestor `72805930…`.
-- **`braincrew_preflight_ready` remains `false`, and Issue #71 does not change that.** The re-pin
-  makes artifacts *constructible*, not *captured*. Live HTTP parse capture still requires a
-  separately authorized AX runtime start, stopped since Stage 12.
-- **Blocked, and blocked on a human decision:** the dataset-identity work. Braincrew
-  [Issue #38](https://github.com/DHChe/braincrew-datateam-portfolio/issues/38)'s acceptance criteria
-  contradict themselves — one clause requires nested parsing component `2.0.0` *and* the six reviewed
-  historical Verification cases, and no repository state satisfies both, because the six live under
-  integrated v2 whose parsing component is `1.0.0`. Recorded as a comment on that issue; its body is
-  unchanged. Three questions must be settled before that work starts: which case set the evaluation
-  runs against, which integrated manifest version that implies, and how integrated and nested
-  versions are represented so they cannot be conflated again.
-  - **The human decision is not the only blocker.** Issue #38 formally lists
-    [AX #37](https://github.com/DHChe/AX_portfolio/issues/37) — the operator-controlled snapshot
-    gate — among its blocking issues, and it is still **`OPEN`**, as is the linked
-    [AX #43](https://github.com/DHChe/AX_portfolio/issues/43). That issue topology has to be
-    reconciled alongside the decision, not after it. The SUT-commit decision's §10 already directed
-    this and it has now been omitted from the record twice; it is written here so a third omission
-    is harder.
-- Deferred and tracked, not forgotten: the duplicated literal `"2.0.0"` at `live_preflight.py:951`
-  belongs to the dataset-identity work rather than to Issue #71, and the blast-radius figures in the
-  SUT decision's §6 and §14 were measured at `dfc41ff` and need re-measuring when Issue #71 starts.
+- Active phase: **[Issue #77](https://github.com/DHChe/braincrew-datateam-portfolio/issues/77) is
+  implemented, reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE`, and published for merge
+  into `develop` under explicit user authorization** (commit → push → pull request → squash merge).
+  Branch `feat/issue-77-preflight-artifact-v2`, cut from `d429cb1`.
+  `live-verification-preflight-artifact-v2` now exists as a **third** schema, and a `src/` capture
+  path composes the frozen v3 dataset identity, three role corpus observations and the six reviewed
+  parse probes into one create-only artifact.
+  - *This bullet is written to stay true across its own merge.* The previous checkpoint went false
+    the moment its work merged — twice — so this one states the authorized transaction rather than a
+    pre-merge waiting state. The squash commit is recorded in the transition-history entry below
+    once known.
+  The contract is locked in
+  [the v2 contract decision](../decisions/2026-07-27-live-verification-preflight-artifact-v2-contract.md).
+  - **What the review cycle actually caught.** The first implementation bound the six parse probes to
+    one tenant and reviewed subject and left the three corpus observations bound to **nothing** —
+    moving all three to a different tenant *and* subject was accepted and replayed clean, and a
+    corpus observation with **zero HTTP attempts** was accepted. Separately, the five-line reuse that
+    carried every parse-side protection into the v2 contract could be **deleted with the suite green
+    at `370 passed`**. Both are fixed; the second is now the fifth instance of the self-comparison /
+    unobserved-line shape this repository has recorded, and every one was found by mutation.
+  - **Verification.** Ruff, mypy over 65 source files, **387 passed** (from 370, zero test
+    deletions), `git diff --check` clean — reproduced independently by the orchestrator, not taken
+    from a worker report. Re-review ran **35 mutations across four sweeps**; all eight identity
+    mutations that were accepted before the repair are refused after it, and the two deliberate
+    canaries still pass, proving the fix did not overshoot into invented expectations.
+  - **This closes the last code blocker on #38's own criteria, and #38 still cannot close.** What
+    remains is operational, not implementable: an authorized AX runtime start, and the AX issue
+    topology below. Known gaps carried forward deliberately are in §8 of the v2 contract decision.
+- **What merged since the last checkpoint, and what each one deliberately did not do.**
+  `origin/develop` was `354d5b3` at the previous entry and is now `d429cb1`.
+  - `931d404` (#72) — repaired this checkpoint after it went stale on a merge. **The same failure
+    recurred two cycles later**, which is why this section is now rewritten as part of dispatching a
+    cycle rather than after reporting one.
+  - `2a2f469` (#73, Issue #71) — `PINNED_AX_SHA` and the packaged Adapter contract both now name
+    `2bcaee3495fd7b3f624398819575cd86a5a15c47`, the commit `354d5b3` (#70) had reviewed and accepted
+    **as an evaluation SUT**, which is a different assertion from the provisioning review it already
+    had. Artifacts against today's substrate are now *constructible*. They are still not *captured*.
+  - `a846058` (#74) — separated the two identity axes Issue #38 had compressed into one sentence, and
+    corrected that issue's self-contradictory acceptance clause. The analysis is
+    `docs/decisions/2026-07-27-dataset-identity-axis-analysis.md`.
+  - `d429cb1` (#76, Issue #75) — **Option C, as locked by the owner in that decision's §18.** The
+    manifest now decides what the dataset is; the receipt decides which sources get probed. Frozen
+    integrated identity moved to `3.0.0`, and the probe set was detached from manifest membership.
+    The two halves were atomic: the v3 parsing component's documents and the receipt's six
+    attachments overlap **0 of 6**, so either half alone fails every capture closed.
+- **The dataset-identity work is no longer blocked on a human decision.** §18 of the axis analysis is
+  that decision, and #75 implemented it. **§10 of the same document predates §18 and still reads
+  "Recommendation, not decision" — it is preserved as history and must not be followed.**
+- **`braincrew_preflight_ready` remains `false`, and Issue #77 will not change that.** It builds the
+  artifact shape and proves it against controlled transports; it captures nothing. Live HTTP parse
+  capture still requires a **separately authorized AX runtime start**, stopped since Stage 12.
+- **Still blocked, and blocked on issue topology rather than code:** Issue #38 formally lists
+  [AX #37](https://github.com/DHChe/AX_portfolio/issues/37) — the operator-controlled snapshot gate —
+  among its blocking issues. Verified `OPEN` on 2026-07-27, as is the linked
+  [AX #43](https://github.com/DHChe/AX_portfolio/issues/43). The SUT-commit decision's §10 directed
+  this be reconciled alongside the dataset decision, not after it; it had been omitted from the
+  record twice by the time #72 was written, and it is repeated here so a third omission is harder.
+- Resolved, and recorded so it is not re-opened: the duplicated literal `"2.0.0"` formerly at
+  `live_preflight.py:951` is **gone** — #75 deleted `_verification_cases` outright and the literal
+  went with it, so there is no longer a version string that can drift from the named constant.
 - Completed earlier, unchanged by the above: **the twelve-stage live apply ran to completion on
   2026-07-26 and the runtime boundary is stopped.** AX-B was applied against the live cluster under
   explicit stage-by-stage user authorization. The corpus moved from `14/77/77/154` to
@@ -569,6 +591,71 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-27 — Issue #77 implemented, rejected, repaired and approved; three errors in the orchestrator's own ticket and briefs were corrected along the way
+
+- Phase: TDD implementation of Issue #77 on `feat/issue-77-preflight-artifact-v2`, based on
+  `d429cb1`. **Nothing is committed**; the next step is a separately authorized Git proposal.
+- Cycle 75 implementation → cycle 76 review **`REQUEST CHANGES`** (two blocking defects) → cycle 77
+  repair → cycle 78 re-review **`APPROVE`, no blocking defect**.
+- **Blocking defect 1 — the composition claim was half unverified.** The v2 artifact exists to say
+  *these three things are one observation of one principal boundary*. The corpus half was bound to
+  nothing: all three role observations could name a different tenant **and** a different subject and
+  the artifact validated and replayed clean; a corpus observation with **zero HTTP attempts** was
+  accepted, asserting a role-visible corpus identity with no evidence any request was issued. Fixed
+  by mirroring the parse-side request validator and folding corpus tenants into the **same**
+  `tenant_ids` set, which can only tighten — the rule is `len(tenant_ids) != 1` and threading only
+  ever adds elements.
+- **Blocking defect 2 — the load-bearing line had no test above it.** Deleting the five-line
+  `_validate_principal_attachment_capture` reuse removed the reviewed-subject binding, the
+  single-tenant rule, the frozen timeout, probe-set completeness, and the parse-evidence, span and
+  attempt checks from the **entire** v2 contract, and the suite still reported `370 passed`. Seven of
+  nine refusals on the new path were unobserved. Now all are, plus 21 more.
+- **Three errors of the orchestrator's own, all found by others or by measurement:**
+  - the ticket cited the corpus-observation refusal at `:708`; it is `:703`. Corrected before
+    dispatch.
+  - the ticket claimed that refusal "is currently observed by tests." **It had zero coverage** —
+    `git grep` at `d429cb1` returns one hit, in `src/` only. Caught by review, not by me, in a ticket
+    whose whole premise is that claims must be measured. The implementation's new test is the first
+    that has ever observed it.
+  - the cycle-77 brief said Issue #77 had three comments; it has two. Caught by the implementer.
+- **Method note.** The orchestrator withheld its own findings from the reviewer again, and again the
+  reviewer found something the orchestrator had not — defect 2, the more serious of the two. The
+  orchestrator independently reproduced both defects and both repairs rather than accepting the
+  reports, and verified the reviewer restored the working tree exactly after 35 mutations
+  (`shasum` and `git diff --numstat` both matching).
+- Documentation: the contract is locked in
+  `docs/decisions/2026-07-27-live-verification-preflight-artifact-v2-contract.md` and defended as
+  card **D12**. Known gaps are recorded in §8 of that decision and tracked as a follow-up covering
+  **both** halves, because fixing the corpus side alone would leave the asymmetry it was measured
+  against.
+- Not proven: **nothing was captured.** Every result comes from `httpx.MockTransport`.
+  `braincrew_preflight_ready` stays `false`, no AX runtime was started, and AX #37 remains an open
+  formal blocker of Issue #38.
+
+### 2026-07-27 — Issue #75 merged and closed; Issue #77 dispatched, with two errors in its own ticket corrected first
+
+- Phase: Issue #75 merged as `d429cb1` (#76) and closed manually — this repository's default branch
+  is `main`, so closing keywords never fire on a `develop`-targeted merge. Issue #77 was created,
+  labeled `ready-for-agent`, and its implementation cycle dispatched on
+  `feat/issue-77-preflight-artifact-v2`.
+- **Two defects in the ticket I wrote were found and fixed before the implementer saw it**, both by
+  re-measuring claims rather than re-reading them:
+  - the corpus-observation refusal was cited as `live_preflight.py:708`; on `d429cb1` it is
+    **`:703`**, and `:708` is an unrelated local. The claim was right and only the anchor was wrong,
+    but the anchor sits at exactly the point the ticket tells the implementer to be careful.
+  - acceptance item 2 said the count of production callers of `AxHttpAdapter.corpus_identity()` must
+    stop being zero, without defining "production path". Measured: the precedent capture,
+    `capture_principal_attachment_preflight`, has **no CLI command and no `src/` caller either** —
+    only tests call it. Left unresolved, an implementer would reasonably have added a CLI command
+    this ticket never asked for. Both corrections are a comment on the issue, with the body edited.
+- Method note worth keeping: **the checkpoint above was rewritten as part of dispatching this cycle,
+  not after reporting it.** PR #72 existed solely to repair a stale checkpoint, and the same
+  staleness recurred two cycles later, so the repair is now attached to the action that causes it.
+- Completion condition for this cycle: pane 2 writes `DONE` to
+  `sentinel-pane2-cycle75.txt`, a harness-tracked watcher observes it, and pane 3 reviews
+  independently before any Git proposal. **No Git write is authorized**; the worker is prohibited
+  from `commit`, `push`, `add`, branch creation, PR and merge.
 
 ### 2026-07-27 — Issue #75 implemented; v3 dataset identity and receipt-bound probes now have separate authorities
 

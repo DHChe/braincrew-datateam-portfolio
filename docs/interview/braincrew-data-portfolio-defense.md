@@ -1465,6 +1465,37 @@ Likely follow-ups:
 - "Isn't a documentation-only decision separated from its implementation just overhead?" — It is what let the implementation be 22 lines. The decision absorbed the range review, the rejected alternatives, and the scope boundaries; the ticket carried five explicit requirements; the implementation had nothing left to decide. The measurable result is a diff where every changed line is the same substitution.
 - "Why is the old SHA still all over the documentation?" — Because those are records of what was locked at the time. Rewriting them would turn history into a claim that it always said `2bcaee34…`. Independent review enumerated every surviving occurrence and confirmed each is intended preservation; the code carries zero.
 
+### D12. Compose the two identity axes into a third schema, and bind both halves to one principal
+
+Decision:
+: `live-verification-preflight-artifact-v2` is a **third** schema alongside the two existing ones, carrying the frozen v3 dataset identity, three role-visible corpus observations and the six reviewed parse observations in one create-only artifact, and cross-checking each role's `contributing_versions` against `corpus_qualification.SEED_VERSION`. The principal-attachment contract is **not** subsumed. Locked in [the v2 contract decision](../decisions/2026-07-27-live-verification-preflight-artifact-v2-contract.md); carried out by Issue #77.
+
+Why:
+: The model was never the obstacle — `LivePreflightArtifact` already carried all three fields and the generic branch forbade neither. **Nothing produced the combination:** `AxHttpAdapter.corpus_identity()` had zero callers in `src/`, and the principal-attachment contract rejected corpus observations outright. So the work was a capture path plus an artifact contract, not a cross-check. Framing it as "just verify the three roles include the qualified contribution" understates it by an order of magnitude, which is why the ticket said so before implementation began.
+
+Rejected alternative:
+: Subsume the principal-attachment contract into v2. Its narrowness is itself load-bearing evidence — it exists to say *this capture is only the six probes, by the reviewed subject, and nothing else*. Folding it in would put all thirteen of its refusals up for re-derivation inside one change. Also rejected: pinning expectations on `corpus_id`, `corpus_digest`, `inventory_count` or `counts`. No frozen value exists for them; they are genuinely runtime-observed, and inventing one is not a check.
+
+Trade-off:
+: Two construction routes now reach the same model — v2 builds its payload by dumping the principal artifact and re-validating, because `build_live_preflight_artifact` still derives `schema_version` from `capture_contract is not None`. Accepted for this ticket and recorded rather than hidden. Accepted also: a v2 artifact whose **both** halves sit consistently on some other canonical tenant validates, because the rule is *agreement between the halves* and no frozen tenant value exists to pin against.
+
+Known failure modes:
+: The first implementation bound the six parse probes to one tenant and reviewed subject and left the three corpus observations bound to **nothing** — moving all three to a different tenant *and* subject was accepted and replayed clean, and a corpus observation with **zero HTTP attempts** was accepted, asserting a role-visible corpus identity with no evidence any request was issued. Fixed by mirroring the parse-side request validator and folding the corpus tenants into the **same** `tenant_ids` set, which can only tighten: the rule is `len(tenant_ids) != 1`, and threading only ever adds elements.
+: Six reachable clauses inside the corpus attempt validator still have no test. Five mirror an identical pre-existing parse-side gap — measured, not assumed. **One falls below the standard its own sibling sets:** a failed request must not claim a response correlation id, the privacy clause the parse half demonstrably tests. Carried as a follow-up covering both halves, because fixing one side leaves the asymmetry it was measured against.
+
+Validation evidence produced:
+: All eight identity mutations that were **accepted** before the repair are **refused** after it, re-run from the original probe script rather than a rewritten one. The two deliberate canaries — a response naming a different tenant's corpus, and one reporting an empty inventory — are still accepted, proving the fix did not overshoot into invented expectations.
+: **Thirty-five mutations across four sweeps** established that every structural defence in the new contract is observed by a test. All thirteen pre-existing refusals still fire on the v2 path. Gates: Ruff, mypy over 65 source files, **387 passed** (from 370, with zero test deletions).
+
+Validation evidence still required:
+: Every result comes from `httpx.MockTransport`. **Nothing was captured**, no AX runtime was started, and no live network call was made. `braincrew_preflight_ready` stays `false`; a live runtime answering real parse probes needs a separately authorized start, and AX #37 remains an open formal blocker of Issue #38.
+
+Likely follow-ups:
+
+- "You wrote the ticket and it contained a false claim — how is that not disqualifying?" — The ticket asserted the corpus-observation refusal was "currently observed by tests." It had **zero** coverage: one `git grep` hit, in `src/` only. Independent review caught it; the correction is a comment on the issue and the body is preserved so the error stays visible. The instruction it supported was right and was followed, and the implementation's new test is the **first** that has ever observed that refusal — the change closed a hole the ticket wrongly believed was already closed. The system that caught it is the point: a claim written by the person with the most interest in it was measured by someone else.
+- "How do you know your tests are real and not decoration?" — By deleting the thing they defend. The five-line reuse that carried the reviewed-subject binding, single-tenant rule, frozen timeout, probe-set completeness, and the parse-evidence, span and attempt checks for the **entire** v2 contract could be removed with the suite still at `370 passed`. Reading it would never have shown that; disabling it did. This is the **fifth** instance of that shape recorded here, and every one was found by mutation.
+- "Why is the corpus response barely validated compared with the request?" — Because the request is ours and the response is the SUT's. We can pin every field we send, and we have. Pinning what AX returns for `inventory_count` or `corpus_digest` would freeze an observation into an expectation and turn a genuine measurement into a tautology — the exact failure this repository has recorded four times over.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

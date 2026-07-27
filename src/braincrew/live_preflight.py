@@ -14,6 +14,7 @@ from uuid import UUID
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validator
 
+from braincrew import corpus_qualification
 from braincrew.ax_http_adapter import (
     AxCanonicalRequest,
     AxHttpAdapter,
@@ -38,10 +39,15 @@ PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
 REVIEWED_HANDOFF_RECEIPT_SHA256 = "8d59a7907894532d702d0b7c658b8b28bc8370670b69f04884c42d8d1843c767"
 PARSING_AUTHORIZATION_ROLE = "HRPractitioner"
 EXPECTED_PARSER_IDENTITY = ("utf8-text", "stdlib-1")
-PRINCIPAL_PARSE_TIMEOUT_SECONDS = 10.0
+LIVE_PREFLIGHT_REQUEST_TIMEOUT_SECONDS = 10.0
+PRINCIPAL_PARSE_TIMEOUT_SECONDS = LIVE_PREFLIGHT_REQUEST_TIMEOUT_SECONDS
 PRINCIPAL_ATTACHMENT_CAPTURE_CONTRACT: Literal["principal-attachment-preflight-v1"] = (
     "principal-attachment-preflight-v1"
 )
+LIVE_VERIFICATION_CAPTURE_CONTRACT: Literal["live-verification-preflight-v2"] = (
+    "live-verification-preflight-v2"
+)
+LIVE_VERIFICATION_ROLES = ("Employee", "Executive", "HRPractitioner")
 FROZEN_DATASET_ID: Literal["braincrew-evaluation-dataset"] = "braincrew-evaluation-dataset"
 FROZEN_DATASET_VERSION: Literal["3.0.0"] = "3.0.0"
 FROZEN_DATASET_DIGEST = DATASET_V3_DIGEST
@@ -207,9 +213,16 @@ class LivePreflightArtifact(StrictModel):
     schema_version: Literal[
         "live-preflight-evidence-v1",
         "principal-attachment-preflight-evidence-v1",
+        "live-verification-preflight-artifact-v2",
     ]
     capture_state: Literal["captured"]
-    capture_contract: Literal["principal-attachment-preflight-v1"] | None = None
+    capture_contract: (
+        Literal[
+            "principal-attachment-preflight-v1",
+            "live-verification-preflight-v2",
+        ]
+        | None
+    ) = None
     run_id: str = Field(pattern=SAFE_ID_PATTERN)
     captured_at: datetime
     evaluation_plane_sha: str = Field(pattern=COMMIT_SHA_PATTERN)
@@ -256,6 +269,15 @@ class LivePreflightArtifact(StrictModel):
             if self.dataset_identity is None:
                 raise ValueError("principal attachment capture requires frozen dataset identity")
             _validate_principal_attachment_capture(
+                self,
+                reviewed_binding=_reviewed_binding_from_context(info),
+            )
+        elif self.schema_version == "live-verification-preflight-artifact-v2":
+            if self.capture_contract != LIVE_VERIFICATION_CAPTURE_CONTRACT:
+                raise ValueError("live verification schema requires its capture contract")
+            if self.dataset_identity is None:
+                raise ValueError("live verification capture requires frozen dataset identity")
+            _validate_live_verification_capture(
                 self,
                 reviewed_binding=_reviewed_binding_from_context(info),
             )
@@ -459,6 +481,81 @@ def capture_principal_attachment_preflight(
     )
 
 
+def capture_live_verification_preflight(
+    *,
+    run_id: str,
+    captured_at: datetime,
+    evaluation_plane_sha: str,
+    sut_commit_sha: str,
+    base_url: str,
+    tenant_id: str,
+    user_id: str,
+    attachment_mapping: Mapping[str, str],
+    dataset_validation: DatasetValidationReport,
+    handoff_receipt_path: Path,
+    transport: httpx.BaseTransport | None = None,
+) -> LivePreflightArtifact:
+    principal_artifact = capture_principal_attachment_preflight(
+        run_id=run_id,
+        captured_at=captured_at,
+        evaluation_plane_sha=evaluation_plane_sha,
+        sut_commit_sha=sut_commit_sha,
+        base_url=base_url,
+        tenant_id=tenant_id,
+        user_id=user_id,
+        attachment_mapping=attachment_mapping,
+        dataset_validation=dataset_validation,
+        handoff_receipt_path=handoff_receipt_path,
+        transport=transport,
+    )
+    if principal_artifact.blockers:
+        raise ValueError("live verification capture requires successful parsing probes")
+
+    corpus_observations: list[CorpusIdentityObservation] = []
+    for role in LIVE_VERIFICATION_ROLES:
+        adapter = AxHttpAdapter(
+            AxHttpAdapterConfig(
+                base_url=base_url,
+                sut_commit_sha=sut_commit_sha,
+                tenant_id=tenant_id,
+                user_id=user_id,
+                roles=(role,),
+                timeout_seconds=LIVE_PREFLIGHT_REQUEST_TIMEOUT_SECONDS,
+            ),
+            transport=transport,
+        )
+        corpus_observations.append(
+            adapter.corpus_identity(
+                context=AxRequestContext(
+                    run_id=run_id,
+                    case_id=f"corpus-{role}",
+                    eval_correlation_id=f"{run_id}-corpus-{role}",
+                )
+            )
+        )
+
+    payload = principal_artifact.model_dump(mode="json")
+    payload.update(
+        {
+            "schema_version": "live-verification-preflight-artifact-v2",
+            "capture_contract": LIVE_VERIFICATION_CAPTURE_CONTRACT,
+            "corpus_observations": [
+                _sanitize_corpus(observation).model_dump(mode="json")
+                for observation in corpus_observations
+            ],
+            "logical_digest": "sha256:" + "0" * 64,
+        }
+    )
+    reviewed_binding = _load_reviewed_handoff_binding(handoff_receipt_path)
+    artifact = LivePreflightArtifact.model_validate(
+        payload,
+        context={"reviewed_handoff_binding": reviewed_binding},
+    )
+    return artifact.model_copy(
+        update={"logical_digest": canonical_digest(_logical_payload(artifact))}
+    )
+
+
 def write_live_preflight_artifact(
     artifact: LivePreflightArtifact,
     path: Path,
@@ -483,12 +580,18 @@ def replay_live_preflight_artifact(
     raw_artifact = path.read_text(encoding="utf-8")
     payload = json.loads(raw_artifact)
     reviewed_binding: _ReviewedHandoffBinding | None = None
-    if (
-        isinstance(payload, dict)
-        and payload.get("schema_version") == "principal-attachment-preflight-evidence-v1"
-    ):
+    schema_version = payload.get("schema_version") if isinstance(payload, dict) else None
+    if schema_version in {
+        "principal-attachment-preflight-evidence-v1",
+        "live-verification-preflight-artifact-v2",
+    }:
         if handoff_receipt_path is None:
-            raise ValueError("principal attachment replay requires the reviewed handoff receipt")
+            contract_name = (
+                "principal attachment"
+                if schema_version == "principal-attachment-preflight-evidence-v1"
+                else "live verification"
+            )
+            raise ValueError(f"{contract_name} replay requires the reviewed handoff receipt")
         reviewed_binding = _load_reviewed_handoff_binding(handoff_receipt_path)
     artifact = LivePreflightArtifact.model_validate(
         payload,
@@ -698,6 +801,7 @@ def _validate_principal_attachment_capture(
     artifact: LivePreflightArtifact,
     *,
     reviewed_binding: _ReviewedHandoffBinding,
+    tenant_ids: set[str] | None = None,
 ) -> None:
     if artifact.corpus_observations:
         raise ValueError("principal attachment capture cannot contain corpus observations")
@@ -706,7 +810,8 @@ def _validate_principal_attachment_capture(
     if len(artifact.parse_observations) > len(expected_probes):
         raise ValueError("principal attachment capture has too many parse observations")
 
-    tenant_ids: set[str] = set()
+    if tenant_ids is None:
+        tenant_ids = set()
     for observation, (document_id, attachment_id) in zip(
         artifact.parse_observations,
         expected_probes,
@@ -828,6 +933,144 @@ def _validate_principal_attachment_capture(
     }.get(blocker_identity)
     if expected_status is not None and terminal_attempt.status_code != expected_status:
         raise ValueError("principal attachment blocker contradicts its terminal attempt")
+
+
+def _validate_live_verification_capture(
+    artifact: LivePreflightArtifact,
+    *,
+    reviewed_binding: _ReviewedHandoffBinding,
+) -> None:
+    if artifact.blockers:
+        raise ValueError("live verification capture cannot retain blockers")
+
+    # Keep principal attachment evidence strict without weakening that contract's
+    # explicit refusal of corpus observations.
+    tenant_ids: set[str] = set()
+    principal_evidence = artifact.model_copy(update={"corpus_observations": ()})
+    _validate_principal_attachment_capture(
+        principal_evidence,
+        reviewed_binding=reviewed_binding,
+        tenant_ids=tenant_ids,
+    )
+
+    observed_roles: set[str] = set()
+    for observation in artifact.corpus_observations:
+        roles = observation.request.roles
+        if (
+            observation.request.operation != "corpus_identity"
+            or len(roles) != 1
+            or roles[0] not in LIVE_VERIFICATION_ROLES
+            or observation.response.principal_roles != [roles[0]]
+        ):
+            raise ValueError("live verification capture has invalid corpus role evidence")
+        _validate_live_verification_corpus_request(
+            observation.request,
+            artifact_run_id=artifact.run_id,
+            role=roles[0],
+            subject_id=reviewed_binding.subject_id,
+        )
+        _validate_live_verification_corpus_attempts(observation.attempts)
+        tenant_ids.add(observation.request.tenant_id)
+        if corpus_qualification.SEED_VERSION not in observation.response.contributing_versions:
+            raise ValueError(
+                "live verification corpus role is missing the qualified seed contribution"
+            )
+        observed_roles.add(roles[0])
+    if observed_roles != set(LIVE_VERIFICATION_ROLES) or len(artifact.corpus_observations) != len(
+        LIVE_VERIFICATION_ROLES
+    ):
+        raise ValueError("live verification capture requires all three corpus roles")
+    if len(tenant_ids) != 1:
+        raise ValueError("live verification capture must use one tenant identity")
+
+
+def _validate_live_verification_corpus_request(
+    request: AxCanonicalRequest,
+    *,
+    artifact_run_id: str,
+    role: str,
+    subject_id: str,
+) -> None:
+    case_id = f"corpus-{role}"
+    if (
+        request.operation != "corpus_identity"
+        or request.run_id != artifact_run_id
+        or request.case_id != case_id
+        or request.eval_correlation_id != f"{artifact_run_id}-{case_id}"
+    ):
+        raise ValueError("live verification corpus request identity is inconsistent")
+    if request.user_id != subject_id:
+        raise ValueError("live verification corpus request must use the reviewed subject")
+    if not _is_canonical_uuid(request.tenant_id):
+        raise ValueError("live verification corpus request must use a canonical tenant UUID")
+    if request.timeout_seconds != LIVE_PREFLIGHT_REQUEST_TIMEOUT_SECONDS:
+        raise ValueError("live verification corpus request must use the frozen request timeout")
+    if any(
+        value is not None
+        for value in (
+            request.corpus_id,
+            request.corpus_version,
+            request.query,
+            request.attachment_id,
+            request.record_kind,
+            request.record_id,
+            request.top_k,
+            request.evidence_limit,
+        )
+    ):
+        raise ValueError("live verification corpus request cannot contain unrelated payload")
+
+
+def _validate_live_verification_corpus_attempts(
+    attempts: tuple[HttpAttempt, ...],
+) -> None:
+    if not attempts or len(attempts) > 3:
+        raise ValueError("live verification corpus operation requires bounded attempt evidence")
+
+    for attempt_number, attempt in enumerate(attempts, start=1):
+        if (
+            attempt.operation != "corpus_identity"
+            or attempt.attempt_number != attempt_number
+            or attempt.method != "GET"
+            or attempt.path != "/v1/evaluation/corpus-identity"
+        ):
+            raise ValueError("live verification corpus attempt identity is inconsistent")
+        if (
+            attempt.response_correlation_id is not None
+            and re.fullmatch(SHA256_PATTERN, attempt.response_correlation_id) is None
+        ):
+            raise ValueError("live verification corpus attempt correlation must be digest-only")
+        if (
+            attempt.outcome in {"timeout", "request_error"}
+            and attempt.response_correlation_id is not None
+        ):
+            raise ValueError(
+                "live verification corpus attempt without a response cannot declare "
+                "a response correlation"
+            )
+        if attempt.outcome == "success" and not (
+            attempt.status_code is not None and 200 <= attempt.status_code < 300
+        ):
+            raise ValueError(
+                "successful live verification corpus attempt requires a success status"
+            )
+        if attempt.outcome in {"timeout", "request_error"} and attempt.status_code is not None:
+            raise ValueError("failed live verification corpus request cannot declare a status")
+        if attempt.outcome == "retryable_http" and not (
+            attempt.status_code == 429
+            or (attempt.status_code is not None and attempt.status_code >= 500)
+        ):
+            raise ValueError("retryable live verification corpus attempt has invalid status")
+        if attempt_number < len(attempts) and attempt.outcome not in {
+            "timeout",
+            "retryable_http",
+        }:
+            raise ValueError(
+                "only retryable live verification corpus attempts may precede the terminal attempt"
+            )
+
+    if attempts[-1].outcome != "success":
+        raise ValueError("live verification corpus observation requires a successful final attempt")
 
 
 def _validate_principal_parse_request(
