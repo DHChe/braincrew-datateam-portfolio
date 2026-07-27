@@ -6,11 +6,12 @@ import subprocess
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 import typer
 from pydantic import ValidationError
 
+from braincrew.ax_http_adapter import AxHttpFailure
 from braincrew.comparison import (
     ExperimentRunSummary,
     compare_runs,
@@ -40,6 +41,13 @@ from braincrew.grounded_run import (
     load_grounded_dataset,
     load_grounded_observations,
 )
+from braincrew.live_experiment import (
+    SutStateSubject,
+    SutStateWarrant,
+    capture_live_experiment,
+    load_reviewed_principal_binding,
+    write_live_experiment_capture,
+)
 from braincrew.live_preflight import (
     PINNED_AX_SHA,
     capture_reviewed_live_verification_preflight,
@@ -51,7 +59,7 @@ from braincrew.parsing_run import (
     load_parsing_dataset,
     load_parsing_observations,
 )
-from braincrew.repository import RepositoryState, capture_evaluation_repository_state
+from braincrew.repository import RepositoryState, capture_repository_state
 from braincrew.result_store import (
     build_grounded_run_artifact,
     build_parsing_run_artifact,
@@ -97,7 +105,7 @@ def _validate_run_identity(run_id: str, sut_sha: str) -> None:
 
 def _capture_repository_state() -> RepositoryState:
     try:
-        return capture_evaluation_repository_state()
+        return capture_repository_state()
     except subprocess.CalledProcessError as error:
         typer.echo("Unable to capture Evaluation Plane Git provenance", err=True)
         raise typer.Exit(code=2) from error
@@ -688,6 +696,84 @@ def capture_live_verification(
     )
     if artifact.readiness == "NOT_READY":
         raise typer.Exit(code=NOT_READY_EXIT_CODE)
+
+
+@app.command("capture-live-experiment")
+def capture_live_experiment_command(
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    run_id: Annotated[str, typer.Option("--run-id")],
+    role: Annotated[Literal["baseline", "candidate"], typer.Option("--role")],
+    base_url: Annotated[str, typer.Option("--base-url")],
+    handoff_receipt_path: Annotated[
+        Path,
+        typer.Option(
+            "--handoff-receipt",
+            exists=True,
+            dir_okay=False,
+            readable=True,
+        ),
+    ],
+    sut_checkout: Annotated[
+        Path,
+        typer.Option(
+            "--sut-checkout",
+            exists=True,
+            file_okay=False,
+            readable=True,
+        ),
+    ],
+) -> None:
+    """Capture the pinned 30-case live experiment observations create-only."""
+    _validate_artifact_id(run_id, label="run ID")
+    dataset_validation = validate_dataset_bundle(FROZEN_DATASET_MANIFEST)
+    if dataset_validation.state != "VALID":
+        codes = ",".join(item.code for item in dataset_validation.violations)
+        typer.echo(f"Invalid frozen dataset: {codes}", err=True)
+        raise typer.Exit(code=2)
+    try:
+        evaluation_state = _capture_repository_state()
+        sut_state = capture_repository_state(sut_checkout)
+        checked_at = datetime.now(UTC)
+        principal = load_reviewed_principal_binding(handoff_receipt_path)
+        capture = capture_live_experiment(
+            run_id=run_id,
+            role=role,
+            captured_at=checked_at,
+            evaluation_state=evaluation_state,
+            sut_state=SutStateWarrant(
+                schema_version="sut-state-warrant-v1",
+                method="read-only-git-check",
+                subject=SutStateSubject(
+                    repository="AX_portfolio",
+                    checkout_path=sut_checkout.name,
+                    checked_at=checked_at,
+                ),
+                commit_sha=sut_state.commit_sha,
+                dirty_worktree=sut_state.dirty_worktree,
+            ),
+            sut_source_root=sut_checkout,
+            base_url=base_url,
+            principal=principal,
+            dataset_validation=dataset_validation,
+            dependency_lock_path=PROJECT_ROOT / "uv.lock",
+        )
+        artifact_paths = write_live_experiment_capture(capture, output_dir)
+    except subprocess.CalledProcessError as error:
+        typer.echo("Unable to capture SUT Git provenance", err=True)
+        raise typer.Exit(code=2) from error
+    except AxHttpFailure as error:
+        typer.echo(f"Live experiment capture failed: {error.failure_code}", err=True)
+        raise typer.Exit(code=2) from error
+    except (OSError, ValueError, ValidationError) as error:
+        typer.echo(f"Live experiment capture rejected: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    typer.echo(
+        json.dumps(
+            {"artifact_paths": [path.name for path in artifact_paths]},
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
 
 
 @app.command("export-dashboard")

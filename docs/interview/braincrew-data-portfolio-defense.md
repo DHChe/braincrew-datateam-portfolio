@@ -1586,6 +1586,36 @@ Likely follow-ups:
 - "What would have happened if a role had been missing the seed version?" — A create-only `NOT_READY` artifact with one typed blocker, preserved and analyzed — and the work would have moved to AX. The negative verdict exists precisely so that outcome is evidence, not a traceback, and repairing inputs mid-run to convert it is the failure mode both governing tickets name.
 - "Why believe the runtime you started is the code you reviewed?" — Three legs: the AX checkout was verified clean at the pinned SHA read-only before start; the containers were the byte-identical Stage 9 set, not recreations; and the schema version matched the pre-B archived dump. The artifact's `sut_commit_sha` alone would not carry this — that is written down as a limit, not discovered later.
 
+### D16. When the thing you must attest is unobservable, carry the warrant — then pin that it reports what the check returned
+
+Decision:
+: The live experiment capture records a `SutStateWarrant` — the method (`read-only-git-check`), its subject (repository, checkout name, timestamp) and the values the check returned — instead of a bare `sut_dirty` boolean. `execution_mode` widened to `"fixture" | "live"` at the run layer **except on the parsing axis**, which stays fixture. Locked in [the live-experiment decision](../decisions/2026-07-27-live-experiment-capture-and-the-unobservable-warrant.md); carried out by Issue #85.
+
+Why:
+: The comparison gate refuses when either side's worktree is dirty, and Braincrew can check its own. **The SUT's dirtiness is not observable over HTTP** — the adapter sends only tenant, user and role headers. Emitting `sut_dirty=False` would manufacture a clean-state claim from nothing, the same failure D14 and D15 record for `sut_commit_sha`. A live manifest should not be able to exist without saying, in its own bytes, where its belief comes from.
+
+Rejected alternative:
+: Defaulting the flag to `false`; omitting the field, which would silently fail the gate's dirty refusal; and probing the server for its own identity, which is a real gap but an AX-side change rather than something to invent under time pressure.
+
+Trade-off:
+: The warrant attests to a **directory**, not to the server that answered — nothing binds `--sut-checkout` to `--base-url`. Accepted because the limit is pre-existing and already locked, and #85 improves on it by moving the check from a human runbook step into the command. Also accepted: `checkout_path` is a basename with the contract still permitting any string — the third instance of a binding living at the call site rather than in the contract, after the tenant and the SUT commit.
+
+Known failure modes:
+: **The honesty machinery was not earned.** Independent review ran eleven mutations; seven guards were load-bearing and the four survivors were, without exception, the ones carrying the honesty claim — including neutering the execution-claim validator entirely, which **survived all 433 tests**. The decisive pair: fabricating the warrant instead of calling git was *caught*; calling git, **discarding the result** and recording constants was *not*. A test pinned that the check is invoked; nothing pinned that the warrant reports what it returned.
+: Three more, all closed: every live failure produced a traceback and exit 1 because `AxHttpFailure` subclasses `RuntimeError` and escaped the CLI's `except` tuple, with zero of seventeen new tests exercising a transport failure; the `logical_digest` could not be recomputed from the file it was stored in, because `captured_at` was the sole hand-serialized field; and widening `execution_mode` without widening `version` made a *fixture parser declaring live execution* the only newly-reachable parsing state — asserted by a test as intended.
+
+Validation evidence produced:
+: All four blocking findings closed and verified by the reviewer re-running its own eleven mutations plus end-to-end probes that do not reuse the implementer's tests; no previously-caught guard came unpinned. **442 passed**, mypy over 67 source files. The digest pre-image is now **derived** from the model dump rather than retyped, with a round-trip test that recomputes from the written file the way a reader holding only that file would.
+
+Validation evidence still required:
+: **No experiment ran and no quality claim exists.** Everything is `httpx.MockTransport`. Phase 1 of #15 remains a separate decision and is additionally blocked by #86.
+
+Likely follow-ups:
+
+- "A warrant is just a string you wrote — why is it better than a boolean?" — Because a boolean asserts a fact with no account of its origin, while a warrant asserts the fact *and* names the method and subject that produced it, so a reader can judge the claim rather than accept it. But that is only true once a test pins that the recorded values are the check's **output**. Until then it is worse than a boolean, because it reads as evidence. That gap existed here and review found it.
+- "Why revert the parsing widening instead of binding version to execution_mode?" — Because the capture does not need it. Six of the thirty Verification cases are parsing and are deliberately fixture-carried, so the only state the widening enabled was a false one. Reverting removes the reachable falsehood; a validator would have preserved an axis nothing uses.
+- "You found a blocker for the very ticket this unblocks — is that a planning failure?" — It is the planning working. #86 is a contradiction between the design specification and its own implementation, invisible until something tried to produce a real mixed-category run. The specification supplies both the contradiction and its resolution: it declares per-case metric *applicability* as a first-class field and fixes Recall@5's Verification denominator at nine, while one function demands that metric from all thirty cases.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

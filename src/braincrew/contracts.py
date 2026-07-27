@@ -294,7 +294,7 @@ class RetrievalObservation(StrictContract):
 
 class RetrievalObservationBatch(StrictContract):
     schema_version: Literal["retrieval-observation-batch-v1"]
-    adapter_version: Literal["fixture-retrieval-sut-v1"]
+    adapter_version: Literal["fixture-retrieval-sut-v1", "ax-sut-http-v1"]
     observations: list[RetrievalObservation]
 
     @model_validator(mode="after")
@@ -370,8 +370,8 @@ class RetrievalRunEvaluation(StrictContract):
 
 
 class RetrievalAdapterProvenance(StrictContract):
-    version: Literal["fixture-retrieval-sut-v1"]
-    execution_mode: Literal["fixture"]
+    version: Literal["fixture-retrieval-sut-v1", "ax-sut-http-v1"]
+    execution_mode: Literal["fixture", "live"]
 
 
 class RetrievalEvaluatorProvenance(StrictContract):
@@ -527,7 +527,7 @@ class ParsingRunArtifactDocument(StrictContract):
 
 class RunEnvelope(StrictContract):
     run_id: RunId
-    execution_mode: Literal["fixture"]
+    execution_mode: Literal["fixture", "live"]
     created_at: datetime
 
 
@@ -539,9 +539,25 @@ class EvaluationPlaneProvenance(StrictContract):
 
 class SutProvenance(StrictContract):
     commit_sha: CommitSha
-    dirty_worktree: None
-    executed: Literal[False]
-    claim: Literal["identity placeholder only; live AX was not called"]
+    dirty_worktree: bool | None
+    executed: bool
+    claim: Literal[
+        "identity placeholder only; live AX was not called",
+        "live AX called; clean state warranted by read-only checkout check",
+    ]
+
+    @model_validator(mode="after")
+    def bind_execution_claim(self) -> SutProvenance:
+        if self.executed:
+            if self.dirty_worktree is None or self.claim != (
+                "live AX called; clean state warranted by read-only checkout check"
+            ):
+                raise ValueError("live SUT provenance requires a read-only worktree warrant")
+        elif self.dirty_worktree is not None or self.claim != (
+            "identity placeholder only; live AX was not called"
+        ):
+            raise ValueError("fixture SUT provenance must retain its non-execution claim")
+        return self
 
 
 class DatasetArtifactProvenance(DatasetIdentity, FixtureProvenance):
@@ -549,8 +565,8 @@ class DatasetArtifactProvenance(DatasetIdentity, FixtureProvenance):
 
 
 class AdapterProvenance(StrictContract):
-    version: Literal["fixture-sut-v1"]
-    execution_mode: Literal["fixture"]
+    version: Literal["fixture-sut-v1", "ax-sut-http-v1"]
+    execution_mode: Literal["fixture", "live"]
 
 
 class EvaluatorProvenance(StrictContract):
