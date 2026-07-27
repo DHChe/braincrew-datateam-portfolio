@@ -25,11 +25,47 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **none. The twelve-stage live apply ran to completion on 2026-07-26 and the runtime
-  boundary is stopped.** AX-B was applied against the live cluster under explicit stage-by-stage user
-  authorization. The corpus moved from `14/77/77/154` to `20/83/83/166`; six tenant sources, six
-  approvals, one conversation, and six blobs now exist. No quality claim of any kind follows from
-  this — see the exclusions bullet.
+- Active phase: **none. [Issue #71](https://github.com/DHChe/braincrew-datateam-portfolio/issues/71)
+  is the next implementable ticket** — re-pin `PINNED_AX_SHA` to the reviewed AX commit. It is
+  labelled `ready-for-agent`, needs no runtime, and is the only fully unblocked item on the critical
+  path.
+- **What the last two merges changed, and what they deliberately did not.** `origin/develop` is
+  `354d5b3`.
+  - `dfc41ff` (#69, Issue #67) — the live preflight now derives the evaluation principal and the
+    six-case attachment mapping from the AX handoff receipt, pinning **one** digest that is
+    recomputed and refused on mismatch at run time, instead of seven literals that were wrong by
+    construction and never checked.
+  - `354d5b3` (#70) — `2bcaee3495fd7b3f624398819575cd86a5a15c47` is **reviewed and accepted as the
+    SUT commit for evaluation**, which is a different assertion from the provisioning review it
+    already had. The re-pin itself is **not** implemented, so `PINNED_AX_SHA` is still the
+    superseded ancestor `72805930…` and **no artifact captured against today's substrate can be
+    constructed yet.**
+- **`braincrew_preflight_ready` remains `false`, and Issue #71 will not change that.** The re-pin
+  makes artifacts *constructible*, not *captured*. Live HTTP parse capture still requires a
+  separately authorized AX runtime start, stopped since Stage 12.
+- **Blocked, and blocked on a human decision:** the dataset-identity work. Braincrew
+  [Issue #38](https://github.com/DHChe/braincrew-datateam-portfolio/issues/38)'s acceptance criteria
+  contradict themselves — one clause requires nested parsing component `2.0.0` *and* the six reviewed
+  historical Verification cases, and no repository state satisfies both, because the six live under
+  integrated v2 whose parsing component is `1.0.0`. Recorded as a comment on that issue; its body is
+  unchanged. Three questions must be settled before that work starts: which case set the evaluation
+  runs against, which integrated manifest version that implies, and how integrated and nested
+  versions are represented so they cannot be conflated again.
+  - **The human decision is not the only blocker.** Issue #38 formally lists
+    [AX #37](https://github.com/DHChe/AX_portfolio/issues/37) — the operator-controlled snapshot
+    gate — among its blocking issues, and it is still **`OPEN`**, as is the linked
+    [AX #43](https://github.com/DHChe/AX_portfolio/issues/43). That issue topology has to be
+    reconciled alongside the decision, not after it. The SUT-commit decision's §10 already directed
+    this and it has now been omitted from the record twice; it is written here so a third omission
+    is harder.
+- Deferred and tracked, not forgotten: the duplicated literal `"2.0.0"` at `live_preflight.py:951`
+  belongs to the dataset-identity work rather than to Issue #71, and the blast-radius figures in the
+  SUT decision's §6 and §14 were measured at `dfc41ff` and need re-measuring when Issue #71 starts.
+- Completed earlier, unchanged by the above: **the twelve-stage live apply ran to completion on
+  2026-07-26 and the runtime boundary is stopped.** AX-B was applied against the live cluster under
+  explicit stage-by-stage user authorization. The corpus moved from `14/77/77/154` to
+  `20/83/83/166`; six tenant sources, six approvals, one conversation, and six blobs now exist. No
+  quality claim of any kind follows from this — see the exclusions bullet.
 - Completed phase: **Stage 10 — the AX-B live apply.** Handoff receipt
   `10-ax-b-handoff.json`, schema `ax-evaluation-parse-source-handoff-v1`, `state=COMPLETED`,
   `completion_confirmed=true`, logical digest
