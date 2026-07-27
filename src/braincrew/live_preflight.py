@@ -216,6 +216,7 @@ class LivePreflightArtifact(StrictModel):
         "live-verification-preflight-artifact-v2",
     ]
     capture_state: Literal["captured"]
+    readiness: Literal["READY", "NOT_READY"] | None = None
     capture_contract: (
         Literal[
             "principal-attachment-preflight-v1",
@@ -239,6 +240,10 @@ class LivePreflightArtifact(StrictModel):
             raise ValueError("captured_at must include a timezone")
         if self.sut_commit_sha != PINNED_AX_SHA:
             raise ValueError("live preflight artifact must use the pinned AX commit")
+        if self.schema_version != "live-verification-preflight-artifact-v2" and (
+            self.readiness is not None
+        ):
+            raise ValueError("only live verification schema may declare readiness")
         observations: tuple[CorpusIdentityEvidence | ParseObservationEvidence, ...] = (
             *self.corpus_observations,
             *self.parse_observations,
@@ -275,7 +280,7 @@ class LivePreflightArtifact(StrictModel):
         elif self.schema_version == "live-verification-preflight-artifact-v2":
             if self.capture_contract != LIVE_VERIFICATION_CAPTURE_CONTRACT:
                 raise ValueError("live verification schema requires its capture contract")
-            if self.dataset_identity is None:
+            if self.readiness == "READY" and self.dataset_identity is None:
                 raise ValueError("live verification capture requires frozen dataset identity")
             _validate_live_verification_capture(
                 self,
@@ -509,7 +514,13 @@ def capture_live_verification_preflight(
         transport=transport,
     )
     if principal_artifact.blockers:
-        raise ValueError("live verification capture requires successful parsing probes")
+        return _build_live_verification_artifact(
+            principal_artifact=principal_artifact,
+            corpus_observations=(),
+            blockers=principal_artifact.blockers,
+            readiness="NOT_READY",
+            handoff_receipt_path=handoff_receipt_path,
+        )
 
     corpus_observations: list[CorpusIdentityObservation] = []
     for role in LIVE_VERIFICATION_ROLES:
@@ -524,24 +535,63 @@ def capture_live_verification_preflight(
             ),
             transport=transport,
         )
-        corpus_observations.append(
-            adapter.corpus_identity(
-                context=AxRequestContext(
-                    run_id=run_id,
-                    case_id=f"corpus-{role}",
-                    eval_correlation_id=f"{run_id}-corpus-{role}",
+        try:
+            corpus_observations.append(
+                adapter.corpus_identity(
+                    context=AxRequestContext(
+                        run_id=run_id,
+                        case_id=f"corpus-{role}",
+                        eval_correlation_id=f"{run_id}-corpus-{role}",
+                    )
                 )
             )
-        )
+        except AxHttpFailure as error:
+            return _build_live_verification_artifact(
+                principal_artifact=principal_artifact,
+                corpus_observations=tuple(corpus_observations),
+                blockers=(
+                    LivePreflightBlocker(
+                        code="LIVE_CORPUS_IDENTITY_FAILED",
+                        operation="corpus_identity",
+                        case_id=error.request.case_id,
+                        request=error.request,
+                        detail=error.failure_code,
+                        attempts=error.attempts,
+                    ),
+                ),
+                readiness="NOT_READY",
+                handoff_receipt_path=handoff_receipt_path,
+            )
 
+    return _build_live_verification_artifact(
+        principal_artifact=principal_artifact,
+        corpus_observations=tuple(corpus_observations),
+        blockers=(),
+        readiness="READY",
+        handoff_receipt_path=handoff_receipt_path,
+    )
+
+
+def _build_live_verification_artifact(
+    *,
+    principal_artifact: LivePreflightArtifact,
+    corpus_observations: tuple[CorpusIdentityObservation, ...],
+    blockers: tuple[LivePreflightBlocker, ...],
+    readiness: Literal["READY", "NOT_READY"],
+    handoff_receipt_path: Path,
+) -> LivePreflightArtifact:
     payload = principal_artifact.model_dump(mode="json")
     payload.update(
         {
             "schema_version": "live-verification-preflight-artifact-v2",
+            "readiness": readiness,
             "capture_contract": LIVE_VERIFICATION_CAPTURE_CONTRACT,
             "corpus_observations": [
                 _sanitize_corpus(observation).model_dump(mode="json")
                 for observation in corpus_observations
+            ],
+            "blockers": [
+                _sanitize_blocker(blocker).model_dump(mode="json") for blocker in blockers
             ],
             "logical_digest": "sha256:" + "0" * 64,
         }
@@ -600,7 +650,7 @@ def replay_live_preflight_artifact(
     recomputed_digest = canonical_digest(_logical_payload(artifact))
     if artifact.logical_digest != recomputed_digest:
         raise ValueError("artifact logical content does not reproduce its stored digest")
-    return {
+    summary: dict[str, str | int] = {
         "schema_version": artifact.schema_version,
         "logical_digest": recomputed_digest,
         "capture_state": artifact.capture_state,
@@ -608,6 +658,9 @@ def replay_live_preflight_artifact(
         "parse_observation_count": len(artifact.parse_observations),
         "blocker_count": len(artifact.blockers),
     }
+    if artifact.readiness is not None:
+        summary["readiness"] = artifact.readiness
+    return summary
 
 
 def _sanitize_corpus(observation: CorpusIdentityObservation) -> CorpusIdentityEvidence:
@@ -940,13 +993,48 @@ def _validate_live_verification_capture(
     *,
     reviewed_binding: _ReviewedHandoffBinding,
 ) -> None:
-    if artifact.blockers:
-        raise ValueError("live verification capture cannot retain blockers")
+    if artifact.readiness is None:
+        raise ValueError("live verification capture requires a readiness verdict")
+    if artifact.readiness == "READY" and artifact.blockers:
+        raise ValueError("READY live verification capture cannot retain blockers")
+    if artifact.readiness == "NOT_READY" and not artifact.blockers:
+        raise ValueError("NOT_READY live verification capture requires a blocker")
+    if len(artifact.blockers) > 1:
+        raise ValueError("live verification capture requires at most one terminal blocker")
+
+    blocker = artifact.blockers[0] if artifact.blockers else None
+    if blocker is not None and blocker.operation != "corpus_identity":
+        if artifact.corpus_observations:
+            raise ValueError("principal-blocked live verification cannot contain corpus evidence")
+        if artifact.dataset_identity is None:
+            allowed_pre_probe_blockers = {
+                ("EVALUATION_PRINCIPAL_ID_INVALID", "tenant_or_user_uuid_invalid"),
+                (
+                    "EVALUATION_PRINCIPAL_SUBJECT_INVALID",
+                    "subject_is_not_reviewed_owner",
+                ),
+                ("PARSE_ATTACHMENT_MAPPING_INVALID", "dataset_identity_mismatch"),
+            }
+            if (
+                artifact.parse_observations
+                or blocker.case_id is not None
+                or blocker.request is not None
+                or blocker.attempts
+                or (blocker.code, blocker.detail) not in allowed_pre_probe_blockers
+            ):
+                raise ValueError("pre-probe live verification blocker is inconsistent")
+            return
+        principal_evidence = artifact.model_copy(update={"corpus_observations": ()})
+        _validate_principal_attachment_capture(
+            principal_evidence,
+            reviewed_binding=reviewed_binding,
+        )
+        return
 
     # Keep principal attachment evidence strict without weakening that contract's
     # explicit refusal of corpus observations.
     tenant_ids: set[str] = set()
-    principal_evidence = artifact.model_copy(update={"corpus_observations": ()})
+    principal_evidence = artifact.model_copy(update={"corpus_observations": (), "blockers": ()})
     _validate_principal_attachment_capture(
         principal_evidence,
         reviewed_binding=reviewed_binding,
@@ -976,7 +1064,56 @@ def _validate_live_verification_capture(
                 "live verification corpus role is missing the qualified seed contribution"
             )
         observed_roles.add(roles[0])
-    if observed_roles != set(LIVE_VERIFICATION_ROLES) or len(artifact.corpus_observations) != len(
+    if blocker is not None:
+        if artifact.dataset_identity is None:
+            raise ValueError("live verification corpus blocker requires frozen dataset identity")
+        expected_completed_roles = set(LIVE_VERIFICATION_ROLES[: len(artifact.corpus_observations)])
+        if observed_roles != expected_completed_roles or len(observed_roles) != len(
+            artifact.corpus_observations
+        ):
+            raise ValueError("live verification completed corpus role prefix is inconsistent")
+        if blocker.request is None or blocker.case_id is None:
+            raise ValueError("live verification corpus blocker requires its canonical request")
+        blocked_roles = blocker.request.roles
+        if (
+            blocker.code != "LIVE_CORPUS_IDENTITY_FAILED"
+            or blocker.operation != "corpus_identity"
+            or len(blocked_roles) != 1
+            or len(artifact.corpus_observations) >= len(LIVE_VERIFICATION_ROLES)
+        ):
+            raise ValueError("live verification corpus blocker identity is inconsistent")
+        blocked_role = blocked_roles[0]
+        if (
+            blocked_role != LIVE_VERIFICATION_ROLES[len(artifact.corpus_observations)]
+            or blocker.case_id != f"corpus-{blocked_role}"
+        ):
+            raise ValueError("live verification corpus blocker identity is inconsistent")
+        _validate_live_verification_corpus_request(
+            blocker.request,
+            artifact_run_id=artifact.run_id,
+            role=blocked_role,
+            subject_id=reviewed_binding.subject_id,
+        )
+        _validate_live_verification_corpus_attempts(
+            blocker.attempts,
+            require_success=False,
+        )
+        allowed_terminal_outcomes = {
+            "AX_REQUEST_FAILURE": {"request_error"},
+            "AX_TRANSIENT_RETRIES_EXHAUSTED": {"timeout", "retryable_http"},
+            "AX_PERMANENT_HTTP_FAILURE": {"permanent_http"},
+            "AX_RESPONSE_SCHEMA_MISMATCH": {"schema_error"},
+        }
+        blocker_detail = blocker.detail
+        if blocker_detail is None:
+            raise ValueError("live verification corpus blocker requires a typed detail")
+        if blocker.attempts[-1].outcome not in allowed_terminal_outcomes.get(
+            blocker_detail,
+            set(),
+        ):
+            raise ValueError("live verification corpus blocker contradicts its terminal attempt")
+        tenant_ids.add(blocker.request.tenant_id)
+    elif observed_roles != set(LIVE_VERIFICATION_ROLES) or len(artifact.corpus_observations) != len(
         LIVE_VERIFICATION_ROLES
     ):
         raise ValueError("live verification capture requires all three corpus roles")
@@ -1023,6 +1160,8 @@ def _validate_live_verification_corpus_request(
 
 def _validate_live_verification_corpus_attempts(
     attempts: tuple[HttpAttempt, ...],
+    *,
+    require_success: bool = True,
 ) -> None:
     if not attempts or len(attempts) > 3:
         raise ValueError("live verification corpus operation requires bounded attempt evidence")
@@ -1069,7 +1208,7 @@ def _validate_live_verification_corpus_attempts(
                 "only retryable live verification corpus attempts may precede the terminal attempt"
             )
 
-    if attempts[-1].outcome != "success":
+    if require_success and attempts[-1].outcome != "success":
         raise ValueError("live verification corpus observation requires a successful final attempt")
 
 
