@@ -16,6 +16,7 @@ from braincrew.cli import app
 from braincrew.contracts import ParsingCase
 from braincrew.dataset_registry import validate_dataset_bundle
 from braincrew.digest import canonical_digest
+from braincrew.parsing_run import load_parsing_dataset
 
 PROJECT_ROOT = Path(__file__).parents[2]
 PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
@@ -32,19 +33,22 @@ APPROVED_ATTACHMENTS = {
 }
 
 
-def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
+def test_v3_manifest_documents_can_differ_from_reviewed_probes_and_capture_succeeds(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
-    validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v2.json")
+    validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v3.json")
     assert validation.state == "VALID"
     assert validation.snapshot is not None
-    cases = {
+    manifest_verification_ids = {
         case.document.id: case
         for case in validation.snapshot.parsing_dataset.cases
         if case.split == "verification"
     }
+    reviewed_probe_cases = _reviewed_probe_cases()
+    # Issue #75 acceptance item 3: manifest membership does not select live probes.
+    assert set(manifest_verification_ids).isdisjoint(reviewed_probe_cases)
     attachment_documents = {
         attachment_id: document_id for document_id, attachment_id in APPROVED_ATTACHMENTS.items()
     }
@@ -54,7 +58,7 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
         requests.append(request)
         attachment_id = request.url.path.split("/")[-2]
         document_id = attachment_documents[attachment_id]
-        case = cases[document_id]
+        case = reviewed_probe_cases[document_id]
         payload = _parse_response(case, attachment_id=attachment_id)
         if document_id == "synthetic-rule-019":
             payload["headings"] = []
@@ -82,15 +86,16 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
     assert artifact.corpus_observations == ()
     assert artifact.dataset_identity is not None
     assert artifact.dataset_identity.id == "braincrew-evaluation-dataset"
-    assert artifact.dataset_identity.version == "2.0.0"
+    assert artifact.dataset_identity.version == "3.0.0"
     assert (
         artifact.dataset_identity.content_digest
-        == "sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a"
+        == "sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d"
     )
-    assert (
-        artifact.dataset_identity.component_digests.parsing
-        == "sha256:a4ce3d2381853288e92cc2fd21df5cfcd9629db39ea134d8314594e146b48127"
-    )
+    assert artifact.dataset_identity.component_digests.model_dump() == {
+        "parsing": "sha256:33e17fbb4d3f5485df1482de37e472e1b20fceef922c9b1dda90f8d9dfc25f73",
+        "retrieval": "sha256:9687ead24590cab1b9d244ef876f226545a1fb1aa2013c50e4be7a63430c8408",
+        "grounded": "sha256:f76a9a1fa9a6a4b467f76ce7649dc7c15f5ad7c615d6cbb20ed3394e486d94b2",
+    }
     assert len(artifact.parse_observations) == 6
     assert [request.headers["x-ax-user-id"] for request in requests] == [OWNER_USER_ID] * 6
     assert [request.headers["x-ax-roles"] for request in requests] == ["HRPractitioner"] * 6
@@ -122,7 +127,9 @@ def test_six_reviewed_owner_probes_create_raw_text_free_replayable_evidence(
         tmp_path / "issue-34-live-preflight-evidence.json",
     )
     retained = artifact_path.read_text(encoding="utf-8")
-    assert all(case.document.canonical_text not in retained for case in cases.values())
+    assert all(
+        case.document.canonical_text not in retained for case in reviewed_probe_cases.values()
+    )
     assert '"extracted_text"' not in retained
     assert '"text"' not in retained
 
@@ -256,7 +263,7 @@ def test_blocked_principal_attachment_capture_cannot_replay_without_dataset_iden
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
-    validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v2.json")
+    validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v3.json")
     assert validation.state == "VALID"
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -363,7 +370,7 @@ def test_real_cli_principal_replay_without_handoff_receipt_refuses(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     receipt_path = _install_reviewed_receipt(tmp_path, monkeypatch)
-    validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v2.json")
+    validation = validate_dataset_bundle(PROJECT_ROOT / "datasets/dataset_manifest_v3.json")
     assert validation.state == "VALID"
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -415,6 +422,15 @@ def _parse_response(case: ParsingCase, *, attachment_id: str) -> dict[str, Any]:
         "list": None if expected.list is None else expected.list.model_dump(mode="json"),
         "unavailable_fields": [],
     }
+
+
+def _reviewed_probe_cases() -> dict[str, ParsingCase]:
+    parsing_dataset = load_parsing_dataset(PROJECT_ROOT / "datasets/parsing/parsing_cases_v1.json")
+    cases = {
+        case.document.id: case for case in parsing_dataset.cases if case.split == "verification"
+    }
+    assert set(cases) == set(live_preflight.REVIEWED_PARSING_SOURCE_EVIDENCE)
+    return cases
 
 
 def _install_reviewed_receipt(

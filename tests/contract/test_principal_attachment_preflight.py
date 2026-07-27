@@ -16,9 +16,10 @@ from braincrew.ax_http_adapter import AxHttpAdapterConfig
 from braincrew.contracts import ParsingCase
 from braincrew.dataset_registry import DatasetValidationReport, validate_dataset_bundle
 from braincrew.digest import canonical_digest
+from braincrew.parsing_run import load_parsing_dataset
 
 PROJECT_ROOT = Path(__file__).parents[2]
-DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v2.json"
+DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v3.json"
 PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
 EVALUATION_SHA = "93c8e8dabab855b7f2f700df73cd04ce38995f29"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
@@ -175,7 +176,7 @@ def test_nonfrozen_dataset_identity_blocks_before_http(
             "computed_dataset_digest": wrong_digest,
         }
     )
-    cases = _verification_cases(forged_validation)
+    cases = _reviewed_probe_cases()
     requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -222,7 +223,7 @@ def test_nonfrozen_dataset_component_digest_blocks_before_http(
             },
         }
     )
-    cases = _verification_cases(forged_validation)
+    cases = _reviewed_probe_cases()
     requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -329,7 +330,7 @@ def test_request_error_attempt_cannot_claim_a_response_correlation(
 def test_unavailable_parse_preserves_the_existing_typed_live_blocker(
     dataset_validation: DatasetValidationReport,
 ) -> None:
-    cases = _verification_cases(dataset_validation)
+    cases = _reviewed_probe_cases()
 
     def handler(request: httpx.Request) -> httpx.Response:
         requested = _requested_attachment(request)
@@ -356,7 +357,7 @@ def test_unavailable_parse_preserves_the_existing_typed_live_blocker(
 def test_mismatched_attachment_identity_is_a_mapping_blocker(
     dataset_validation: DatasetValidationReport,
 ) -> None:
-    cases = _verification_cases(dataset_validation)
+    cases = _reviewed_probe_cases()
 
     def handler(request: httpx.Request) -> httpx.Response:
         requested = _requested_attachment(request)
@@ -400,7 +401,7 @@ def test_successful_transport_with_invalid_strict_evidence_remains_blocked(
     mutation: Callable[[dict[str, Any]], None],
     detail: str,
 ) -> None:
-    cases = _verification_cases(dataset_validation)
+    cases = _reviewed_probe_cases()
 
     def handler(request: httpx.Request) -> httpx.Response:
         requested = _requested_attachment(request)
@@ -419,7 +420,7 @@ def test_successful_transport_with_invalid_strict_evidence_remains_blocked(
 def test_unsafe_span_identifier_is_blocked_without_retaining_it(
     dataset_validation: DatasetValidationReport,
 ) -> None:
-    cases = _verification_cases(dataset_validation)
+    cases = _reviewed_probe_cases()
     unsafe_span_id = "Bearer secret-material"
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -439,7 +440,7 @@ def test_unsafe_span_identifier_is_blocked_without_retaining_it(
 def test_available_parse_with_empty_spans_remains_measureable(
     dataset_validation: DatasetValidationReport,
 ) -> None:
-    cases = _verification_cases(dataset_validation)
+    cases = _reviewed_probe_cases()
 
     def handler(request: httpx.Request) -> httpx.Response:
         requested = _requested_attachment(request)
@@ -508,7 +509,7 @@ def test_exhausted_parse_retries_are_retained_with_the_blocker(
 def test_retries_are_retained_when_recovered_response_evidence_is_rejected(
     dataset_validation: DatasetValidationReport,
 ) -> None:
-    cases = _verification_cases(dataset_validation)
+    cases = _reviewed_probe_cases()
     request_count = 0
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -551,7 +552,7 @@ def test_retries_are_retained_when_recovered_response_evidence_is_rejected(
 def test_retryable_parse_failures_retain_attempts_and_then_complete_six_probes(
     dataset_validation: DatasetValidationReport,
 ) -> None:
-    cases = _verification_cases(dataset_validation)
+    cases = _reviewed_probe_cases()
     request_count = 0
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -610,15 +611,15 @@ def _capture(
     )
 
 
-def _verification_cases(
-    validation: DatasetValidationReport,
-) -> dict[str, ParsingCase]:
-    assert validation.snapshot is not None
-    return {
-        case.document.id: case
-        for case in validation.snapshot.parsing_dataset.cases
-        if case.split == "verification"
+def _reviewed_probe_cases() -> dict[str, ParsingCase]:
+    parsing_dataset = load_parsing_dataset(
+        PROJECT_ROOT / "datasets" / "parsing" / "parsing_cases_v1.json"
+    )
+    cases = {
+        case.document.id: case for case in parsing_dataset.cases if case.split == "verification"
     }
+    assert set(cases) == set(live_preflight.REVIEWED_PARSING_SOURCE_EVIDENCE)
+    return cases
 
 
 def _attachment_documents() -> dict[str, str]:

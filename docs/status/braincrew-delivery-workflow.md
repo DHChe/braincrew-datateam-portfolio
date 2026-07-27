@@ -570,6 +570,51 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-07-27 — Issue #75 implemented; v3 dataset identity and receipt-bound probes now have separate authorities
+
+- Phase: TDD implementation of Braincrew Issue #75 on
+  `feat/issue-75-bind-v3-decouple-probe-set`, based on `a846058`. **Nothing is committed**; cycle 71
+  is the independent review and no Git lifecycle action is authorized.
+- Authority: the repository owner's locked Option C decision in
+  `docs/decisions/2026-07-27-dataset-identity-axis-analysis.md` §18. The preserved §10 remains
+  historical recommendation text, not the decision.
+- Blast radius was re-measured rather than copied from the ticket. Across the ticket's broad
+  v2-reference inventory, `2.0.0|dataset_manifest_v2` matches **32 lines across 8 files** at HEAD,
+  not the stated 28 occurrences. Most are intentionally preserved historical v2
+  qualification/freeze evidence. The behavior-changing radius was measured by the required
+  constants-first run: **19 failed, 346 passed across 3 test modules**.
+- RED evidence: changing only the frozen dataset constants to v3 made existing v2
+  `dataset_validation` fixtures fail the frozen identity gate. Three acceptance failures, one
+  receipt-binding failure, and fifteen principal-attachment contract failures then either returned
+  `dataset_identity_mismatch` before HTTP/evidence checks or built the generic artifact shape
+  instead of the principal-attachment shape. This demonstrated that the old manifest binding held
+  up the whole principal capture suite, not only `_approved_mapping`.
+- Probe authority was independently verified before implementation:
+  `REVIEWED_PARSING_SOURCE_EVIDENCE` contains exactly six `synthetic-rule-*` entries; all six stored
+  digests equal the SHA-256 of their stored canonical text, and all six texts are byte-identical to
+  the historical reviewed source documents. `_parse_evidence_failure` consumed only
+  `case.document.canonical_text` from its manifest-derived `ParsingCase`.
+- Change: the frozen integrated identity now uses `3.0.0`, `DATASET_V3_DIGEST`, and a protected copy
+  of `DATASET_V3_COMPONENT_DIGESTS`. The manifest-derived `_verification_cases` function and its
+  duplicated `"2.0.0"` literal are removed. Capture member order comes from the reviewed handoff
+  receipt after its case set is checked against `REVIEWED_PARSING_SOURCE_EVIDENCE`; strict parse
+  comparison receives the frozen reviewed source digest directly.
+- Naming: source uses `reviewed_probe_evidence`; tests use `reviewed_probe_cases`. Neither name calls
+  the probes a dataset, manifest, version, or parsing component.
+- Acceptance evidence: the bound v3 manifest's Verification documents are all `demo-*`, the
+  reviewed operational probes are `synthetic-rule-*`, the test asserts the sets are disjoint, and
+  the six-probe capture plus replay still succeeds. The complementary receipt test replaces one
+  reviewed case and observes refusal before capture.
+- Pre-gate evidence: the three affected test modules pass **38 tests**, followed by a full
+  **365 passed** run. Final six-gate evidence belongs to the cycle-70 completion report.
+- **`braincrew_preflight_ready` remains `false`.** Issue #75 does not add
+  `live-verification-preflight-artifact-v2`, role-visible corpus capture, a live runtime start, or
+  reconciliation of AX #37/#43.
+- Exact next action and entry condition: cycle 71 independent review in the existing pane 3,
+  retaining a fresh review context so implementation assumptions are not inherited as evidence.
+  Approval requires the v3 identity, disjoint-set success test, receipt mismatch refusal, naming
+  boundary, and all six gates to reproduce with zero blocking defect.
+
 ### 2026-07-27 — Issue #71 implemented; the re-pin's one real risk turned out to be loud, not silent
 
 - Phase: implementation of Braincrew Issue #71 on `feat/issue-71-repin-evaluation-sut-commit`, based
