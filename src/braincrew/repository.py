@@ -13,6 +13,12 @@ class RepositoryState:
 
 def capture_evaluation_repository_state() -> RepositoryState:
     repository_root = Path(__file__).resolve().parents[2]
+    return capture_repository_state(repository_root)
+
+
+def capture_repository_state(repository_root: Path | None = None) -> RepositoryState:
+    if repository_root is None:
+        repository_root = Path(__file__).resolve().parents[2]
     commit_sha = _git_output(repository_root, "rev-parse", "HEAD")
     dirty_worktree = bool(_git_output(repository_root, "status", "--porcelain"))
     return RepositoryState(commit_sha=commit_sha, dirty_worktree=dirty_worktree)

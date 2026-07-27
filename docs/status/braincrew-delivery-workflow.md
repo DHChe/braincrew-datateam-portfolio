@@ -25,7 +25,41 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **Phase 1 of the authorized live runtime capture executed on 2026-07-27, and
+- Active phase: **[Issue #85](https://github.com/DHChe/braincrew-datateam-portfolio/issues/85) is
+  implemented, reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE` with no blocking finding,
+  and published for merge into `develop` under explicit user authorization** (commit → push → pull
+  request → squash merge). Branch `feat/issue-85-live-experiment-capture`, cut from `515d9c9`.
+  **Phase 0 of Issue #15**: a committed command that issues live `retrieve`/`answer` and a run
+  contract that can say it was live. Locked in
+  [the live-experiment decision](../decisions/2026-07-27-live-experiment-capture-and-the-unobservable-warrant.md),
+  defended as card **D16**.
+  - **Why it was needed.** `READY` made #15 the only licensed step, and #15 could not start:
+    **zero production callers** of `retrieve`/`answer`, and the run-artifact contracts pinned
+    `execution_mode: Literal["fixture"]`, so a live run was **unrepresentable** — while
+    `ExperimentProvenance` in `comparison.py` already permitted `"live"`. The same shape #38 had that
+    morning, one layer up.
+  - **The trap and the answer.** The comparison gate refuses a dirty SUT, but **SUT dirtiness is not
+    observable over HTTP**. Rather than default `sut_dirty=False`, the artifact carries a
+    `SutStateWarrant` naming the method, its subject and the values the check returned.
+  - **What review caught.** Eleven mutations; seven guards load-bearing; the **four survivors were
+    without exception the ones carrying the honesty claim**, including neutering the execution-claim
+    validator, which survived all 433 tests. The decisive pair: fabricating the warrant was *caught*;
+    calling git, **discarding the result** and recording constants was *not*. Plus: every live
+    failure produced a traceback and exit 1 (`AxHttpFailure` subclasses `RuntimeError`); the
+    `logical_digest` could not be recomputed from its own file; and the parsing widening made only a
+    *false* state reachable. All closed, **442 passed**.
+  - **Correction to the orchestrator's ticket, by the implementer:** the 30 Verification cases are
+    6 parsing + 9 retrieval + 15 grounded, so live calls are **24, not 30**. Parsing cases carry no
+    query. The manifest now encodes the partition explicitly.
+- **Newly blocking Phase 1 of #15:**
+  [Issue #86](https://github.com/DHChe/braincrew-datateam-portfolio/issues/86) — `_confound_violations()`
+  demands retrieval metrics from all 30 case pairs, which the 21 non-retrieval cases structurally
+  cannot supply, so a real comparison is `INVALID` by construction. **The contradiction is in the
+  design specification, and so is its resolution:** that document declares per-case metric
+  **applicability** as a first-class field (line 181) and fixes Recall@5's Verification denominator at
+  **9** (line 240), while line 258 demands the metric from every case. Scoping the check is the spec
+  being applied, not relaxed.
+- Preceding phase: **Phase 1 of the authorized live runtime capture executed on 2026-07-27, and
   `braincrew_preflight_ready` is now `true`.** Under explicit stage-by-stage user authorization, the
   stopped AX runtime was started (the same containers Stage 9 created — all three container IDs
   byte-identical), the committed `capture-live-verification` command ran **once** against
@@ -656,6 +690,44 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-27 — Issue #85 built Phase 0 of the live experiment, and independent review found the honesty machinery unearned
+
+- Phase: Issue #85 implemented on `feat/issue-85-live-experiment-capture` across cycles 89–93:
+  implementation → `REQUEST CHANGES` (four blocking) → repair → **`APPROVE`, no blocking finding** →
+  one targeted alignment. **Nothing is committed.**
+- **The prerequisite was measured before recommending, this time.** After `READY`, the natural move
+  was to request authorization for #15's runtime start. Measuring first showed #15 could not start at
+  all. That is the same discipline the previous cycle's error taught, applied deliberately.
+- **The trap: attesting to something unobservable.** The comparison gate refuses a dirty SUT, and SUT
+  dirtiness cannot be seen over HTTP. The answer was a warrant carrying the method, its subject and
+  the check's returned values — not a bare boolean.
+- **Review's central finding: the machinery was not earned.** Seven of eleven guards were
+  load-bearing; **all four survivors carried the honesty claim.** Neutering the execution-claim
+  validator survived all 433 tests. The decisive pair — fabricating the warrant was *caught*; calling
+  git, **throwing the answer away**, and recording constants was *not*.
+  - **Rule recorded:** a warrant that names a method is not evidence until a test pins that it
+    carries *the method's result*. Until then it is worse than a bare boolean, because it reads as
+    evidence.
+- Three further blocking findings, all closed: every live failure produced a traceback and **exit 1**
+  because `AxHttpFailure` subclasses `RuntimeError` (zero of seventeen new tests exercised a
+  transport failure, on a run designed to happen once); the `logical_digest` could not be recomputed
+  from the file storing it, because `captured_at` was the sole hand-serialized field; and widening
+  `execution_mode` without widening `version` made *a fixture parser declaring live execution* the
+  only newly-reachable parsing state — asserted by a test as intended.
+- **The implementer corrected the orchestrator's ticket again:** live calls are **24, not 30**, since
+  6 of the 30 Verification cases are parsing and carry no query. The orchestrator asserted a total
+  without measuring its composition — the same error class as earlier in the day.
+- **A blocker for the ticket this unblocks was discovered and filed as #86.** The contradiction lives
+  in the design specification, which also supplies its own resolution through the per-case metric
+  **applicability** concept it already declares. The reviewer verified the orchestrator's addition
+  and found it stronger than stated.
+- One alignment beyond the review's blocking set: `checkout_path` recorded an absolute host path into
+  a citable artifact, conflicting with the standard `live_preflight.py:296` already enforces by
+  refusing private paths. Fixed to a basename and pinned by a test. The reviewer had classified it
+  non-blocking; the override was to a **stricter** position and is recorded as such.
+- Not proven: **no experiment ran, no quality claim exists.** Phase 1 of #15 remains a separate
+  decision and is additionally blocked by #86.
 
 ### 2026-07-27 — Issue #82 merged as `6ec3abc`; Phase 1 executed once, the first live artifact reported READY, and the readiness flag was earned
 

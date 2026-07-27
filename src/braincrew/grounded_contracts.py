@@ -292,7 +292,7 @@ class GroundedObservation(StrictGroundedContract):
 
 class GroundedObservationBatch(StrictGroundedContract):
     schema_version: Literal["grounded-observation-batch-v1"]
-    adapter_version: Literal["fixture-grounded-sut-v1"]
+    adapter_version: Literal["fixture-grounded-sut-v1", "ax-sut-http-v1"]
     sut_commit_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
     observations: tuple[GroundedObservation, ...] = Field(min_length=1)
 
@@ -401,8 +401,8 @@ class GroundedRunEvaluation(StrictGroundedContract):
 
 
 class GroundedAdapterProvenance(StrictGroundedContract):
-    version: Literal["fixture-grounded-sut-v1"]
-    execution_mode: Literal["fixture"]
+    version: Literal["fixture-grounded-sut-v1", "ax-sut-http-v1"]
+    execution_mode: Literal["fixture", "live"]
 
 
 class GroundedCompatibilityProvenance(StrictGroundedContract):
