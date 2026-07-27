@@ -16,8 +16,8 @@ from braincrew.dataset_registry import DatasetValidationReport, validate_dataset
 
 PROJECT_ROOT = Path(__file__).parents[2]
 DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v2.json"
-PINNED_AX_SHA = "72805930d9addd8ea41743d1922acf8de621c3f8"
-APPLIED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
+PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
+UNREVIEWED_AX_SHA = "d7930978d7b0cb41668a86acd9fe77c16068801d"
 EVALUATION_SHA = "93c8e8dabab855b7f2f700df73cd04ce38995f29"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
 SYNTHETIC_SUBJECT_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
@@ -82,12 +82,17 @@ def test_incomplete_receipt_state_refuses(
         _capture(dataset_validation, handoff_receipt_path=receipt_path)
 
 
+def test_unreviewed_ax_sha_is_distinct_from_pin() -> None:
+    if UNREVIEWED_AX_SHA == PINNED_AX_SHA:
+        pytest.fail("UNREVIEWED_AX_SHA must differ from PINNED_AX_SHA")
+
+
 def test_receipt_from_unreviewed_sut_commit_refuses(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     dataset_validation: DatasetValidationReport,
 ) -> None:
-    receipt_path = _write_receipt(tmp_path, repository_commit_sha=APPLIED_AX_SHA)
+    receipt_path = _write_receipt(tmp_path, repository_commit_sha=UNREVIEWED_AX_SHA)
     _pin_fixture_digest(monkeypatch, receipt_path)
 
     with pytest.raises(ValueError, match="unreviewed AX commit"):

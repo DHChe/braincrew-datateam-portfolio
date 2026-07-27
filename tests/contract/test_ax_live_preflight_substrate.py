@@ -15,7 +15,7 @@ from braincrew.ax_http_adapter import (
     ParseObservationResponse,
 )
 
-PINNED_AX_SHA = "72805930d9addd8ea41743d1922acf8de621c3f8"
+PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
 USER_ID = "22222222-2222-2222-2222-222222222222"
 TEXT_DIGEST = "sha256:" + "1" * 64
