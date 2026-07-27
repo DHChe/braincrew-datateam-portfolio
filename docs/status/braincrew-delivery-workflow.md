@@ -25,7 +25,32 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **[Issue #85](https://github.com/DHChe/braincrew-datateam-portfolio/issues/85) is
+- Active phase: **[Issue #86](https://github.com/DHChe/braincrew-datateam-portfolio/issues/86) is
+  implemented, reviewed `APPROVE` with no blocking finding, and published for merge into `develop`
+  under explicit user authorization** (commit → push → pull request → squash merge). Branch
+  `fix/issue-86-confound-applicability`, cut from `af18c5e`. **This removes the last code blocker on
+  Issue #15.** Locked in
+  [the conformance decision](../decisions/2026-07-27-confound-applicability-conformance.md),
+  defended as card **D17**.
+  - **The defect, and why it was sharp.** `_confound_violations()` demanded three retrieval metrics
+    from all 30 Verification case pairs, which the 21 non-retrieval cases structurally cannot supply
+    — so a real comparison was `INVALID` by construction. **The evaluator's *correct* behaviour was
+    what triggered it:** it computes a metric only when the case declares it applicable, and the
+    comparison layer read that deliberate omission as missing. `comparison.py` referenced
+    applicability **zero** times.
+  - **It was conformance, not a contract change.** The orchestrator's first justification — "no
+    stored artifact breaks" — was **rejected by review** as a migration fact rather than a reason.
+    The correct reason: the specification's unchanged description of `experiment-run-summary-v1`
+    already required comparison to fail closed on differing **per-case applicability**. The code was
+    under-implementing a contract it already had.
+  - **The specification was amended too**, because the code was not the origin: line 258 declared the
+    metrics mandatory per case, while lines 181, 183 and 240 of the same document supplied the
+    resolution — applicability as a first-class per-case field and a Recall@5 Verification
+    denominator of **9**, not 30.
+  - **What it establishes:** a real mixed 6 + 9 + 15 comparison now **reaches a decision** (`FAIL`
+    computed from evidence) with the confound control **still armed on all 9 retrieval cases** —
+    not merely un-refused. **449 passed.**
+- Preceding phase, merged as **`af18c5e`** (PR #87): **[Issue #85](https://github.com/DHChe/braincrew-datateam-portfolio/issues/85) was
   implemented, reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE` with no blocking finding,
   and published for merge into `develop` under explicit user authorization** (commit → push → pull
   request → squash merge). Branch `feat/issue-85-live-experiment-capture`, cut from `515d9c9`.

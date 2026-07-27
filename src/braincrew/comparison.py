@@ -9,7 +9,7 @@ from typing import Literal, Never, cast
 
 from pydantic import Field, TypeAdapter, field_validator, model_validator
 
-from braincrew.contracts import RunId, StrictContract
+from braincrew.contracts import RetrievalApplicability, RunId, StrictContract
 from braincrew.digest import canonical_digest
 
 PRIMARY_METRICS = (
@@ -20,7 +20,24 @@ PRIMARY_METRICS = (
     "answer_mode_accuracy",
     "abstention_accuracy",
 )
-RETRIEVAL_CONFOUND_METRICS = ("recall_at_5", "mrr_at_10", "authority_priority")
+type RetrievalConfoundMetric = Literal["recall_at_5", "mrr_at_10", "authority_priority"]
+type RetrievalApplicabilityField = Literal[
+    "recall_at_5",
+    "mrr_at_10",
+    "authority_ordering",
+]
+RETRIEVAL_CONFOUND_METRICS: tuple[RetrievalConfoundMetric, ...] = (
+    "recall_at_5",
+    "mrr_at_10",
+    "authority_priority",
+)
+RETRIEVAL_CONFOUND_APPLICABILITY_FIELDS: dict[
+    RetrievalConfoundMetric, RetrievalApplicabilityField
+] = {
+    "recall_at_5": "recall_at_5",
+    "mrr_at_10": "mrr_at_10",
+    "authority_priority": "authority_ordering",
+}
 VERIFICATION_MINIMUM_DENOMINATORS = {
     "evidence_span_recovery": 6,
     "recall_at_5": 9,
@@ -115,6 +132,7 @@ class ExperimentCaseResult(StrictContract):
     case_id: str
     metrics: dict[str, Decimal]
     retrieval_metrics: dict[str, Decimal] = Field(default_factory=dict)
+    applicability: RetrievalApplicability
     latency_ms: Decimal = Field(ge=0)
     cost_usd: Decimal = Field(ge=0)
     failures: tuple[FailureIdentity, ...]
@@ -150,6 +168,18 @@ class ExperimentCaseResult(StrictContract):
             raise ValueError("retrieval metric values must fit DECIMAL(38, 28) exactly")
         if any(value < 0 or value > 1 for value in self.retrieval_metrics.values()):
             raise ValueError("retrieval metric values must be within [0, 1]")
+        return self
+
+    @model_validator(mode="after")
+    def validate_inapplicable_confound_metrics_absent(self) -> ExperimentCaseResult:
+        for metric, applicability_field in RETRIEVAL_CONFOUND_APPLICABILITY_FIELDS.items():
+            metric_value = (
+                self.metrics.get(metric)
+                if metric == "recall_at_5"
+                else self.retrieval_metrics.get(metric)
+            )
+            if not getattr(self.applicability, applicability_field) and metric_value is not None:
+                raise ValueError(f"{metric} must be absent when declared inapplicable")
         return self
 
 
@@ -442,6 +472,13 @@ def _confound_violations(
     violations: list[str] = []
     for baseline_case, candidate_case in pairs:
         for metric in RETRIEVAL_CONFOUND_METRICS:
+            applicability_field = RETRIEVAL_CONFOUND_APPLICABILITY_FIELDS[metric]
+            baseline_applicable = getattr(baseline_case.applicability, applicability_field)
+            candidate_applicable = getattr(candidate_case.applicability, applicability_field)
+            # Applicability drift is rejected separately; this only skips pairs
+            # declared inapplicable in both runs.
+            if not baseline_applicable and not candidate_applicable:
+                continue
             baseline_value = (
                 baseline_case.metrics.get(metric)
                 if metric == "recall_at_5"
@@ -537,7 +574,7 @@ def compare_runs(
     delta_errors = [
         f"SYS-COMPARISON-METRIC-APPLICABILITY-MISMATCH:{left.case_id}"
         for left, right in pairs
-        if set(left.metrics) != set(right.metrics)
+        if left.applicability != right.applicability or set(left.metrics) != set(right.metrics)
     ]
     for left, right in pairs:
         try:
