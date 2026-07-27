@@ -51,6 +51,13 @@ research and AX_portfolio context
   unchanged. Three questions must be settled before that work starts: which case set the evaluation
   runs against, which integrated manifest version that implies, and how integrated and nested
   versions are represented so they cannot be conflated again.
+  - **The human decision is not the only blocker.** Issue #38 formally lists
+    [AX #37](https://github.com/DHChe/AX_portfolio/issues/37) — the operator-controlled snapshot
+    gate — among its blocking issues, and it is still **`OPEN`**, as is the linked
+    [AX #43](https://github.com/DHChe/AX_portfolio/issues/43). That issue topology has to be
+    reconciled alongside the decision, not after it. The SUT-commit decision's §10 already directed
+    this and it has now been omitted from the record twice; it is written here so a third omission
+    is harder.
 - Deferred and tracked, not forgotten: the duplicated literal `"2.0.0"` at `live_preflight.py:951`
   belongs to the dataset-identity work rather than to Issue #71, and the blast-radius figures in the
   SUT decision's §6 and §14 were measured at `dfc41ff` and need re-measuring when Issue #71 starts.
