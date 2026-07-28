@@ -17,7 +17,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-001",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -61,7 +61,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-002",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -105,7 +105,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-003",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -149,7 +149,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-004",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -193,7 +193,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-005",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -237,7 +237,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-006",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -281,7 +281,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-007",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -325,7 +325,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-008",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -369,7 +369,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-009",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -413,7 +413,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-010",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -457,7 +457,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-011",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -501,7 +501,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-012",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -545,7 +545,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-013",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -589,7 +589,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-014",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -633,7 +633,7 @@
     {
       "candidate_failures": [],
       "case_id": "CASE-015",
-      "cost_relative_delta": "0",
+      "cost_relative_delta": null,
       "latency_relative_delta": "0",
       "metrics": [
         {
@@ -715,7 +715,7 @@
       "reasons": []
     }
   ],
-  "logical_digest": "sha256:f8630e70892f976ee120ac497ef63ce6cc64add8aa1d71989a576891b5ae7bbe",
+  "logical_digest": "sha256:d426e04c0c2b960d8c8c17efc216688891b2078faaaa51ff226c137c2f8694ae",
   "metrics": [
     {
       "baseline": "0.80",
@@ -755,11 +755,19 @@
     }
   ],
   "operational_delta": {
-    "baseline_mean_cost_usd": "0.010",
+    "baseline_cost_case_count": 0,
+    "baseline_latency_case_count": 15,
+    "baseline_mean_cost_usd": null,
     "baseline_p95_latency_ms": "100",
-    "candidate_mean_cost_usd": "0.010",
+    "candidate_cost_case_count": 0,
+    "candidate_latency_case_count": 15,
+    "candidate_mean_cost_usd": null,
     "candidate_p95_latency_ms": "100",
-    "mean_cost_relative_delta": "0",
+    "cost_decision_warrant": {
+      "reason": "both runs declare cost unmeasured",
+      "status": "excluded"
+    },
+    "mean_cost_relative_delta": null,
     "p95_latency_relative_delta": "0"
   },
   "reasons": [],

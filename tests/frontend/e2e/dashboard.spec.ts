@@ -15,7 +15,7 @@ test("renders the immutable comparison and its three-gate decision trace", async
     page.getByText("Fixture evidence — not a live AX verification"),
   ).toBeVisible();
   await expect(page.getByTestId("logical-digest")).toContainText(
-    "f8630e70892f976ee120ac497ef63ce6cc64add8aa1d71989a576891b5ae7bbe",
+    "d426e04c0c2b960d8c8c17efc216688891b2078faaaa51ff226c137c2f8694ae",
   );
   await expect(page.getByTestId("release-gate")).toHaveCount(3);
   await expect(

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -8,6 +10,7 @@ from typing import Any, Literal, cast
 
 import httpx
 import pytest
+from pydantic import ValidationError
 from typer.testing import CliRunner
 
 from braincrew.ax_http_adapter import AxHttpFailure
@@ -329,6 +332,7 @@ def _capture(
     sut_dirty: bool = False,
     response_mutation: ResponseMutation | None = None,
     invalid_dataset: bool = False,
+    clock_ns: Callable[[], int] | None = None,
 ) -> Any:
     from braincrew.live_experiment import (
         ReviewedPrincipalBinding,
@@ -378,8 +382,818 @@ def _capture(
         dataset_validation=capture_validation,
         dependency_lock_path=PROJECT_ROOT / "uv.lock",
         transport=transport,
+        clock_ns=clock_ns or time.perf_counter_ns,
     )
     return result, calls
+
+
+def test_live_capture_records_total_client_latency_and_refuses_to_invent_cost(
+    tmp_path: Path,
+) -> None:
+    from braincrew.operational_evaluator import (
+        CLIENT_TOTAL_LATENCY_DEFINITION,
+        OPERATIONAL_EVALUATOR_VERSION,
+    )
+
+    ticks = iter(range(0, 49_000_000, 1_000_000))
+    result, _ = _capture(tmp_path, clock_ns=lambda: next(ticks))
+    live_observations = (
+        *result.retrieval_observations.observations,
+        *result.grounded_observations.observations,
+    )
+
+    _check(len(live_observations) == 24, "capture must retain all 24 live case measurements")
+    for observation in live_observations:
+        operational = observation.operational
+        _check(operational is not None, "every live observation must carry operational evidence")
+        _check(operational.latency_ms == Decimal("1"), "latency must derive from the capture clock")
+        _check(
+            operational.latency_definition == CLIENT_TOTAL_LATENCY_DEFINITION,
+            "latency semantics must be recorded with every measurement",
+        )
+        _check(operational.cost_usd is None, "unmeasured cost must remain null")
+        _check(operational.cost_status == "unmeasured", "cost absence must be explicit")
+    _check(
+        result.manifest.provenance.evaluator_versions["operational"]
+        == OPERATIONAL_EVALUATOR_VERSION,
+        "manifest must name the implemented operational evaluator",
+    )
+
+
+def _perfect_parsing_observations(validation: Any) -> Any:
+    from braincrew.contracts import ParsingObservationBatch
+
+    snapshot = validation.snapshot
+    _check(snapshot is not None, "parsing observations require a dataset snapshot")
+    return ParsingObservationBatch.model_validate(
+        {
+            "schema_version": "parsing-observation-batch-v1",
+            "adapter_version": "fixture-parsing-sut-v1",
+            "parser_version": "fixture-parser-v1",
+            "observations": [
+                {
+                    "schema_version": "parsing-observation-v1",
+                    "case_id": case.id,
+                    "parse_available": True,
+                    "parser_version": "fixture-parser-v1",
+                    "failure_code": None,
+                    "evidence_spans": [
+                        span.model_dump(mode="json") for span in case.expected.evidence_spans
+                    ],
+                    "headings": case.expected.structure.headings,
+                    "metadata": case.expected.metadata,
+                    "table": (
+                        None
+                        if case.expected.table is None
+                        else case.expected.table.model_dump(mode="json")
+                    ),
+                    "list": (
+                        None
+                        if case.expected.list is None
+                        else case.expected.list.model_dump(mode="json")
+                    ),
+                }
+                for case in snapshot.parsing_dataset.cases
+            ],
+        }
+    )
+
+
+def _live_dataset_artifact(
+    capture: Any,
+    *,
+    retrieval_observations: Any | None = None,
+    grounded_observations: Any | None = None,
+    require_completed: bool = True,
+) -> Any:
+    from braincrew.dataset_run import (
+        DatasetObservationSnapshot,
+        build_dataset_run_artifact,
+        execute_dataset_fixture,
+    )
+
+    validation = _validated_dataset()
+    observations = DatasetObservationSnapshot(
+        parsing=_perfect_parsing_observations(validation),
+        retrieval=retrieval_observations or capture.retrieval_observations,
+        grounded=grounded_observations or capture.grounded_observations,
+    )
+    evaluation = execute_dataset_fixture(validation, observations)
+    if require_completed:
+        _check(evaluation.state == "COMPLETED", "Verification-only integrated run must complete")
+        _check(evaluation.total_cases == 30, "Verification-only run must report 30 evaluated cases")
+        _check(evaluation.scored_cases == 30, "Verification-only run must score exactly 30 cases")
+    return build_dataset_run_artifact(
+        validation=validation,
+        observations=observations,
+        evaluation=evaluation,
+        run_id=capture.manifest.run_id,
+        evaluation_state=RepositoryState(commit_sha="a" * 40, dirty_worktree=False),
+        sut_sha=PINNED_AX_SHA,
+        live_provenance=capture.manifest.provenance,
+    )
+
+
+def _rehash_capture_manifest(manifest: Any) -> Any:
+    from braincrew.digest import canonical_digest
+
+    return manifest.model_copy(
+        update={
+            "logical_digest": canonical_digest(
+                manifest.model_dump(mode="json", exclude={"logical_digest"})
+            )
+        }
+    )
+
+
+def _manifest_with_observation_references(
+    manifest: Any,
+    *,
+    retrieval_observations: Any | None = None,
+    grounded_observations: Any | None = None,
+) -> Any:
+    from braincrew.digest import canonical_digest
+
+    updates: dict[str, Any] = {}
+    for component, observations in (
+        ("retrieval", retrieval_observations),
+        ("grounded", grounded_observations),
+    ):
+        if observations is None:
+            continue
+        reference = getattr(manifest, f"{component}_observations").model_copy(
+            update={
+                "content_digest": canonical_digest(observations.model_dump(mode="json")),
+                "case_count": len(observations.observations),
+            }
+        )
+        updates[f"{component}_observations"] = reference
+    return _rehash_capture_manifest(manifest.model_copy(update=updates))
+
+
+def test_live_dataset_artifact_refuses_provenance_that_does_not_match_evidence(
+    tmp_path: Path,
+) -> None:
+    from braincrew.dataset_run import (
+        DatasetObservationSnapshot,
+        build_dataset_run_artifact,
+        execute_dataset_fixture,
+    )
+
+    capture, _ = _capture(tmp_path)
+    validation = _validated_dataset()
+    observations = DatasetObservationSnapshot(
+        parsing=_perfect_parsing_observations(validation),
+        retrieval=capture.retrieval_observations,
+        grounded=capture.grounded_observations,
+    )
+    evaluation = execute_dataset_fixture(validation, observations)
+
+    with pytest.raises(
+        ValueError,
+        match="live dataset provenance does not match the evaluated evidence",
+    ):
+        build_dataset_run_artifact(
+            validation=validation,
+            observations=observations,
+            evaluation=evaluation,
+            run_id=capture.manifest.run_id,
+            evaluation_state=RepositoryState(commit_sha="f" * 40, dirty_worktree=False),
+            sut_sha=PINNED_AX_SHA,
+            live_provenance=capture.manifest.provenance,
+        )
+
+
+def test_run_summary_builder_derives_the_comparison_input_and_writes_create_only(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from braincrew.comparison import VERIFICATION_MINIMUM_DENOMINATORS
+    from braincrew.operational_evaluator import OPERATIONAL_EVALUATOR_VERSION
+    from braincrew.run_summary import (
+        build_experiment_run_summary,
+        write_experiment_run_summary,
+    )
+
+    def ticks_for(durations_ns: tuple[int, ...]) -> tuple[int, ...]:
+        ticks: list[int] = []
+        start = 0
+        for duration_ns in durations_ns:
+            ticks.extend((start, start + duration_ns))
+            start += duration_ns + 1_000_000
+        return tuple(ticks)
+
+    baseline_ticks = iter(ticks_for(tuple(164_083 + index * 101 for index in range(24))))
+    candidate_ticks = iter(ticks_for(tuple(155_250 + index * 97 for index in range(24))))
+    baseline_capture, _ = _capture(
+        tmp_path / "baseline",
+        role="baseline",
+        clock_ns=lambda: next(baseline_ticks),
+    )
+    candidate_capture, _ = _capture(
+        tmp_path / "candidate",
+        role="candidate",
+        clock_ns=lambda: next(candidate_ticks),
+    )
+    baseline_artifact = _live_dataset_artifact(baseline_capture)
+    baseline = build_experiment_run_summary(
+        baseline_capture.manifest,
+        baseline_artifact,
+    )
+    candidate = build_experiment_run_summary(
+        candidate_capture.manifest,
+        _live_dataset_artifact(candidate_capture),
+    )
+    baseline_provenance = baseline.provenance.model_dump(mode="json")
+    candidate_provenance = candidate.provenance.model_dump(mode="json")
+    baseline_limit = baseline_provenance.pop("evidence_limit")
+    candidate_limit = candidate_provenance.pop("evidence_limit")
+    _check(
+        baseline_limit == 3
+        and candidate_limit == 5
+        and baseline_provenance == candidate_provenance,
+        "the built pair must differ in compatible provenance only by evidence_limit",
+    )
+
+    _check(len(baseline.cases) == 30, "summary must contain the 30 Verification cases")
+    _check(
+        baseline_artifact.run.execution_mode == "live"
+        and baseline_artifact.provenance.adapter.execution_mode == "live",
+        "integrated run evidence must retain truthful live execution provenance",
+    )
+    _check(
+        baseline_artifact.provenance.evaluator.operational_version == OPERATIONAL_EVALUATOR_VERSION,
+        "integrated run evidence must name the implemented operational evaluator",
+    )
+    _check(
+        sum(case.latency_ms is not None for case in baseline.cases) == 24,
+        "only the 24 live cases may claim measured latency",
+    )
+    baseline_latencies = tuple(
+        case.latency_ms for case in baseline.cases if case.latency_ms is not None
+    )
+    candidate_latencies = tuple(
+        case.latency_ms for case in candidate.cases if case.latency_ms is not None
+    )
+    _check(
+        len(set(baseline_latencies)) == 24
+        and len(set(candidate_latencies)) == 24
+        and baseline_latencies != candidate_latencies,
+        "deterministic latency evidence must vary across cases and runs",
+    )
+    _check(
+        all(case.cost_usd is None for case in baseline.cases),
+        "summary must preserve cost as unmeasured",
+    )
+    for metric, minimum in VERIFICATION_MINIMUM_DENOMINATORS.items():
+        _check(
+            sum(metric in case.metrics for case in baseline.cases) == minimum,
+            f"{metric} denominator must equal its Verification coverage",
+        )
+
+    comparison = compare_runs(baseline, candidate, comparison_id="built-live-pair")
+    _check(
+        comparison.compatibility_violations == (),
+        "built baseline/candidate summaries must be compatible",
+    )
+    _check(
+        comparison.confound_violations == (),
+        "built baseline/candidate summaries must pass confound checks",
+    )
+    _check(
+        comparison.decision in {"PASS", "FAIL"}
+        and all(gate.decision != "INVALID" for gate in comparison.gates),
+        f"built comparison must reach the quality-and-latency gates: {comparison.reasons}",
+    )
+    operational = comparison.operational_delta
+    if operational is None:
+        pytest.fail("measured latency must produce an operational delta")
+    _check(
+        operational.cost_decision_warrant.status == "excluded"
+        and operational.cost_decision_warrant.reason == "both runs declare cost unmeasured",
+        "artifact must record that unmeasured cost was excluded rather than passed",
+    )
+    _check(
+        operational.baseline_cost_case_count == 0
+        and operational.candidate_cost_case_count == 0
+        and operational.mean_cost_relative_delta is None,
+        "excluded cost must retain zero coverage and no decision delta",
+    )
+
+    output_path = tmp_path / "baseline-summary.json"
+    written = write_experiment_run_summary(baseline, output_path)
+    _check(written == output_path, "summary writer must return the created path")
+    _check(
+        ExperimentRunSummary.model_validate_json(output_path.read_text(encoding="utf-8"))
+        == baseline,
+        "written summary must round-trip through the comparison input contract",
+    )
+    with pytest.raises(FileExistsError):
+        write_experiment_run_summary(baseline, output_path)
+
+    manifest_path = tmp_path / "baseline.capture-manifest.json"
+    cli_output_path = tmp_path / "baseline.cli-summary.json"
+    manifest_path.write_text(
+        baseline_capture.manifest.model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
+    parsing_path = tmp_path / "baseline.parsing-observations.json"
+    retrieval_path = tmp_path / "baseline.retrieval-observations.json"
+    grounded_path = tmp_path / "baseline.grounded-observations.json"
+    parsing_path.write_text(
+        _perfect_parsing_observations(_validated_dataset()).model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
+    retrieval_path.write_text(
+        baseline_capture.retrieval_observations.model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
+    grounded_path.write_text(
+        baseline_capture.grounded_observations.model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
+    from braincrew import cli
+
+    monkeypatch.setattr(
+        cli,
+        "_capture_repository_state",
+        lambda: RepositoryState(commit_sha="a" * 40, dirty_worktree=False),
+    )
+    run_output_dir = tmp_path / "dataset-runs"
+    run_result = CliRunner().invoke(
+        cli.app,
+        [
+            "run-dataset",
+            "--manifest",
+            str(DATASET_MANIFEST),
+            "--parsing-observations",
+            str(parsing_path),
+            "--retrieval-observations",
+            str(retrieval_path),
+            "--grounded-observations",
+            str(grounded_path),
+            "--output-dir",
+            str(run_output_dir),
+            "--run-id",
+            baseline_capture.manifest.run_id,
+            "--sut-sha",
+            PINNED_AX_SHA,
+            "--capture-manifest",
+            str(manifest_path),
+        ],
+    )
+    _check(run_result.exit_code == 0, f"dataset CLI failed: {run_result.output}")
+    artifact_path = run_output_dir / f"{baseline_capture.manifest.run_id}.json"
+    missing_provenance_result = CliRunner().invoke(
+        cli.app,
+        [
+            "run-dataset",
+            "--manifest",
+            str(DATASET_MANIFEST),
+            "--parsing-observations",
+            str(parsing_path),
+            "--retrieval-observations",
+            str(retrieval_path),
+            "--grounded-observations",
+            str(grounded_path),
+            "--output-dir",
+            str(tmp_path / "missing-provenance"),
+            "--run-id",
+            "missing-provenance",
+            "--sut-sha",
+            PINNED_AX_SHA,
+        ],
+    )
+    _check(
+        missing_provenance_result.exit_code == 2
+        and "requires captured experiment provenance" in missing_provenance_result.output,
+        "live integrated execution must refuse to emit without capture provenance",
+    )
+
+    cli_result = CliRunner().invoke(
+        cli.app,
+        [
+            "build-run-summary",
+            "--capture-manifest",
+            str(manifest_path),
+            "--run-artifact",
+            str(artifact_path),
+            "--output",
+            str(cli_output_path),
+        ],
+    )
+    _check(cli_result.exit_code == 0, f"summary CLI failed: {cli_result.output}")
+    _check(
+        ExperimentRunSummary.model_validate_json(cli_output_path.read_text(encoding="utf-8"))
+        == baseline,
+        "CLI must emit the same derived comparison input as the in-process builder",
+    )
+
+
+def test_run_summary_score_quantizes_repeating_decimals_for_parquet() -> None:
+    from braincrew.comparison import _fits_parquet_decimal
+    from braincrew.run_summary import _score
+
+    for denominator in (11, 12, 15, 30):
+        score = _score(1, denominator)
+
+        assert _fits_parquet_decimal(score)
+        assert score.as_tuple().exponent == -28
+
+
+def test_run_summary_quantizes_live_grounded_metrics_for_parquet(tmp_path: Path) -> None:
+    from braincrew.comparison import _fits_parquet_decimal
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(tmp_path)
+    observations = list(capture.grounded_observations.observations)
+    observation_index = next(
+        index for index, observation in enumerate(observations) if observation.case_id == "GA-001"
+    )
+    original = observations[observation_index]
+    observations[observation_index] = original.model_copy(
+        update={
+            "structured_answer": original.structured_answer.model_copy(
+                update={
+                    "summary": "즉시 해고는 금지됩니다.",
+                    "answer": "",
+                    "grounds": tuple(
+                        f"추가 절차 {index}를 검토해야 합니다." for index in range(1, 8)
+                    ),
+                    "review_points": ("담당자 검토가 필요합니다.",),
+                    "additional_checks": ("적용 조건을 확인해야 합니다.",),
+                    "risk_warning": "예외 가능성을 별도로 확인해야 합니다.",
+                }
+            )
+        }
+    )
+    grounded_observations = capture.grounded_observations.model_copy(
+        update={"observations": tuple(observations)}
+    )
+    manifest = _manifest_with_observation_references(
+        capture.manifest,
+        grounded_observations=grounded_observations,
+    )
+    artifact = _live_dataset_artifact(
+        capture,
+        grounded_observations=grounded_observations,
+    )
+    grounded_evaluation = artifact.logical_result.evaluation.grounded
+    if grounded_evaluation is None:
+        pytest.fail("completed live artifact must retain grounded evaluation")
+    grounded_result = next(
+        result
+        for result in grounded_evaluation.case_evaluations
+        if result.case_id == original.case_id
+    )
+    assert grounded_result.claim_support_precision.exact == "1/11"
+
+    summary = build_experiment_run_summary(manifest, artifact)
+    summary_case = next(case for case in summary.cases if case.case_id == original.case_id)
+    score = summary_case.metrics["claim_support_precision"]
+
+    assert _fits_parquet_decimal(score)
+    assert score.as_tuple().exponent == -28
+
+
+def test_run_summary_builder_replays_scoring_instead_of_trusting_a_rehashed_result(
+    tmp_path: Path,
+) -> None:
+    from braincrew.digest import canonical_digest
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(tmp_path)
+    artifact = _live_dataset_artifact(capture)
+    evaluation = artifact.logical_result.evaluation
+    if evaluation.retrieval is None:
+        pytest.fail("completed live artifact must retain retrieval evaluation")
+    case_results = list(evaluation.retrieval.case_results)
+    original = case_results[0]
+    if original.recall_at_5 is None:
+        pytest.fail("first Verification retrieval result must score recall_at_5")
+    changed_numerator = 0 if original.recall_at_5.numerator else 1
+    changed_score = original.recall_at_5.model_copy(
+        update={
+            "numerator": changed_numerator,
+            "display_value": f"{changed_numerator / original.recall_at_5.denominator:.4f}",
+        }
+    )
+    case_results[0] = original.model_copy(update={"recall_at_5": changed_score})
+    changed_retrieval = evaluation.retrieval.model_copy(update={"case_results": case_results})
+    changed_evaluation = evaluation.model_copy(update={"retrieval": changed_retrieval})
+    changed_logical = artifact.logical_result.model_copy(update={"evaluation": changed_evaluation})
+    changed_artifact = artifact.model_copy(
+        update={
+            "logical_result": changed_logical,
+            "logical_digest": canonical_digest(
+                {
+                    "provenance": artifact.provenance.model_dump(mode="json"),
+                    "logical_result": changed_logical.model_dump(mode="json"),
+                }
+            ),
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="logical content does not reproduce",
+    ):
+        build_experiment_run_summary(capture.manifest, changed_artifact)
+
+
+def test_run_summary_builder_refuses_a_different_capture_run_identity(
+    tmp_path: Path,
+) -> None:
+    from braincrew.digest import canonical_digest
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(tmp_path)
+    artifact = _live_dataset_artifact(capture)
+    changed_manifest = capture.manifest.model_copy(update={"run_id": "different-live"})
+    changed_manifest = changed_manifest.model_copy(
+        update={
+            "logical_digest": canonical_digest(
+                changed_manifest.model_dump(mode="json", exclude={"logical_digest"})
+            )
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="run artifact ID does not match",
+    ):
+        build_experiment_run_summary(changed_manifest, artifact)
+
+
+def test_run_summary_builder_refuses_a_non_reproducible_capture_manifest(
+    tmp_path: Path,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(tmp_path)
+    artifact = _live_dataset_artifact(capture)
+    changed_manifest = capture.manifest.model_copy(update={"logical_digest": "sha256:" + "0" * 64})
+
+    with pytest.raises(
+        ValueError,
+        match="capture manifest logical digest does not reproduce",
+    ):
+        build_experiment_run_summary(changed_manifest, artifact)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("artifact-provenance", "run artifact provenance does not match"),
+        ("adapter-versions", "run artifact adapter versions do not match"),
+        ("evaluator-versions", "run artifact evaluator versions do not match"),
+        ("dataset-identity", "run artifact dataset identity does not match"),
+        ("retrieval-reference", "retrieval observations do not match"),
+        ("grounded-reference", "grounded observations do not match"),
+    ],
+)
+def test_run_summary_builder_refuses_manifest_to_artifact_drift(
+    tmp_path: Path,
+    mutation: str,
+    message: str,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(tmp_path)
+    artifact = _live_dataset_artifact(capture)
+    manifest = capture.manifest
+    provenance = manifest.provenance
+    if mutation == "artifact-provenance":
+        provenance = provenance.model_copy(update={"evaluation_plane_sha": "f" * 40})
+        manifest = manifest.model_copy(update={"provenance": provenance})
+    elif mutation == "adapter-versions":
+        provenance = provenance.model_copy(
+            update={
+                "adapter_versions": {
+                    **provenance.adapter_versions,
+                    "retrieval": "drifted-adapter-v1",
+                }
+            }
+        )
+        manifest = manifest.model_copy(update={"provenance": provenance})
+    elif mutation == "evaluator-versions":
+        provenance = provenance.model_copy(
+            update={
+                "evaluator_versions": {
+                    **provenance.evaluator_versions,
+                    "retrieval": "drifted-evaluator-v1",
+                }
+            }
+        )
+        manifest = manifest.model_copy(update={"provenance": provenance})
+    elif mutation == "dataset-identity":
+        provenance = provenance.model_copy(update={"dataset_version": "drifted"})
+        manifest = manifest.model_copy(update={"provenance": provenance})
+    elif mutation == "retrieval-reference":
+        reference = manifest.retrieval_observations.model_copy(
+            update={"content_digest": "sha256:" + "0" * 64}
+        )
+        manifest = manifest.model_copy(update={"retrieval_observations": reference})
+    elif mutation == "grounded-reference":
+        reference = manifest.grounded_observations.model_copy(
+            update={"content_digest": "sha256:" + "0" * 64}
+        )
+        manifest = manifest.model_copy(update={"grounded_observations": reference})
+    else:
+        pytest.fail(f"unhandled manifest mutation: {mutation}")
+    manifest = _rehash_capture_manifest(manifest)
+
+    with pytest.raises(ValueError, match=message):
+        build_experiment_run_summary(manifest, artifact)
+
+
+def test_run_summary_builder_refuses_an_incomplete_replayed_evaluation(
+    tmp_path: Path,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(tmp_path)
+    retrieval = capture.retrieval_observations.model_copy(
+        update={"observations": capture.retrieval_observations.observations[:-1]}
+    )
+    artifact = _live_dataset_artifact(
+        capture,
+        retrieval_observations=retrieval,
+        require_completed=False,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="one completed 30-case Verification evaluation",
+    ):
+        build_experiment_run_summary(capture.manifest, artifact)
+
+
+@pytest.mark.parametrize("component", ["retrieval", "grounded"])
+def test_run_summary_builder_refuses_missing_operational_measurement(
+    tmp_path: Path,
+    component: str,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(tmp_path)
+    batch = getattr(capture, f"{component}_observations")
+    observations = list(batch.observations)
+    observations[0] = observations[0].model_copy(update={"operational": None})
+    changed_batch = batch.model_copy(
+        update={"observations": observations if component == "retrieval" else tuple(observations)}
+    )
+    if component == "retrieval":
+        artifact = _live_dataset_artifact(capture, retrieval_observations=changed_batch)
+        manifest = _manifest_with_observation_references(
+            capture.manifest,
+            retrieval_observations=changed_batch,
+        )
+    else:
+        artifact = _live_dataset_artifact(capture, grounded_observations=changed_batch)
+        manifest = _manifest_with_observation_references(
+            capture.manifest,
+            grounded_observations=changed_batch,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match=rf"live {component} result requires an operational measurement",
+    ):
+        build_experiment_run_summary(manifest, artifact)
+
+
+def test_run_summary_builder_refuses_cases_outside_the_captured_partition(
+    tmp_path: Path,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(tmp_path)
+    artifact = _live_dataset_artifact(capture)
+    extra_case = next(
+        case
+        for case in artifact.logical_result.dataset_snapshot.retrieval_dataset.cases
+        if case.split != "verification"
+    )
+    live_case_ids = (*capture.manifest.live_case_ids[:-1], extra_case.id)
+    verification_case_ids = (*capture.manifest.fixture_case_ids, *live_case_ids)
+    manifest = _rehash_capture_manifest(
+        capture.manifest.model_copy(
+            update={
+                "live_case_ids": live_case_ids,
+                "verification_case_ids": verification_case_ids,
+            }
+        )
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="summary cases do not match the captured Verification partition",
+    ):
+        build_experiment_run_summary(manifest, artifact)
+
+
+def test_run_summary_builder_refuses_missing_or_invalid_parsing_result(
+    tmp_path: Path,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(tmp_path)
+    artifact = _live_dataset_artifact(capture)
+    extra_case = next(
+        case
+        for case in artifact.logical_result.dataset_snapshot.parsing_dataset.cases
+        if case.split != "verification"
+    )
+    fixture_case_ids = (*capture.manifest.fixture_case_ids[:-1], extra_case.id)
+    verification_case_ids = (*fixture_case_ids, *capture.manifest.live_case_ids)
+    manifest = _rehash_capture_manifest(
+        capture.manifest.model_copy(
+            update={
+                "fixture_case_ids": fixture_case_ids,
+                "verification_case_ids": verification_case_ids,
+            }
+        )
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="parsing Verification result is missing or invalid",
+    ):
+        build_experiment_run_summary(manifest, artifact)
+
+
+def test_run_summary_builder_binds_measurements_to_the_published_latency_definition(
+    tmp_path: Path,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(tmp_path)
+    observations = list(capture.retrieval_observations.observations)
+    operational = observations[0].operational
+    if operational is None:
+        pytest.fail("live retrieval observation must carry operational evidence")
+    observations[0] = observations[0].model_copy(
+        update={
+            "operational": operational.model_copy(
+                update={"latency_definition": "unbound one-attempt latency"}
+            )
+        }
+    )
+    retrieval = capture.retrieval_observations.model_copy(update={"observations": observations})
+    artifact = _live_dataset_artifact(capture, retrieval_observations=retrieval)
+    manifest = _manifest_with_observation_references(
+        capture.manifest,
+        retrieval_observations=retrieval,
+    )
+
+    with pytest.raises(ValidationError, match="latency_definition"):
+        build_experiment_run_summary(manifest, artifact)
+
+
+def test_run_summary_builder_derives_measured_cost_status_from_complete_case_values(
+    tmp_path: Path,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(tmp_path)
+
+    def with_measured_cost(batch: Any) -> Any:
+        observations = []
+        for observation in batch.observations:
+            operational = observation.operational
+            if operational is None:
+                pytest.fail("live observation must carry operational evidence")
+            observations.append(
+                observation.model_copy(
+                    update={
+                        "operational": operational.model_copy(
+                            update={"cost_usd": Decimal("0.01"), "cost_status": "measured"}
+                        )
+                    }
+                )
+            )
+        collection = observations if isinstance(batch.observations, list) else tuple(observations)
+        return batch.model_copy(update={"observations": collection})
+
+    retrieval = with_measured_cost(capture.retrieval_observations)
+    grounded = with_measured_cost(capture.grounded_observations)
+    artifact = _live_dataset_artifact(
+        capture,
+        retrieval_observations=retrieval,
+        grounded_observations=grounded,
+    )
+    manifest = _manifest_with_observation_references(
+        capture.manifest,
+        retrieval_observations=retrieval,
+        grounded_observations=grounded,
+    )
+    summary = build_experiment_run_summary(manifest, artifact)
+
+    if summary.provenance.cost_measurement_status != "measured":
+        pytest.fail(f"cost status was not derived from case values: {summary.provenance}")
+    if sum(case.cost_usd is not None for case in summary.cases) != 24:
+        pytest.fail("all and only live case costs must survive into the summary")
 
 
 def test_live_capture_issues_only_the_pinned_verification_requests_and_derives_provenance(
@@ -617,6 +1431,8 @@ def test_live_manifest_refuses_an_incomplete_case_partition(tmp_path: Path) -> N
 def test_baseline_and_candidate_capture_provenance_passes_the_existing_compatibility_check(
     tmp_path: Path,
 ) -> None:
+    from braincrew.operational_evaluator import CLIENT_TOTAL_LATENCY_DEFINITION
+
     baseline_capture, _ = _capture(tmp_path / "baseline", role="baseline")
     candidate_capture, _ = _capture(tmp_path / "candidate", role="candidate")
     baseline_provenance = baseline_capture.manifest.provenance
@@ -663,7 +1479,12 @@ def test_baseline_and_candidate_capture_provenance_passes_the_existing_compatibi
             split="verification",
             state="COMPLETED",
             candidate_plan_version="candidate-plan-v1",
-            provenance=provenance,
+            provenance=provenance.model_copy(
+                update={
+                    "latency_definition": CLIENT_TOTAL_LATENCY_DEFINITION,
+                    "cost_measurement_status": "measured",
+                }
+            ),
             cases=cases,
         )
 

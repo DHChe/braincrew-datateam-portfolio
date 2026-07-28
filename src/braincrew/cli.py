@@ -30,6 +30,7 @@ from braincrew.corpus_sealing import (
 from braincrew.dashboard_export import export_dashboard_artifact
 from braincrew.dataset_registry import validate_dataset_bundle
 from braincrew.dataset_run import (
+    DatasetRunArtifactDocument,
     build_dataset_run_artifact,
     execute_dataset_fixture,
     load_dataset_observations,
@@ -42,6 +43,7 @@ from braincrew.grounded_run import (
     load_grounded_observations,
 )
 from braincrew.live_experiment import (
+    LiveExperimentCaptureManifest,
     SutStateSubject,
     SutStateWarrant,
     capture_live_experiment,
@@ -77,6 +79,10 @@ from braincrew.retrieval_run import (
     execute_retrieval_fixture,
     load_retrieval_dataset,
     load_retrieval_observations,
+)
+from braincrew.run_summary import (
+    build_experiment_run_summary,
+    write_experiment_run_summary,
 )
 
 app = typer.Typer(no_args_is_help=True)
@@ -333,8 +339,12 @@ def run_dataset_fixture(
     output_dir: Annotated[Path, typer.Option("--output-dir")],
     run_id: Annotated[str, typer.Option("--run-id")],
     sut_sha: Annotated[str, typer.Option("--sut-sha")],
+    capture_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--capture-manifest", exists=True, dir_okay=False, readable=True),
+    ] = None,
 ) -> None:
-    """Evaluate the frozen integrated 100-case fixture dataset."""
+    """Evaluate either the full fixture dataset or one captured Verification partition."""
     _validate_run_identity(run_id, sut_sha)
     validation = validate_dataset_bundle(manifest_path)
     if validation.state != "VALID":
@@ -356,18 +366,38 @@ def run_dataset_fixture(
             err=True,
         )
         raise typer.Exit(code=2)
+    live_provenance = None
+    if capture_manifest_path is not None:
+        try:
+            capture_manifest = LiveExperimentCaptureManifest.model_validate_json(
+                capture_manifest_path.read_text(encoding="utf-8")
+            )
+        except (UnicodeError, ValidationError) as error:
+            typer.echo(f"Invalid capture manifest: {error}", err=True)
+            raise typer.Exit(code=2) from error
+        if capture_manifest.run_id != run_id or capture_manifest.provenance.sut_sha != sut_sha:
+            typer.echo(
+                "Invalid capture manifest: run ID and SUT SHA must match the dataset run",
+                err=True,
+            )
+            raise typer.Exit(code=2)
+        live_provenance = capture_manifest.provenance
     evaluation_state = _capture_repository_state()
     evaluation = execute_dataset_fixture(validation, observations)
-    artifact = build_dataset_run_artifact(
-        validation=validation,
-        observations=observations,
-        evaluation=evaluation,
-        run_id=run_id,
-        evaluation_state=evaluation_state,
-        sut_sha=sut_sha,
-    )
     try:
+        artifact = build_dataset_run_artifact(
+            validation=validation,
+            observations=observations,
+            evaluation=evaluation,
+            run_id=run_id,
+            evaluation_state=evaluation_state,
+            sut_sha=sut_sha,
+            live_provenance=live_provenance,
+        )
         artifact_path = write_dataset_run_artifact(artifact, output_dir)
+    except ValueError as error:
+        typer.echo(f"Invalid dataset run provenance: {error}", err=True)
+        raise typer.Exit(code=2) from error
     except FileExistsError as error:
         typer.echo(f"Artifact already exists: {output_dir / f'{run_id}.json'}", err=True)
         raise typer.Exit(code=2) from error
@@ -429,6 +459,47 @@ def compare_experiment_runs(
                 "json_artifact_path": str(json_path),
                 "parquet_artifact_path": str(parquet_path),
                 "duckdb_cache_path": str(cache_path),
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+@app.command("build-run-summary")
+def build_run_summary(
+    capture_manifest_path: Annotated[
+        Path,
+        typer.Option("--capture-manifest", exists=True, dir_okay=False, readable=True),
+    ],
+    run_artifact_path: Annotated[
+        Path,
+        typer.Option("--run-artifact", exists=True, dir_okay=False, readable=True),
+    ],
+    output_path: Annotated[Path, typer.Option("--output")],
+) -> None:
+    """Derive one create-only comparison input from captured run evidence."""
+    try:
+        manifest = LiveExperimentCaptureManifest.model_validate_json(
+            capture_manifest_path.read_text(encoding="utf-8")
+        )
+        artifact = DatasetRunArtifactDocument.model_validate_json(
+            run_artifact_path.read_text(encoding="utf-8")
+        )
+        summary = build_experiment_run_summary(manifest, artifact)
+        written_path = write_experiment_run_summary(summary, output_path)
+    except (UnicodeError, ValidationError, ValueError) as error:
+        typer.echo(f"Invalid run summary evidence: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    except FileExistsError as error:
+        typer.echo(f"Run summary already exists: {output_path}", err=True)
+        raise typer.Exit(code=2) from error
+    typer.echo(
+        json.dumps(
+            {
+                "run_id": summary.run_id,
+                "case_count": len(summary.cases),
+                "output_path": str(written_path),
             },
             ensure_ascii=False,
             sort_keys=True,

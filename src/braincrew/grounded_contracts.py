@@ -17,6 +17,7 @@ from braincrew.contracts import (
     RunEnvelope,
     SutProvenance,
 )
+from braincrew.operational_evaluator import OperationalMeasurement
 
 
 class StrictGroundedContract(BaseModel):
@@ -79,6 +80,11 @@ ClaimModality = Literal[
 _REQUIRED_PATH_PATTERN = re.compile(
     r"^(summary|answer|risk_warning|(grounds|review_points|additional_checks)\[[0-9]+\])$"
 )
+
+
+def canonical_ax_role(role: str) -> str:
+    """Return the AX wire identity for dataset role aliases."""
+    return {"employee": "Employee", "hr_manager": "HRManager"}.get(role, role)
 
 
 class SurfaceMatcher(StrictGroundedContract):
@@ -280,6 +286,10 @@ class GroundedObservation(StrictGroundedContract):
     structured_answer: GroundedStructuredAnswer
     citations: tuple[GroundedCitation, ...]
     source_texts: tuple[SourceTextResolution, ...]
+    operational: OperationalMeasurement | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
 
     @model_validator(mode="after")
     def validate_availability(self) -> GroundedObservation:

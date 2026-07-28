@@ -509,11 +509,11 @@ def _write_comparison_parquet(artifact: ComparisonArtifact, path: Path) -> None:
                 baseline_value DECIMAL(38, 28) NOT NULL,
                 candidate_value DECIMAL(38, 28) NOT NULL,
                 delta DECIMAL(38, 28) NOT NULL,
-                baseline_latency_ms DECIMAL(38, 28) NOT NULL,
-                candidate_latency_ms DECIMAL(38, 28) NOT NULL,
+                baseline_latency_ms DECIMAL(38, 28),
+                candidate_latency_ms DECIMAL(38, 28),
                 latency_relative_delta DECIMAL(38, 28),
-                baseline_cost_usd DECIMAL(38, 28) NOT NULL,
-                candidate_cost_usd DECIMAL(38, 28) NOT NULL,
+                baseline_cost_usd DECIMAL(38, 28),
+                candidate_cost_usd DECIMAL(38, 28),
                 cost_relative_delta DECIMAL(38, 28),
                 candidate_failures_json VARCHAR NOT NULL
             )

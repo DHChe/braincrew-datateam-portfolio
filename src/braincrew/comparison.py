@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from decimal import Decimal
+from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation, localcontext
 from math import ceil
 from typing import Literal, Never, cast
 
@@ -11,6 +11,7 @@ from pydantic import Field, TypeAdapter, field_validator, model_validator
 
 from braincrew.contracts import RetrievalApplicability, RunId, StrictContract
 from braincrew.digest import canonical_digest
+from braincrew.operational_evaluator import LatencyDefinition
 
 PRIMARY_METRICS = (
     "evidence_span_recovery",
@@ -38,6 +39,7 @@ RETRIEVAL_CONFOUND_APPLICABILITY_FIELDS: dict[
     "mrr_at_10": "mrr_at_10",
     "authority_priority": "authority_ordering",
 }
+PARQUET_DECIMAL_QUANTUM = Decimal(1).scaleb(-28)
 VERIFICATION_MINIMUM_DENOMINATORS = {
     "evidence_span_recovery": 6,
     "recall_at_5": 9,
@@ -133,8 +135,8 @@ class ExperimentCaseResult(StrictContract):
     metrics: dict[str, Decimal]
     retrieval_metrics: dict[str, Decimal] = Field(default_factory=dict)
     applicability: RetrievalApplicability
-    latency_ms: Decimal = Field(ge=0)
-    cost_usd: Decimal = Field(ge=0)
+    latency_ms: Decimal | None = Field(ge=0)
+    cost_usd: Decimal | None = Field(ge=0)
     failures: tuple[FailureIdentity, ...]
 
     @field_validator("metrics", "retrieval_metrics")
@@ -144,8 +146,8 @@ class ExperimentCaseResult(StrictContract):
 
     @field_validator("latency_ms", "cost_usd")
     @classmethod
-    def validate_operational_decimal(cls, value: Decimal) -> Decimal:
-        if not _fits_parquet_decimal(value):
+    def validate_operational_decimal(cls, value: Decimal | None) -> Decimal | None:
+        if value is not None and not _fits_parquet_decimal(value):
             raise ValueError("operational values must fit DECIMAL(38, 28) exactly")
         return value
 
@@ -208,6 +210,8 @@ class ExperimentProvenance(StrictContract):
     dependency_lock_digest: str = Field(pattern=SHA256_DIGEST_PATTERN)
     runtime_environment_digest: str = Field(pattern=SHA256_DIGEST_PATTERN)
     execution_mode: Literal["fixture", "live"]
+    latency_definition: LatencyDefinition | None = None
+    cost_measurement_status: Literal["measured", "unmeasured"] | None = None
 
     @field_validator("evaluator_versions", "adapter_versions")
     @classmethod
@@ -246,6 +250,22 @@ class ExperimentRunSummary(StrictContract):
             for failure in case.failures
         ):
             raise ValueError("failure identity must reference evaluator provenance")
+        latency_cases = [case for case in self.cases if case.latency_ms is not None]
+        if latency_cases and self.provenance.latency_definition is None:
+            raise ValueError("measured case latency requires its latency definition")
+        if not latency_cases and self.provenance.latency_definition is not None:
+            raise ValueError("latency definition requires at least one measured case latency")
+        measured_costs = [case.cost_usd for case in self.cases if case.cost_usd is not None]
+        if self.provenance.cost_measurement_status == "unmeasured" and measured_costs:
+            raise ValueError("unmeasured cost provenance requires null case costs")
+        if any(case.cost_usd is not None and case.latency_ms is None for case in self.cases):
+            raise ValueError("case cost requires a latency-measured operational case")
+        if self.provenance.cost_measurement_status == "measured" and (
+            not latency_cases or any(case.cost_usd is None for case in latency_cases)
+        ):
+            raise ValueError(
+                "measured cost provenance requires a cost for every latency-measured case"
+            )
         return self
 
 
@@ -261,13 +281,41 @@ class CaseDelta(StrictContract):
         return _freeze_mapping(values)
 
 
+class CostDecisionWarrant(StrictContract):
+    status: Literal["included", "excluded"]
+    reason: Literal[
+        "both runs declare complete cost measurement",
+        "both runs declare cost unmeasured",
+        "cost measurement status differs or is missing",
+    ]
+
+    @model_validator(mode="after")
+    def bind_status_to_reason(self) -> CostDecisionWarrant:
+        if (
+            self.status == "included"
+            and self.reason != "both runs declare complete cost measurement"
+        ):
+            raise ValueError("included cost requires complete measurement in both runs")
+        if (
+            self.status == "excluded"
+            and self.reason == "both runs declare complete cost measurement"
+        ):
+            raise ValueError("excluded cost requires an exclusion reason")
+        return self
+
+
 class OperationalDelta(StrictContract):
     baseline_p95_latency_ms: Decimal
     candidate_p95_latency_ms: Decimal
     p95_latency_relative_delta: Decimal
-    baseline_mean_cost_usd: Decimal
-    candidate_mean_cost_usd: Decimal
-    mean_cost_relative_delta: Decimal
+    baseline_latency_case_count: int = Field(ge=1)
+    candidate_latency_case_count: int = Field(ge=1)
+    baseline_mean_cost_usd: Decimal | None
+    candidate_mean_cost_usd: Decimal | None
+    mean_cost_relative_delta: Decimal | None
+    baseline_cost_case_count: int = Field(ge=0)
+    candidate_cost_case_count: int = Field(ge=0)
+    cost_decision_warrant: CostDecisionWarrant
 
 
 class FailureTaxonomyDelta(StrictContract):
@@ -377,6 +425,8 @@ def _compatibility_violations(
         "dependency_lock_digest",
         "runtime_environment_digest",
         "execution_mode",
+        "latency_definition",
+        "cost_measurement_status",
     )
     for field_name in comparable_fields:
         if getattr(left, field_name) != getattr(right, field_name):
@@ -411,6 +461,7 @@ def _compatibility_violations(
             or not provenance.corpus_digest
             or not provenance.dependency_lock_digest
             or not provenance.runtime_environment_digest
+            or provenance.cost_measurement_status is None
         ):
             violations.append("SYS-PROVENANCE-MISSING")
     return tuple(dict.fromkeys(violations))
@@ -436,17 +487,30 @@ def _relative_delta(baseline: Decimal, candidate: Decimal) -> Decimal | None:
     return (candidate - baseline) / baseline
 
 
+def _quantize_parquet_decimal(value: Decimal) -> Decimal:
+    if value == 0:
+        return Decimal(0)
+    try:
+        with localcontext() as context:
+            context.prec = max(38, value.adjusted() + 29)
+            context.rounding = ROUND_HALF_EVEN
+            return value.quantize(PARQUET_DECIMAL_QUANTUM).normalize()
+    except InvalidOperation as error:
+        raise OverflowError("relative delta does not fit DECIMAL(38, 28)") from error
+
+
 def _parquet_relative_delta(baseline: Decimal, candidate: Decimal) -> Decimal | None:
     delta = _relative_delta(baseline, candidate)
     if delta is None:
         return None
+    delta = _quantize_parquet_decimal(delta)
     if not _fits_parquet_decimal(delta):
         raise OverflowError("relative delta does not fit DECIMAL(38, 28)")
     return delta
 
 
 def _required_relative_delta(baseline: Decimal, candidate: Decimal) -> Decimal:
-    delta = _relative_delta(baseline, candidate)
+    delta = _parquet_relative_delta(baseline, candidate)
     if delta is None:
         raise ZeroDivisionError("aggregate relative delta requires a non-zero baseline")
     return delta
@@ -577,16 +641,23 @@ def compare_runs(
         if left.applicability != right.applicability or set(left.metrics) != set(right.metrics)
     ]
     for left, right in pairs:
-        try:
-            latency_relative_delta = _parquet_relative_delta(left.latency_ms, right.latency_ms)
-        except OverflowError:
-            latency_relative_delta = None
-            delta_errors.append(DECIMAL_RANGE_VIOLATION)
-        try:
-            cost_relative_delta = _parquet_relative_delta(left.cost_usd, right.cost_usd)
-        except OverflowError:
-            cost_relative_delta = None
-            delta_errors.append(DECIMAL_RANGE_VIOLATION)
+        latency_relative_delta = None
+        if (left.latency_ms is None) != (right.latency_ms is None):
+            delta_errors.append(f"SYS-COMPARISON-LATENCY-COVERAGE-MISMATCH:{left.case_id}")
+        elif left.latency_ms is not None and right.latency_ms is not None:
+            try:
+                latency_relative_delta = _parquet_relative_delta(
+                    left.latency_ms,
+                    right.latency_ms,
+                )
+            except OverflowError:
+                delta_errors.append(DECIMAL_RANGE_VIOLATION)
+        cost_relative_delta = None
+        if left.cost_usd is not None and right.cost_usd is not None:
+            try:
+                cost_relative_delta = _parquet_relative_delta(left.cost_usd, right.cost_usd)
+            except OverflowError:
+                delta_errors.append(DECIMAL_RANGE_VIOLATION)
         case_deltas.append(
             CaseDelta(
                 case_id=left.case_id,
@@ -599,27 +670,73 @@ def compare_runs(
                 cost_relative_delta=cost_relative_delta,
             )
         )
-    try:
-        baseline_p95 = _p95(tuple(case.latency_ms for case in baseline.cases))
-        candidate_p95 = _p95(tuple(case.latency_ms for case in candidate.cases))
-        baseline_cost = sum((case.cost_usd for case in baseline.cases), start=Decimal(0)) / Decimal(
-            len(baseline.cases)
+    baseline_latencies = tuple(
+        case.latency_ms for case in baseline.cases if case.latency_ms is not None
+    )
+    candidate_latencies = tuple(
+        case.latency_ms for case in candidate.cases if case.latency_ms is not None
+    )
+    baseline_costs = tuple(case.cost_usd for case in baseline.cases if case.cost_usd is not None)
+    candidate_costs = tuple(case.cost_usd for case in candidate.cases if case.cost_usd is not None)
+    cost_is_included = (
+        baseline.provenance.cost_measurement_status == "measured"
+        and candidate.provenance.cost_measurement_status == "measured"
+    )
+    if cost_is_included:
+        cost_warrant = CostDecisionWarrant(
+            status="included",
+            reason="both runs declare complete cost measurement",
         )
-        candidate_cost = sum(
-            (case.cost_usd for case in candidate.cases), start=Decimal(0)
-        ) / Decimal(len(candidate.cases))
-        operational = OperationalDelta(
-            baseline_p95_latency_ms=baseline_p95,
-            candidate_p95_latency_ms=candidate_p95,
-            p95_latency_relative_delta=_required_relative_delta(baseline_p95, candidate_p95),
-            baseline_mean_cost_usd=baseline_cost,
-            candidate_mean_cost_usd=candidate_cost,
-            mean_cost_relative_delta=_required_relative_delta(baseline_cost, candidate_cost),
+    elif (
+        baseline.provenance.cost_measurement_status == "unmeasured"
+        and candidate.provenance.cost_measurement_status == "unmeasured"
+    ):
+        cost_warrant = CostDecisionWarrant(
+            status="excluded",
+            reason="both runs declare cost unmeasured",
         )
-    except OverflowError:
-        delta_errors.append(DECIMAL_RANGE_VIOLATION)
-    except ZeroDivisionError:
-        delta_errors.append("SYS-COMPARISON-OPERATIONAL-BASELINE-ZERO")
+    else:
+        cost_warrant = CostDecisionWarrant(
+            status="excluded",
+            reason="cost measurement status differs or is missing",
+        )
+    if not baseline_latencies or not candidate_latencies:
+        delta_errors.append("SYS-COMPARISON-LATENCY-UNMEASURED")
+    else:
+        try:
+            baseline_p95 = _p95(baseline_latencies)
+            candidate_p95 = _p95(candidate_latencies)
+            baseline_cost = (
+                sum(baseline_costs, start=Decimal(0)) / Decimal(len(baseline_costs))
+                if cost_is_included
+                else None
+            )
+            candidate_cost = (
+                sum(candidate_costs, start=Decimal(0)) / Decimal(len(candidate_costs))
+                if cost_is_included
+                else None
+            )
+            operational = OperationalDelta(
+                baseline_p95_latency_ms=baseline_p95,
+                candidate_p95_latency_ms=candidate_p95,
+                p95_latency_relative_delta=_required_relative_delta(baseline_p95, candidate_p95),
+                baseline_latency_case_count=len(baseline_latencies),
+                candidate_latency_case_count=len(candidate_latencies),
+                baseline_mean_cost_usd=baseline_cost,
+                candidate_mean_cost_usd=candidate_cost,
+                mean_cost_relative_delta=(
+                    _required_relative_delta(baseline_cost, candidate_cost)
+                    if baseline_cost is not None and candidate_cost is not None
+                    else None
+                ),
+                baseline_cost_case_count=len(baseline_costs),
+                candidate_cost_case_count=len(candidate_costs),
+                cost_decision_warrant=cost_warrant,
+            )
+        except OverflowError:
+            delta_errors.append(DECIMAL_RANGE_VIOLATION)
+        except ZeroDivisionError:
+            delta_errors.append("SYS-COMPARISON-OPERATIONAL-BASELINE-ZERO")
 
     missing_metrics = set(PRIMARY_METRICS) - set(macro_deltas)
     if missing_metrics:
@@ -640,6 +757,13 @@ def compare_runs(
         decision: Literal["PASS", "FAIL", "INVALID"] = "INVALID"
         reasons = invalid_reasons
     else:
+        if operational is None:
+            raise RuntimeError("validated comparison must retain measured latency")
+        operational_cost_delta = (
+            operational.mean_cost_relative_delta
+            if operational.cost_decision_warrant.status == "included"
+            else None
+        )
         gate_1_reasons = (
             ("GATE-1-CANDIDATE-CRITICAL-FAILURE",) if taxonomy.candidate_critical else ()
         )
@@ -663,8 +787,8 @@ def compare_runs(
                 ),
                 *(
                     ["GATE-2-COST-REGRESSION"]
-                    if operational is not None
-                    and operational.mean_cost_relative_delta > COST_REGRESSION_LIMIT
+                    if operational_cost_delta is not None
+                    and operational_cost_delta > COST_REGRESSION_LIMIT
                     else []
                 ),
             ]
@@ -686,8 +810,8 @@ def compare_runs(
                     and operational.p95_latency_relative_delta <= -LATENCY_IMPROVEMENT_MINIMUM
                 )
                 or (
-                    operational is not None
-                    and operational.mean_cost_relative_delta <= -COST_IMPROVEMENT_MINIMUM
+                    operational_cost_delta is not None
+                    and operational_cost_delta <= -COST_IMPROVEMENT_MINIMUM
                 )
             )
             gate_3_reasons = () if positive_evidence else ("GATE-3-NO-POSITIVE-EVIDENCE",)

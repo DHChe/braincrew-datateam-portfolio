@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import {
+  operationalCostDisplay,
   taxonomyRows,
   type DashboardExport,
   type DashboardMetric,
@@ -54,6 +55,10 @@ export function DashboardExplorer({
     data.failure_taxonomy.candidate_family_counts,
     data.failure_taxonomy.family_count_deltas,
   );
+  const operationalDelta = data.operational_delta;
+  const costDisplay = operationalDelta
+    ? operationalCostDisplay(operationalDelta)
+    : null;
 
   return (
     <main>
@@ -168,25 +173,19 @@ export function DashboardExplorer({
             </tbody>
           </table>
         </div>
-        {data.operational_delta ? (
+        {operationalDelta && costDisplay ? (
           <div className="operational-grid">
             <article>
               <span>P95 latency</span>
-              <strong>
-                {data.operational_delta.candidate_p95_latency_ms} ms
-              </strong>
+              <strong>{operationalDelta.candidate_p95_latency_ms} ms</strong>
               <small>
-                {signed(data.operational_delta.p95_latency_relative_delta)}{" "}
-                relative
+                {signed(operationalDelta.p95_latency_relative_delta)} relative
               </small>
             </article>
             <article>
               <span>Mean cost</span>
-              <strong>${data.operational_delta.candidate_mean_cost_usd}</strong>
-              <small>
-                {signed(data.operational_delta.mean_cost_relative_delta)}{" "}
-                relative
-              </small>
+              <strong>{costDisplay.value}</strong>
+              <small>{costDisplay.context}</small>
             </article>
           </div>
         ) : null}

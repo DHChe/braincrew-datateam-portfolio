@@ -51,6 +51,33 @@ def retrieval_run_evaluator() -> Callable[
     return evaluate_retrieval_run
 
 
+def test_live_retrieval_run_scores_only_the_nine_verification_observations() -> None:
+    dataset = dataset_document()
+    batch = observation_batch()
+    verification_ids = {case.id for case in dataset.cases if case.split == "verification"}
+    live_batch = RetrievalObservationBatch.model_validate(
+        {
+            **batch.model_dump(mode="json"),
+            "adapter_version": "ax-sut-http-v1",
+            "observations": [
+                observation.model_dump(mode="json")
+                for observation in batch.observations
+                if observation.case_id in verification_ids
+            ],
+        }
+    )
+
+    result = evaluate_retrieval_run(dataset, live_batch)
+
+    assert result.state == "COMPLETED"
+    assert result.invalid_reasons == []
+    assert len(result.case_results) == 9
+    assert result.coverage.total_cases == 9
+    assert result.coverage.scored_cases == 9
+    assert result.coverage.calibration_cases == 0
+    assert result.coverage.verification_cases == 9
+
+
 def candidate(
     *,
     rank: int,

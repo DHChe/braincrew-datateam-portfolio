@@ -2,9 +2,27 @@ import { describe, expect, it } from "vitest";
 
 import {
   loadDashboardData,
+  operationalCostDisplay,
   taxonomyRows,
 } from "../../dashboard/lib/dashboard-data";
 import dashboardExport from "../../dashboard/data/dashboard-export-v1.json";
+
+const unmeasuredOperationalDelta = {
+  baseline_p95_latency_ms: "100",
+  candidate_p95_latency_ms: "100",
+  p95_latency_relative_delta: "0",
+  baseline_latency_case_count: 9,
+  candidate_latency_case_count: 9,
+  baseline_mean_cost_usd: null,
+  candidate_mean_cost_usd: null,
+  mean_cost_relative_delta: null,
+  baseline_cost_case_count: 0,
+  candidate_cost_case_count: 0,
+  cost_decision_warrant: {
+    status: "excluded",
+    reason: "both runs declare cost unmeasured",
+  },
+} as const;
 
 const goldenExport = {
   schema_version: "dashboard-export-v1",
@@ -42,7 +60,7 @@ const goldenExport = {
       delta: "0.03",
     },
   ],
-  operational_delta: null,
+  operational_delta: unmeasuredOperationalDelta,
   failure_taxonomy: {
     baseline_critical: [],
     candidate_critical: [],
@@ -99,7 +117,7 @@ describe("loadDashboardData", () => {
     const dashboard = loadDashboardData(dashboardExport);
 
     expect(dashboard.logical_digest).toBe(
-      "sha256:f8630e70892f976ee120ac497ef63ce6cc64add8aa1d71989a576891b5ae7bbe",
+      "sha256:d426e04c0c2b960d8c8c17efc216688891b2078faaaa51ff226c137c2f8694ae",
     );
     expect(dashboard.decision).toBe("PASS");
     expect(dashboard.totals).toEqual({
@@ -112,6 +130,70 @@ describe("loadDashboardData", () => {
       "PASS",
       "PASS",
     ]);
+    const operational = dashboard.operational_delta;
+    expect(operational).not.toBeNull();
+    if (operational === null) {
+      throw new Error(
+        "checked-in dashboard export omitted operational evidence",
+      );
+    }
+    expect(operationalCostDisplay(operational)).toEqual({
+      value: "Not measured",
+      context: "both runs declare cost unmeasured",
+    });
+  });
+
+  it("keeps excluded cost absent and explains the recorded exclusion", () => {
+    const dashboard = loadDashboardData(goldenExport);
+
+    expect(dashboard.operational_delta).not.toBeNull();
+    expect(operationalCostDisplay(unmeasuredOperationalDelta)).toEqual({
+      value: "Not measured",
+      context: "both runs declare cost unmeasured",
+    });
+  });
+
+  it("accepts and renders a measured cost when one is actually reported", () => {
+    const operational_delta = {
+      ...unmeasuredOperationalDelta,
+      baseline_mean_cost_usd: "0.010",
+      candidate_mean_cost_usd: "0.010",
+      mean_cost_relative_delta: "0",
+      baseline_cost_case_count: 9,
+      candidate_cost_case_count: 9,
+      cost_decision_warrant: {
+        status: "included",
+        reason: "both runs declare complete cost measurement",
+      },
+    } as const;
+
+    const dashboard = loadDashboardData({ ...goldenExport, operational_delta });
+
+    expect(dashboard.operational_delta).not.toBeNull();
+    expect(operationalCostDisplay(operational_delta)).toEqual({
+      value: "$0.010",
+      context: "0 relative",
+    });
+    expect(
+      operationalCostDisplay({
+        ...operational_delta,
+        mean_cost_relative_delta: "0.04",
+      }),
+    ).toEqual({ value: "$0.010", context: "+0.04 relative" });
+  });
+
+  it("rejects an operational payload that contradicts its cost warrant", () => {
+    const operational_delta = {
+      ...unmeasuredOperationalDelta,
+      cost_decision_warrant: {
+        status: "included",
+        reason: "both runs declare complete cost measurement",
+      },
+    } as const;
+
+    expect(() =>
+      loadDashboardData({ ...goldenExport, operational_delta }),
+    ).toThrow("dashboard operational delta is invalid");
   });
 
   it("rejects a display payload that omits canonical execution provenance", () => {

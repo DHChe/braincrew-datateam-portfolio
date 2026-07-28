@@ -24,6 +24,31 @@ def grounded_run_module() -> ModuleType:
         pytest.fail("grounded run orchestration is not implemented")
 
 
+def test_live_grounded_run_scores_only_the_fifteen_verification_observations() -> None:
+    grounded_run = grounded_run_module()
+    dataset = grounded_run.load_grounded_dataset(DATASET_PATH)
+    observations = grounded_run.load_grounded_observations(OBSERVATIONS_PATH)
+    verification_ids = {case.case_id for case in dataset.cases if case.split == "Verification"}
+    live_observations = observations.model_validate(
+        {
+            **observations.model_dump(mode="json"),
+            "adapter_version": "ax-sut-http-v1",
+            "observations": [
+                observation.model_dump(mode="json")
+                for observation in observations.observations
+                if observation.case_id in verification_ids
+            ],
+        }
+    )
+
+    result = grounded_run.execute_grounded_fixture(dataset, live_observations)
+
+    assert result.state == "COMPLETED"
+    assert len(result.case_evaluations) == 15
+    assert result.coverage.total_cases == 15
+    assert result.coverage.verification_cases == 15
+
+
 def test_fifty_case_answer_run_matches_hand_calculated_macro_goldens() -> None:
     grounded_run = grounded_run_module()
     dataset = grounded_run.load_grounded_dataset(DATASET_PATH)
