@@ -716,6 +716,34 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-07-28 (session close) — Issue #91 merged, a live probe blocked #15 before it ran, and the first evaluation-found defect was fixed in the product
+
+**Where to resume: [Issue #94](https://github.com/DHChe/braincrew-datateam-portfolio/issues/94).** Everything below is recorded so that does not depend on conversation memory. A copy-ready start prompt, including the three-pane topology a fresh session would otherwise discard, is at `/Users/astralpig/ax-issue-45-review/NEXT-SESSION-PROMPT.md` — kept outside the repository because it goes stale by design.
+
+**Merged today.** Braincrew [#89](https://github.com/DHChe/braincrew-datateam-portfolio/issues/89) as `74ab1772` (PR #90, five review rounds) and [#91](https://github.com/DHChe/braincrew-datateam-portfolio/issues/91) as `43bd404d` (PR #93, two rounds). AX [#58](https://github.com/DHChe/AX_portfolio/issues/58) as `1ead1331` (AX PR #59, five CI jobs green). `develop` is at `43bd404`; the AX checkout is on `develop` at `1ead133`. Both trees clean, AX runtime stopped, volumes unchanged at 114.
+
+**Issue #15 Phase 1 did not run, and should not have.** The authorized runtime start and a single-case probe found three blockers *before* any experiment:
+
+- **A — the capture aborted.** 3 of 15 grounded Verification cases asked as a role AX has never defined, and the check for that compared a value to itself. Fixed by #91.
+- **C — the capture cannot tell a broken answer path from a cautious one.** [#92](https://github.com/DHChe/braincrew-datateam-portfolio/issues/92), open.
+- **B — the grounded answer path yields no signal**, and this one was diagnosed to root cause.
+
+**Blocker B, measured then diagnosed.** Fifty identical repeats across five cases that all expect `direct_grounded`: **50 abstentions, zero flips**. Not noise — stable at failure. That inverted the plan: pinning sampling (`temperature=0`) had been recommended on the theory that non-determinism was the problem, and the measurement showed the *modal* behaviour is rejection, so pinning would have locked the failure in. **Measuring before changing is what caught that**, and the recommendation was contradicted by the measurement that was run to justify it.
+
+The cause: AX's `_citations_valid` requires the union of cited claim paths to **exactly equal every populated field** of the answer, while the provider request uses a `strict: True` schema that pushes the model to populate every field. The model cites correctly but incompletely — every citation valid, 3–8 fields uncited. `provider_output_unsafe` was `False`; the label `unsafe_provider_output` covers two conditions and nothing unsafe had occurred.
+
+**The product question this raises is the owner's to answer, and the owner owns both tracks.** Whether procedural-advice fields (`review_points`, `additional_checks`) should require citations at all is a design decision, not a defect. A partial fix was tested offline against real model output: narrowing the obligation to claim-bearing fields would have accepted one of the two inspected cases and **not** the other, whose uncited fields were genuine `grounds` and `risk_warning`. So there are **two problems, not one** — contract over-reach, which should be fixed, and model under-citation of real claims, which must not be relaxed. Do not merge them.
+
+**AX #58 is the first evaluation-found defect fixed in the product.** Diagnosing B required temporarily patching AX's source, because `_debug_payload` was attached on the success path only — the answer you most need to inspect was the only one you could not. That is now fixed under three independently load-bearing gates, with the newly exposed content class named rather than folded into "exposure unchanged". The evidence chain is preserved deliberately: the pre-change measurement stands as the evaluation's finding on `SUT@2bcaee3`, the product change is recorded as a product decision, and the changed SUT is a new subject.
+
+**Why #94 is next and is not mechanical.** `PINNED_AX_SHA` means both "the commit under test" (`live_experiment.py:374`) and "the commit the provisioning receipt was produced at" (`live_preflight.py:851`). They diverged today for the first time. The receipt at `2bcaee3` is still valid — a debug attachment does not touch the corpus — but re-pinning naively fails with a message that says the receipt came from an *unreviewed* commit, which is false. The re-pin is unusually safe: `backend/src` was byte-identical between `2bcaee3` and the pre-merge `develop`, so the new SUT differs from the reviewed one by **one file, +22/−2**.
+
+**After #94:** re-pin → re-run the preflight → the 24-case measurement AX #58 exists to make possible, which separates contract over-reach from genuine under-citation and gives the citation-scope decision a basis better than two cases.
+
+**Not claimed.** No experiment has run. No baseline, no candidate, no quality claim. Every quality observation in this repository still comes from `httpx.MockTransport`.
+
+**Evidence outside the repository** (`/Users/astralpig/ax-live-verification-evidence/`): `08` probe and boundary, `09` the three blockers, `10` blocker A root cause, `11` runtime stop, `12`–`13` the variance measurement, `14`–`15` blocker B root cause. Two key-exposure incidents are recorded in `02` and `06`; the second prompted a standing rule that a secret value must never enter a pipeline that a downstream filter is trusted to clean.
+
 ### 2026-07-28 — Cycle 111 repairs Issue #91 after the live-path tautology survived review mutation M4
 
 - Independent Cycle 110 review returned `REQUEST CHANGES`: Cycle 109 correctly removed the
