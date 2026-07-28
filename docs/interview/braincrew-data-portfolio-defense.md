@@ -1646,6 +1646,86 @@ Likely follow-ups:
 - "Why amend the specification rather than just the code?" — Because the specification is where the defect came from. One sentence declared the metrics mandatory per case; the code implemented that faithfully. Leaving it standing would recreate the defect the next time someone implemented from the spec. The same document already contained its own resolution — applicability as a first-class per-case field, and a Recall@5 Verification denominator of nine rather than thirty.
 - "How did a contradiction survive in a frozen specification?" — Because nothing had ever tried to produce a real mixed-category run. The fixtures exercised retrieval-bearing cases only, so the contradiction was unreachable until a live capture forced the question. That is an argument for building the thing that produces the evidence early, which is what the two preceding tickets did.
 
+### D18. Exclude what cannot be measured, record the exclusion, and distrust a test whose inputs are all identical
+
+Decision:
+: The run summary carries `cost_usd: Decimal | None` with a bidirectionally-validated, **derived** measurement status, and a latency whose definition is a `Literal` type. The owner decided the release comparison runs on **quality and latency**, with cost **excluded and the exclusion carried** in a `CostDecisionWarrant` the gates consult. Relative deltas are quantised to the contract's scale before the range check. Locked in [the operational-measurement decision](../decisions/2026-07-28-operational-measurement-and-the-cost-exclusion.md); carried out by Issue #89.
+
+Why:
+: `latency_ms` and `cost_usd` were required with `ge=0`, so the cheapest way to satisfy the validator was `0` — and those values feed `baseline_p95_latency_ms` and `baseline_mean_cost_usd` in a **published** artifact. A zero written to pass a validator becomes a measured-looking figure in recruiter-facing output. The repository had answered this shape three times already (`sut_dirty`, `sut_commit_sha`, the readiness verdict) and never by defaulting.
+
+Rejected alternative:
+: Writing `0` for cost — the only plausible source, `provider_metadata`, is free-form and unvalidated, so reading a schema out of it would assert a structure AX has not promised. Also rejected, by the owner: keeping `INVALID` on unmeasured cost, which converts *"we could not measure cost"* into *"the comparison is invalid"* and would have made a release decision unreachable until AX exposed usage data.
+
+Trade-off:
+: Quantisation rounds. Excluding cost means the release verdict rests on quality and latency alone, and the artifact must carry that fact so no reader infers cost was evaluated and passed. **One of gate 2's six primary metrics also cannot move**: `evidence_span_recovery` is computed from fixture parsing observations because `evidence_limit` cannot affect parsing, so its macro delta is identically `0` in every pair. The warrant is carried in the compared provenance, and the fact must be stated wherever the comparison is presented.
+
+Known failure modes:
+: **Resolving the cost blocker did not deliver a reachable verdict.** With *real* measured latency, every pair was still `INVALID`: `Decimal` division yields 28 **significant** digits, so a ratio below 1 in magnitude lands at exponent −29 while the Parquet contract requires −28 or greater. Reproduced at `0.164083 ms → 0.15525 ms`. The range check was correct; producing a value it must reject was the bug.
+: **The acceptance test passed only because it injected a synthetic clock** giving baseline and candidate identical tick sequences, so all 24 latencies were exactly 1 ms and every delta was exactly `0`. A broken pipeline looked green.
+: The mirror defect: per-case deltas were range-checked while **the aggregate the gates actually read was not**, and a published value at exponent −30 was observed. Per-case failed closed; the aggregate failed open.
+
+Validation evidence produced:
+: The same real-world ratio now quantises to exponent −28 and fits; the aggregate routes through the same quantise-then-check helper; the cost exclusion is asserted by test alongside a decision in `{PASS, FAIL}` with all gates non-`INVALID`; and `test_run_summary_refuses_zero_cost_under_an_unmeasured_warrant` pins the original trap. Across two review rounds, no existing assertion was relaxed anywhere in a 24-path diff, and the four golden comparison fixtures changed **0 of 15 cases** each.
+
+Validation evidence still required:
+: **No experiment has run and no quality claim exists.** Phase 1 of Issue #15 remains a separate decision, and whether the live answer path needs a generation provider is an AX-side fact to be settled by a single-case probe rather than guessed at.
+
+Likely follow-ups:
+
+- "You excluded cost from a release gate — isn't that lowering the bar?" — The bar is what the evidence can support. Cost was never measured; the alternative was to call an otherwise-valid quality comparison `INVALID` because one dimension was unavailable, which reports a measurement failure as an evaluation failure. The exclusion is carried in the artifact with its reason, the gates still enforce cost when it *is* measured, and a reader cannot conclude from the artifact that cost was evaluated and passed.
+- "How did a broken pipeline pass its own acceptance test?" — The test injected identical clock ticks into both runs, so every latency delta was exactly zero and the range path was never exercised. **An injected value that is the same everywhere removes the variation the code exists to handle.** The rule now recorded: keep the deterministic test, but at least one test must carry values that genuinely differ across cases and runs.
+- "Why is one of your six primary metrics always zero?" — Because parsing is fixture-carried and the experiment's only variable is evidence packaging, which cannot affect parsing. It is disclosed rather than quietly averaged in: the provenance names the fixture adapter version, and the limitation is written where the comparison is presented. Removing the metric would have been the other honest option; hiding the constant zero was not.
+
+### D19. When the same defect returns five times, stop fixing instances and change the type
+
+Decision:
+: Five review rounds on Issue #89 each found one more instance of a single shape — **a producer emitting a `Decimal` its consumer contract refuses** (F1 per-case delta, F2 the aggregate the gates read, H8 `_score`, J1 the grounded value, and an open fifth at `run_summary.py:211-212, 241-242`). The decision is that the sequence ends with **one annotated type**, `ParquetDecimal` = `Annotated[Decimal, BeforeValidator(quantise), AfterValidator(assert_fits)]`, applied at all four contracts — and that it is **deliberately deferred to its own ticket** rather than bolted onto a ticket already at five review rounds. Recorded in [the operational-measurement decision](../decisions/2026-07-28-operational-measurement-and-the-cost-exclusion.md) §9.
+
+Why:
+: The root cause is nameable and is not carelessness. **The fit check lives on the consumer; the type at every producer boundary is a bare `Decimal`.** No type in the codebase means "a Decimal that fits the published scale", so correctness at five-and-counting sites depends on a person remembering to call `_quantize_parquet_decimal`, while mypy, the contracts and the linters stay silent when they do not. Every new producer is a fresh draw. Four consecutive rounds each closed an instance and none closed the class.
+
+Rejected alternative:
+: Quantising instance 5 now. It closes one site and leaves the generator running — and instance 5 is precisely the one that goes live the day the cost exclusion is lifted, because a per-token cost is exactly the kind of small non-terminating value that lands below 0.1 and therefore at exponent −29.
+
+Trade-off:
+: Deferring means shipping with a known-unreachable defect. It is unreachable for an *accidental* reason worth stating plainly: the only in-repo producer divides by `10⁶`, and division by a power of ten is exact, so the value carries at most 6 decimal places; and `cost_usd` is hardcoded `None`. The two contracts agree because of the divisor and because cost is absent — **nothing enforces the relationship and nothing pins it.**
+
+Known failure modes:
+: `OperationalMeasurement` accepts exponent −29 and −30 while `ExperimentCaseResult` refuses them; a refusal there aborts the whole 30-case build. Separately, `_quantize_parquet_decimal` fixes **scale, not magnitude** — it returns `1E+30` unchanged — so the new type must carry both halves, and it returns exactly `0` below the publication scale, making a sub-resolution delta indistinguishable from no change.
+
+Validation evidence produced:
+: The gap is reproduced, not inferred: `1/30` and `1/300` are accepted by the producing contract and rejected by the consuming one. **And the reason the check matters at all was measured rather than assumed** — DuckDB **silently truncates** an over-scale decimal (`exp −29 → −28`, `equal=False`) and raises only on over-magnitude, so `exponent >= -28` is defending against silent corruption of published evidence, with `replay_comparison_artifact` the only backstop that would notice.
+
+Likely follow-ups:
+
+- "Why ship with a known defect?" — Because it cannot be reached and the fix that *would* close it is a contract change across four models. Shipping the point fix would have closed the fifth instance and left the sixth to be found by the sixth review round. The defect is written down with its reachability condition, which is the difference between a deferred fix and an unknown one.
+- "How do you know this is the last instance?" — I don't, and that is the argument for the type. The enumeration that found instance 5 listed producers rather than checking the two the repair touched; that method can be re-run, but a type makes re-running it unnecessary.
+
+### D20. An approval is only as safe as its statement of what it did not check
+
+Decision:
+: Independent review approved Issue #89 while explicitly listing six CI gates it **could not execute** — `node_modules` was absent and the review was constrained offline — and named the specific risk: all four TypeScript/JSON paths in the diff are in Prettier's scope, so an unformatted file would fail CI unseen. The orchestrator then ran the full frontend job locally rather than treating the approval as complete.
+
+Why:
+: **`prettier --check` failed on two files this ticket had modified**, both clean at `HEAD`, so the ticket introduced them and CI would have rejected the merge. The failure was invisible to every gate the review *could* run: ruff, mypy and 497 pytest tests were all green, and so were eslint, tsc, vitest and the Next.js build.
+
+Rejected alternative:
+: Treating `APPROVE` as a merge signal. The verdict was correct on everything it covered; the merge risk lived entirely in the part it disclaimed.
+
+Trade-off:
+: Reproducing a full CI job locally costs a dependency install and several minutes. It is worth it exactly when the review was scoped away from part of the diff — not as a routine step.
+
+Known failure modes:
+: The orchestrator's own verification was wrong once here too: checking "did only whitespace change?" by stripping whitespace and comparing reported a **false** semantic difference, because the strip also removes spaces **inside string literals** (`replaceAll("_", " ")` collapses to `replaceAll("_","")`). **When a check fails, suspect the check before the subject.** The sound method — diff the file against its pre-format backup — showed two pure line-wraps, matching the preview exactly.
+
+Validation evidence produced:
+: All seven CI steps reproduced locally and green: ruff format/check, mypy (70 source files), pytest (497), `prettier --check` ("All matched files use Prettier code style!"), eslint, `tsc --noEmit`, vitest (6), `next build` (3/3 static pages), and the Playwright browser smoke test (2 passed).
+
+Likely follow-ups:
+
+- "Isn't a formatting failure trivial?" — The failure is trivial; **the mechanism that hid it is not.** A reviewer running every gate available to it, finding nothing, and approving is the normal case. What made this recoverable was that the review stated its blind spot in a form specific enough to act on — naming the gates, the tool, and the paths at risk. "I reviewed everything" would have produced a red CI run instead.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

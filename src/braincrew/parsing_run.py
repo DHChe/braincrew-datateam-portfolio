@@ -25,5 +25,11 @@ def load_parsing_observations(path: Path) -> ParsingObservationBatch:
 def execute_parsing_fixture(
     dataset: ParsingDatasetDocument,
     observations: ParsingObservationBatch,
+    *,
+    verification_only: bool = False,
 ) -> ParsingRunEvaluation:
-    return evaluate_parsing_run(dataset, observations)
+    return evaluate_parsing_run(
+        dataset,
+        observations,
+        verification_only=verification_only,
+    )

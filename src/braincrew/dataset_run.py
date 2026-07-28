@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
+from braincrew.comparison import ExperimentProvenance
 from braincrew.contracts import (
     EvaluationPlaneProvenance,
     ModelIdentity,
@@ -31,6 +32,7 @@ from braincrew.grounded_run import (
     execute_grounded_fixture,
     load_grounded_observations,
 )
+from braincrew.operational_evaluator import OPERATIONAL_EVALUATOR_VERSION
 from braincrew.parsing_run import execute_parsing_fixture, load_parsing_observations
 from braincrew.repository import RepositoryState
 from braincrew.retrieval_run import execute_retrieval_fixture, load_retrieval_observations
@@ -73,10 +75,11 @@ class DatasetAdapterProvenance(StrictDatasetContract):
 
 
 class DatasetEvaluatorProvenance(StrictDatasetContract):
-    version: Literal["dataset-fixture-v1"]
+    version: Literal["dataset-fixture-v1", "dataset-verification-v1"]
     parsing_version: Literal["parsing-quality-v1"]
     retrieval_version: Literal["retrieval-quality-v1"]
     grounded_version: Literal["grounded-answer-v1"]
+    operational_version: Literal["operational-v1"] | None = None
 
 
 class DatasetArtifactProvenance(StrictDatasetContract):
@@ -132,10 +135,48 @@ def execute_dataset_fixture(
             grounded=None,
         )
     snapshot = validation.snapshot
-    parsing = execute_parsing_fixture(snapshot.parsing_dataset, observations.parsing)
+    live_components = (
+        observations.retrieval.adapter_version == "ax-sut-http-v1",
+        observations.grounded.adapter_version == "ax-sut-http-v1",
+    )
+    if live_components[0] != live_components[1]:
+        return DatasetRunEvaluation(
+            schema_version="dataset-run-evaluation-v1",
+            state="INVALID",
+            invalid_reasons=("LIVE_COMPONENT_EXECUTION_MODE_MISMATCH",),
+            total_cases=0,
+            scored_cases=0,
+            parsing=None,
+            retrieval=None,
+            grounded=None,
+        )
+    verification_only = all(live_components)
+    parsing_observations = observations.parsing
+    if verification_only:
+        verification_parsing_ids = {
+            case.id for case in snapshot.parsing_dataset.cases if case.split == "verification"
+        }
+        parsing_observations = observations.parsing.model_copy(
+            update={
+                "observations": [
+                    observation
+                    for observation in observations.parsing.observations
+                    if observation.case_id in verification_parsing_ids
+                ]
+            }
+        )
+    parsing = execute_parsing_fixture(
+        snapshot.parsing_dataset,
+        parsing_observations,
+        verification_only=verification_only,
+    )
     retrieval = execute_retrieval_fixture(snapshot.retrieval_dataset, observations.retrieval)
     grounded = execute_grounded_fixture(snapshot.grounded_dataset, observations.grounded)
-    total_cases = len(snapshot.case_records)
+    total_cases = (
+        sum(record.split == "Verification" for record in snapshot.case_records)
+        if verification_only
+        else len(snapshot.case_records)
+    )
     scored_cases = (
         parsing.coverage.scored_cases
         + retrieval.coverage.scored_cases
@@ -145,8 +186,8 @@ def execute_dataset_fixture(
     state: Literal["COMPLETED", "INVALID"] = (
         "COMPLETED"
         if component_states == ("COMPLETED", "COMPLETED", "COMPLETED")
-        and total_cases == 100
-        and scored_cases == 100
+        and total_cases == (30 if verification_only else 100)
+        and scored_cases == total_cases
         else "INVALID"
     )
     invalid_reasons: tuple[str, ...] = ()
@@ -155,7 +196,7 @@ def execute_dataset_fixture(
             [*(f"parsing:{reason}" for reason in parsing.invalid_reasons)]
             + [*(f"retrieval:{reason}" for reason in retrieval.invalid_reasons)]
             + (["grounded:SYS-GROUNDED-COVERAGE-INVALID"] if grounded.state == "INVALID" else [])
-            + (["DATASET_CASE_COVERAGE_INVALID"] if scored_cases != 100 else [])
+            + (["DATASET_CASE_COVERAGE_INVALID"] if scored_cases != total_cases else [])
         )
     return DatasetRunEvaluation(
         schema_version="dataset-run-evaluation-v1",
@@ -185,24 +226,47 @@ def _dataset_provenance(snapshot: DatasetBundleSnapshot) -> DatasetRegistryArtif
 
 
 def _dataset_adapter(observations: DatasetObservationSnapshot) -> DatasetAdapterProvenance:
+    execution_mode: Literal["fixture", "live"] = (
+        "live"
+        if observations.retrieval.adapter_version == "ax-sut-http-v1"
+        and observations.grounded.adapter_version == "ax-sut-http-v1"
+        else "fixture"
+    )
     return DatasetAdapterProvenance(
-        execution_mode="fixture",
+        execution_mode=execution_mode,
         parsing_version=observations.parsing.adapter_version,
         retrieval_version=observations.retrieval.adapter_version,
         grounded_version=observations.grounded.adapter_version,
     )
 
 
-def _dataset_evaluator() -> DatasetEvaluatorProvenance:
+def _dataset_evaluator(
+    execution_mode: Literal["fixture", "live"],
+) -> DatasetEvaluatorProvenance:
     return DatasetEvaluatorProvenance(
-        version="dataset-fixture-v1",
+        version=("dataset-verification-v1" if execution_mode == "live" else "dataset-fixture-v1"),
         parsing_version="parsing-quality-v1",
         retrieval_version="retrieval-quality-v1",
         grounded_version="grounded-answer-v1",
+        operational_version=(OPERATIONAL_EVALUATOR_VERSION if execution_mode == "live" else None),
     )
 
 
-def _dataset_sut(sut_sha: str) -> SutProvenance:
+def _dataset_sut(
+    sut_sha: str,
+    *,
+    execution_mode: Literal["fixture", "live"],
+    dirty_worktree: bool | None = None,
+) -> SutProvenance:
+    if execution_mode == "live":
+        if dirty_worktree is None:
+            raise ValueError("live dataset execution requires the captured SUT dirtiness warrant")
+        return SutProvenance(
+            commit_sha=sut_sha,
+            dirty_worktree=dirty_worktree,
+            executed=True,
+            claim="live AX called; clean state warranted by read-only checkout check",
+        )
     return SutProvenance(
         commit_sha=sut_sha,
         dirty_worktree=None,
@@ -227,21 +291,53 @@ def build_dataset_run_artifact(
     run_id: str,
     evaluation_state: RepositoryState,
     sut_sha: str,
+    live_provenance: ExperimentProvenance | None = None,
 ) -> DatasetRunArtifactDocument:
     if validation.state != "VALID" or validation.snapshot is None:
         raise ValueError("a valid dataset snapshot is required for fixture execution")
+    adapter = _dataset_adapter(observations)
+    if adapter.execution_mode == "live":
+        if live_provenance is None:
+            raise ValueError("live dataset execution requires captured experiment provenance")
+        if (
+            live_provenance.execution_mode != "live"
+            or live_provenance.sut_sha != sut_sha
+            or live_provenance.evaluation_plane_sha != evaluation_state.commit_sha
+            or live_provenance.evaluation_plane_dirty != evaluation_state.dirty_worktree
+        ):
+            raise ValueError("live dataset provenance does not match the evaluated evidence")
+        sut = _dataset_sut(
+            sut_sha,
+            execution_mode="live",
+            dirty_worktree=live_provenance.sut_dirty,
+        )
+        prompt = PromptIdentity(
+            id=live_provenance.prompt_id,
+            hash=live_provenance.prompt_hash,
+        )
+        model = ModelIdentity(
+            provider=live_provenance.model_provider,
+            name=live_provenance.model_name,
+            parameters=live_provenance.model_parameters,
+        )
+    else:
+        if live_provenance is not None:
+            raise ValueError("fixture dataset execution cannot accept live provenance")
+        sut = _dataset_sut(sut_sha, execution_mode="fixture")
+        prompt = _dataset_prompt()
+        model = _dataset_model()
     provenance = DatasetArtifactProvenance(
         evaluation_plane=EvaluationPlaneProvenance(
             commit_sha=evaluation_state.commit_sha,
             dirty_worktree=evaluation_state.dirty_worktree,
             executed=True,
         ),
-        sut=_dataset_sut(sut_sha),
+        sut=sut,
         dataset=_dataset_provenance(validation.snapshot),
-        adapter=_dataset_adapter(observations),
-        evaluator=_dataset_evaluator(),
-        prompt=_dataset_prompt(),
-        model=_dataset_model(),
+        adapter=adapter,
+        evaluator=_dataset_evaluator(adapter.execution_mode),
+        prompt=prompt,
+        model=model,
     )
     logical_result = DatasetLogicalResult(
         dataset_snapshot=validation.snapshot,
@@ -252,7 +348,7 @@ def build_dataset_run_artifact(
         schema_version="dataset-run-artifact-v1",
         run=RunEnvelope(
             run_id=run_id,
-            execution_mode="fixture",
+            execution_mode=adapter.execution_mode,
             created_at=datetime.now(UTC),
         ),
         provenance=provenance,
@@ -295,14 +391,30 @@ def replay_dataset_run_artifact(raw_artifact: object) -> dict[str, str]:
         observation_snapshot=stored.observation_snapshot,
         evaluation=recomputed_evaluation,
     )
+    adapter = _dataset_adapter(stored.observation_snapshot)
+    if adapter.execution_mode == "live":
+        recomputed_sut = _dataset_sut(
+            stored.observation_snapshot.grounded.sut_commit_sha,
+            execution_mode="live",
+            dirty_worktree=artifact.provenance.sut.dirty_worktree,
+        )
+        recomputed_prompt = artifact.provenance.prompt
+        recomputed_model = artifact.provenance.model
+    else:
+        recomputed_sut = _dataset_sut(
+            stored.observation_snapshot.grounded.sut_commit_sha,
+            execution_mode="fixture",
+        )
+        recomputed_prompt = _dataset_prompt()
+        recomputed_model = _dataset_model()
     recomputed_provenance = artifact.provenance.model_copy(
         update={
-            "sut": _dataset_sut(stored.observation_snapshot.grounded.sut_commit_sha),
+            "sut": recomputed_sut,
             "dataset": _dataset_provenance(validation.snapshot),
-            "adapter": _dataset_adapter(stored.observation_snapshot),
-            "evaluator": _dataset_evaluator(),
-            "prompt": _dataset_prompt(),
-            "model": _dataset_model(),
+            "adapter": adapter,
+            "evaluator": _dataset_evaluator(adapter.execution_mode),
+            "prompt": recomputed_prompt,
+            "model": recomputed_model,
         }
     )
     recomputed_digest = canonical_digest(

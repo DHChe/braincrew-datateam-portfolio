@@ -89,6 +89,29 @@ def test_dashboard_export_copies_canonical_comparison_without_recalculation(
     assert (tmp_path / "dashboard-data.json").is_file()
 
 
+def test_dashboard_export_preserves_cost_exclusion(tmp_path: Path) -> None:
+    comparison_path = _comparison_artifact(tmp_path / "comparison")
+
+    exported = export_dashboard_artifact(
+        comparison_path,
+        tmp_path / "dashboard-data.json",
+        dataset_manifest_path=DATASET_MANIFEST,
+    )
+
+    operational = exported.operational_delta
+    assert operational is not None
+    assert operational.baseline_mean_cost_usd is None
+    assert operational.candidate_mean_cost_usd is None
+    assert operational.mean_cost_relative_delta is None
+    assert operational.baseline_cost_case_count == 0
+    assert operational.candidate_cost_case_count == 0
+    assert operational.cost_decision_warrant.model_dump(mode="json") == {
+        "status": "excluded",
+        "reason": "both runs declare cost unmeasured",
+    }
+    assert all(case.cost_relative_delta is None for case in exported.cases)
+
+
 def test_dashboard_export_rejects_non_publishable_case_identifier(tmp_path: Path) -> None:
     comparison_path = _comparison_artifact(
         tmp_path / "comparison",

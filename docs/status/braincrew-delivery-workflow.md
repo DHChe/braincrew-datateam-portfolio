@@ -716,6 +716,74 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-07-28 — Issue #89 in its fourth review round; cycle 106 dispatched, and the orchestrator's own mutation method was corrected by review
+
+- Phase: Issue #89 — Phase 0 of Issue #15 — implemented on `feat/issue-89-run-summary-builder`
+  (`HEAD = 46115c0`). Cycles 97–105: implementation → `REQUEST CHANGES` ×4 rounds, repaired between
+  each. **Nothing is committed.** Cycle 106, the fourth independent re-review, is dispatched to
+  pane 3 as this entry is written.
+- Round history, each round changing angle and each new angle finding something the last did not:
+  cycle 98 construction (B1–B6, N1–N9) → cycle 100 verdict reachability (F1, F2, M1–M6) → cycle 102
+  the storage contract (G1, H1–H8) → cycle 104 the consumer layer and mutation adequacy (J1, J2, J5).
+- **The owner's decision inside this ticket:** the release comparison runs on quality and latency;
+  cost is excluded and the exclusion is carried in the artifact. Escalated rather than resolved by
+  the orchestrator because it changes what a release decision means. Locked in
+  [the operational measurement decision](../decisions/2026-07-28-operational-measurement-and-the-cost-exclusion.md).
+- **A method the orchestrator got wrong, recorded because it will recur.** To show the G1 remedy was
+  load-bearing, the orchestrator restored `NOT NULL` on all four operational columns *together*,
+  watched one test go red, and concluded the fix was pinned. Independent review mutated the columns
+  *individually*: two of the four **survived**. A collective mutation proves a test exists; it does
+  not identify which clause the test protects. Cycle 106's brief carries this as a standing rule.
+- **Cycle 106 returned `APPROVE`** — zero blocking findings, eight non-blocking (K1–K8). All three
+  cycle-104 blockers are closed and each is pinned by a test that fails when the repair is reverted.
+  The mutation measurement that failed in cycle 104 (two of four columns survived) came back
+  **six of six killed** this cycle, on six columns rather than the four the orchestrator's brief
+  named — the brief was wrong about the count and the reviewer widened rather than followed it.
+- **The approval's disclaimer was load-bearing.** The review listed six CI gates it could not run
+  (`node_modules` absent, offline by the brief's own constraint) and named the risk precisely: the
+  four TypeScript/JSON paths in this diff are in Prettier's scope. Running the frontend job locally
+  found **`prettier --check` failing on two files this ticket introduced**, both clean at `HEAD`.
+  CI would have rejected the merge. Fixed; the change is two line-wraps and nothing else.
+- All seven CI steps now reproduced locally and green: ruff format/check, mypy (70 source files),
+  pytest (497), prettier, eslint, `tsc --noEmit`, vitest (6), `next build` (3/3), Playwright (2).
+- **The user was given the Git proposal with K1 as an explicit scope choice, and chose to fix K1
+  inside this ticket** rather than ship and file a follow-up. Cycle 107 is dispatched to pane 2 as
+  this entry is written: regenerate the shipped golden dashboard export from a cost-excluded pair,
+  and add the Python test that no existing test covers. The end-to-end path was already proven
+  during cycle 106 review, so this is making the shipped artifact use a mechanism that works, not
+  building a new one.
+- **The choice left to the implementer, deliberately:** flip the four golden comparison fixtures to
+  `unmeasured`, or add a cost-excluded pair alongside. The trade-off is real in both directions and
+  the reason must be recorded with the rejected option.
+- **The trap named in the brief:** the decision requires the cost checks to keep firing when cost
+  *is* measured, so that coverage (`tests/unit/test_comparison.py:368-371`) must survive. Deleting a
+  check's coverage while making an artifact honest would be the same class of error the ticket is
+  about.
+- **Cycle 107 closed K1**, choosing option (a). **Cycle 108 verified it and returned
+  `REQUEST CHANGES` — on two documentation lines, not on the code.** Both were the orchestrator's
+  own: a spliced digest abbreviation in the decision document, and an unscoped "appears nowhere"
+  claim contradicted by a stale digest in this file. Both fixed; the historical line is preserved
+  with a superseding pointer rather than rewritten.
+- **What cycle 108 proved that cycle 107 had not.** Seven Python cost clauses mutated individually,
+  seven killed — measured-cost coverage survives the fixture flip because `_mixed_run_payload` builds
+  its own cases independently of the four JSON fixtures. The golden chain's PASS/FAIL/INVALID
+  decisions are unchanged, because none of them was ever cost-driven. **But one coverage deletion was
+  found in TypeScript (K9)**, where cycle 107 had not looked: flipping the shipped export to
+  `excluded` made `isOperationalDelta`'s included-warrant path unreachable, so a mutant that was
+  detectable before became invisible — *a test that still passes because its inputs no longer reach
+  the branch*, the exact shape the brief named. Closed by one added vitest case, verified against the
+  reviewer's own mutant list: T1, T2, T3 and T6 all now die. Frontend suite 6 → 7.
+- All seven CI gates green after every fix: ruff format/check, mypy (70), pytest (**498**), prettier,
+  eslint, tsc, vitest (**7**), next build (3/3), Playwright (2). Tree: 34 uncommitted paths.
+- Blocked on: nothing external. Not blocked on the AX runtime — this ticket makes no live call.
+- Completion condition for the current step: the authorized Git lifecycle. **No commit, push, PR, or
+  merge until the user authorizes it.**
+- **Deferred to its own ticket, not forgotten:** the `ParquetDecimal` annotated type that ends the
+  five-instance producer/consumer sequence (decision §9), and K2–K8.
+- Explicitly not claimed: **no experiment has run.** No baseline, no candidate, no quality claim.
+  Every observation still comes from `httpx.MockTransport`. Phase 1 of Issue #15 — the authorized
+  runtime start and the two 30-case runs — remains a separate decision.
+
 ### 2026-07-27 — Issue #85 built Phase 0 of the live experiment, and independent review found the honesty machinery unearned
 
 - Phase: Issue #85 implemented on `feat/issue-85-live-experiment-capture` across cycles 89–93:
@@ -1832,6 +1900,7 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 - Python export RED/GREEN: missing `braincrew.dashboard_export`, missing `export-dashboard`, accepted email-like and sensitive slug identifiers, and missing execution provenance were each observed failing before the minimum exporter/CLI contract passed.
 - Frontend RED/GREEN: the first contract test failed on missing `dashboard/lib/dashboard-data`; the first UI build failed on missing `app`/`pages`; taxonomy row projection and fixture/live provenance validation each failed before their readonly implementations passed.
 - Golden evidence: `dashboard/data/dashboard-export-v1.json` retains canonical decision `PASS`, logical digest `sha256:f8630e70892f976ee120ac497ef63ce6cc64add8aa1d71989a576891b5ae7bbe`, 15 cases, 6 metrics, three ordered `PASS` gates, fixture mode, Evaluation Plane SHA, and SUT SHA. Frontend unit and Playwright assertions compare the rendered decision, digest, totals, gate count, evidence drill-down, and fixture-not-live label with that artifact.
+  - **Superseded 2026-07-28 by Issue #89; the text above is deliberately unchanged as the record of what was true then.** The digest `sha256:f8630e70…5ae7bbe` is no longer the artifact's identity. Issue #89 closed finding K1 — the shipped export declared a **measured** cost that no producer in this repository can emit, inverting the cost-exclusion decision the ticket implements — by flipping the four golden fixtures to `cost_measurement_status: "unmeasured"` and regenerating the export. The current digest is `sha256:d426e04c0c2b960d8c8c17efc216688891b2078faaaa51ff226c137c2f8694ae`, pinned at `tests/frontend/dashboard-data.test.ts:120` and `tests/frontend/e2e/dashboard.spec.ts:18`; the artifact now renders **"Not measured — both runs declare cost unmeasured"**. Decision recorded in [the operational-measurement decision](../decisions/2026-07-28-operational-measurement-and-the-cost-exclusion.md) §11. Everything else in the bullet above — decision `PASS`, 15 cases, 6 metrics, three ordered gates, fixture mode — still holds. This pointer exists because independent review found the stale digest **in the commit**, not after it.
 - Toolchain repair: clean npm installation exposed ESLint 10 peer incompatibilities with the Next 16 lint plugins, so the final lock uses ESLint `9.39.5`; transitive PostCSS is overridden to patched `8.5.10`, and `npm audit --audit-level=moderate` reports zero vulnerability.
 - Static evidence: Next.js `output: "export"` generates `dashboard/out`; Playwright serves only that directory. A 1440×1000 full-page browser inspection showed the comparison, gates, metrics, operational deltas, and drill-down layout without an external runtime dependency.
 - Standards review: PASS, zero unresolved finding. The exporter reuses the existing strict manifest contract and comparison replay/result-store boundaries, dependencies are pinned without a new package manager, imports and write behavior follow repository patterns, and no speculative service or database access was added.

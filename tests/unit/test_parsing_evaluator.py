@@ -175,6 +175,10 @@ def test_twenty_case_run_macro_aggregates_exact_scores_and_verification_coverage
     }
     assert result.aggregate.structure_preservation.case_count == 20
     assert result.aggregate.metadata_completeness.case_count == 20
+    if result.aggregate.table_preservation is None:
+        pytest.fail("full parsing evaluation must retain table applicability")
+    if result.aggregate.list_preservation is None:
+        pytest.fail("full parsing evaluation must retain list applicability")
     assert result.aggregate.table_preservation.case_count == 5
     assert result.aggregate.list_preservation.case_count == 5
 

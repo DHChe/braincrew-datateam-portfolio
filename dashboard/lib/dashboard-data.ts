@@ -14,6 +14,26 @@ export interface DashboardFailure {
   readonly evaluator_version: string;
 }
 
+export interface DashboardOperationalDelta {
+  readonly baseline_p95_latency_ms: string;
+  readonly candidate_p95_latency_ms: string;
+  readonly p95_latency_relative_delta: string;
+  readonly baseline_latency_case_count: number;
+  readonly candidate_latency_case_count: number;
+  readonly baseline_mean_cost_usd: string | null;
+  readonly candidate_mean_cost_usd: string | null;
+  readonly mean_cost_relative_delta: string | null;
+  readonly baseline_cost_case_count: number;
+  readonly candidate_cost_case_count: number;
+  readonly cost_decision_warrant: {
+    readonly status: "included" | "excluded";
+    readonly reason:
+      | "both runs declare complete cost measurement"
+      | "both runs declare cost unmeasured"
+      | "cost measurement status differs or is missing";
+  };
+}
+
 export interface DashboardExport {
   readonly schema_version: "dashboard-export-v1";
   readonly source_schema_version: "experiment-comparison-artifact-v1";
@@ -47,14 +67,7 @@ export interface DashboardExport {
     readonly gate_count: 3;
   };
   readonly metrics: readonly DashboardMetric[];
-  readonly operational_delta: {
-    readonly baseline_p95_latency_ms: string;
-    readonly candidate_p95_latency_ms: string;
-    readonly p95_latency_relative_delta: string;
-    readonly baseline_mean_cost_usd: string;
-    readonly candidate_mean_cost_usd: string;
-    readonly mean_cost_relative_delta: string;
-  } | null;
+  readonly operational_delta: DashboardOperationalDelta | null;
   readonly failure_taxonomy: {
     readonly baseline_critical: readonly string[];
     readonly candidate_critical: readonly string[];
@@ -114,6 +127,49 @@ function isDashboardRun(value: unknown, role: "baseline" | "candidate") {
   );
 }
 
+function isOperationalDelta(
+  value: unknown,
+): value is DashboardOperationalDelta {
+  if (!isRecord(value) || !isRecord(value.cost_decision_warrant)) {
+    return false;
+  }
+  const nullableCostFields = [
+    value.baseline_mean_cost_usd,
+    value.candidate_mean_cost_usd,
+    value.mean_cost_relative_delta,
+  ];
+  const costsArePresent = nullableCostFields.every(
+    (field) => typeof field === "string",
+  );
+  const costsAreAbsent = nullableCostFields.every((field) => field === null);
+  const warrant = value.cost_decision_warrant;
+  const warrantMatchesCosts =
+    (warrant.status === "included" &&
+      warrant.reason === "both runs declare complete cost measurement" &&
+      costsArePresent) ||
+    (warrant.status === "excluded" &&
+      new Set([
+        "both runs declare cost unmeasured",
+        "cost measurement status differs or is missing",
+      ]).has(String(warrant.reason)) &&
+      costsAreAbsent);
+
+  return (
+    typeof value.baseline_p95_latency_ms === "string" &&
+    typeof value.candidate_p95_latency_ms === "string" &&
+    typeof value.p95_latency_relative_delta === "string" &&
+    Number.isInteger(value.baseline_latency_case_count) &&
+    Number(value.baseline_latency_case_count) > 0 &&
+    Number.isInteger(value.candidate_latency_case_count) &&
+    Number(value.candidate_latency_case_count) > 0 &&
+    Number.isInteger(value.baseline_cost_case_count) &&
+    Number(value.baseline_cost_case_count) >= 0 &&
+    Number.isInteger(value.candidate_cost_case_count) &&
+    Number(value.candidate_cost_case_count) >= 0 &&
+    warrantMatchesCosts
+  );
+}
+
 function assertDashboardEnvelope(
   value: unknown,
 ): asserts value is DashboardExport {
@@ -162,6 +218,12 @@ function assertDashboardEnvelope(
   if (!Array.isArray(value.metrics) || !Array.isArray(value.cases)) {
     throw new TypeError("dashboard metric and case evidence must be arrays");
   }
+  if (
+    value.operational_delta !== null &&
+    !isOperationalDelta(value.operational_delta)
+  ) {
+    throw new TypeError("dashboard operational delta is invalid");
+  }
 }
 
 function deepFreeze<T>(value: T): T {
@@ -177,6 +239,28 @@ function deepFreeze<T>(value: T): T {
 export function loadDashboardData(value: unknown): DashboardExport {
   assertDashboardEnvelope(value);
   return deepFreeze(value);
+}
+
+export function operationalCostDisplay(
+  operational: DashboardOperationalDelta,
+): Readonly<{ value: string; context: string }> {
+  if (
+    operational.candidate_mean_cost_usd === null ||
+    operational.mean_cost_relative_delta === null
+  ) {
+    return {
+      value: "Not measured",
+      context: operational.cost_decision_warrant.reason,
+    };
+  }
+  const relativeDelta =
+    Number(operational.mean_cost_relative_delta) > 0
+      ? `+${operational.mean_cost_relative_delta}`
+      : operational.mean_cost_relative_delta;
+  return {
+    value: `$${operational.candidate_mean_cost_usd}`,
+    context: `${relativeDelta} relative`,
+  };
 }
 
 export function taxonomyRows(

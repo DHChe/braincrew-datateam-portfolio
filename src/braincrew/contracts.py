@@ -7,6 +7,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from braincrew.operational_evaluator import OperationalMeasurement
+
 CommitSha = Annotated[str, Field(pattern=r"^[0-9a-f]{40}$")]
 LogicalDigest = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
 RunId = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")]
@@ -278,6 +280,10 @@ class RetrievalObservation(StrictContract):
     retrieval_available: bool
     failure_code: str | None
     candidates: list[RetrievalCandidateObservation]
+    operational: OperationalMeasurement | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
 
     @model_validator(mode="after")
     def validate_availability_and_rank_contract(self) -> RetrievalObservation:
@@ -477,8 +483,8 @@ class ParsingAggregate(StrictContract):
     evidence_span_recovery: ParsingAggregateMetric
     structure_preservation: ParsingAggregateMetric
     metadata_completeness: ParsingAggregateMetric
-    table_preservation: ParsingAggregateMetric
-    list_preservation: ParsingAggregateMetric
+    table_preservation: ParsingAggregateMetric | None
+    list_preservation: ParsingAggregateMetric | None
 
 
 class ParsingRunEvaluation(StrictContract):

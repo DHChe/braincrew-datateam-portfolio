@@ -6,7 +6,9 @@ from pathlib import Path
 
 import pytest
 
+from braincrew.comparison import ExperimentRunSummary
 from braincrew.dataset_registry import validate_dataset_bundle
+from braincrew.repository import RepositoryState
 
 MANIFEST_PATH = Path("datasets/dataset_manifest_v1.json")
 PARSING_OBSERVATIONS = Path("tests/fixtures/parsing_observations_v1.json")
@@ -95,3 +97,66 @@ def test_integrated_run_is_invalid_when_an_observation_identity_is_duplicated() 
     assert result.state == "INVALID"
     assert result.scored_cases == 99
     assert "DATASET_CASE_COVERAGE_INVALID" in result.invalid_reasons
+
+
+def test_integrated_run_refuses_mixed_live_and_fixture_components() -> None:
+    dataset_run = importlib.import_module("braincrew.dataset_run")
+    validation = validate_dataset_bundle(MANIFEST_PATH)
+    observations = dataset_run.load_dataset_observations(
+        parsing_path=PARSING_OBSERVATIONS,
+        retrieval_path=RETRIEVAL_OBSERVATIONS,
+        grounded_path=GROUNDED_OBSERVATIONS,
+    )
+    mixed = observations.model_copy(
+        update={
+            "retrieval": observations.retrieval.model_copy(
+                update={"adapter_version": "ax-sut-http-v1"}
+            )
+        }
+    )
+
+    result = dataset_run.execute_dataset_fixture(validation, mixed)
+
+    if result.invalid_reasons != ("LIVE_COMPONENT_EXECUTION_MODE_MISMATCH",):
+        pytest.fail(f"mixed execution provenance was not refused: {result.invalid_reasons}")
+    assert result.state == "INVALID"
+    assert result.total_cases == 0
+
+
+def test_live_dataset_sut_requires_the_captured_dirtiness_warrant() -> None:
+    dataset_run = importlib.import_module("braincrew.dataset_run")
+
+    with pytest.raises(
+        ValueError,
+        match="captured SUT dirtiness warrant",
+    ):
+        dataset_run._dataset_sut("b" * 40, execution_mode="live")
+
+
+def test_fixture_dataset_run_refuses_live_provenance() -> None:
+    dataset_run = importlib.import_module("braincrew.dataset_run")
+    validation = validate_dataset_bundle(MANIFEST_PATH)
+    observations = dataset_run.load_dataset_observations(
+        parsing_path=PARSING_OBSERVATIONS,
+        retrieval_path=RETRIEVAL_OBSERVATIONS,
+        grounded_path=GROUNDED_OBSERVATIONS,
+    )
+    evaluation = dataset_run.execute_dataset_fixture(validation, observations)
+    fixture_summary = ExperimentRunSummary.model_validate_json(
+        Path("tests/fixtures/comparison_baseline_v1.json").read_text(encoding="utf-8")
+    )
+    live_provenance = fixture_summary.provenance.model_copy(update={"execution_mode": "live"})
+
+    with pytest.raises(
+        ValueError,
+        match="fixture dataset execution cannot accept live provenance",
+    ):
+        dataset_run.build_dataset_run_artifact(
+            validation=validation,
+            observations=observations,
+            evaluation=evaluation,
+            run_id="fixture-with-live-provenance",
+            evaluation_state=RepositoryState(commit_sha="a" * 40, dirty_worktree=False),
+            sut_sha="b" * 40,
+            live_provenance=live_provenance,
+        )

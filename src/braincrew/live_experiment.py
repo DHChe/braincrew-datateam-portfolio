@@ -7,8 +7,11 @@ import json
 import os
 import platform
 import sys
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Literal, cast
@@ -52,8 +55,14 @@ from braincrew.grounded_contracts import (
     GroundedObservationBatch,
     GroundedStructuredAnswer,
     SourceTextResolution,
+    canonical_ax_role,
 )
 from braincrew.live_preflight import PINNED_AX_SHA
+from braincrew.operational_evaluator import (
+    CLIENT_TOTAL_LATENCY_DEFINITION,
+    OPERATIONAL_EVALUATOR_VERSION,
+    OperationalMeasurement,
+)
 from braincrew.repository import RepositoryState
 
 TOP_K = 5
@@ -65,7 +74,7 @@ EVALUATOR_VERSIONS = {
     "parsing": "parsing-quality-v1",
     "retrieval": "retrieval-quality-v1",
     "grounded": "grounded-answer-v1",
-    "operational": "operational-v1",
+    "operational": OPERATIONAL_EVALUATOR_VERSION,
 }
 ADAPTER_VERSIONS = {
     "parsing": "fixture-parsing-sut-v1",
@@ -160,10 +169,6 @@ def load_reviewed_principal_binding(path: Path) -> ReviewedPrincipalBinding:
 
 def _sha256_bytes(payload: bytes) -> str:
     return f"sha256:{hashlib.sha256(payload).hexdigest()}"
-
-
-def _canonical_role(role: str) -> str:
-    return {"employee": "Employee", "hr_manager": "HRManager"}.get(role, role)
 
 
 def _adapter(
@@ -362,6 +367,7 @@ def capture_live_experiment(
     dataset_validation: DatasetValidationReport,
     dependency_lock_path: Path,
     transport: httpx.BaseTransport | None = None,
+    clock_ns: Callable[[], int] = time.perf_counter_ns,
 ) -> LiveExperimentCapture:
     if evaluation_state.dirty_worktree:
         raise ValueError("live capture requires a clean committed Evaluation Plane")
@@ -393,7 +399,7 @@ def capture_live_experiment(
         sorted(
             {
                 *(case.role for case in retrieval_cases),
-                *(_canonical_role(case.role) for case in grounded_cases),
+                *(canonical_ax_role(case.role) for case in grounded_cases),
             }
         )
     )
@@ -420,16 +426,19 @@ def capture_live_experiment(
 
     retrieval_observations: list[RetrievalObservation] = []
     for retrieval_case in retrieval_cases:
-        retrieval_ax_observation = _adapter(
+        retrieval_adapter = _adapter(
             base_url=base_url,
             principal=principal,
             role=retrieval_case.role,
             transport=transport,
-        ).retrieve(
+        )
+        started_ns = clock_ns()
+        retrieval_ax_observation = retrieval_adapter.retrieve(
             context=_context(run_id, retrieval_case.id, "retrieve"),
             query=retrieval_case.query,
             top_k=TOP_K,
         )
+        latency_ms = Decimal(clock_ns() - started_ns) / Decimal(1_000_000)
         if (
             retrieval_ax_observation.response.query != retrieval_case.query
             or retrieval_ax_observation.response.top_k != TOP_K
@@ -454,6 +463,12 @@ def capture_live_experiment(
                         start=1,
                     )
                 ],
+                operational=OperationalMeasurement(
+                    latency_ms=latency_ms,
+                    latency_definition=CLIENT_TOTAL_LATENCY_DEFINITION,
+                    cost_usd=None,
+                    cost_status="unmeasured",
+                ),
             )
         )
 
@@ -461,18 +476,21 @@ def capture_live_experiment(
     grounded_observations: list[GroundedObservation] = []
     model_identities: set[tuple[str, str]] = set()
     for grounded_case in grounded_cases:
-        executed_role = _canonical_role(grounded_case.role)
-        answer_observation = _adapter(
+        executed_role = canonical_ax_role(grounded_case.role)
+        answer_adapter = _adapter(
             base_url=base_url,
             principal=principal,
             role=executed_role,
             transport=transport,
-        ).answer(
+        )
+        started_ns = clock_ns()
+        answer_observation = answer_adapter.answer(
             context=_context(run_id, grounded_case.case_id, "answer"),
             query=grounded_case.query,
             top_k=TOP_K,
             evidence_limit=evidence_limit,
         )
+        latency_ms = Decimal(clock_ns() - started_ns) / Decimal(1_000_000)
         if answer_observation.response.query != grounded_case.query:
             raise ValueError("AX answer response does not bind the requested case")
         provider = answer_observation.response.provider_metadata.get("provider_adapter")
@@ -511,6 +529,12 @@ def capture_live_experiment(
                 ),
                 citations=tuple(item[0] for item in citations_and_sources),
                 source_texts=tuple(unique_sources.values()),
+                operational=OperationalMeasurement(
+                    latency_ms=latency_ms,
+                    latency_definition=CLIENT_TOTAL_LATENCY_DEFINITION,
+                    cost_usd=None,
+                    cost_status="unmeasured",
+                ),
             )
         )
     if len(model_identities) != 1:

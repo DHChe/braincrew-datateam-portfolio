@@ -20,6 +20,7 @@ from braincrew.grounded_contracts import (
     GroundedStructuredAnswer,
     SourceTextResolution,
     SurfaceMatcher,
+    canonical_ax_role,
 )
 
 CLAIM_TRAVERSAL_VERSION: Final[Literal["claim-traversal-v1"]] = "claim-traversal-v1"
@@ -248,13 +249,13 @@ def evaluate_grounded_case(
         "SYS-GROUNDED-ROLE-MISMATCH"
         if observation.case_id == case.case_id
         and observation.available
-        and observation.executed_role != case.role
+        and canonical_ax_role(observation.executed_role) != canonical_ax_role(case.role)
         else "SYS-GROUNDED-OBSERVATION-INVALID"
     )
     if (
         observation.case_id != case.case_id
         or not observation.available
-        or observation.executed_role != case.role
+        or canonical_ax_role(observation.executed_role) != canonical_ax_role(case.role)
     ):
         invalid_failures = [invalid_failure]
         invalid_hard_failure_codes: tuple[str, ...] = ()

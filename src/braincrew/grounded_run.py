@@ -95,9 +95,15 @@ def _invalid_run(
     verification_answer_mode_cases: int,
     verification_abstention_cases: int,
     case_evaluations: tuple[GroundedCaseEvaluation, ...] = (),
+    evaluated_case_ids: frozenset[str] | None = None,
 ) -> GroundedRunEvaluation:
     case_failure_codes = tuple(
         failure for result in case_evaluations for failure in result.failure_codes
+    )
+    evaluated_cases = (
+        dataset.cases
+        if evaluated_case_ids is None
+        else tuple(case for case in dataset.cases if case.case_id in evaluated_case_ids)
     )
     return GroundedRunEvaluation(
         evaluator_version=GROUNDED_EVALUATOR_VERSION,
@@ -109,8 +115,8 @@ def _invalid_run(
         state="INVALID",
         case_evaluations=case_evaluations,
         coverage=GroundedCoverage(
-            total_cases=len(dataset.cases),
-            verification_cases=sum(case.split == "Verification" for case in dataset.cases),
+            total_cases=len(evaluated_cases),
+            verification_cases=sum(case.split == "Verification" for case in evaluated_cases),
             verification_claim_support_cases=verification_claim_support_cases,
             verification_citation_precision_cases=verification_citation_precision_cases,
             verification_answer_mode_cases=verification_answer_mode_cases,
@@ -133,7 +139,13 @@ def execute_grounded_fixture(
         dataset_contract_valid = True
     except ValueError:
         dataset_contract_valid = False
-    case_by_id = {case.case_id: case for case in dataset.cases}
+    evaluated_cases = tuple(
+        case
+        for case in dataset.cases
+        if observations.adapter_version != "ax-sut-http-v1" or case.split == "Verification"
+    )
+    evaluated_case_ids = frozenset(case.case_id for case in evaluated_cases)
+    case_by_id = {case.case_id: case for case in evaluated_cases}
     observation_by_id = {item.case_id: item for item in observations.observations}
     expected_ids = set(case_by_id)
     observed_ids = set(observation_by_id)
@@ -162,7 +174,7 @@ def execute_grounded_fixture(
     )
     case_evaluations = tuple(
         evaluate_grounded_case(case, observation_by_id[case.case_id])
-        for case in dataset.cases
+        for case in evaluated_cases
         if case.case_id in observation_by_id
     )
     if (
@@ -180,6 +192,7 @@ def execute_grounded_fixture(
             verification_answer_mode_cases=answer_mode_coverage,
             verification_abstention_cases=abstention_coverage,
             case_evaluations=case_evaluations,
+            evaluated_case_ids=evaluated_case_ids,
         )
 
     if any(result.state != "COMPLETED" for result in case_evaluations):
@@ -190,30 +203,31 @@ def execute_grounded_fixture(
             verification_answer_mode_cases=answer_mode_coverage,
             verification_abstention_cases=abstention_coverage,
             case_evaluations=case_evaluations,
+            evaluated_case_ids=evaluated_case_ids,
         )
     claim_scores = tuple(
         result.claim_support_precision
-        for case, result in zip(dataset.cases, case_evaluations, strict=True)
+        for case, result in zip(evaluated_cases, case_evaluations, strict=True)
         if case.applicability.claim_support_precision
     )
     citation_scores = tuple(
         result.citation_precision
-        for case, result in zip(dataset.cases, case_evaluations, strict=True)
+        for case, result in zip(evaluated_cases, case_evaluations, strict=True)
         if case.applicability.citation_precision
     )
     coverage_scores = tuple(
         result.citation_coverage
-        for case, result in zip(dataset.cases, case_evaluations, strict=True)
+        for case, result in zip(evaluated_cases, case_evaluations, strict=True)
         if case.applicability.citation_coverage
     )
     answer_mode_scores = tuple(
         result.answer_mode_accuracy
-        for case, result in zip(dataset.cases, case_evaluations, strict=True)
+        for case, result in zip(evaluated_cases, case_evaluations, strict=True)
         if case.applicability.answer_mode_accuracy
     )
     abstention_scores = tuple(
         result.abstention_accuracy
-        for case, result in zip(dataset.cases, case_evaluations, strict=True)
+        for case, result in zip(evaluated_cases, case_evaluations, strict=True)
         if case.applicability.abstention_accuracy
     )
     if (
@@ -230,6 +244,7 @@ def execute_grounded_fixture(
             verification_answer_mode_cases=answer_mode_coverage,
             verification_abstention_cases=abstention_coverage,
             case_evaluations=case_evaluations,
+            evaluated_case_ids=evaluated_case_ids,
         )
     failure_codes = tuple(
         dict.fromkeys(failure for result in case_evaluations for failure in result.failure_codes)
@@ -244,8 +259,8 @@ def execute_grounded_fixture(
         state="COMPLETED",
         case_evaluations=case_evaluations,
         coverage=GroundedCoverage(
-            total_cases=len(dataset.cases),
-            verification_cases=sum(case.split == "Verification" for case in dataset.cases),
+            total_cases=len(evaluated_cases),
+            verification_cases=sum(case.split == "Verification" for case in evaluated_cases),
             verification_claim_support_cases=claim_support_coverage,
             verification_citation_precision_cases=citation_precision_coverage,
             verification_answer_mode_cases=answer_mode_coverage,

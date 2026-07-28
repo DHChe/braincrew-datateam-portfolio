@@ -23,6 +23,10 @@ PRIMARY_METRICS = (
     "answer_mode_accuracy",
     "abstention_accuracy",
 )
+LATENCY_DEFINITION = (
+    "client wall-clock from adapter call start through terminal response validation, "
+    "including retries; excludes corpus identity and evaluator time"
+)
 
 VERSION_MISMATCHES = (
     ("sut_sha", "1" * 40, "SYS-COMPARISON-SUT_SHA-MISMATCH"),
@@ -104,6 +108,8 @@ def _run_payload(
             "dependency_lock_digest": "sha256:" + "8" * 64,
             "runtime_environment_digest": "sha256:" + "9" * 64,
             "execution_mode": "fixture",
+            "latency_definition": LATENCY_DEFINITION,
+            "cost_measurement_status": "measured",
         },
         "cases": [
             {
@@ -194,6 +200,269 @@ def _mixed_run_payload(*, role: str, evidence_limit: int) -> dict[str, Any]:
         )
     payload["cases"] = [*parsing_cases, *retrieval_cases, *grounded_cases]
     return payload
+
+
+def test_unmeasured_cost_is_required_but_explicitly_nullable() -> None:
+    from braincrew.comparison import ExperimentRunSummary
+
+    payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    payload["provenance"]["cost_measurement_status"] = "unmeasured"
+    for case in payload["cases"]:
+        case["cost_usd"] = None
+
+    summary = ExperimentRunSummary.model_validate(payload)
+
+    assert all(case.cost_usd is None for case in summary.cases)
+    del payload["cases"][0]["cost_usd"]
+    with pytest.raises(ValidationError, match="cost_usd"):
+        ExperimentRunSummary.model_validate(payload)
+
+
+def test_run_summary_refuses_zero_cost_under_an_unmeasured_warrant() -> None:
+    from braincrew.comparison import ExperimentRunSummary
+
+    payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    payload["provenance"]["cost_measurement_status"] = "unmeasured"
+
+    with pytest.raises(ValidationError, match="unmeasured cost provenance"):
+        ExperimentRunSummary.model_validate(payload)
+
+
+def test_run_summary_refuses_measured_cost_warrant_without_any_measurement() -> None:
+    from braincrew.comparison import ExperimentRunSummary
+
+    payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    payload["provenance"]["cost_measurement_status"] = "measured"
+    for case in payload["cases"]:
+        case["cost_usd"] = None
+
+    with pytest.raises(ValidationError, match="measured cost provenance"):
+        ExperimentRunSummary.model_validate(payload)
+
+
+def test_run_summary_refuses_measured_cost_with_partial_operational_coverage() -> None:
+    from braincrew.comparison import ExperimentRunSummary
+
+    payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    payload["provenance"]["cost_measurement_status"] = "measured"
+    for case in payload["cases"][1:]:
+        case["cost_usd"] = None
+
+    with pytest.raises(
+        ValidationError,
+        match="every latency-measured case",
+    ):
+        ExperimentRunSummary.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    "latency_definition",
+    [None, "one attempt measured by an unrelated stopwatch"],
+)
+def test_run_summary_binds_latency_definition_to_measured_cases(
+    latency_definition: str | None,
+) -> None:
+    from braincrew.comparison import ExperimentRunSummary
+
+    payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    payload["provenance"]["latency_definition"] = latency_definition
+
+    with pytest.raises(ValidationError, match="latency"):
+        ExperimentRunSummary.model_validate(payload)
+
+
+def test_run_summary_refuses_a_latency_definition_without_any_measurement() -> None:
+    from braincrew.comparison import ExperimentRunSummary
+
+    payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    payload["provenance"]["latency_definition"] = LATENCY_DEFINITION
+    payload["provenance"]["cost_measurement_status"] = "unmeasured"
+    for case in payload["cases"]:
+        case["latency_ms"] = None
+        case["cost_usd"] = None
+
+    with pytest.raises(ValidationError, match="latency definition requires"):
+        ExperimentRunSummary.model_validate(payload)
+
+
+def test_comparison_keeps_measured_latency_when_cost_is_unmeasured() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _mixed_run_payload(role="candidate", evidence_limit=5)
+    for payload in (baseline_payload, candidate_payload):
+        payload["provenance"]["cost_measurement_status"] = "unmeasured"
+        for case in payload["cases"]:
+            case["cost_usd"] = None
+        for case in payload["cases"][:6]:
+            case["latency_ms"] = None
+    for case in candidate_payload["cases"]:
+        if "claim_support_precision" in case["metrics"]:
+            case["metrics"]["claim_support_precision"] = "0.83"
+
+    artifact = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="unmeasured-cost",
+    )
+
+    if artifact.decision != "PASS":
+        pytest.fail(
+            f"quality and latency comparison was blocked by unmeasured cost: {artifact.reasons}"
+        )
+    operational = artifact.operational_delta
+    if operational is None:
+        pytest.fail("measured latency must produce an operational delta")
+    if operational.baseline_p95_latency_ms != Decimal("100"):
+        pytest.fail(f"unexpected baseline p95: {operational.baseline_p95_latency_ms}")
+    if operational.candidate_p95_latency_ms != Decimal("100"):
+        pytest.fail(f"unexpected candidate p95: {operational.candidate_p95_latency_ms}")
+    if operational.baseline_mean_cost_usd is not None:
+        pytest.fail("excluded baseline cost must remain null")
+    if operational.candidate_mean_cost_usd is not None:
+        pytest.fail("excluded candidate cost must remain null")
+    if operational.mean_cost_relative_delta is not None:
+        pytest.fail("excluded cost must not produce a relative delta")
+    if operational.cost_decision_warrant.status != "excluded":
+        pytest.fail(f"cost exclusion was not explicit: {operational.cost_decision_warrant}")
+    if operational.cost_decision_warrant.reason != "both runs declare cost unmeasured":
+        pytest.fail(f"cost exclusion reason drifted: {operational.cost_decision_warrant}")
+
+
+def test_unmeasured_cost_does_not_count_as_gate_3_positive_evidence() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _mixed_run_payload(role="candidate", evidence_limit=5)
+    for payload in (baseline_payload, candidate_payload):
+        payload["provenance"]["cost_measurement_status"] = "unmeasured"
+        for case in payload["cases"]:
+            case["cost_usd"] = None
+
+    artifact = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="unmeasured-cost-no-positive-evidence",
+    )
+
+    if [gate.decision for gate in artifact.gates] != ["PASS", "PASS", "FAIL"]:
+        pytest.fail(f"unmeasured cost affected the gate sequence: {artifact.gates}")
+    if artifact.reasons != ("GATE-3-NO-POSITIVE-EVIDENCE",):
+        pytest.fail(f"unmeasured cost was treated as evidence: {artifact.reasons}")
+
+
+def test_measured_cost_regression_still_fails_gate_2() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _mixed_run_payload(role="candidate", evidence_limit=5)
+    for case in candidate_payload["cases"]:
+        case["cost_usd"] = "0.013"
+
+    artifact = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="measured-cost-regression",
+    )
+
+    if "GATE-2-COST-REGRESSION" not in artifact.reasons:
+        pytest.fail(f"measured cost regression was skipped: {artifact.reasons}")
+    operational = artifact.operational_delta
+    if operational is None or operational.cost_decision_warrant.status != "included":
+        pytest.fail(f"measured cost was not included: {operational}")
+
+
+def test_measured_cost_improvement_still_counts_as_gate_3_positive_evidence() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _mixed_run_payload(role="candidate", evidence_limit=5)
+    for case in candidate_payload["cases"]:
+        case["cost_usd"] = "0.008"
+
+    artifact = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="measured-cost-improvement",
+    )
+
+    if artifact.decision != "PASS":
+        pytest.fail(f"measured cost improvement did not reach gate 3: {artifact.reasons}")
+
+
+def test_comparison_refuses_all_null_latency_without_a_traceback() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _mixed_run_payload(role="candidate", evidence_limit=5)
+    for payload in (baseline_payload, candidate_payload):
+        payload["provenance"]["latency_definition"] = None
+        payload["provenance"]["cost_measurement_status"] = "unmeasured"
+        for case in payload["cases"]:
+            case["latency_ms"] = None
+            case["cost_usd"] = None
+
+    artifact = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="unmeasured-latency",
+    )
+
+    if artifact.decision != "INVALID":
+        pytest.fail(f"all-null latency was not refused: {artifact.decision}")
+    if "SYS-COMPARISON-LATENCY-UNMEASURED" not in artifact.reasons:
+        pytest.fail(f"all-null latency refusal missing: {artifact.reasons}")
+    if artifact.operational_delta is not None:
+        pytest.fail("all-null latency must not publish an operational aggregate")
+
+
+def test_comparison_refuses_per_case_latency_coverage_drift() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _mixed_run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _mixed_run_payload(role="candidate", evidence_limit=5)
+    candidate_payload["cases"][0]["latency_ms"] = None
+    candidate_payload["cases"][0]["cost_usd"] = None
+
+    artifact = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="latency-coverage-drift",
+    )
+
+    expected = f"SYS-COMPARISON-LATENCY-COVERAGE-MISMATCH:{baseline_payload['cases'][0]['case_id']}"
+    if expected not in artifact.reasons:
+        pytest.fail(f"latency coverage drift was not refused: {artifact.reasons}")
+
+
+def test_comparison_records_operational_aggregate_denominators() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline = comparison_module.ExperimentRunSummary.model_validate(
+        _mixed_run_payload(role="baseline", evidence_limit=3)
+    )
+    candidate = comparison_module.ExperimentRunSummary.model_validate(
+        _mixed_run_payload(role="candidate", evidence_limit=5)
+    )
+
+    artifact = comparison_module.compare_runs(
+        baseline,
+        candidate,
+        comparison_id="operational-denominators",
+    )
+
+    operational = artifact.operational_delta
+    if operational is None:
+        pytest.fail("measured operational values must produce an aggregate")
+    expected = len(baseline.cases)
+    counts = (
+        operational.baseline_latency_case_count,
+        operational.candidate_latency_case_count,
+        operational.baseline_cost_case_count,
+        operational.candidate_cost_case_count,
+    )
+    if counts != (expected, expected, expected, expected):
+        pytest.fail(f"operational denominators do not describe the run: {counts}")
 
 
 def test_compare_runs_passes_on_compatible_positive_quality_evidence() -> None:
@@ -353,6 +622,33 @@ def test_comparison_artifacts_replay_and_rebuild_disposable_cache(tmp_path: Path
         result_store.write_comparison_artifact(artifact, tmp_path)
 
 
+def test_comparison_artifact_writes_and_replays_null_cost(tmp_path: Path) -> None:
+    from braincrew import comparison as comparison_module
+    from braincrew import result_store
+
+    baseline_payload = _run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _run_payload(role="candidate", evidence_limit=5)
+    for payload in (baseline_payload, candidate_payload):
+        payload["provenance"]["cost_measurement_status"] = "unmeasured"
+        for case in payload["cases"]:
+            case["cost_usd"] = None
+        payload["cases"][0]["latency_ms"] = None
+    artifact = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="null-cost-comparison",
+    )
+
+    json_path, parquet_path = result_store.write_comparison_artifact(artifact, tmp_path)
+    replay = result_store.replay_comparison_artifact(json_path)
+
+    assert parquet_path.is_file()
+    assert replay == {
+        "decision": artifact.decision,
+        "logical_digest": artifact.logical_digest,
+    }
+
+
 def test_comparison_artifact_pair_rolls_back_new_file_on_publish_race(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -417,6 +713,64 @@ def test_run_summary_rejects_decimals_not_exactly_representable_in_parquet(
 
     with pytest.raises(ValidationError, match=r"DECIMAL\(38, 28\)"):
         ExperimentRunSummary.model_validate(payload)
+
+
+def test_relative_delta_is_quantized_to_the_published_decimal_scale() -> None:
+    from braincrew import comparison as comparison_module
+
+    delta = comparison_module._parquet_relative_delta(
+        Decimal("0.164083"),
+        Decimal("0.15525"),
+    )
+
+    assert delta == Decimal("-0.0538325115947416856103313567")
+    assert delta.as_tuple().exponent == -28
+    assert comparison_module._fits_parquet_decimal(delta)
+
+
+def test_operational_aggregate_deltas_share_the_published_decimal_guard() -> None:
+    from braincrew import comparison as comparison_module
+
+    raw_latency_delta = comparison_module._relative_delta(
+        Decimal("0.164083"),
+        Decimal("0.165021"),
+    )
+    raw_cost_delta = comparison_module._relative_delta(
+        Decimal("0.010001"),
+        Decimal("0.010058"),
+    )
+    assert raw_latency_delta is not None
+    assert raw_cost_delta is not None
+    assert not comparison_module._fits_parquet_decimal(raw_latency_delta)
+    assert not comparison_module._fits_parquet_decimal(raw_cost_delta)
+
+    baseline_payload = _run_payload(
+        role="baseline",
+        evidence_limit=3,
+        latency_ms="0.164083",
+        cost_usd="0.010001",
+    )
+    candidate_payload = _run_payload(
+        role="candidate",
+        evidence_limit=5,
+        latency_ms="0.165021",
+        cost_usd="0.010058",
+    )
+
+    artifact = comparison_module.compare_runs(
+        comparison_module.ExperimentRunSummary.model_validate(baseline_payload),
+        comparison_module.ExperimentRunSummary.model_validate(candidate_payload),
+        comparison_id="aggregate-decimal-scale",
+    )
+
+    operational = artifact.operational_delta
+    if operational is None:
+        pytest.fail(f"representable operational deltas were rejected: {artifact.reasons}")
+    assert operational.p95_latency_relative_delta.as_tuple().exponent == -28
+    assert operational.mean_cost_relative_delta is not None
+    assert operational.mean_cost_relative_delta.as_tuple().exponent == -28
+    assert comparison_module._fits_parquet_decimal(operational.p95_latency_relative_delta)
+    assert comparison_module._fits_parquet_decimal(operational.mean_cost_relative_delta)
 
 
 def test_zero_case_baseline_keeps_computable_operational_aggregate() -> None:

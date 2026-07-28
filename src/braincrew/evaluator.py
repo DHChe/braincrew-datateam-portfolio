@@ -243,9 +243,14 @@ def evaluate_retrieval_run(
     batch: RetrievalObservationBatch,
 ) -> RetrievalRunEvaluation:
     observations_by_case = {observation.case_id: observation for observation in batch.observations}
+    evaluated_cases = [
+        case
+        for case in dataset.cases
+        if batch.adapter_version != "ax-sut-http-v1" or case.split == "verification"
+    ]
     case_results: list[RetrievalCaseEvaluation] = []
     invalid_reasons: list[str] = []
-    for case in dataset.cases:
+    for case in evaluated_cases:
         observation = observations_by_case.get(case.id)
         if observation is None:
             result = _invalid_retrieval_case(case, "RETRIEVAL_OBSERVATION_MISSING")
@@ -254,7 +259,7 @@ def evaluate_retrieval_run(
         case_results.append(result)
         if result.status == "INVALID":
             invalid_reasons.extend(f"{case.id}:{reason}" for reason in result.invalid_reasons)
-    dataset_case_ids = {case.id for case in dataset.cases}
+    dataset_case_ids = {case.id for case in evaluated_cases}
     invalid_reasons.extend(
         f"{case_id}:RETRIEVAL_OBSERVATION_UNEXPECTED"
         for case_id in sorted(observations_by_case.keys() - dataset_case_ids)
@@ -263,13 +268,13 @@ def evaluate_retrieval_run(
     hard_failure_cases = [result.case_id for result in case_results if result.hard_failure]
     verification_recall_at_5_cases = sum(
         case.split == "verification" and result.recall_at_5 is not None
-        for case, result in zip(dataset.cases, case_results, strict=True)
+        for case, result in zip(evaluated_cases, case_results, strict=True)
     )
     coverage = RetrievalCoverage(
-        total_cases=len(dataset.cases),
+        total_cases=len(evaluated_cases),
         scored_cases=len(scored_results),
-        calibration_cases=sum(case.split == "calibration" for case in dataset.cases),
-        verification_cases=sum(case.split == "verification" for case in dataset.cases),
+        calibration_cases=sum(case.split == "calibration" for case in evaluated_cases),
+        verification_cases=sum(case.split == "verification" for case in evaluated_cases),
         verification_recall_at_5_cases=verification_recall_at_5_cases,
         authority_ordering_cases=sum(
             result.authority_priority is not None for result in scored_results
@@ -441,14 +446,19 @@ def _aggregate_metric(scores: list[ParsingMetricScore]) -> ParsingAggregateMetri
 def evaluate_parsing_run(
     dataset: ParsingDatasetDocument,
     batch: ParsingObservationBatch,
+    *,
+    verification_only: bool = False,
 ) -> ParsingRunEvaluation:
     observations_by_case = {observation.case_id: observation for observation in batch.observations}
+    evaluated_cases = [
+        case for case in dataset.cases if not verification_only or case.split == "verification"
+    ]
     case_results: list[ParsingCaseEvaluation] = []
     invalid_reasons: list[str] = []
     verification_evidence_span_cases = 0
-    dataset_case_ids = {case.id for case in dataset.cases}
+    dataset_case_ids = {case.id for case in evaluated_cases}
 
-    for case in dataset.cases:
+    for case in evaluated_cases:
         observation = observations_by_case.get(case.id)
         if observation is None:
             case_result = ParsingCaseEvaluation(
@@ -481,10 +491,10 @@ def evaluate_parsing_run(
 
     scored_results = [result for result in case_results if result.status == "SCORED"]
     coverage = ParsingCoverage(
-        total_cases=len(dataset.cases),
+        total_cases=len(evaluated_cases),
         scored_cases=len(scored_results),
-        calibration_cases=sum(case.split == "calibration" for case in dataset.cases),
-        verification_cases=sum(case.split == "verification" for case in dataset.cases),
+        calibration_cases=sum(case.split == "calibration" for case in evaluated_cases),
+        verification_cases=sum(case.split == "verification" for case in evaluated_cases),
         verification_evidence_span_cases=verification_evidence_span_cases,
     )
     if invalid_reasons:
@@ -527,19 +537,27 @@ def evaluate_parsing_run(
                     if result.metadata_completeness is not None
                 ]
             ),
-            table_preservation=_aggregate_metric(
-                [
-                    result.table_preservation
-                    for result in scored_results
-                    if result.table_preservation is not None
-                ]
+            table_preservation=(
+                _aggregate_metric(
+                    [
+                        result.table_preservation
+                        for result in scored_results
+                        if result.table_preservation is not None
+                    ]
+                )
+                if any(result.table_preservation is not None for result in scored_results)
+                else None
             ),
-            list_preservation=_aggregate_metric(
-                [
-                    result.list_preservation
-                    for result in scored_results
-                    if result.list_preservation is not None
-                ]
+            list_preservation=(
+                _aggregate_metric(
+                    [
+                        result.list_preservation
+                        for result in scored_results
+                        if result.list_preservation is not None
+                    ]
+                )
+                if any(result.list_preservation is not None for result in scored_results)
+                else None
             ),
         ),
     )
