@@ -35,7 +35,7 @@
           "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-002",
@@ -84,7 +84,7 @@
           "source_text_digest": "sha256:b78193dec7867d2918b733d8ea1900e508af6fb076c5fb4ae65658bb129bc984"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-003",
@@ -118,7 +118,7 @@
           "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-004",
@@ -135,7 +135,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-005",
@@ -152,7 +152,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-006",
@@ -171,7 +171,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-007",
@@ -205,7 +205,7 @@
           "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-008",
@@ -239,7 +239,7 @@
           "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-009",
@@ -273,7 +273,7 @@
           "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-010",
@@ -309,7 +309,7 @@
           "source_text_digest": "sha256:2ed06f9050221b6f77faacf150ba37dac487482a059dc5f011f0ff6537012cc1"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-011",
@@ -343,7 +343,7 @@
           "source_text_digest": "sha256:90b69fddae35811f2af13d5e605e49e424534238a2a265132124444640410eae"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-012",
@@ -377,7 +377,7 @@
           "source_text_digest": "sha256:d957acfa1f3db4ad37b492765fabdb8156f7b5a3ce0604fda3090b856f441f94"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-013",
@@ -411,7 +411,7 @@
           "source_text_digest": "sha256:df6604c0fc3c3ad2fd9aa8a32fd8598b3b6e7df271f9abd23c5ddd4cc40ac038"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-014",
@@ -445,7 +445,7 @@
           "source_text_digest": "sha256:d482a7781f9314782f504499a83a7aa6e4e901fa9f3ae1e28c95ed7f8d1d65d1"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-015",
@@ -479,7 +479,7 @@
           "source_text_digest": "sha256:648b1ed6082f938efc20a5dcaa1117a0b6057f8c763fb6d6db11eba566532c17"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-016",
@@ -513,7 +513,7 @@
           "source_text_digest": "sha256:40595b50a60d7bc01eaa9523b381fe4ca0926ce79483ac883630e8c7431fd8b3"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-017",
@@ -547,7 +547,7 @@
           "source_text_digest": "sha256:010274182d911c16a5edbeef1ffef9a7ee953e9f550038559f01be5c89952c1c"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-018",
@@ -581,7 +581,7 @@
           "source_text_digest": "sha256:fb47c1e936164cbce6ce33be0106b537ca9097396058e96bad7dfab4c1df776b"
         }
       ],
-      "executed_role": "manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-019",
@@ -615,7 +615,7 @@
           "source_text_digest": "sha256:f31694029d7cca1f7c243c4f65f4adfe9703b46455edf9803c5afb5dcfc10566"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-020",
@@ -649,7 +649,7 @@
           "source_text_digest": "sha256:6a52239c89a257f670976840b46d1dc2350c5dd63b626de4e485ab4b50369bd7"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-021",
@@ -683,7 +683,7 @@
           "source_text_digest": "sha256:7bbacfa7b237023859d70ba7aadf01a8ede6662c3f58d92215d03bbee6076e32"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-022",
@@ -717,7 +717,7 @@
           "source_text_digest": "sha256:851f2ae28bc35b6bb9f1322348f36d3de8226c867569cf30dc9e3849e6415f17"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-023",
@@ -751,7 +751,7 @@
           "source_text_digest": "sha256:e3b09e1016d1d92aa8b1065357679d1a23ebab9398d60204eb9a5ebac746b8e5"
         }
       ],
-      "executed_role": "recruiter"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-024",
@@ -785,7 +785,7 @@
           "source_text_digest": "sha256:1f41f3326de11cd6223d900c3e40af8ec2bd74d2626171ac988ac18f9c484a7c"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-025",
@@ -819,7 +819,7 @@
           "source_text_digest": "sha256:e635edc16fe0c177d84ee76757d8426c54ce2a92f043084068825c785542c5ab"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-026",
@@ -853,7 +853,7 @@
           "source_text_digest": "sha256:f6a0a2af47618c62bc1907f4ad6f33707b2569f121ddd907962c225dae73f7c8"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-027",
@@ -887,7 +887,7 @@
           "source_text_digest": "sha256:a80e14e31a2f170025d45f9ead79fcc23698002f3ff9084e33776d0182f0a814"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-028",
@@ -921,7 +921,7 @@
           "source_text_digest": "sha256:fb691d87b0c8a448193ba34998690d20d6c4ede4e049edf351aeacf03a25eadc"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-029",
@@ -955,7 +955,7 @@
           "source_text_digest": "sha256:d946d8ad7ea0865c71efcc56036142cc7b48a2ce602904393c021131557986b3"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-030",
@@ -989,7 +989,7 @@
           "source_text_digest": "sha256:63a283b3aedc0bf6e517c71a687e5360a40fb5e3afc0ddd07f58b49054bd03aa"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-031",
@@ -1023,7 +1023,7 @@
           "source_text_digest": "sha256:a85474b449883094e4f691d2b156dd8c32e53f0c7e1f00eb97dc02006cb689f3"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-032",
@@ -1057,7 +1057,7 @@
           "source_text_digest": "sha256:cab7a2a3e1734e4852f56891285ed2ca5e64221afb1a87759e735fc81a92948b"
         }
       ],
-      "executed_role": "manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-033",
@@ -1091,7 +1091,7 @@
           "source_text_digest": "sha256:8ca57df00563ac1fa5bfbb6fab93cf3334ac921946aa2e751bf4730cad30fcc0"
         }
       ],
-      "executed_role": "investigator"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-034",
@@ -1125,7 +1125,7 @@
           "source_text_digest": "sha256:d84de18499d3bd07e9f1d253b07c1510dea37bd8d0cd084e791b8406a071c686"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-035",
@@ -1159,7 +1159,7 @@
           "source_text_digest": "sha256:a215c2d49f73820229c793af1422eb8d05edf869497beb921c0c297105477ed9"
         }
       ],
-      "executed_role": "manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-036",
@@ -1193,7 +1193,7 @@
           "source_text_digest": "sha256:88be1f81c5b1257f5ff3725aebcf39c14cf9b9d09df7a9fe4d0e4099cd698636"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-037",
@@ -1227,7 +1227,7 @@
           "source_text_digest": "sha256:bb360c2b9ba967991bf193189959340a57ec5835398d1f11ddec5c5af8f47241"
         }
       ],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "GA-038",
@@ -1261,7 +1261,7 @@
           "source_text_digest": "sha256:54f09a4e20cbb2c04fa792c2ee22d2c70ba0cce217811559ffb10235be3dfc00"
         }
       ],
-      "executed_role": "it_admin"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-039",
@@ -1295,7 +1295,7 @@
           "source_text_digest": "sha256:31b38aaf431f8a098a336aea06011fb2632109ed954a39d43ded3ae8dc159208"
         }
       ],
-      "executed_role": "recruiter"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "GA-040",
@@ -1329,7 +1329,7 @@
           "source_text_digest": "sha256:b1274da3a5df571da82885282f7925344536719f9ade7e074a7408439894106d"
         }
       ],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "VA-001",
@@ -1346,7 +1346,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "VA-002",
@@ -1363,7 +1363,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "VA-003",
@@ -1380,7 +1380,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "recruiter"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "VA-004",
@@ -1397,7 +1397,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "VA-005",
@@ -1414,7 +1414,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "VA-006",
@@ -1431,7 +1431,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "VA-007",
@@ -1448,7 +1448,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "employee"
+      "executed_role": "Employee"
     },
     {
       "case_id": "VA-008",
@@ -1465,7 +1465,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "hr_manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "VA-009",
@@ -1482,7 +1482,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "manager"
+      "executed_role": "HRPractitioner"
     },
     {
       "case_id": "VA-010",
@@ -1499,7 +1499,7 @@
       },
       "citations": [],
       "source_texts": [],
-      "executed_role": "interviewer"
+      "executed_role": "HRPractitioner"
     }
   ]
 }

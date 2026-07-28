@@ -41,6 +41,13 @@ def _check(condition: bool, message: str) -> None:
         pytest.fail(message)
 
 
+def _expected_ax_role(role: str) -> str:
+    return {
+        "employee": "Employee",
+        "hr_manager": "HRPractitioner",
+    }.get(role, role)
+
+
 def _validated_dataset() -> Any:
     validation = validate_dataset_bundle(DATASET_MANIFEST)
     _check(validation.state == "VALID", "frozen v3 dataset must validate")
@@ -167,7 +174,11 @@ def _answer_response(
     }
 
 
-def _capture_transport(validation: Any) -> tuple[httpx.MockTransport, list[tuple[str, str]]]:
+def _capture_transport(
+    validation: Any,
+    *,
+    enforce_grounded_role: bool = True,
+) -> tuple[httpx.MockTransport, list[tuple[str, str]]]:
     snapshot = validation.snapshot
     _check(snapshot is not None, "transport fixture requires a dataset snapshot")
     retrieval_cases = {
@@ -181,6 +192,10 @@ def _capture_transport(validation: Any) -> tuple[httpx.MockTransport, list[tuple
     sources = _source_texts(validation)
     first_retrieval_id = sorted(retrieval_cases)[0]
     first_grounded_id = sorted(grounded_cases)[0]
+    expected_corpus_roles = {
+        *(_expected_ax_role(case.role) for case in retrieval_cases.values()),
+        *(_expected_ax_role(case.role) for case in grounded_cases.values()),
+    }
     calls: list[tuple[str, str]] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -190,6 +205,10 @@ def _capture_transport(validation: Any) -> tuple[httpx.MockTransport, list[tuple
         _check(request.headers["x-ax-tenant-id"] == TENANT_ID, "tenant must come from receipt")
         _check(request.headers["x-ax-user-id"] == USER_ID, "subject must come from receipt")
         if request.url.path == "/v1/evaluation/corpus-identity":
+            _check(
+                role in expected_corpus_roles,
+                "corpus identity role must derive from the dataset",
+            )
             return httpx.Response(
                 200,
                 json={
@@ -213,6 +232,8 @@ def _capture_transport(validation: Any) -> tuple[httpx.MockTransport, list[tuple
             )
         if request.url.path == "/v1/retrieval/search":
             case = retrieval_cases[case_id]
+            expected_role = _expected_ax_role(case.role)
+            _check(role == expected_role, "retrieval role must derive from the dataset")
             body = json.loads(request.read())
             _check(body == {"query": case.query, "top_k": 5}, "retrieval request drifted")
             if case_id != first_retrieval_id:
@@ -231,11 +252,9 @@ def _capture_transport(validation: Any) -> tuple[httpx.MockTransport, list[tuple
         if request.url.path == "/v1/answers/generate":
             case = grounded_cases[case_id]
             body = json.loads(request.read())
-            expected_role = {
-                "employee": "Employee",
-                "hr_manager": "HRManager",
-            }.get(case.role, case.role)
-            _check(role == expected_role, "grounded role must derive from the dataset")
+            expected_role = _expected_ax_role(case.role)
+            if enforce_grounded_role:
+                _check(role == expected_role, "grounded role must derive from the dataset")
             _check(body["query"] == case.query, "answer query drifted")
             _check(body["top_k"] == 5, "answer top_k drifted")
             if case_id != first_grounded_id:
@@ -332,6 +351,8 @@ def _capture(
     sut_dirty: bool = False,
     response_mutation: ResponseMutation | None = None,
     invalid_dataset: bool = False,
+    retrieval_role_override: str | None = None,
+    enforce_grounded_role: bool = True,
     clock_ns: Callable[[], int] | None = None,
 ) -> Any:
     from braincrew.live_experiment import (
@@ -342,7 +363,28 @@ def _capture(
     )
 
     validation = _validated_dataset()
-    transport, calls = _capture_transport(validation)
+    if retrieval_role_override is not None:
+        snapshot = validation.snapshot
+        _check(snapshot is not None, "retrieval role override requires a dataset snapshot")
+        first_retrieval_id = next(
+            case.id for case in snapshot.retrieval_dataset.cases if case.split == "verification"
+        )
+        retrieval_cases = tuple(
+            case.model_copy(update={"role": retrieval_role_override})
+            if case.id == first_retrieval_id
+            else case
+            for case in snapshot.retrieval_dataset.cases
+        )
+        retrieval_dataset = snapshot.retrieval_dataset.model_copy(update={"cases": retrieval_cases})
+        validation = validation.model_copy(
+            update={
+                "snapshot": snapshot.model_copy(update={"retrieval_dataset": retrieval_dataset})
+            }
+        )
+    transport, calls = _capture_transport(
+        validation,
+        enforce_grounded_role=enforce_grounded_role,
+    )
     if response_mutation is not None:
         transport = _mutate_transport(transport, response_mutation)
     capture_validation = (
@@ -1274,6 +1316,65 @@ def test_live_capture_issues_only_the_pinned_verification_requests_and_derives_p
     )
 
 
+def test_live_capture_records_adapter_request_role_for_grounded_mismatch_evaluation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from braincrew import live_experiment
+    from braincrew.grounded_run import execute_grounded_fixture
+
+    original_adapter = live_experiment._adapter
+
+    class AnswerRoleDriftAdapter:
+        def __init__(self, adapter_kwargs: dict[str, Any]) -> None:
+            self.adapter_kwargs = adapter_kwargs
+            self.delegate = original_adapter(**adapter_kwargs)
+
+        def __getattr__(self, name: str) -> Any:
+            return getattr(self.delegate, name)
+
+        def answer(self, **kwargs: Any) -> Any:
+            context = kwargs["context"]
+            if context.case_id != "GA-003":
+                return self.delegate.answer(**kwargs)
+            drifted_kwargs = {**self.adapter_kwargs, "role": "Employee"}
+            return original_adapter(**drifted_kwargs).answer(**kwargs)
+
+    def adapter_with_answer_role_drift(**kwargs: Any) -> AnswerRoleDriftAdapter:
+        return AnswerRoleDriftAdapter(kwargs)
+
+    monkeypatch.setattr(live_experiment, "_adapter", adapter_with_answer_role_drift)
+    capture, _ = _capture(tmp_path, enforce_grounded_role=False)
+    validation = _validated_dataset()
+    snapshot = validation.snapshot
+    _check(snapshot is not None, "grounded mismatch evaluation requires a dataset snapshot")
+
+    evaluation = execute_grounded_fixture(
+        snapshot.grounded_dataset,
+        capture.grounded_observations,
+    )
+    case_result = next(
+        result for result in evaluation.case_evaluations if result.case_id == "GA-003"
+    )
+
+    _check(case_result.state == "INVALID", "wrong live request role must invalidate the case")
+    _check(
+        case_result.failure_codes == ("SYS-GROUNDED-ROLE-MISMATCH",),
+        "wrong live request role must reach the grounded role-mismatch guard",
+    )
+
+
+def test_live_capture_canonicalizes_retrieval_dataset_role_before_ax_request(
+    tmp_path: Path,
+) -> None:
+    result, _ = _capture(tmp_path, retrieval_role_override="hr_manager")
+
+    _check(
+        len(result.retrieval_observations.observations) == 9,
+        "canonical retrieval alias must retain all Verification observations",
+    )
+
+
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [
@@ -1356,7 +1457,7 @@ def test_live_capture_refuses_an_invalid_frozen_dataset(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("mutation", "message"),
     [
-        ("corpus_role", "corpus identity does not bind the requested dataset role"),
+        ("corpus_role", "AX-confirmed corpus roles do not match required dataset roles"),
         ("retrieval_binding", "retrieval response does not bind the requested case"),
         ("visibility", "retrieval visibility decision is incomplete"),
         ("answer_binding", "answer response does not bind the requested case"),

@@ -716,6 +716,58 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-07-28 — Cycle 111 repairs Issue #91 after the live-path tautology survived review mutation M4
+
+- Independent Cycle 110 review returned `REQUEST CHANGES`: Cycle 109 correctly removed the
+  evaluator's double normalization, but the live producer still derived `executed_role` from the
+  same case expectation. M4 replaced the recorded value with that derivation and all 505 tests
+  passed. The earlier Issue #91 entry below is preserved as history; its claim that the evidence
+  boundary was already independent is superseded here.
+- Repair: the live capture derives the complete canonical role requirement from both retrieval and
+  grounded Verification cases and compares it with AX's complete corpus-identity response map.
+  Grounded observations record `answer_observation.request.roles[0]`, the adapter request actually
+  constructed, instead of deriving the recorded evidence again from `case.role`.
+- Retrieval alignment: retrieval roles now pass through `canonical_ax_role` for both corpus
+  identity and retrieval requests, closing the same raw-role gap on both live query paths. This
+  capture executes 9 retrieval and 15 grounded Verification requests; the brief's count of 45
+  combines all 30 retrieval cases with the 15 grounded Verification cases and is not this capture's
+  request count.
+- Controlled evidence: a wrong-but-valid `Employee` request for grounded case GA-003 now reaches
+  `SYS-GROUNDED-ROLE-MISMATCH`. A copied retrieval case with `hr_manager` reaches the transport as
+  `HRPractitioner`. No live AX request, runtime, Docker service, AX change, or dataset edit is
+  involved.
+- Decision correction: [canonical AX roles and the executed-role evidence boundary](../decisions/2026-07-28-canonical-ax-role-and-executed-role-evidence.md)
+  now records the false Cycle 109 claim, the exact strength of corpus versus request evidence, the
+  rejected literal `LEGACY_FIXTURE_ROLES` alternative, the six-persona collapse, the 43 preserved
+  golden tests, manifest v3 → grounded v2, and the deliberate fail-closed run abort.
+- Completion condition: M4 and every repair clause must be killed independently, all ten gates must
+  pass, and independent re-review must find no blocking issue before any Git lifecycle proposal.
+
+### 2026-07-28 — Issue #91 fixes the AX role boundary and closes the executed-role tautology
+
+- Phase: Issue #91 implemented on `feat/issue-91-canonical-ax-role` from verified
+  `develop` commit `74ab1772`; the change remains uncommitted pending independent review.
+- Contract: dataset alias `hr_manager` now maps to AX's provisioned reader identity,
+  `HRPractitioner`; every canonical or pass-through role is checked against the local closed set
+  `Executive | HRAdmin | HRPractitioner | Employee` before a request can be built.
+- Compatibility ripple: the frozen v1 controlled dataset also contains five historical reader
+  aliases that are not AX roles. The dataset remains byte-identical; those known aliases map to
+  `HRPractitioner`, and only the synthetic observation fixture was corrected to record AX wire
+  identities. The mapping preserves fixture replay and does not assert that the persona labels are
+  semantically identical.
+- Evidence boundary: `GroundedObservation.executed_role` is now compared directly with the
+  canonical role expected from the case. The evaluator no longer normalizes both operands through
+  the same helper and calls the self-derived result independent evidence.
+- Verification: each clause was mutation-tested separately — changing the mapping to `HRAdmin`,
+  deleting the unknown-role refusal, restoring double normalization, and replacing the direct
+  comparison with `False` each made its named regression test fail before the fixed source was
+  restored. The MockTransport acceptance path sends the three `hr_manager` Verification cases as
+  `HRPractitioner`. The dataset is unchanged.
+- Decision: [canonical AX roles and the executed-role evidence boundary](../decisions/2026-07-28-canonical-ax-role-and-executed-role-evidence.md).
+- Explicitly not claimed: no experiment or live AX request ran during implementation. This repairs
+  the harness contract; it does not establish that the dataset author's word `hr_manager` meant
+  practitioner rather than approver, and it does not produce an answer-quality result.
+
 ### 2026-07-28 — Issue #89 in its fourth review round; cycle 106 dispatched, and the orchestrator's own mutation method was corrected by review
 
 - Phase: Issue #89 — Phase 0 of Issue #15 — implemented on `feat/issue-89-run-summary-builder`
@@ -783,6 +835,17 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 - Explicitly not claimed: **no experiment has run.** No baseline, no candidate, no quality claim.
   Every observation still comes from `httpx.MockTransport`. Phase 1 of Issue #15 — the authorized
   runtime start and the two 30-case runs — remains a separate decision.
+- **Superseding closeout for Issue #89:** the Git lifecycle above completed. PR
+  [#90](https://github.com/DHChe/braincrew-datateam-portfolio/pull/90) merged into `develop` as squash
+  commit **`74ab1772`** with both remote jobs, `python` and `frontend`, passing. Issue
+  [#89](https://github.com/DHChe/braincrew-datateam-portfolio/issues/89) was then closed manually:
+  GitHub closing keywords apply only when a pull request merges into the default branch (`main`), so
+  a merge into `develop` does not auto-close the issue.
+- **Why the frontend job belongs in the closeout:** independent review approved the code while
+  explicitly naming six CI gates it could not run and the four TypeScript/JSON paths at risk. The
+  subsequent local frontend run found `prettier --check` failing on two ticket-introduced files
+  before the PR was opened. The clean merge therefore depended on treating the review's disclaimer
+  as actionable evidence: an approval is only as safe as its statement of what it did not check.
 
 ### 2026-07-27 — Issue #85 built Phase 0 of the live experiment, and independent review found the honesty machinery unearned
 

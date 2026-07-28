@@ -395,16 +395,16 @@ def capture_live_experiment(
     grounded_cases = tuple(
         case for case in snapshot.grounded_dataset.cases if case.split == "Verification"
     )
-    roles = tuple(
-        sorted(
-            {
-                *(case.role for case in retrieval_cases),
-                *(canonical_ax_role(case.role) for case in grounded_cases),
-            }
-        )
+    required_roles = frozenset(
+        {
+            *(canonical_ax_role(case.role) for case in retrieval_cases),
+            *(canonical_ax_role(case.role) for case in grounded_cases),
+        }
     )
+    roles = tuple(sorted(required_roles))
 
     corpus_identities: set[tuple[str, str]] = set()
+    confirmed_roles_by_request: dict[str, tuple[str, ...]] = {}
     for corpus_role in roles:
         corpus_observation = _adapter(
             base_url=base_url,
@@ -412,24 +412,27 @@ def capture_live_experiment(
             role=corpus_role,
             transport=transport,
         ).corpus_identity(context=_context(run_id, f"corpus-{corpus_role}", "corpus-identity"))
-        if corpus_observation.response.principal_roles != [corpus_role]:
-            raise ValueError("corpus identity does not bind the requested dataset role")
+        confirmed_roles_by_request[corpus_role] = tuple(corpus_observation.response.principal_roles)
         corpus_identities.add(
             (
                 corpus_observation.response.corpus_id,
                 corpus_observation.response.corpus_digest,
             )
         )
+    expected_role_evidence = {role: (role,) for role in required_roles}
+    if confirmed_roles_by_request != expected_role_evidence:
+        raise ValueError("AX-confirmed corpus roles do not match required dataset roles")
     if len(corpus_identities) != 1:
         raise ValueError("corpus identity differs across dataset roles")
     corpus_id, corpus_digest = corpus_identities.pop()
 
     retrieval_observations: list[RetrievalObservation] = []
     for retrieval_case in retrieval_cases:
+        retrieval_role = canonical_ax_role(retrieval_case.role)
         retrieval_adapter = _adapter(
             base_url=base_url,
             principal=principal,
-            role=retrieval_case.role,
+            role=retrieval_role,
             transport=transport,
         )
         started_ns = clock_ns()
@@ -476,11 +479,11 @@ def capture_live_experiment(
     grounded_observations: list[GroundedObservation] = []
     model_identities: set[tuple[str, str]] = set()
     for grounded_case in grounded_cases:
-        executed_role = canonical_ax_role(grounded_case.role)
+        expected_role = canonical_ax_role(grounded_case.role)
         answer_adapter = _adapter(
             base_url=base_url,
             principal=principal,
-            role=executed_role,
+            role=expected_role,
             transport=transport,
         )
         started_ns = clock_ns()
@@ -493,6 +496,7 @@ def capture_live_experiment(
         latency_ms = Decimal(clock_ns() - started_ns) / Decimal(1_000_000)
         if answer_observation.response.query != grounded_case.query:
             raise ValueError("AX answer response does not bind the requested case")
+        executed_role = answer_observation.request.roles[0]
         provider = answer_observation.response.provider_metadata.get("provider_adapter")
         model = answer_observation.response.provider_metadata.get("model")
         if not isinstance(provider, str) or not provider or not isinstance(model, str) or not model:
