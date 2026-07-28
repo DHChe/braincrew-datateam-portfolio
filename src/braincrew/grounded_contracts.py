@@ -4,7 +4,7 @@ import hashlib
 import json
 import re
 from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation
-from typing import Literal
+from typing import Final, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -81,10 +81,26 @@ _REQUIRED_PATH_PATTERN = re.compile(
     r"^(summary|answer|risk_warning|(grounds|review_points|additional_checks)\[[0-9]+\])$"
 )
 
+AX_WIRE_ROLES: Final[frozenset[str]] = frozenset(
+    {"Executive", "HRAdmin", "HRPractitioner", "Employee"}
+)
+_DATASET_ROLE_ALIASES: Final[dict[str, str]] = {
+    "employee": "Employee",
+    "hr_manager": "HRPractitioner",
+    "manager": "HRPractitioner",
+    "recruiter": "HRPractitioner",
+    "interviewer": "HRPractitioner",
+    "investigator": "HRPractitioner",
+    "it_admin": "HRPractitioner",
+}
+
 
 def canonical_ax_role(role: str) -> str:
     """Return the AX wire identity for dataset role aliases."""
-    return {"employee": "Employee", "hr_manager": "HRManager"}.get(role, role)
+    canonical_role = _DATASET_ROLE_ALIASES.get(role, role)
+    if canonical_role not in AX_WIRE_ROLES:
+        raise ValueError(f"unsupported AX role: {role}")
+    return canonical_role
 
 
 class SurfaceMatcher(StrictGroundedContract):

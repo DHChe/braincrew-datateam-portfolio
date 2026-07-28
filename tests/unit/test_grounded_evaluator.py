@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 
+import pytest
+
 from braincrew import grounded_evaluator
 from braincrew.grounded_contracts import (
     GroundedCase,
@@ -10,6 +12,7 @@ from braincrew.grounded_contracts import (
     GroundedCitation,
     GroundedObservation,
     SourceTextResolution,
+    canonical_ax_role,
 )
 
 
@@ -160,7 +163,7 @@ def observation(
     citations: tuple[GroundedCitation, ...] = (),
     source_texts: tuple[SourceTextResolution, ...] = (),
     answer_mode: str = "direct_grounded",
-    executed_role: str = "hr_manager",
+    executed_role: str = "HRPractitioner",
 ) -> GroundedObservation:
     payload: dict[str, object] = {
         "case_id": "GA-001",
@@ -187,6 +190,23 @@ def evaluate(case: GroundedCase, observed: GroundedObservation) -> GroundedCaseE
         "grounded evaluator is not implemented"
     )
     return grounded_evaluator.evaluate_grounded_case(case, observed)
+
+
+def test_hr_manager_alias_maps_to_provisioned_ax_reader_role() -> None:
+    assert canonical_ax_role("hr_manager") == "HRPractitioner"
+
+
+@pytest.mark.parametrize(
+    "role",
+    ("manager", "recruiter", "interviewer", "investigator", "it_admin"),
+)
+def test_legacy_fixture_reader_alias_maps_to_provisioned_ax_reader_role(role: str) -> None:
+    assert canonical_ax_role(role) == "HRPractitioner"
+
+
+def test_canonical_ax_role_refuses_role_outside_ax_closed_set() -> None:
+    with pytest.raises(ValueError, match="unsupported AX role: HRManager"):
+        canonical_ax_role("HRManager")
 
 
 def test_supported_claim_requires_matching_source_text_and_exact_path_citation() -> None:
@@ -370,17 +390,17 @@ def test_observation_from_a_different_executed_role_is_invalid() -> None:
     assert result.failure_codes == ("SYS-GROUNDED-ROLE-MISMATCH",)
 
 
-def test_ax_role_alias_is_compared_by_its_canonical_identity() -> None:
+def test_uncanonicalized_executed_role_is_role_mismatch() -> None:
     case = grounded_case([proposition("dismissal-prohibited", "즉시 해고는 금지됩니다")])
     observed = observation(
         summary="즉시 해고는 금지됩니다.",
-        executed_role="HRManager",
+        executed_role="hr_manager",
     )
 
     result = evaluate(case, observed)
 
-    assert result.state == "COMPLETED"
-    assert "SYS-GROUNDED-ROLE-MISMATCH" not in result.failure_codes
+    assert result.state == "INVALID"
+    assert result.failure_codes == ("SYS-GROUNDED-ROLE-MISMATCH",)
 
 
 def test_same_path_support_and_contradiction_cannot_cancel_each_other() -> None:

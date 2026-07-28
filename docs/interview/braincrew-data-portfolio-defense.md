@@ -1726,6 +1726,36 @@ Likely follow-ups:
 
 - "Isn't a formatting failure trivial?" — The failure is trivial; **the mechanism that hid it is not.** A reviewer running every gate available to it, finding nothing, and approving is the normal case. What made this recoverable was that the review stated its blind spot in a form specific enough to act on — naming the gates, the tool, and the paths at risk. "I reviewed everything" would have produced a red CI run instead.
 
+### D21. Treat a role as a closed external identity, and do not normalize execution evidence back into the expectation
+
+Decision:
+: Braincrew maps the dataset alias `hr_manager` to AX's provisioned reader role, `HRPractitioner`, and validates every mapped or pass-through value against the locally declared closed AX wire-role set. The live capture requires AX's corpus-identity responses to confirm exactly the canonical roles required by retrieval and grounded Verification cases. `GroundedObservation.executed_role` records the adapter request role and is compared directly with the canonical role expected from the case. Locked in [the canonical AX role decision](../decisions/2026-07-28-canonical-ax-role-and-executed-role-evidence.md); carried out by Issue #91 and corrected after Cycle 110 review.
+
+Why:
+: `HRManager` exists nowhere in the pinned AX backend or frontend, while AX's role literal is exactly `Executive | HRAdmin | HRPractitioner | Employee`. The controlled probe sent GA-003, GA-006 and GA-009 as each candidate: `HRPractitioner` and `HRAdmin` both reached the answer path and selected five evidence items; `HRManager` was rejected before retrieval. Visibility therefore could not choose between the two valid HR roles. Provisioning and semantics could: AX provisions `HRPractitioner` as the corpus identity, the receipt records it as the parse reader, and reserves `HRAdmin` for approval and write authority the evaluation never exercises.
+
+Rejected alternative:
+: Mapping to `HRAdmin` — same measured visibility, wrong authority semantics and no corpus-identity provisioning. Also rejected: renaming the dataset role, which changes the dataset digest and invalidates prior provenance; adding `HRManager` to AX, which reshapes the SUT around a harness mistake; deriving the closed set from a live AX response or database, which makes a pre-request guard depend on the runtime it is supposed to protect; and a separate literal `LEGACY_FIXTURE_ROLES` comparison, which preserves v1 persona discrimination by giving `executed_role` two different meanings across fixture and live paths.
+
+Trade-off:
+: Braincrew now carries a local copy of AX's four-role wire contract. A reviewed AX role change requires an explicit matching update here. Importing product internals would couple repository histories, while live derivation would make controlled tests and pre-request refusal impossible; visible maintenance is the smaller cost. The superseded v1 fixture dataset — not the frozen manifest v3 → grounded v2 live dataset — also has five historical reader-persona aliases, so they map explicitly to `HRPractitioner` and its synthetic observation fixture records that wire identity. This preserves the dataset digest and 43 tests' golden outcomes, but collapses six personas to one wire identity and no longer detects swaps among them.
+
+Known failure modes:
+: The old default `.get(role, role)` silently promoted any unknown dataset role to a supposed AX identity. Cycle 109 removed double normalization in the evaluator but left the live producer deriving `executed_role` from the same case; M4 restored that derivation and all 505 tests passed. The repair therefore records the adapter's actual request role and separately requires AX-reported corpus roles to match the complete dataset requirement. Unsupported roles deliberately abort the run instead of becoming case scores. This is the seventh recorded instance of the repository's recurring self-comparison or wrong-subject guard shape, plus a correction to the first locked explanation that mistakenly declared it fixed.
+
+Validation evidence produced:
+: The original mapping and closed-set mutations remain independently killed. The repair adds a controlled adapter divergence: GA-003 is actually requested as the wrong-but-valid `Employee` role, the captured request evidence records it, and evaluation emits `SYS-GROUNDED-ROLE-MISMATCH`. M4 — replacing that evidence with `canonical_ax_role(case.role)` — must now make the named acceptance test fail. A copied retrieval case using `hr_manager` proves canonicalization before both corpus and retrieval requests, and AX corpus responses are compared as a complete evidence map against the independently derived required-role map. The dataset remains byte-identical; no AX runtime or Docker service is used.
+
+Validation evidence still required:
+: **No experiment has run and no answer-quality claim exists.** This settles which role the harness sends, not whether the dataset author meant practitioner or approver: both roles see the same evidence on these cases, so that intent is not recoverable from the corpus. Nor does the v1 compatibility map recover what each historical persona author intended. All successful probes still hit the separate citation-contract blocker after retrieval.
+
+Likely follow-ups:
+
+- "Why not ask AX which roles it supports at runtime?" — The harness must reject an invalid identity before sending it. A live lookup also makes a controlled unit contract depend on the stopped runtime and risks verifying the request with a neighbouring response rather than an independent expectation.
+- "How can you claim `HRPractitioner` is correct if `HRAdmin` sees the same evidence?" — I cannot recover the dataset author's noun choice from visibility. The decision is narrower: `HRPractitioner` is AX's provisioned reading identity and matches the receipt's reader role; `HRAdmin` adds approval/write semantics this evaluation does not exercise.
+- "Didn't you already have a role-mismatch test?" — Yes, for an artificially different role. It did not distinguish the live-path tautology because test observations defaulted to the raw dataset alias and the evaluator normalized both operands. The new tests pin the boundary itself and each clause dies under an isolated mutation.
+- "Does AX confirm the role on each answer response?" — No. The answer endpoint exposes no role. The per-case evidence is the adapter request actually constructed; AX independently confirms the complete required role set through the corpus-identity endpoint. The decision keeps those strengths separate.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

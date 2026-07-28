@@ -245,18 +245,13 @@ def evaluate_grounded_case(
         required_output_paths=case.required_output_paths,
     )
     leaking_atom_ids = _role_leakage_atom_ids(case, observation.structured_answer, atoms)
+    role_mismatch = observation.executed_role != canonical_ax_role(case.role)
     invalid_failure = (
         "SYS-GROUNDED-ROLE-MISMATCH"
-        if observation.case_id == case.case_id
-        and observation.available
-        and canonical_ax_role(observation.executed_role) != canonical_ax_role(case.role)
+        if observation.case_id == case.case_id and observation.available and role_mismatch
         else "SYS-GROUNDED-OBSERVATION-INVALID"
     )
-    if (
-        observation.case_id != case.case_id
-        or not observation.available
-        or canonical_ax_role(observation.executed_role) != canonical_ax_role(case.role)
-    ):
+    if observation.case_id != case.case_id or not observation.available or role_mismatch:
         invalid_failures = [invalid_failure]
         invalid_hard_failure_codes: tuple[str, ...] = ()
         if leaking_atom_ids:
