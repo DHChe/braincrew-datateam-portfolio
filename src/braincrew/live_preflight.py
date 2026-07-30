@@ -35,7 +35,8 @@ SHA256_PATTERN = r"^sha256:[0-9a-f]{64}$"
 COMMIT_SHA_PATTERN = r"^[0-9a-f]{40}$"
 SAFE_ID_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$"
 SAFE_DETAIL_PATTERN = r"^[A-Za-z0-9_.:-]{1,160}$"
-PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
+PINNED_AX_SHA = "1ead1331166538e417027a7064179f15c5cfbf61"
+REVIEWED_PROVISIONED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
 REVIEWED_HANDOFF_RECEIPT_SHA256 = "8d59a7907894532d702d0b7c658b8b28bc8370670b69f04884c42d8d1843c767"
 PARSING_AUTHORIZATION_ROLE = "HRPractitioner"
 EXPECTED_PARSER_IDENTITY = ("utf8-text", "stdlib-1")
@@ -91,6 +92,71 @@ class _ReceiptModel(BaseModel):
     model_config = ConfigDict(extra="ignore", frozen=True)
 
 
+class ReceiptSutContinuityWarrant(StrictModel):
+    schema_version: Literal["receipt-sut-continuity-warrant-v1"]
+    method: Literal["reviewed-ax-source-diff"]
+    provisioned_at_sha: str = Field(pattern=COMMIT_SHA_PATTERN)
+    last_provisioning_equivalent_sha: str = Field(pattern=COMMIT_SHA_PATTERN)
+    under_test_sha: str = Field(pattern=COMMIT_SHA_PATTERN)
+    provisioned_source_tree_sha: str = Field(pattern=COMMIT_SHA_PATTERN)
+    last_equivalent_source_tree_sha: str = Field(pattern=COMMIT_SHA_PATTERN)
+    changed_paths: tuple[str, ...]
+    provisioning_state_affected: Literal[False]
+
+    @model_validator(mode="after")
+    def require_measured_continuity(self) -> ReceiptSutContinuityWarrant:
+        if self.provisioned_source_tree_sha != self.last_equivalent_source_tree_sha:
+            raise ValueError("continuity warrant source trees must match through provisioning")
+        if not self.changed_paths or any(
+            not path.startswith("backend/src/") for path in self.changed_paths
+        ):
+            raise ValueError("continuity warrant must name reviewed AX source changes")
+        return self
+
+
+class ReceiptSutCommitBinding(StrictModel):
+    provisioned_at_sha: str = Field(pattern=COMMIT_SHA_PATTERN)
+    under_test_sha: str = Field(pattern=COMMIT_SHA_PATTERN)
+    acceptance_reason: Literal[
+        "same-reviewed-commit",
+        "reviewed-provisioning-continuity",
+    ]
+    continuity_warrant: ReceiptSutContinuityWarrant | None = None
+
+    @model_validator(mode="after")
+    def require_reason_for_divergence(self) -> ReceiptSutCommitBinding:
+        if self.provisioned_at_sha == self.under_test_sha:
+            if self.acceptance_reason != "same-reviewed-commit":
+                raise ValueError("equal AX commits require the same-commit acceptance reason")
+            if self.continuity_warrant is not None:
+                raise ValueError("equal AX commits must not claim a continuity warrant")
+            return self
+        if (
+            self.acceptance_reason != "reviewed-provisioning-continuity"
+            or self.continuity_warrant is None
+        ):
+            raise ValueError("divergent AX commits require a reviewed continuity warrant")
+        if (
+            self.continuity_warrant.provisioned_at_sha != self.provisioned_at_sha
+            or self.continuity_warrant.under_test_sha != self.under_test_sha
+        ):
+            raise ValueError("continuity warrant must bind both divergent AX commits")
+        return self
+
+
+REVIEWED_PROVISIONING_CONTINUITY_WARRANT = ReceiptSutContinuityWarrant(
+    schema_version="receipt-sut-continuity-warrant-v1",
+    method="reviewed-ax-source-diff",
+    provisioned_at_sha="2bcaee3495fd7b3f624398819575cd86a5a15c47",
+    last_provisioning_equivalent_sha="d7930978d7b0cb41668a86acd9fe77c16068801d",
+    under_test_sha="1ead1331166538e417027a7064179f15c5cfbf61",
+    provisioned_source_tree_sha="846c06ba9461c97a75b16caf7b85570e0c0f14fd",
+    last_equivalent_source_tree_sha="846c06ba9461c97a75b16caf7b85570e0c0f14fd",
+    changed_paths=("backend/src/ax_engine/answers/service.py",),
+    provisioning_state_affected=False,
+)
+
+
 class _ReceiptRepository(_ReceiptModel):
     commit_sha: str
 
@@ -118,6 +184,7 @@ class _ReviewedHandoffBinding:
     subject_id: str
     tenant_id: str
     attachment_mapping: Mapping[str, str]
+    commit_binding: ReceiptSutCommitBinding
 
 
 class LivePreflightBlocker(StrictModel):
@@ -241,7 +308,9 @@ class LivePreflightArtifact(StrictModel):
         if self.captured_at.tzinfo is None or self.captured_at.utcoffset() is None:
             raise ValueError("captured_at must include a timezone")
         if self.sut_commit_sha != PINNED_AX_SHA:
-            raise ValueError("live preflight artifact must use the pinned AX commit")
+            raise ValueError(
+                "live preflight artifact SUT commit does not match the under-test AX commit"
+            )
         if self.schema_version != "live-verification-preflight-artifact-v2" and (
             self.readiness is not None
         ):
@@ -848,8 +917,7 @@ def _load_reviewed_handoff_binding(path: Path) -> _ReviewedHandoffBinding:
 
     if receipt.state != "COMPLETED" or receipt.completion_confirmed is not True:
         raise ValueError("reviewed handoff receipt is not completed")
-    if receipt.repository.commit_sha != PINNED_AX_SHA:
-        raise ValueError("reviewed handoff receipt was produced from an unreviewed AX commit")
+    commit_binding = _reviewed_receipt_sut_commit_binding(receipt.repository.commit_sha)
     if len(receipt.attachments) != 6:
         raise ValueError("reviewed handoff receipt must contain exactly six attachments")
 
@@ -871,6 +939,32 @@ def _load_reviewed_handoff_binding(path: Path) -> _ReviewedHandoffBinding:
         subject_id=receipt.target.subject_id,
         tenant_id=receipt.target.tenant_id,
         attachment_mapping=MappingProxyType(attachment_mapping),
+        commit_binding=commit_binding,
+    )
+
+
+def _reviewed_receipt_sut_commit_binding(receipt_commit_sha: str) -> ReceiptSutCommitBinding:
+    if receipt_commit_sha != REVIEWED_PROVISIONED_AX_SHA:
+        raise ValueError(
+            "reviewed handoff receipt commit does not match the reviewed provisioning commit"
+        )
+    if receipt_commit_sha == PINNED_AX_SHA:
+        return ReceiptSutCommitBinding(
+            provisioned_at_sha=receipt_commit_sha,
+            under_test_sha=PINNED_AX_SHA,
+            acceptance_reason="same-reviewed-commit",
+        )
+
+    warrant = REVIEWED_PROVISIONING_CONTINUITY_WARRANT
+    if warrant.provisioned_at_sha != receipt_commit_sha or warrant.under_test_sha != PINNED_AX_SHA:
+        raise ValueError(
+            "reviewed provisioning continuity warrant does not bind the current AX commits"
+        )
+    return ReceiptSutCommitBinding(
+        provisioned_at_sha=receipt_commit_sha,
+        under_test_sha=PINNED_AX_SHA,
+        acceptance_reason="reviewed-provisioning-continuity",
+        continuity_warrant=warrant,
     )
 
 

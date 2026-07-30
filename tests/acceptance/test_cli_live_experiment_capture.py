@@ -21,7 +21,8 @@ from braincrew.repository import RepositoryState
 
 PROJECT_ROOT = Path(__file__).parents[2]
 DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v3.json"
-PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
+PINNED_AX_SHA = "1ead1331166538e417027a7064179f15c5cfbf61"
+PROVISIONED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
 TENANT_ID = "ae09ec7f-e2b8-4f83-99bb-7031ef5eb6e2"
 USER_ID = "12171ca4-a001-40da-881b-b87cce42e9b2"
 CAPTURED_AT = datetime(2026, 7, 27, 9, 0, tzinfo=UTC)
@@ -427,6 +428,14 @@ def _capture(
         clock_ns=clock_ns or time.perf_counter_ns,
     )
     return result, calls
+
+
+def test_live_capture_refuses_commit_that_is_not_the_under_test_pin(tmp_path: Path) -> None:
+    with pytest.raises(
+        ValueError,
+        match="live capture SUT commit does not match the under-test AX commit",
+    ):
+        _capture(tmp_path, sut_sha=PROVISIONED_AX_SHA)
 
 
 def test_live_capture_records_total_client_latency_and_refuses_to_invent_cost(
@@ -1379,7 +1388,10 @@ def test_live_capture_canonicalizes_retrieval_dataset_role_before_ax_request(
     ("overrides", "message"),
     [
         ({"evaluation_dirty": True}, "clean committed Evaluation Plane"),
-        ({"sut_sha": "b" * 40}, "pinned AX commit"),
+        (
+            {"sut_sha": "b" * 40},
+            "live capture SUT commit does not match the under-test AX commit",
+        ),
         ({"sut_dirty": True}, "clean SUT checkout"),
     ],
 )

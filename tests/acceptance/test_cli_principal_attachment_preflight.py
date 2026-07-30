@@ -24,7 +24,8 @@ from braincrew.parsing_run import load_parsing_dataset
 from braincrew.repository import RepositoryState
 
 PROJECT_ROOT = Path(__file__).parents[2]
-PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
+PINNED_AX_SHA = "1ead1331166538e417027a7064179f15c5cfbf61"
+PROVISIONED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
 EVALUATION_SHA = "93c8e8dabab855b7f2f700df73cd04ce38995f29"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
 OWNER_USER_ID = "22222222-2222-2222-2222-222222222222"
@@ -731,7 +732,7 @@ def _install_reviewed_receipt(
     receipt_path.write_text(
         json.dumps(
             {
-                "repository": {"commit_sha": PINNED_AX_SHA},
+                "repository": {"commit_sha": PROVISIONED_AX_SHA},
                 "target": {
                     "subject_id": OWNER_USER_ID,
                     "tenant_id": TENANT_ID,
