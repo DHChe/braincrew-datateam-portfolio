@@ -716,6 +716,210 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-07-30 — Issue #94 approved after six review cycles; the adjudication corrected pane 1's framing and added a commit precondition
+
+- **Cycle 120 returned `APPROVE` on the cycle 119 delta with no blocking finding. U1 and U2 are
+  closed, and Issue #94 has no open blocking finding.** The reviewer mutated **both** halves of the
+  new U1 test separately — including the warrant half pane 1 had not checked — and each killed
+  exactly the named test. It also derived its own mechanical `PINNED_AX_SHA` census before reading
+  pane 2's column and reached the same 13 rows, adjudicating individually the three
+  "historical record, leave" calls the brief had flagged as the ones that would be wrong quietly.
+- **Why the ticket's evidence survives the concurrency defect, which is a better reason than "out of
+  scope".** The load-bearing evidence here is **mutation** evidence, and mutation evidence is immune
+  to this pollution mode: a test passing for an unrelated reason cannot produce a pass → fail → pass
+  signal, it would stay green and be recorded as a survivor. Across cycles 115–120 the ticket rests
+  on **seventeen** isolated mutations, every one killing exactly its intended case. The single
+  survivor is provably semantically equivalent and is recorded so nobody later re-reports it as a
+  gap. Independently: this pollution manifests as *failures*, never passes, so a zero-failure solo
+  suite is itself evidence that no drift window was open during it.
+- **The adjudication corrected pane 1 on the mechanism, and it is worse than pane 1 said.** No
+  interruption is required. `test_schema_drift_fails_closed_even_if_declared_digest_is_also_changed`
+  captures the tracked schema bytes, writes drift, and restores the captured bytes in a `finally`; a
+  second run that captures its "original" inside the first run's drift window writes the **drifted**
+  bytes back as pristine. Both `finally` blocks complete and the tree stays corrupted — and the
+  corrupted `(schema, digest)` pair is **self-consistent**, so any recompute-and-compare check
+  passes. Only the pinned `EXPECTED_SCHEMA_DIGESTS` constant or `git status` can detect it. pane 1's
+  own reproduction had left exactly that pair modified, which corroborates the explanation. pane 1
+  was wrong about the cause twice — `__pycache__`, then "interrupted mid-test" — and both times its
+  own measurement exposed the error, which is why the recusal was the right call.
+- **A precondition adopted for this commit, not a code change:** confirm `git status --short
+  schemas/` is empty immediately before committing, and commit **explicitly named paths** — never
+  `git add -A` or `git commit -a`. Committing a drifted schema beside its matching drifted digest
+  inside this ticket would be worse than any finding in six cycles, because this ticket's whole value
+  is evidentiary integrity.
+- **Three follow-ups, none blocking:** the shared-`schemas/` test defect needs an env-var or flag
+  override for the schema directory in production source, because `seal()` runs the CLI in a
+  subprocess and an in-process monkeypatch cannot reach it — squarely outside Issue #94. A topology
+  rule the reviewer proposed and pane 1 accepts: no two panes run the full suite concurrently in one
+  shared working tree, and after any concurrent or interrupted run, verify `git status` before
+  trusting the tree or reporting a gate result. And V1, a precision note requiring no action: the new
+  U1 test's field assertions are pre-empted by validator refusal, so its operative contribution is
+  reaching the branch at all — which is exactly what U1 asked for.
+- **A question worth carrying forward,** in the reviewer's words: it had judged this ticket by running
+  the suite and never asked until cycle 120 **whether any test in this repository writes to tracked
+  files**. That is worth asking in any repository whose commit gate is `git status`.
+
+### 2026-07-30 — Cycle 119 closed U1 and U2; a reproduction found a shared-`schemas/` test-isolation defect, routed to independent adjudication
+
+- Cycle 119 (pane 2) closed **U1** with `test_reviewed_provisioning_receipt_is_accepted_for_same_reviewed_sut`,
+  which monkeypatches `PINNED_AX_SHA` to the provisioned SHA and asserts the loader returns a
+  `same-reviewed-commit` binding with **no** warrant, and closed **U2** by appending the fifth
+  supersession annotation. 520 → **521 passed**. **No production code changed in cycle 117 or 119** —
+  `live_preflight.py` is byte-identical to the snapshot pane 1 took before dispatching cycle 117,
+  and pane 3's own cycle 116 digest record agrees.
+- pane 1 reproduced U1's kill directly: corrupting the same-commit branch's `acceptance_reason`,
+  which left **520 green** before this cycle, now fails the named test. All docs remain append-only
+  (0 deletions), `521` replaced `520` in both current-evidence documents, and the tree is exactly
+  the delta.
+- **pane 1 fixed its own census method rather than only the instance.** U2 existed because pane 1
+  had grepped every occurrence and then hand-picked four into the brief's table. Cycle 119's brief
+  handed over the **complete 13-row census** with pane 1's adjudication beside each row and an
+  instruction to adjudicate every row independently. pane 2 agreed on all 13 and confirmed no
+  occurrence was missed.
+- **A finding pane 1 declined to resolve itself.** pane 2 reported one unrelated test failing during
+  a run that overlapped another pytest invocation, and called it non-reproducing. pane 1's first
+  hypothesis — concurrent `__pycache__` deletion — was **refuted by its own probe**. Two concurrent
+  **full** suites then reproduced it heavily (26 and 24 failures), dominated by
+  `AX_SCHEMA_DRIFT`. The mechanism is in the source: `_verify_vendored_schemas()` digest-checks the
+  repository's own `schemas/` directory, and `tests/contract/test_corpus_pack_sealing.py` writes a
+  drifted schema into that shared path and restores it in a `finally`, so a concurrent run observes
+  the window. **pane 1's own reproduction left two tracked `schemas/` files modified**; pane 1
+  restored them with `git checkout -- schemas/` and re-verified the tree. That is recorded here
+  rather than omitted.
+- Neither `schemas/` nor the mutating test is in this ticket's diff. pane 1 **recused itself**: it
+  wants the answer to be "pre-existing, out of scope" because that permits the authorized commit,
+  and it had already been wrong once about the cause. Cycle 120 receives the measured facts as
+  inputs, four candidate verdicts rather than two, and an explicit invitation to call the framing
+  biased. The sharpest version of the risk is the one pane 1 named against its own interest: in a
+  three-pane shared working tree, a run interrupted mid-test can leave tracked files modified in a
+  repository whose commit gate is `git status`.
+- Completion condition: cycle 120's delta verdict on U1/U2 plus its adjudication. If no blocking
+  finding, pane 1 executes the owner-authorized commit → push → pull request → squash merge into
+  `develop`. HEAD is still `d74065f`; nothing is committed.
+
+### 2026-07-30 — Cycle 118 re-review closed T1–T5 and found U1: an untested branch in the same function
+
+- Cycle 117 (pane 2) closed T1 with six validator test functions producing nine cases, 511 → **520
+  passed**, and closed T2–T5 as append-only annotations and rescoped claims. **No production code
+  changed** — pane 1 confirmed `live_preflight.py` byte-identical to a snapshot it took before the
+  repair dispatch, and pane 3 independently confirmed the same digests against its own cycle 116
+  record rather than against any cycle 117 artifact.
+- Cycle 118 (pane 3, delta-scoped) returned **APPROVE, no blocking findings**, and judged T1
+  **closed and exceeded**: it ran the six clauses as **nine isolated branch mutations** and each
+  killed **exactly one case and nothing else**, so the clause-to-test mapping is one-to-one in both
+  directions. That is the per-clause evidence pane 1 could not supply — pane 1's own mutation had
+  neutralised each validator whole, which is the collective shape this project has banned since
+  cycle 104. The two independent methods reconcile exactly: 6 + 3 whole-validator kills = the 6 and
+  3 clauses each validator contains.
+- **T3 came out stronger than the framing pane 1 supplied.** The 2026-07-26 AX-SUT decision §8 had
+  already written the successor design four days early — "the honest model may need separate
+  `REVIEWED_HANDOFF_PRODUCER_SHA` and `PINNED_SUT_SHA` values plus an explicit compatibility
+  review. It must not silently loosen the current equality or derive B from A." Issue #94 is that
+  prescription implemented, differing only in the constants' names. The reviewer recorded this as
+  corroboration for the design rather than as a scoping nuance that merely escaped falsification.
+- **U1, and it is nobody's single miss.** The loader's `same-reviewed-commit` branch is
+  **unreachable and untested**: it requires the receipt commit to equal both
+  `REVIEWED_PROVISIONED_AX_SHA` and `PINNED_AX_SHA`, which cannot hold while they differ.
+  Corrupting that branch's `acceptance_reason` leaves all **520** tests green — measured by pane 3
+  and independently reproduced by pane 1. It fails closed and becomes live on the first future
+  re-pin that re-provisions at the SUT commit. pane 2 built it, pane 1 briefed it, pane 3 approved
+  it in cycle 116; none of the three tested it.
+- **U2 is a census failure in pane 1's brief, for the second cycle running.** A fifth stale
+  operative location exists at `2026-07-26-ax-sut-commit-for-evaluation-review.md:229` — "exact
+  `PINNED_AX_SHA` equality rejects a different receipt or artifact", which now names the wrong
+  constant for the receipt half. pane 2 annotated exactly the four locations pane 1's brief table
+  listed. pane 1 had grepped every occurrence and then hand-picked four into the table: the
+  derivation was mechanical, the **adjudication** was not. In cycle 115 the same failure shape cost
+  `ax-http-v1.yaml`, which pane 2 caught. U3 is a precision note: clause 3b protects the refusal
+  *message*, not the refusal — without it an invalid binding crashes rather than being accepted.
+- **An approval-scope limit the reviewer recorded rather than let stand implied:** `format:check`
+  enumerates its targets and `docs/` is not among them, so "all eleven gates green" carries **no
+  information** about the four documentation files that are most of this delta. Their correctness
+  rests on human reading only.
+- **Waiting on the owner:** whether to close U1 (~10 lines) and U2 (2 lines, append-only) in a
+  cycle 119 before committing, or commit as reviewed and file them. The reviewer recommends the
+  latter but named the tension plainly: U1 is the same "an unprotected check is decorative" class
+  that decided the T1 call. Nothing is committed; HEAD is still `d74065f`.
+
+### 2026-07-30 — The owner chose to close T1 inside the ticket; repair cycle 117 dispatched
+
+- Presented with the Git Lifecycle Proposal and an explicit scope choice, **the owner chose to
+  repair before committing**: close T1 (per-clause unit tests for the two new Pydantic
+  validators) together with the cheap T2–T5 documentation lines, have pane 3 re-review only the
+  delta, and then commit → push → pull request → squash merge into `develop`. The reasoning that
+  decided it: an unprotected check is decorative by this repository's own standard, and that
+  standard should apply to the commit being made rather than to a later one. Same shape as the
+  owner's cycle-107 choice to close K1 in-ticket.
+- The entry below is left intact deliberately. Its "waiting on the owner" state was true when
+  written and is the record that the proposal gate was honoured rather than assumed.
+- Cycle 117 is dispatched to pane 2 from
+  `/Users/astralpig/ax-issue-45-review/brief-cycle117-issue94-repair.md`. Six validator clauses
+  each need their own test and their own isolated mutation. pane 1 verified all four T3/T4
+  documentation facts directly against the files before asking for any edit, including the
+  nuance that the 2026-07-26 AX-SUT decision's "one SUT constant" held **"for this cycle"** — a
+  correctly scoped claim whose scope ended, not a claim that was wrong.
+- Completion condition: six clause mutations killed individually, all eleven gates green, the
+  pytest count corrected in both documents that quote it, then cycle 118's delta re-review with
+  no blocking finding. Nothing is committed yet.
+
+### 2026-07-30 — Cycle 116 review returned APPROVE with no blocking finding; the Git proposal is with the owner
+
+- Cycle 115 (pane 2) delivered Issue #94: `PINNED_AX_SHA` now means only the commit under test
+  (`1ead133`), `REVIEWED_PROVISIONED_AX_SHA` names the receipt's commit (`2bcaee3`), and a
+  code-pinned `ReceiptSutContinuityWarrant` must bind the exact divergent pair for the receipt
+  to be accepted — with four condition-specific refusals replacing the misleading "unreviewed
+  AX commit" message. The implementer also caught a census gap in the orchestrator's brief:
+  `src/braincrew/ax-http-v1.yaml` pins the under-test SHA and was re-pinned with the rest.
+- Cycle 116 (pane 3, briefed blind to pane 1's observations) returned **APPROVE**: all eight
+  review dimensions pass, zero blocking findings, five non-blocking (**T1–T5**). The reviewer
+  reproduced all six per-clause mutations with matching red modes, added two probes of its own,
+  re-measured every Git fact the continuity warrant attests (read-only, in the AX checkout),
+  and read the +22/−2 AX diff itself — so `provisioning_state_affected=False` is supported by
+  the reviewer's own reading, not only attested. Restore was proven by file digests and a final
+  511-test green run.
+- **T1, which pane 1's own reading had missed:** the two new model validators are unprotected
+  in isolation — an outright deletion of `require_reason_for_divergence` or
+  `require_measured_continuity` leaves all 511 tests green. The loader checks (the operative
+  runtime gate) are each mutation-protected; the validators are the future-facing half of the
+  rule. pane 1 independently confirmed T1 (validator neutralised → 511 passed → byte-identical
+  restore → 511 passed, `git diff --check` clean). T2: the warrant schema can only express
+  today's divergence shape and fails closed on any other — safe direction, unrecorded limit.
+  T3: supersession pointers are forward-only; the 2026-07-26 receipt-binding decision still
+  carries now-stale operative text with no appended annotation. T4/T5: documentation
+  completeness and an unpreserved TDD-red claim whose evidential load the reproduced mutation
+  table carries instead.
+- After the reviewer finished, pane 1 re-verified the working tree byte-restored (the same 13
+  modified + 1 new file, +250/−26) and the full suite green post-restore.
+- **Waiting on the owner:** the Git Lifecycle Proposal, presented with an explicit scope
+  choice — close T1 (and the cheap T2/T3/T4 documentation lines) in repair cycle 117 with a
+  delta re-review before commit, or commit as reviewed and file the follow-ups. No commit
+  exists yet; nothing is pushed.
+
+### 2026-07-30 — Issue #94 implementation dispatched (cycle 115)
+
+- Phase: [Issue #94](https://github.com/DHChe/braincrew-datateam-portfolio/issues/94) —
+  separate the two meanings of `PINNED_AX_SHA` (commit under test vs commit the provisioning
+  receipt was produced at), state and enforce the divergence rule, re-pin to `1ead1331` — is
+  **in implementation** on `feat/issue-94-separate-pin-meanings`, cut from `develop` at
+  `d74065f` (verified equal to `origin/develop`, clean tree).
+- The standing three-pane team is adopted per the session-close entry below: pane 2 implements
+  from the brief at `/Users/astralpig/ax-issue-45-review/brief-cycle115-issue94.md`, pane 3
+  reviews independently in cycle 116, pane 1 owns this file for the cycle.
+- Pre-dispatch, pane 1 independently re-verified the ticket's two measured claims in the AX
+  checkout (`/Users/astralpig/portfolio/AX_portfolio`, `develop` at `1ead133`, clean):
+  `git diff --stat 2bcaee3..1ead133 -- backend/src` is exactly one file (+22/−2), and the
+  `backend/src` tree hash is identical at `2bcaee3` and `d793097` (`846c06ba…`).
+- The framing choice the ticket demands (two constants + rule, receipt-coverage validity, or
+  ancestry) is deliberately left to the implementer to argue and pane 3 to challenge, with the
+  rejected alternative recorded in a new decision document and defence card D22. One known
+  discrepancy is flagged in the brief: the parsed receipt model carries no digests
+  (`extra="ignore"`), so the ticket's receipt-coverage framing needs the real receipt inspected
+  first.
+- Completion condition: implementation → independent cycle-116 review → repair if needed →
+  re-review → Git Lifecycle Proposal to the owner. No commit exists yet; workers hold no Git
+  write authority. After that merge: re-pin → re-run the preflight → the 24-case measurement
+  AX #58 exists to make possible.
+
 ### 2026-07-28 (session close) — Issue #91 merged, a live probe blocked #15 before it ran, and the first evaluation-found defect was fixed in the product
 
 **Where to resume: [Issue #94](https://github.com/DHChe/braincrew-datateam-portfolio/issues/94).** Everything below is recorded so that does not depend on conversation memory. A copy-ready start prompt, including the three-pane topology a fresh session would otherwise discard, is at `/Users/astralpig/ax-issue-45-review/NEXT-SESSION-PROMPT.md` — kept outside the repository because it goes stale by design.

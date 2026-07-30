@@ -16,8 +16,9 @@ from braincrew.dataset_registry import DatasetValidationReport, validate_dataset
 
 PROJECT_ROOT = Path(__file__).parents[2]
 DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v3.json"
-PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
-UNREVIEWED_AX_SHA = "d7930978d7b0cb41668a86acd9fe77c16068801d"
+PINNED_AX_SHA = "1ead1331166538e417027a7064179f15c5cfbf61"
+PROVISIONED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
+UNRELATED_AX_SHA = "7b6f480c52583a3ff12e3af809eba6510a7a2348"
 EVALUATION_SHA = "93c8e8dabab855b7f2f700df73cd04ce38995f29"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
 SYNTHETIC_SUBJECT_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
@@ -37,6 +38,117 @@ def dataset_validation() -> DatasetValidationReport:
     validation = validate_dataset_bundle(DATASET_MANIFEST)
     assert validation.state == "VALID"
     return validation
+
+
+def _continuity_warrant_payload(**overrides: Any) -> dict[str, Any]:
+    payload = live_preflight.REVIEWED_PROVISIONING_CONTINUITY_WARRANT.model_dump(mode="python")
+    payload.update(overrides)
+    return payload
+
+
+def test_equal_commit_binding_requires_same_commit_reason() -> None:
+    with pytest.raises(
+        ValidationError,
+        match="equal AX commits require the same-commit acceptance reason",
+    ):
+        live_preflight.ReceiptSutCommitBinding(
+            provisioned_at_sha=PROVISIONED_AX_SHA,
+            under_test_sha=PROVISIONED_AX_SHA,
+            acceptance_reason="reviewed-provisioning-continuity",
+        )
+
+
+def test_equal_commit_binding_refuses_continuity_warrant() -> None:
+    with pytest.raises(
+        ValidationError,
+        match="equal AX commits must not claim a continuity warrant",
+    ):
+        live_preflight.ReceiptSutCommitBinding(
+            provisioned_at_sha=PROVISIONED_AX_SHA,
+            under_test_sha=PROVISIONED_AX_SHA,
+            acceptance_reason="same-reviewed-commit",
+            continuity_warrant=live_preflight.REVIEWED_PROVISIONING_CONTINUITY_WARRANT,
+        )
+
+
+@pytest.mark.parametrize(
+    ("acceptance_reason", "continuity_warrant"),
+    [
+        (
+            "same-reviewed-commit",
+            live_preflight.REVIEWED_PROVISIONING_CONTINUITY_WARRANT,
+        ),
+        ("reviewed-provisioning-continuity", None),
+    ],
+    ids=["continuity-reason", "continuity-warrant"],
+)
+def test_divergent_commit_binding_requires_continuity_reason_and_warrant(
+    acceptance_reason: str,
+    continuity_warrant: live_preflight.ReceiptSutContinuityWarrant | None,
+) -> None:
+    with pytest.raises(
+        ValidationError,
+        match="divergent AX commits require a reviewed continuity warrant",
+    ):
+        live_preflight.ReceiptSutCommitBinding.model_validate(
+            {
+                "provisioned_at_sha": PROVISIONED_AX_SHA,
+                "under_test_sha": PINNED_AX_SHA,
+                "acceptance_reason": acceptance_reason,
+                "continuity_warrant": continuity_warrant,
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    ("provisioned_at_sha", "under_test_sha"),
+    [
+        (UNRELATED_AX_SHA, PINNED_AX_SHA),
+        (PROVISIONED_AX_SHA, UNRELATED_AX_SHA),
+    ],
+    ids=["provisioned-at", "under-test"],
+)
+def test_divergent_commit_binding_requires_warrant_to_bind_both_commits(
+    provisioned_at_sha: str,
+    under_test_sha: str,
+) -> None:
+    with pytest.raises(
+        ValidationError,
+        match="continuity warrant must bind both divergent AX commits",
+    ):
+        live_preflight.ReceiptSutCommitBinding(
+            provisioned_at_sha=provisioned_at_sha,
+            under_test_sha=under_test_sha,
+            acceptance_reason="reviewed-provisioning-continuity",
+            continuity_warrant=live_preflight.REVIEWED_PROVISIONING_CONTINUITY_WARRANT,
+        )
+
+
+def test_continuity_warrant_requires_matching_source_tree_hashes() -> None:
+    with pytest.raises(
+        ValidationError,
+        match="continuity warrant source trees must match through provisioning",
+    ):
+        live_preflight.ReceiptSutContinuityWarrant.model_validate(
+            _continuity_warrant_payload(last_equivalent_source_tree_sha="f" * 40)
+        )
+
+
+@pytest.mark.parametrize(
+    "changed_paths",
+    [(), ("docs/runbook.md",)],
+    ids=["empty", "outside-backend-src"],
+)
+def test_continuity_warrant_requires_reviewed_backend_source_paths(
+    changed_paths: tuple[str, ...],
+) -> None:
+    with pytest.raises(
+        ValidationError,
+        match="continuity warrant must name reviewed AX source changes",
+    ):
+        live_preflight.ReceiptSutContinuityWarrant.model_validate(
+            _continuity_warrant_payload(changed_paths=changed_paths)
+        )
 
 
 def test_absent_reviewed_receipt_refuses_with_distinct_error(
@@ -82,21 +194,101 @@ def test_incomplete_receipt_state_refuses(
         _capture(dataset_validation, handoff_receipt_path=receipt_path)
 
 
-def test_unreviewed_ax_sha_is_distinct_from_pin() -> None:
-    if UNREVIEWED_AX_SHA == PINNED_AX_SHA:
-        pytest.fail("UNREVIEWED_AX_SHA must differ from PINNED_AX_SHA")
+def test_unrelated_ax_sha_is_distinct_from_both_reviewed_commits() -> None:
+    if UNRELATED_AX_SHA in {PINNED_AX_SHA, PROVISIONED_AX_SHA}:
+        pytest.fail("UNRELATED_AX_SHA must differ from both reviewed AX commits")
 
 
-def test_receipt_from_unreviewed_sut_commit_refuses(
+def test_receipt_from_unrelated_commit_refuses_as_unreviewed_provisioning(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     dataset_validation: DatasetValidationReport,
 ) -> None:
-    receipt_path = _write_receipt(tmp_path, repository_commit_sha=UNREVIEWED_AX_SHA)
+    receipt_path = _write_receipt(tmp_path, repository_commit_sha=UNRELATED_AX_SHA)
     _pin_fixture_digest(monkeypatch, receipt_path)
 
-    with pytest.raises(ValueError, match="unreviewed AX commit"):
+    with pytest.raises(
+        ValueError,
+        match="receipt commit does not match the reviewed provisioning commit",
+    ):
         _capture(dataset_validation, handoff_receipt_path=receipt_path)
+
+
+def test_reviewed_provisioning_receipt_is_accepted_for_newer_sut_for_warranted_reason(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipt_path = _write_receipt(tmp_path)
+    _pin_fixture_digest(monkeypatch, receipt_path)
+
+    binding = live_preflight._load_reviewed_handoff_binding(receipt_path)
+
+    assert binding.commit_binding.provisioned_at_sha == PROVISIONED_AX_SHA
+    assert binding.commit_binding.under_test_sha == PINNED_AX_SHA
+    assert binding.commit_binding.acceptance_reason == "reviewed-provisioning-continuity"
+    assert binding.commit_binding.continuity_warrant is not None
+    assert binding.commit_binding.continuity_warrant.model_dump(mode="json") == {
+        "schema_version": "receipt-sut-continuity-warrant-v1",
+        "method": "reviewed-ax-source-diff",
+        "provisioned_at_sha": PROVISIONED_AX_SHA,
+        "last_provisioning_equivalent_sha": "d7930978d7b0cb41668a86acd9fe77c16068801d",
+        "under_test_sha": PINNED_AX_SHA,
+        "provisioned_source_tree_sha": "846c06ba9461c97a75b16caf7b85570e0c0f14fd",
+        "last_equivalent_source_tree_sha": "846c06ba9461c97a75b16caf7b85570e0c0f14fd",
+        "changed_paths": ["backend/src/ax_engine/answers/service.py"],
+        "provisioning_state_affected": False,
+    }
+
+
+def test_reviewed_provisioning_receipt_is_accepted_for_same_reviewed_sut(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipt_path = _write_receipt(tmp_path)
+    _pin_fixture_digest(monkeypatch, receipt_path)
+    monkeypatch.setattr(
+        live_preflight,
+        "PINNED_AX_SHA",
+        live_preflight.REVIEWED_PROVISIONED_AX_SHA,
+    )
+
+    binding = live_preflight._load_reviewed_handoff_binding(receipt_path)
+
+    assert binding.commit_binding.provisioned_at_sha == live_preflight.REVIEWED_PROVISIONED_AX_SHA
+    assert binding.commit_binding.under_test_sha == live_preflight.REVIEWED_PROVISIONED_AX_SHA
+    assert binding.commit_binding.acceptance_reason == "same-reviewed-commit"
+    assert binding.commit_binding.continuity_warrant is None
+
+
+def test_preflight_artifact_refuses_sut_commit_that_is_not_the_under_test_pin() -> None:
+    with pytest.raises(
+        ValidationError,
+        match="live preflight artifact SUT commit does not match the under-test AX commit",
+    ):
+        live_preflight.build_live_preflight_artifact(
+            run_id="issue-94-under-test-pin",
+            captured_at=datetime(2026, 7, 30, tzinfo=UTC),
+            evaluation_plane_sha=EVALUATION_SHA,
+            sut_commit_sha=PROVISIONED_AX_SHA,
+            corpus_observations=(),
+            parse_observations=(),
+            blockers=(),
+        )
+
+
+def test_divergent_commits_refuse_when_warrant_does_not_bind_current_under_test_pin(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipt_path = _write_receipt(tmp_path)
+    _pin_fixture_digest(monkeypatch, receipt_path)
+    monkeypatch.setattr(live_preflight, "PINNED_AX_SHA", UNRELATED_AX_SHA)
+
+    with pytest.raises(
+        ValueError,
+        match="continuity warrant does not bind the current AX commits",
+    ):
+        live_preflight._load_reviewed_handoff_binding(receipt_path)
 
 
 @pytest.mark.parametrize(
@@ -219,6 +411,7 @@ def _capture(
     validation: DatasetValidationReport,
     *,
     handoff_receipt_path: Path,
+    sut_commit_sha: str = PINNED_AX_SHA,
 ) -> live_preflight.LivePreflightArtifact:
     def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("receipt refusal must happen before HTTP", request=request)
@@ -227,7 +420,7 @@ def _capture(
         run_id="issue-67-receipt-binding",
         captured_at=datetime(2026, 7, 26, tzinfo=UTC),
         evaluation_plane_sha=EVALUATION_SHA,
-        sut_commit_sha=PINNED_AX_SHA,
+        sut_commit_sha=sut_commit_sha,
         base_url="https://ax.example.test",
         tenant_id=TENANT_ID,
         user_id=SYNTHETIC_SUBJECT_ID,
@@ -243,7 +436,7 @@ def _write_receipt(
     *,
     state: str = "COMPLETED",
     completion_confirmed: bool = True,
-    repository_commit_sha: str = PINNED_AX_SHA,
+    repository_commit_sha: str = PROVISIONED_AX_SHA,
     subject_id: str = SYNTHETIC_SUBJECT_ID,
     attachment_mapping: Mapping[str, str] = SYNTHETIC_ATTACHMENTS,
 ) -> Path:

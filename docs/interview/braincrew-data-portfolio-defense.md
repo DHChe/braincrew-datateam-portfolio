@@ -1756,6 +1756,35 @@ Likely follow-ups:
 - "Didn't you already have a role-mismatch test?" — Yes, for an artificially different role. It did not distinguish the live-path tautology because test observations defaulted to the raw dataset alias and the evaluator normalized both operands. The new tests pin the boundary itself and each clause dies under an isolated mutation.
 - "Does AX confirm the role on each answer response?" — No. The answer endpoint exposes no role. The per-case evidence is the adapter request actually constructed; AX independently confirms the complete required role set through the corpus-identity endpoint. The decision keeps those strengths separate.
 
+### D22. Separate the commit that produced the receipt from the commit under test, and warrant their divergence
+
+Decision:
+: `REVIEWED_PROVISIONED_AX_SHA` names the AX commit that produced the byte-digest-pinned receipt, while `PINNED_AX_SHA` names the SUT commit under test. They may differ only when a code-pinned `ReceiptSutContinuityWarrant` binds the exact pair and carries the reviewed Git-diff result. The current warrant binds receipt commit `2bcaee3` to under-test commit `1ead133`, records the identical `backend/src` tree through `d793097`, names `backend/src/ax_engine/answers/service.py` as the sole subsequent source change, and records that the change does not affect receipt-bound provisioning state. Locked in [the separate AX commit meanings decision](../decisions/2026-07-30-separate-provisioned-and-under-test-ax-commits.md); implemented by Issue #94.
+
+Why:
+: One `PINNED_AX_SHA` previously meant both "the commit this experiment executes" and "the commit that produced this provisioning receipt." The first legitimate re-pin made those meanings diverge. Keeping equality would reject a still-valid reviewed receipt with a false "unreviewed commit" message; accepting both SHAs as a set would say what passes without carrying why it is safe. Preflight cannot observe Git history at check time, so D16's warrant rule applies.
+
+Rejected alternative:
+: A growing `{old, new}` allow-list, because it does not encode the reviewed relation; two renamed constants without an enforced relation, because the next re-pin would silently inherit the conclusion; receipt-coverage-derived validity, because the current parser ignores the digest fields Issue #94 says exist and the external receipt bytes were not inspected here; ancestry alone, because descendants can change provisioning; and regenerating the create-only receipt, because the existing receipt remains valid and regeneration would discard provenance.
+
+Trade-off:
+: Every future divergent re-pin must re-measure and replace a fixed warrant. That visible maintenance burden is intentional. The warrant is still an attestation rather than runtime proof, but it names the method, subjects, tree outputs and changed path, is bound to both exact constants, and is asserted as a complete payload in tests.
+
+Known failure modes:
+: A receipt from any commit other than the reviewed provisioned-at SHA fails before HTTP with a provisioning-specific error. A new under-test pin without a matching warrant fails with a continuity-specific error. Preflight artifacts and live capture independently refuse a SUT SHA that is not the under-test pin. The receipt byte-digest control remains untouched. The important honesty risk is a decorative method name whose returned values are not pinned; the acceptance test therefore compares the full warrant payload.
+
+Validation evidence produced:
+: The cycle 115 implementer reported that TDD first exposed the old conflation, but preserved no durable raw red output; that statement is process history, not independently reproducible evidence. The load-bearing evidence is mutation-based: six isolated cycle 115 mutations turned their named tests red and restored green, covering the receipt commit, exact warrant binding, preflight pin, live-capture pin, acceptance reason, and changed-path evidence. Cycle 117 added direct mutation coverage for all six model-validator clauses. Cycle 119 added loader-level acceptance coverage for the future same-reviewed-commit branch; isolated mutations separately killed its required `same-reviewed-commit` reason and its required lack of a continuity warrant, then restored green. Full gates passed: Ruff and mypy over 70 files, **521 pytest tests**, Prettier, ESLint, TypeScript, **7 Vitest tests**, static Next.js build, **2 Playwright tests**, and `git diff --check`. No Docker service, live endpoint, or experiment was used.
+
+Validation evidence still required:
+: Independent pane 3 review must challenge the provisioning-impact judgment and reproduce the mutation evidence. The warrant does not prove behavioural equivalence — `1ead133` is intentionally a different SUT and remains subject to evaluation — and it does not bind a checkout directory to the server that answers.
+
+Likely follow-ups:
+
+- "Isn't `provisioning_state_affected=False` just another assertion?" — Alone it would be. The warrant also carries the comparison method, exact commits, identical tree outputs and the sole changed path, and the test pins that complete result. That is the distinction D16 required.
+- "Why not trust receipt digests instead?" — The current parser does not consume them, and the receipt lives outside this repository. A future schema can make digest coverage authoritative, but this ticket cannot derive safety from fields it neither parses nor verified.
+- "Does the receipt now prove `1ead133` is behaviourally equivalent?" — No. It proves only that the already-reviewed provisioning state remains applicable. The answer-service observability change is exactly why `1ead133` is the new SUT under test.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

@@ -109,6 +109,13 @@ Requiring `receipt.repository.commit_sha == PINNED_AX_SHA` is therefore a real c
 someone presents a receipt produced at an unreviewed commit. Deriving one from the other would
 delete that check while appearing to simplify.
 
+> **[Superseded 2026-07-30 — the distinction above remains correct, but the equality was operative
+> only while the commit that produced the reviewed receipt and the commit under test were the same.
+> Once they legitimately diverged, the receipt commit stayed exact against
+> `REVIEWED_PROVISIONED_AX_SHA`, the SUT stayed exact against `PINNED_AX_SHA`, and a reviewed
+> continuity warrant became mandatory between them. See
+> [the separate AX commit meanings decision](./2026-07-30-separate-provisioned-and-under-test-ax-commits.md).]**
+
 The current value `72805930…` is a genuine ancestor of the applied commit — superseded, not
 fictional — and is enforced in the `LivePreflightArtifact` validator, so **no artifact captured
 against today's substrate can currently be constructed.** Re-pinning it touches 36 occurrences across
@@ -174,6 +181,12 @@ approval IDs are already consumed correctly from the receipt by Stage 11 and are
 | receipt contains other than six attachments | fail closed |
 | a reviewed case id missing from the receipt mapping | fail closed; no partial mapping |
 | receipt `target.subject_id` not active in the receipt's tenant | fail closed |
+
+> **[Superseded 2026-07-30 — the receipt-commit row keeps its fail-closed intent, but the current
+> comparison is `receipt.repository.commit_sha == REVIEWED_PROVISIONED_AX_SHA`, not equality with
+> the under-test `PINNED_AX_SHA`. Legitimate divergence additionally requires the exact reviewed
+> continuity warrant named in
+> [the separate AX commit meanings decision](./2026-07-30-separate-provisioned-and-under-test-ax-commits.md).]**
 
 No condition may degrade to a warning, and none may fall back to the previous literals — a fallback
 would silently restore the behaviour this decision removes.

@@ -27,6 +27,12 @@ The implementation must:
 4. keep historical records historical rather than rewriting their old SHA in place;
 5. preserve a negative test using a genuinely different, unreviewed 40-hex AX SHA.
 
+> **[Superseded 2026-07-30 — item 2 was correct for this 2026-07-26 re-pin because the reviewed
+> provisioning commit and the commit under test were still identical. That cycle's scope ended when
+> the two meanings first legitimately diverged. The receipt now remains exact against
+> `REVIEWED_PROVISIONED_AX_SHA`, while `PINNED_AX_SHA` independently names the SUT under test; see
+> [the separate AX commit meanings decision](./2026-07-30-separate-provisioned-and-under-test-ax-commits.md).]**
+
 No additional AX-side check is a prerequisite to this re-pin. The existing exact-SHA refusal is
 the right check; this review changes which one exact SHA has passed the Braincrew-side review.
 
@@ -226,6 +232,12 @@ Detection remains layered:
 4. fresh corpus-identity and parse observations must be captured and replayed;
 5. every later pin change requires another range review rather than a constants sweep.
 
+> **[Superseded 2026-07-30 — item 1's receipt and artifact identities no longer share one
+> `PINNED_AX_SHA`. Receipt equality is now exact against `REVIEWED_PROVISIONED_AX_SHA`;
+> artifact and live-capture SUT equality remain exact against the under-test `PINNED_AX_SHA`.
+> See
+> [the separate AX commit meanings decision](./2026-07-30-separate-provisioned-and-under-test-ax-commits.md).]**
+
 One limitation remains: the Braincrew artifact validates the SHA it is given; it does not
 cryptographically attest which binary a remote AX server is actually running. The controlled
 runtime-start procedure must establish that link from clean checkout to running service.
@@ -249,6 +261,12 @@ If a later workflow produces a handoff at commit A but intentionally evaluates r
 the shape must be reconsidered. At that point the honest model may need separate
 `REVIEWED_HANDOFF_PRODUCER_SHA` and `PINNED_SUT_SHA` values plus an explicit compatibility review.
 It must not silently loosen the current equality or derive B from A.
+
+> **[Superseded 2026-07-30 — "for this cycle" was a correct and deliberately bounded decision, not
+> an error. Its anticipated later-workflow condition has now occurred: the receipt was produced at
+> commit A and the evaluation intentionally moved to commit B. The successor design uses the two
+> separate identities and explicit compatibility review this section anticipated; see
+> [the separate AX commit meanings decision](./2026-07-30-separate-provisioned-and-under-test-ax-commits.md).]**
 
 ## 9. `FROZEN_DATASET_VERSION`: the two records do not agree
 

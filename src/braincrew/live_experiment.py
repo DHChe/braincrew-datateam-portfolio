@@ -372,7 +372,7 @@ def capture_live_experiment(
     if evaluation_state.dirty_worktree:
         raise ValueError("live capture requires a clean committed Evaluation Plane")
     if sut_state.commit_sha != PINNED_AX_SHA:
-        raise ValueError("live capture requires the pinned AX commit")
+        raise ValueError("live capture SUT commit does not match the under-test AX commit")
     if sut_state.dirty_worktree:
         raise ValueError("live capture requires a clean SUT checkout")
     if dataset_validation.state != "VALID" or dataset_validation.snapshot is None:

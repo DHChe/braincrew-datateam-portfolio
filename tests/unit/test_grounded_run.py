@@ -14,7 +14,7 @@ from braincrew.grounded_contracts import GroundedCitation
 
 DATASET_PATH = Path("datasets/grounded/grounded_cases_v1.json")
 OBSERVATIONS_PATH = Path("tests/fixtures/grounded_observations_v1.json")
-PINNED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
+PINNED_AX_SHA = "1ead1331166538e417027a7064179f15c5cfbf61"
 
 
 def grounded_run_module() -> ModuleType:
