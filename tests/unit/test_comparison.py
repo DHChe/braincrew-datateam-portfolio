@@ -202,6 +202,16 @@ def _mixed_run_payload(*, role: str, evidence_limit: int) -> dict[str, Any]:
     return payload
 
 
+def _set_live_corpus_digests(payload: dict[str, Any]) -> None:
+    payload["provenance"]["execution_mode"] = "live"
+    payload["provenance"].pop("corpus_digest")
+    payload["provenance"]["corpus_digests_by_role"] = {
+        "Employee": "sha256:" + "7" * 64,
+        "Executive": "sha256:" + "7" * 64,
+        "HRPractitioner": "sha256:" + "7" * 64,
+    }
+
+
 def test_unmeasured_cost_is_required_but_explicitly_nullable() -> None:
     from braincrew.comparison import ExperimentRunSummary
 
@@ -1199,7 +1209,7 @@ def test_comparison_is_invalid_for_each_locked_version_dimension(
     assert reason in comparison.reasons
 
 
-def test_comparison_is_invalid_when_corpus_provenance_differs() -> None:
+def test_comparison_is_invalid_when_fixture_corpus_provenance_differs() -> None:
     from braincrew import comparison as comparison_module
 
     baseline_payload = _run_payload(role="baseline", evidence_limit=3)
@@ -1227,6 +1237,155 @@ def test_comparison_is_invalid_when_corpus_provenance_differs() -> None:
 
     assert comparison.decision == "INVALID"
     assert "SYS-COMPARISON-CORPUS_DIGEST-MISMATCH" in comparison.reasons
+
+
+def test_comparison_refuses_one_roles_corpus_digest_change_between_runs() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _run_payload(role="candidate", evidence_limit=5)
+    _set_live_corpus_digests(baseline_payload)
+    _set_live_corpus_digests(candidate_payload)
+    candidate_payload["provenance"]["corpus_digests_by_role"]["Employee"] = "sha256:" + "0" * 64
+    baseline = comparison_module.ExperimentRunSummary.model_validate(baseline_payload)
+    candidate = comparison_module.ExperimentRunSummary.model_validate(candidate_payload)
+
+    comparison = comparison_module.compare_runs(
+        baseline,
+        candidate,
+        comparison_id="role-corpus-digest-drift",
+    )
+
+    reason = "SYS-COMPARISON-CORPUS_DIGESTS_BY_ROLE-MISMATCH"
+    assert comparison.decision == "INVALID"
+    assert reason in comparison.compatibility_violations
+    assert reason in comparison.reasons
+    assert all(gate.decision == "INVALID" for gate in comparison.gates)
+
+
+@pytest.mark.parametrize("coverage_change", ["missing", "extra"])
+def test_comparison_refuses_role_scoped_corpus_coverage_change_between_runs(
+    coverage_change: str,
+) -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _run_payload(role="candidate", evidence_limit=5)
+    _set_live_corpus_digests(baseline_payload)
+    _set_live_corpus_digests(candidate_payload)
+    candidate_digests = candidate_payload["provenance"]["corpus_digests_by_role"]
+    if coverage_change == "missing":
+        candidate_digests.pop("Employee")
+    else:
+        candidate_digests["HRAdmin"] = "sha256:" + "7" * 64
+    baseline = comparison_module.ExperimentRunSummary.model_validate(baseline_payload)
+    candidate = comparison_module.ExperimentRunSummary.model_validate(candidate_payload)
+
+    comparison = comparison_module.compare_runs(
+        baseline,
+        candidate,
+        comparison_id=f"role-corpus-coverage-{coverage_change}",
+    )
+
+    reason = "SYS-COMPARISON-CORPUS_DIGESTS_BY_ROLE-MISMATCH"
+    assert comparison.decision == "INVALID"
+    assert reason in comparison.compatibility_violations
+
+
+def test_comparison_refuses_corpus_id_change_between_runs() -> None:
+    from braincrew import comparison as comparison_module
+
+    baseline_payload = _run_payload(role="baseline", evidence_limit=3)
+    candidate_payload = _run_payload(role="candidate", evidence_limit=5)
+    _set_live_corpus_digests(baseline_payload)
+    _set_live_corpus_digests(candidate_payload)
+    candidate_payload["provenance"]["corpus_id"] = "different-live-corpus-v1"
+    baseline = comparison_module.ExperimentRunSummary.model_validate(baseline_payload)
+    candidate = comparison_module.ExperimentRunSummary.model_validate(candidate_payload)
+
+    comparison = comparison_module.compare_runs(
+        baseline,
+        candidate,
+        comparison_id="corpus-id-drift",
+    )
+
+    reason = "SYS-COMPARISON-CORPUS_ID-MISMATCH"
+    assert comparison.decision == "INVALID"
+    assert reason in comparison.compatibility_violations
+    assert reason in comparison.reasons
+
+
+def test_fixture_corpus_digest_is_explicitly_not_role_scoped() -> None:
+    from braincrew import comparison as comparison_module
+
+    summary = comparison_module.ExperimentRunSummary.model_validate(
+        _run_payload(role="baseline", evidence_limit=3)
+    )
+
+    assert summary.provenance.execution_mode == "fixture"
+    assert summary.provenance.corpus_digest == "sha256:" + "7" * 64
+    assert summary.provenance.corpus_digests_by_role is None
+
+
+def test_corpus_digests_by_role_refuses_an_empty_map() -> None:
+    from braincrew import comparison as comparison_module
+
+    payload = _run_payload(role="baseline", evidence_limit=3)
+    payload["provenance"]["execution_mode"] = "live"
+    payload["provenance"].pop("corpus_digest")
+    payload["provenance"]["corpus_digests_by_role"] = {}
+
+    with pytest.raises(
+        ValidationError,
+        match="per-role corpus digests require non-empty role keys",
+    ):
+        comparison_module.ExperimentRunSummary.model_validate(payload)
+
+
+def test_corpus_digests_by_role_refuses_an_empty_role_key() -> None:
+    from braincrew import comparison as comparison_module
+
+    payload = _run_payload(role="baseline", evidence_limit=3)
+    payload["provenance"]["execution_mode"] = "live"
+    payload["provenance"].pop("corpus_digest")
+    payload["provenance"]["corpus_digests_by_role"] = {
+        "": "sha256:" + "7" * 64,
+    }
+
+    with pytest.raises(
+        ValidationError,
+        match="per-role corpus digests require non-empty role keys",
+    ):
+        comparison_module.ExperimentRunSummary.model_validate(payload)
+
+
+def test_live_provenance_refuses_an_unscoped_fixture_digest() -> None:
+    from braincrew import comparison as comparison_module
+
+    payload = _run_payload(role="baseline", evidence_limit=3)
+    payload["provenance"]["execution_mode"] = "live"
+
+    with pytest.raises(
+        ValidationError,
+        match="live provenance requires corpus_digests_by_role",
+    ):
+        comparison_module.ExperimentRunSummary.model_validate(payload)
+
+
+def test_fixture_provenance_refuses_role_scoped_corpus_digests() -> None:
+    from braincrew import comparison as comparison_module
+
+    payload = _run_payload(role="baseline", evidence_limit=3)
+    payload["provenance"].pop("corpus_digest")
+    payload["provenance"]["corpus_digests_by_role"] = {
+        "Employee": "sha256:" + "7" * 64,
+    }
+
+    with pytest.raises(
+        ValidationError,
+        match="fixture provenance requires one unscoped corpus_digest",
+    ):
+        comparison_module.ExperimentRunSummary.model_validate(payload)
 
 
 def test_retrieval_digest_names_only_the_fixed_configuration() -> None:

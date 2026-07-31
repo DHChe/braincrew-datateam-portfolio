@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation, localcontext
 from math import ceil
-from typing import Literal, Never, cast
+from typing import Annotated, Literal, Never, cast
 
 from pydantic import Field, TypeAdapter, field_validator, model_validator
 
@@ -194,7 +194,10 @@ class ExperimentProvenance(StrictContract):
     dataset_version: str = Field(min_length=1)
     dataset_digest: str = Field(pattern=SHA256_DIGEST_PATTERN)
     corpus_id: str = Field(min_length=1)
-    corpus_digest: str = Field(pattern=SHA256_DIGEST_PATTERN)
+    corpus_digest: str | None = Field(default=None, pattern=SHA256_DIGEST_PATTERN)
+    corpus_digests_by_role: (
+        dict[str, Annotated[str, Field(pattern=SHA256_DIGEST_PATTERN)]] | None
+    ) = None
     evaluator_versions: dict[str, str]
     prompt_id: str = Field(min_length=1)
     prompt_hash: str = Field(pattern=SHA256_DIGEST_PATTERN)
@@ -213,6 +216,18 @@ class ExperimentProvenance(StrictContract):
     latency_definition: LatencyDefinition | None = None
     cost_measurement_status: Literal["measured", "unmeasured"] | None = None
 
+    @field_validator("corpus_digests_by_role")
+    @classmethod
+    def validate_corpus_digests_by_role(
+        cls,
+        digests: dict[str, str] | None,
+    ) -> dict[str, str] | None:
+        if digests is None:
+            return None
+        if not digests or any(not role for role in digests):
+            raise ValueError("per-role corpus digests require non-empty role keys")
+        return _freeze_mapping(digests)
+
     @field_validator("evaluator_versions", "adapter_versions")
     @classmethod
     def validate_version_map(cls, versions: dict[str, str]) -> dict[str, str]:
@@ -224,6 +239,20 @@ class ExperimentProvenance(StrictContract):
     @classmethod
     def freeze_model_parameters(cls, parameters: dict[str, object]) -> dict[str, object]:
         return _freeze_mapping(parameters)
+
+    @model_validator(mode="after")
+    def validate_corpus_digest_scope(self) -> ExperimentProvenance:
+        if self.execution_mode == "fixture":
+            if self.corpus_digest is None or self.corpus_digests_by_role is not None:
+                raise ValueError(
+                    "fixture provenance requires one unscoped corpus_digest "
+                    "and no role-scoped corpus digests"
+                )
+        elif self.corpus_digest is not None or self.corpus_digests_by_role is None:
+            raise ValueError(
+                "live provenance requires corpus_digests_by_role and no unscoped corpus_digest"
+            )
+        return self
 
 
 class ExperimentRunSummary(StrictContract):
@@ -411,6 +440,7 @@ def _compatibility_violations(
         "dataset_digest",
         "corpus_id",
         "corpus_digest",
+        "corpus_digests_by_role",
         "evaluator_versions",
         "prompt_id",
         "prompt_hash",
@@ -458,7 +488,8 @@ def _compatibility_violations(
             or not provenance.threshold_version
             or not provenance.threshold_digest
             or not provenance.corpus_id
-            or not provenance.corpus_digest
+            or (provenance.execution_mode == "fixture" and not provenance.corpus_digest)
+            or (provenance.execution_mode == "live" and not provenance.corpus_digests_by_role)
             or not provenance.dependency_lock_digest
             or not provenance.runtime_environment_digest
             or provenance.cost_measurement_status is None

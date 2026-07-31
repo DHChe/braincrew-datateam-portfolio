@@ -25,6 +25,18 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-07-31 evening.** [Issue #101](https://github.com/DHChe/braincrew-datateam-portfolio/issues/101)
+  is **implemented and approved twice**, on branch `feat/issue-101-corpus-identity-per-role` cut
+  from `develop` at **`61fe64c`**. **The owner authorized commit → push → pull request**; the merge
+  into `develop` is a separate authorization, conditional on both CI jobs passing. This entry is
+  written into the commit that exercises that authorization, so at the moment of writing no commit
+  and no pull request exist yet. `uv run pytest -q` reproduces **562 passed**;
+  `git status --short schemas/` is empty. See the 2026-07-31 evening entry at the top of Transition
+  history.
+- **The bullets below this one are earlier dated records, preserved unedited.** They are not
+  current state; the bullet immediately following still names Issue #94 as the last merge and #92
+  as the next ticket, and both have since merged (`998708e`, `2331963`). Transition history remains
+  the authoritative record of what has landed.
 - Active phase: **nothing is in flight.** [Issue #94](https://github.com/DHChe/braincrew-datateam-portfolio/issues/94)
   merged into `develop` as **`3822daf`** (PR #96, both CI jobs green) and is `CLOSED`. `develop` is
   clean and reproduces **521 passed**. The next ticket is
@@ -728,6 +740,108 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-31 (evening) — Issue #101 answered its design question and was approved twice; corpus identity is now compared per role between runs
+
+- **[Issue #101](https://github.com/DHChe/braincrew-datateam-portfolio/issues/101) is implemented,
+  reviewed `APPROVE` with no blocking defect, repaired, and re-reviewed `APPROVE`.** Branch
+  `feat/issue-101-corpus-identity-per-role`, cut from `develop` `61fe64c`, tree clean at cut.
+  **The owner authorized commit → push → pull request; the merge is a separate authorization,
+  conditional on both CI jobs passing.** Cycles 128 (implementation), 129 (independent review), 130
+  (repair), 131 (scoped re-review), 132 (a precision fix plus an audit of pane 1's own status
+  entry), 133 (an overclaim that audit found), 134 (a pre-commit audit that returned **NOT SAFE TO
+  COMMIT** on four records-level blockers) and 135 (closing them). No AX runtime was started and no
+  live call was made; the ticket is a Braincrew code change and needed none.
+- **The decision.** *"Baseline and candidate ran against the same corpus"* means the corpus identity
+  AX reports **for each required principal role** is equal **between the two runs**. It does **not**
+  mean one identity **across roles within** a run: a *visible* corpus digest is a function of the
+  principal's visibility, so AX's `employee_visibility_invariant` makes cross-role equality
+  structurally unsatisfiable for any role set spanning visibility classes — which this dataset's is.
+  Locked in [the per-role corpus identity decision](../decisions/2026-07-31-corpus-identity-per-role-across-runs.md),
+  defended as card **D24**.
+- **The control was scoped, not deleted, and two within-run invariants stay armed:** `corpus_id`
+  must still be identical across every required role (AX measurably returns one for all three, so a
+  difference means genuinely different corpora rather than a visibility slice), and the AX-confirmed
+  role evidence must cover exactly the required dataset roles. The reviewer hunted for an input
+  where two genuinely different corpora compare compatible — mixed fixture/live pairs, role-swapped
+  digests, missing and extra keys — and **found none**.
+- **The field shape is an `execution_mode`-keyed exclusive choice.** A `live` summary carries
+  `corpus_digests_by_role` and no scalar; a `fixture` summary carries one unscoped `corpus_digest`
+  and no role map, because its observations are hand-authored and no role scoping occurred. It is
+  therefore structurally impossible for a live artifact to collapse the split or for a fixture to
+  invent role-scoped provenance. `_compatibility_violations` compares the whole mapping, so a
+  changed digest, a missing role, or an extra role all produce
+  `SYS-COMPARISON-CORPUS_DIGESTS_BY_ROLE-MISMATCH` and an `INVALID` comparison.
+- **The independent review found a defect pane 1 had not.** pane 1 withheld its own findings from
+  the reviewer's brief — the reviewer had the ticket, the diff and pane 2's report, but not pane 1's
+  conclusions. It then reported that the new field validator `validate_corpus_digests_by_role` was
+  protected by **nothing**: replacing its body left the suite at **560 passed**. pane 1 had not
+  looked at that function's coverage at all, and reproduced the result independently afterwards
+  (row 9 of the reproduction record). That was the one literal miss against #101's
+  *"mutation-verify per clause"* criterion, and it is now closed by two named tests.
+- **The mutation table was corrected rather than defended.** Of the four rows first reported, **two
+  mutated lines byte-identical to `61fe64c`** — they prove pre-existing guards are armed, not that
+  the new work is protected. They are now labelled *"pre-existing guard, re-confirmed"*, B1's count
+  is corrected from one red test to **three**, and the reviewer's own discovery — the mode-scoped
+  required-provenance clause, which **is** new and **is** armed — was added as a fifth row. The
+  table is stronger after the finding than before it.
+- **What pane 1 reproduced itself, and what it did not.** Ran by pane 1: ruff format/check and mypy
+  clean; `pytest -q` **560** after cycle 128 and **562** after cycle 130; the B1 mutation (3 named
+  tests red); the validator mutation both before and after the repair; the mode-scoped fifth-row
+  mutation; the dossier revert as a single addition-only hunk with zero deletions; direct
+  `ExperimentProvenance` probes; `git status --short schemas/` empty throughout — each restore
+  verified by SHA-256 rather than by a passing test. **Not run by pane 1:** the `552` pre-edit
+  baseline, which is pane 2's; the six npm/Playwright gates, which pane 2 ran and pane 3
+  independently reproduced; and the W1, W2 and B2 mutations, which are pane 2's and pane 3's.
+  The itemised record with commands and outputs is
+  `cycle128-133-pane1-reproductions.md` in the local evidence directory
+  `~/ax-issue-45-review/` — **outside this repository and not committed**, like every other
+  evidence artifact in this project. It exists
+  because cycle 132's audit found this bullet's earlier wording attributed the whole list to pane 1
+  with no artifact anyone could check.
+- **Recorded and deliberately not fixed here.** `contributing_versions` — the field proving each
+  role's corpus actually contains the frozen dataset — is still not carried into provenance, so no
+  single command binds it (`capture-live-verification` checks it; `capture_live_experiment` does not
+  require a preflight artifact). Not a regression, and the reviewer agreed it is scope creep into a
+  ticket that has answered its design question. **Follow-up on #15.**
+- **An open question this ticket deliberately did not settle: this file's own `Last updated` field
+  says `2026-07-25` and is wrong.** Entries were added on 07-27, 07-28, 07-30 and 07-31 without it
+  moving. Cycle 132's audit flagged it and pane 1 changed it — which turned
+  `test_delivery_status_records_the_published_review_repair_and_new_frontier`
+  (`tests/acceptance/test_corpus_provisioning_workflow_order.py:399`) **red**: that test pins the
+  literal string `Last updated: 2026-07-25` alongside a block of Issue #47-era Current-checkpoint
+  content it exists to preserve. **pane 1 reverted its own edit** rather than change a pinned
+  assertion inside a ticket that is not about it, and rather than resolve a judgment it has an
+  interest in — the question is whether the *check* is wrong, and pane 1 authored the change under
+  dispute. **The auditor's finding is acknowledged, not rejected.** The owner chose to separate it:
+  it is now [Issue #103](https://github.com/DHChe/braincrew-datateam-portfolio/issues/103), which
+  must decide whether `Last updated` is a current-state field or part of the preserved Issue #47
+  snapshot, and must prefer whichever option cannot silently go stale again.
+- **A finding against pane 1's own conduct.** The repair brief handed pane 2 an *unreproduced*
+  factual claim — that an empty role key is not caught downstream — and it landed in a durable
+  decision document as an assertion. The reviewer reproduced it: the claim is true and in fact
+  **stronger** than stated, since such a pair is decided `PASS` rather than merely uncaught. The
+  failure mode is the one `AGENTS.md` already forbids in the worker → orchestrator direction, run in
+  the orchestrator → worker direction, where the topology did not name it. **The owner authorized
+  adding the rule**, and it is in this commit: `AGENTS.md`'s orchestration topology now binds the
+  orchestrator in the same direction it already binds workers, and requires a brief to mark each
+  load-bearing claim as measured or inferred and to say who measured it.
+- **Recorded elsewhere, by the owner's decision.** `contributing_versions` is a follow-up comment on
+  [#15](https://github.com/DHChe/braincrew-datateam-portfolio/issues/15#issuecomment-5141346809)
+  with three costed options, not a change here. The `Last updated` question is
+  [#103](https://github.com/DHChe/braincrew-datateam-portfolio/issues/103).
+- **Not claimed.** No experiment has run. No baseline, no candidate, no answer call, no provider
+  cost, no quality claim. T-ACCEPT drives the capture through `httpx.MockTransport`; T-REFUSE is an
+  in-memory comparison over two constructed run summaries and uses no transport at all. Neither
+  touches a live AX, and every quality observation in this repository still comes from
+  `httpx.MockTransport`. **The earlier wording of this bullet said both controlled tests used
+  `MockTransport`, which was false for T-REFUSE** — found by pane 2's cycle-132 audit of pane 1's
+  own entry, after two review cycles had passed over the same sentence in the decision document
+  without catching it.
+- **Next, after this merges:** #15 Phase 1 has no known blocker. Re-run the preflight, then the
+  24-case capture — and **record X1 during it**, the distribution of AX answer-path emission shapes
+  across the 15 grounded cases, which decides whether #92's three repair cycles were urgent or
+  insurance.
 
 ### 2026-07-31 — Issue #92 merged; the runtime ran, the preflight passed, and the baseline capture found a fourth blocker
 
