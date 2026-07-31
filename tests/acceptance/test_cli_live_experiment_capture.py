@@ -34,7 +34,13 @@ ResponseMutation = Literal[
     "model_missing",
     "model_mismatch",
     "answer_mode",
+    "llm_call_performed_missing",
+    "llm_call_success_missing",
+    "llm_call_failure_reason_missing",
+    "llm_call_success_reason_conflict",
+    "llm_call_not_performed_but_succeeded",
 ]
+AnswerPathOutcome = Literal["succeeded", "failed", "not_performed", "not_needed"]
 
 
 def _check(condition: bool, message: str) -> None:
@@ -118,9 +124,17 @@ def _answer_response(
     source_id: str | None = None,
     source_class: str | None = None,
     snippet: str = "",
+    answer_path_outcome: AnswerPathOutcome = "succeeded",
+    answer_path_failure_reason: str | None = None,
+    omit_llm_call_succeeded: bool = False,
+    answer_mode: str = "direct_grounded",
 ) -> dict[str, object]:
     citations: list[dict[str, object]] = []
-    if source_id is not None and source_class is not None:
+    if (
+        answer_mode != "insufficient_evidence"
+        and source_id is not None
+        and source_class is not None
+    ):
         citations.append(
             {
                 "source_id": source_id,
@@ -137,9 +151,25 @@ def _answer_response(
                 "claim_paths": ["summary"],
             }
         )
+    provider_metadata: dict[str, object] = {
+        "provider_adapter": "fake-deterministic",
+        "model": "fake-answer-model",
+        "provider_store": False,
+        "llm_call_performed": answer_path_outcome not in {"not_performed", "not_needed"},
+    }
+    if not omit_llm_call_succeeded:
+        provider_metadata["llm_call_succeeded"] = (
+            None
+            if answer_path_outcome in {"not_performed", "not_needed"}
+            else answer_path_outcome == "succeeded"
+        )
+    if answer_path_outcome in {"failed", "not_performed"}:
+        provider_metadata["failure_reason"] = answer_path_failure_reason or (
+            "provider_error" if answer_path_outcome == "failed" else "blocked_no_safe_provider"
+        )
     return {
         "query": query,
-        "answer_mode": "direct_grounded",
+        "answer_mode": answer_mode,
         "structured_answer": {
             "summary": "선택된 근거에 따르면 검토가 필요합니다.",
             "answer": "검토가 필요합니다.",
@@ -154,14 +184,8 @@ def _answer_response(
         "retrieval_correlation_id": "retrieval:fixture",
         "answer_correlation_id": "answer:fixture",
         "audit_recorded": True,
-        "natural_language_answer_generated": True,
-        "provider_metadata": {
-            "provider_adapter": "fake-deterministic",
-            "model": "fake-answer-model",
-            "provider_store": False,
-            "llm_call_performed": True,
-            "llm_call_succeeded": True,
-        },
+        "natural_language_answer_generated": answer_path_outcome == "succeeded",
+        "provider_metadata": provider_metadata,
         "evidence_packaging": {
             "selected_count": len(citations),
             "selected_record_ids": ["chunk-1"] if citations else [],
@@ -179,6 +203,10 @@ def _capture_transport(
     validation: Any,
     *,
     enforce_grounded_role: bool = True,
+    answer_path_outcome: AnswerPathOutcome = "succeeded",
+    answer_path_failure_reason: str | None = None,
+    omit_llm_call_succeeded: bool = False,
+    answer_mode: str = "direct_grounded",
 ) -> tuple[httpx.MockTransport, list[tuple[str, str]]]:
     snapshot = validation.snapshot
     _check(snapshot is not None, "transport fixture requires a dataset snapshot")
@@ -259,7 +287,16 @@ def _capture_transport(
             _check(body["query"] == case.query, "answer query drifted")
             _check(body["top_k"] == 5, "answer top_k drifted")
             if case_id != first_grounded_id:
-                return httpx.Response(200, json=_answer_response(query=case.query))
+                return httpx.Response(
+                    200,
+                    json=_answer_response(
+                        query=case.query,
+                        answer_path_outcome=answer_path_outcome,
+                        answer_path_failure_reason=answer_path_failure_reason,
+                        omit_llm_call_succeeded=omit_llm_call_succeeded,
+                        answer_mode=answer_mode,
+                    ),
+                )
             alternative = case.propositions[0].supporting_evidence_groups[0].alternatives[0]
             text = sources[alternative.record_id]
             return httpx.Response(
@@ -269,6 +306,10 @@ def _capture_transport(
                     source_id=alternative.record_id,
                     source_class=alternative.record_kind,
                     snippet=text[:80],
+                    answer_path_outcome=answer_path_outcome,
+                    answer_path_failure_reason=answer_path_failure_reason,
+                    omit_llm_call_succeeded=omit_llm_call_succeeded,
+                    answer_mode=answer_mode,
                 ),
             )
         pytest.fail(f"unexpected HTTP request: {request.method} {request.url.path}")
@@ -338,6 +379,48 @@ def _mutate_transport(
         ):
             payload["answer_mode"] = "unreviewed-mode"
             mutated = True
+        elif (
+            mutation == "llm_call_performed_missing"
+            and request.url.path.endswith("answers/generate")
+            and not mutated
+        ):
+            metadata = cast(dict[str, object], payload["provider_metadata"])
+            del metadata["llm_call_performed"]
+            mutated = True
+        elif (
+            mutation == "llm_call_success_missing"
+            and request.url.path.endswith("answers/generate")
+            and not mutated
+        ):
+            metadata = cast(dict[str, object], payload["provider_metadata"])
+            del metadata["llm_call_succeeded"]
+            mutated = True
+        elif (
+            mutation == "llm_call_failure_reason_missing"
+            and request.url.path.endswith("answers/generate")
+            and not mutated
+        ):
+            metadata = cast(dict[str, object], payload["provider_metadata"])
+            metadata["llm_call_succeeded"] = False
+            metadata.pop("failure_reason", None)
+            mutated = True
+        elif (
+            mutation == "llm_call_success_reason_conflict"
+            and request.url.path.endswith("answers/generate")
+            and not mutated
+        ):
+            metadata = cast(dict[str, object], payload["provider_metadata"])
+            metadata["failure_reason"] = "provider_error"
+            mutated = True
+        elif (
+            mutation == "llm_call_not_performed_but_succeeded"
+            and request.url.path.endswith("answers/generate")
+            and not mutated
+        ):
+            metadata = cast(dict[str, object], payload["provider_metadata"])
+            metadata["llm_call_performed"] = False
+            metadata["llm_call_succeeded"] = True
+            mutated = True
         return httpx.Response(response.status_code, json=payload)
 
     return httpx.MockTransport(handler)
@@ -355,6 +438,10 @@ def _capture(
     retrieval_role_override: str | None = None,
     enforce_grounded_role: bool = True,
     clock_ns: Callable[[], int] | None = None,
+    answer_path_outcome: AnswerPathOutcome = "succeeded",
+    answer_path_failure_reason: str | None = None,
+    omit_llm_call_succeeded: bool = False,
+    answer_mode: str = "direct_grounded",
 ) -> Any:
     from braincrew.live_experiment import (
         ReviewedPrincipalBinding,
@@ -385,6 +472,10 @@ def _capture(
     transport, calls = _capture_transport(
         validation,
         enforce_grounded_role=enforce_grounded_role,
+        answer_path_outcome=answer_path_outcome,
+        answer_path_failure_reason=answer_path_failure_reason,
+        omit_llm_call_succeeded=omit_llm_call_succeeded,
+        answer_mode=answer_mode,
     )
     if response_mutation is not None:
         transport = _mutate_transport(transport, response_mutation)
@@ -469,6 +560,212 @@ def test_live_capture_records_total_client_latency_and_refuses_to_invent_cost(
         == OPERATIONAL_EVALUATOR_VERSION,
         "manifest must name the implemented operational evaluator",
     )
+
+
+def test_failed_answer_path_is_recorded_but_cannot_publish_a_quality_comparison(
+    tmp_path: Path,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(
+        tmp_path,
+        answer_path_outcome="failed",
+        answer_mode="insufficient_evidence",
+    )
+
+    for observation in capture.grounded_observations.observations:
+        _check(observation.available is False, "a failed LLM call is not a quality observation")
+        _check(observation.error == "provider_error", "the AX failure reason must be preserved")
+        _check(
+            observation.answer_path.llm_call_performed is True,
+            "the artifact must record that AX attempted the failed call",
+        )
+        _check(
+            observation.answer_path.llm_call_succeeded is False,
+            "the artifact must record that the answer path failed",
+        )
+        _check(
+            observation.answer_path.failure_reason == "provider_error",
+            "the typed answer-path health must preserve AX's exact label",
+        )
+        _check(
+            observation.answer_mode == "insufficient_evidence",
+            "the contract-valid AX fallback must remain visible",
+        )
+
+    artifact = _live_dataset_artifact(capture, require_completed=False)
+    evaluation = artifact.logical_result.evaluation
+    _check(evaluation.state == "INVALID", "failed calls must invalidate quality evaluation")
+    grounded = evaluation.grounded
+    if grounded is None:
+        pytest.fail("a failed live answer path must still produce grounded refusal evidence")
+    _check(
+        grounded.coverage.verification_claim_support_cases == 0,
+        "failed calls must not enter grounded quality coverage",
+    )
+    _check(
+        grounded.coverage.verification_answer_mode_cases == 0,
+        "a machinery failure must not be counted as a measured abstention",
+    )
+    _check(
+        "grounded:SYS-GROUNDED-COVERAGE-INVALID" in evaluation.invalid_reasons,
+        "the integrated artifact must name grounded evidence as unavailable",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="run artifact must contain one completed 30-case Verification evaluation",
+    ):
+        build_experiment_run_summary(capture.manifest, artifact)
+
+
+@pytest.mark.parametrize(
+    ("omit_llm_call_succeeded", "failure_reason"),
+    [
+        (False, "blocked_no_safe_provider"),
+        (True, "historical_alignment_unresolved"),
+    ],
+    ids=["explicit-null", "omitted-success"],
+)
+def test_not_performed_answer_path_is_preserved_without_aborting_capture(
+    tmp_path: Path,
+    omit_llm_call_succeeded: bool,
+    failure_reason: str,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(
+        tmp_path,
+        answer_path_outcome="not_performed",
+        answer_path_failure_reason=failure_reason,
+        omit_llm_call_succeeded=omit_llm_call_succeeded,
+        answer_mode="insufficient_evidence",
+    )
+
+    for observation in capture.grounded_observations.observations:
+        _check(
+            observation.answer_path.llm_call_performed is False,
+            "the artifact must preserve that AX did not attempt an LLM call",
+        )
+        _check(
+            observation.answer_path.llm_call_succeeded is None,
+            "an unperformed call must preserve AX's null outcome",
+        )
+        _check(observation.available is False, "an unperformed call is not quality evidence")
+        _check(observation.error == failure_reason, "the exact AX failure reason must be preserved")
+        _check(
+            observation.answer_mode == "insufficient_evidence",
+            "the contract-valid fallback response must remain visible",
+        )
+
+    artifact = _live_dataset_artifact(capture, require_completed=False)
+    _check(
+        artifact.logical_result.evaluation.state == "INVALID",
+        "unperformed answer calls must invalidate quality evaluation",
+    )
+    with pytest.raises(
+        ValueError,
+        match="run artifact must contain one completed 30-case Verification evaluation",
+    ):
+        build_experiment_run_summary(capture.manifest, artifact)
+
+
+def test_successful_legitimate_abstention_remains_a_measurable_quality_outcome(
+    tmp_path: Path,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(
+        tmp_path,
+        answer_path_outcome="succeeded",
+        answer_mode="insufficient_evidence",
+    )
+
+    for observation in capture.grounded_observations.observations:
+        _check(observation.available is True, "a successful abstention remains available evidence")
+        _check(observation.error is None, "a successful call must not carry a failure reason")
+        _check(
+            observation.answer_path.llm_call_performed is True,
+            "the artifact must record that AX attempted the successful call",
+        )
+        _check(
+            observation.answer_path.llm_call_succeeded is True,
+            "the artifact must record that the answer path worked",
+        )
+        _check(
+            observation.answer_path.failure_reason is None,
+            "successful answer-path health must not invent a failure",
+        )
+        _check(
+            observation.answer_mode == "insufficient_evidence",
+            "legitimate AX abstention must remain the measured answer mode",
+        )
+
+    artifact = _live_dataset_artifact(capture)
+    grounded = artifact.logical_result.evaluation.grounded
+    if grounded is None:
+        pytest.fail("a completed live evaluation must carry grounded results")
+    _check(grounded.state == "COMPLETED", "successful abstentions must remain measurable")
+    _check(
+        all(result.state == "COMPLETED" for result in grounded.case_evaluations),
+        "successful abstentions must not be dropped from grounded coverage",
+    )
+    summary = build_experiment_run_summary(capture.manifest, artifact)
+    _check(summary.state == "COMPLETED", "measurable abstentions may become comparison input")
+    _check(len(summary.cases) == 30, "no abstention may disappear from the fixed denominator")
+
+
+@pytest.mark.parametrize(
+    "answer_mode",
+    ["insufficient_evidence", "out_of_scope"],
+    ids=["no-evidence-packaged", "retrieval-level-abstention"],
+)
+def test_unneeded_llm_call_remains_a_measurable_abstention(
+    tmp_path: Path,
+    answer_mode: str,
+) -> None:
+    from braincrew.run_summary import build_experiment_run_summary
+
+    capture, _ = _capture(
+        tmp_path,
+        answer_path_outcome="not_needed",
+        answer_mode=answer_mode,
+    )
+
+    for observation in capture.grounded_observations.observations:
+        _check(
+            observation.answer_path.llm_call_performed is False,
+            "the artifact must preserve that AX did not need an LLM call",
+        )
+        _check(
+            observation.answer_path.llm_call_succeeded is None,
+            "an unneeded call must preserve AX's null outcome",
+        )
+        _check(
+            observation.answer_path.failure_reason is None,
+            "a normal retrieval abstention must not invent a machinery failure",
+        )
+        _check(observation.available is True, "a no-call abstention remains quality evidence")
+        _check(observation.error is None, "a no-call abstention must not carry an error")
+        _check(
+            observation.answer_mode == answer_mode,
+            "the retrieval-level abstention mode must remain visible",
+        )
+
+    artifact = _live_dataset_artifact(capture)
+    grounded = artifact.logical_result.evaluation.grounded
+    if grounded is None:
+        pytest.fail("a completed live evaluation must carry grounded results")
+    _check(grounded.state == "COMPLETED", "no-call abstentions must remain measurable")
+    _check(
+        all(result.state == "COMPLETED" for result in grounded.case_evaluations),
+        "no-call abstentions must not be dropped from grounded coverage",
+    )
+    summary = build_experiment_run_summary(capture.manifest, artifact)
+    _check(
+        summary.state == "COMPLETED", "measurable no-call abstentions may become comparison input"
+    )
+    _check(len(summary.cases) == 30, "no no-call abstention may leave the fixed denominator")
 
 
 def _perfect_parsing_observations(validation: Any) -> Any:
@@ -1476,6 +1773,23 @@ def test_live_capture_refuses_an_invalid_frozen_dataset(tmp_path: Path) -> None:
         ("model_missing", "answer response omits model identity"),
         ("model_mismatch", "model identity differs across answer responses"),
         ("answer_mode", "answer mode is not representable"),
+        ("llm_call_performed_missing", "llm_call_performed"),
+        (
+            "llm_call_success_missing",
+            "performed LLM call must report success or failure",
+        ),
+        (
+            "llm_call_failure_reason_missing",
+            "failed LLM call requires a failure reason",
+        ),
+        (
+            "llm_call_success_reason_conflict",
+            "successful LLM call cannot carry a failure reason",
+        ),
+        (
+            "llm_call_not_performed_but_succeeded",
+            "unperformed LLM call cannot report success",
+        ),
     ],
 )
 def test_live_capture_refuses_unbound_live_response_identity(
@@ -1623,6 +1937,7 @@ def test_run_contracts_represent_live_execution_without_overclaiming_fixture_par
     )
     from braincrew.dataset_run import DatasetAdapterProvenance
     from braincrew.grounded_contracts import (
+        AnswerPathHealth,
         GroundedAdapterProvenance,
         GroundedObservation,
         GroundedObservationBatch,
@@ -1683,6 +1998,11 @@ def test_run_contracts_represent_live_execution_without_overclaiming_fixture_par
                 executed_role="Executive",
                 available=True,
                 error=None,
+                answer_path=AnswerPathHealth(
+                    llm_call_performed=True,
+                    llm_call_succeeded=True,
+                    failure_reason=None,
+                ),
                 answer_mode="direct_grounded",
                 structured_answer=GroundedStructuredAnswer(
                     summary="검토가 필요합니다.",

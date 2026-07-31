@@ -6,7 +6,7 @@ import re
 from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation
 from typing import Final, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_validator, model_validator
 
 from braincrew.contracts import (
     DatasetArtifactProvenance,
@@ -293,11 +293,37 @@ class SourceTextResolution(StrictGroundedContract):
         return self
 
 
+class AnswerPathHealth(StrictGroundedContract):
+    llm_call_performed: StrictBool
+    llm_call_succeeded: StrictBool | None
+    failure_reason: str | None = Field(default=None, min_length=1)
+
+    @property
+    def answer_quality_available(self) -> bool:
+        return self.failure_reason is None
+
+    @model_validator(mode="after")
+    def bind_success_to_failure_reason(self) -> AnswerPathHealth:
+        if self.llm_call_performed and self.llm_call_succeeded is None:
+            raise ValueError("performed LLM call must report success or failure")
+        if not self.llm_call_performed and self.llm_call_succeeded is not None:
+            raise ValueError("unperformed LLM call cannot report success")
+        if self.llm_call_succeeded is False and self.failure_reason is None:
+            raise ValueError("failed LLM call requires a failure reason")
+        if self.llm_call_succeeded is True and self.failure_reason is not None:
+            raise ValueError("successful LLM call cannot carry a failure reason")
+        return self
+
+
 class GroundedObservation(StrictGroundedContract):
     case_id: str = Field(pattern=r"^(GA|VA)-[0-9]{3}$")
     executed_role: str = Field(min_length=1)
     available: bool
     error: str | None
+    answer_path: AnswerPathHealth | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     answer_mode: AnswerMode
     structured_answer: GroundedStructuredAnswer
     citations: tuple[GroundedCitation, ...]
@@ -313,6 +339,8 @@ class GroundedObservation(StrictGroundedContract):
             raise ValueError("available grounded observation cannot carry an error")
         if not self.available and not self.error:
             raise ValueError("unavailable grounded observation requires an error")
+        if self.answer_path is not None and self.error != self.answer_path.failure_reason:
+            raise ValueError("grounded observation error must match answer-path failure reason")
         return self
 
 
@@ -327,6 +355,10 @@ class GroundedObservationBatch(StrictGroundedContract):
         case_ids = [observation.case_id for observation in self.observations]
         if len(case_ids) != len(set(case_ids)):
             raise ValueError("grounded observation case identities must be unique")
+        if self.adapter_version == "ax-sut-http-v1" and any(
+            observation.answer_path is None for observation in self.observations
+        ):
+            raise ValueError("live grounded observations require answer-path health")
         return self
 
 

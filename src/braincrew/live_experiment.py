@@ -48,6 +48,7 @@ from braincrew.dataset_registry import DatasetBundleSnapshot, DatasetValidationR
 from braincrew.digest import canonical_digest
 from braincrew.grounded_contracts import (
     AnswerMode,
+    AnswerPathHealth,
     EvidenceAlternative,
     GroundedCase,
     GroundedCitation,
@@ -330,6 +331,16 @@ def _answer_mode(value: str) -> AnswerMode:
     return cast(AnswerMode, normalized)
 
 
+def _answer_path_health(provider_metadata: dict[str, object]) -> AnswerPathHealth:
+    return AnswerPathHealth.model_validate(
+        {
+            "llm_call_performed": provider_metadata.get("llm_call_performed"),
+            "llm_call_succeeded": provider_metadata.get("llm_call_succeeded"),
+            "failure_reason": provider_metadata.get("failure_reason"),
+        }
+    )
+
+
 def _threshold_digest() -> str:
     return canonical_digest(
         {
@@ -501,6 +512,7 @@ def capture_live_experiment(
         model = answer_observation.response.provider_metadata.get("model")
         if not isinstance(provider, str) or not provider or not isinstance(model, str) or not model:
             raise ValueError("AX answer response omits model identity")
+        answer_path = _answer_path_health(answer_observation.response.provider_metadata)
         model_identities.add((provider, model))
         citations_and_sources = [
             _normalize_grounded_citation(
@@ -520,8 +532,9 @@ def capture_live_experiment(
             GroundedObservation(
                 case_id=grounded_case.case_id,
                 executed_role=executed_role,
-                available=True,
-                error=None,
+                available=answer_path.answer_quality_available,
+                error=answer_path.failure_reason,
+                answer_path=answer_path,
                 answer_mode=_answer_mode(answer_observation.response.answer_mode),
                 structured_answer=GroundedStructuredAnswer(
                     summary=answer.summary,

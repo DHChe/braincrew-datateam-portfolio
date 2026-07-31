@@ -34,7 +34,14 @@ def test_live_grounded_run_scores_only_the_fifteen_verification_observations() -
             **observations.model_dump(mode="json"),
             "adapter_version": "ax-sut-http-v1",
             "observations": [
-                observation.model_dump(mode="json")
+                {
+                    **observation.model_dump(mode="json"),
+                    "answer_path": {
+                        "llm_call_performed": True,
+                        "llm_call_succeeded": True,
+                        "failure_reason": None,
+                    },
+                }
                 for observation in observations.observations
                 if observation.case_id in verification_ids
             ],

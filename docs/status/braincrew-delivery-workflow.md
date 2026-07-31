@@ -729,6 +729,292 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-07-31 — An independent audit of pane 1's own entries found four errors; they are corrected here, not rewritten above
+
+- Cycle 126 named pane 1's four status entries **"the largest single gap in this approval"** and did
+  not reach them. pane 3 was out of weekly budget, so cycle 127 asked **pane 2** — which did not
+  write them — to audit them and report bluntly without editing. The rule that the orchestrator does
+  not review its own writing has been enforced on every worker in this ticket; pane 1 is not exempt
+  from it. The entries above are left intact and corrected here.
+- **Error 1, and it is the third instance of one failure mode.** The cycle-121 entry says
+  `provider_metadata` "appears in exactly **three** places in `src/`", and the cycle-122 entry
+  "corrected" that to *three lines across two files*. Both are wrong as written. At `eac588b`,
+  `git grep provider_metadata -- src/` returns **four lines across three files**: `ax_http_adapter.py:356`,
+  `live_experiment.py:500-501`, **and `src/braincrew/ax-http-v1.yaml:147`**. pane 1 measured
+  `src/braincrew/*.py` and wrote `src/`. The load-bearing half — that the three answer-path fields
+  were read nowhere — is independently **verified**. But this is the same failure that cost
+  `ax-http-v1.yaml` in the #94 cycle and cost a fifth annotation location in cycle 117: **the scope
+  pane 1 measures keeps being narrower than the scope pane 1's words claim, and twice it has been
+  the same file.** The durable fix is to state the exact command beside the count, or to grep with no
+  path filter.
+- **Error 2 — a true fact bound to the wrong function and the wrong call sites.** The cycle-123 entry
+  and pane 1's cycle-123 brief both attribute the omitted `llm_call_succeeded` at `service.py:676-678`
+  to `_reference_only_fallback`, "whose two call sites `:146` and `:173` are normal answering modes".
+  Measured: `:676` is inside **`_historical_ambiguity_result`** (defined at `:630`).
+  `_reference_only_fallback` is defined at `:576`, is the function called from `:146`/`:173`, and
+  **explicitly passes `llm_call_succeeded=False`** with a required `failure_reason: str`. The
+  emission shape pane 1 described is real; the function and callers it named are not. pane 2's own
+  cycle-124 AST census had this right at the time.
+- **Error 3 — routes reported as shapes.** The cycle-124 entry says "all six AX wire shapes probed".
+  The state space has **four** shapes; the six probed lines are emission *routes*, two pairs of which
+  collapse to the same shape. In a record whose subject is a state space, calling a route a shape is
+  a factual error, not loose phrasing.
+- **Error 4 — the design analogy, already adjudicated.** The cycle-125 entry frames the unbound
+  census relation as "Issue #94's defect returning" and names #94 as the repair pattern. Cycle 126
+  adjudicated that wrong: #94's warrant licenses a divergence that is *legitimate*, whereas a census
+  commit differing from the commit it claims to describe is **always** invalid. The finding was
+  right; the analogy was not.
+- **What the audit could not verify, and why that is worth recording.** Several intermediate claims —
+  the 521 / 531 / 547 / 551 pass counts, the per-cycle doc numstats, cycle 122's 1-of-15 and 5-of-15
+  partial-failure probe, and pane 1's own false-alarm probe — are **unverifiable now**, because the
+  uncommitted intermediate trees were discarded. Contemporaneous reports corroborate them but are not
+  independent reproduction. Only the endpoints have present measurements: `eac588b` independently
+  collects **521** tests, and the current suite freshly passes **552**. A durable record that cites a
+  number from a tree nobody kept is corroborated, not verified, and should say so.
+- **A constraint violation pane 2 caused, detected, reversed and disclosed rather than relabelled.**
+  While attempting an independent replay of the historical `eac588b` suite, a Git-aware fixture
+  persisted `core.worktree` and a test-local `[user]` identity into `.git/config` — **Git
+  configuration writes, which the brief forbade**. pane 2 noticed because `git status --short`
+  unexpectedly went empty, refused to accept the affected gate results, discarded two otherwise-green
+  gate sequences, repaired the configuration and reran everything. pane 1 verified the repair
+  independently: `core.worktree` unset, no local `user.email`/`user.name`, toplevel back to
+  `/Users/astralpig/braincrew`, `git diff --cached HEAD` clean, HEAD still `eac588b`, and the same
+  seven modified plus two untracked paths. **Reporting it rather than quietly passing is the
+  behaviour this topology depends on**, and it is recorded as such.
+- **X2 is closed**: the census's per-shape `failure_reason` is renamed `failure_reason_example`, so an
+  evidence artifact cannot be misread as an enumeration of AX's reason vocabulary — AX emits at least
+  five distinct reason strings, including `reference_overclaim`. `schema_version` deliberately not
+  bumped: the artifact is uncommitted and has no consumer to migrate. 552 passing, unchanged.
+
+### 2026-07-31 — Cycle 126 approved Issue #92, reversed its own earlier position, and found pane 1's cycle-125 direction wrong
+
+- **`APPROVE`, no blocking findings**, on the consolidated 121 + 123 + 124 + 125 delta. Three
+  non-blocking: **X1**, **X2**, **X3**.
+- **The reviewer attacked the enumeration rather than confirming it, and derived it independently
+  from AX source without reading the census first — matching on every row.** It closed the question
+  that would have been W1's *third* instance: the dangerous `(performed=True, succeeded=False,
+  reason=None)` shape is **unreachable**, because `_reference_only_fallback` declares
+  `failure_reason: str` with no default, and both sites passing `provider_attempted=True` also pass a
+  reason. It also confirmed `ProviderMetadata` is constructed at exactly **one** site in all of
+  `backend/src`, so no emission route bypasses the four call sites.
+- **The reviewer reversed its own cycle-122 generalization, and said why in a way worth keeping.**
+  Its "not performed ⟹ unavailable" recommendation came from a **biased sample of two states that
+  both happened to carry a `failure_reason`**; it had never seen `:71`/`:87`. pane 2 was right to
+  refuse to extend it. `failure_reason is None` is judged "a semantic rule, not a coincidence of the
+  current shapes": a reason string present means something went wrong, absent means it did not. And
+  the two boolean fields are not decorative — they carry wire-output validation and the reader-facing
+  distinction between "no call attempted" and "call attempted and failed".
+- **pane 1's cycle-125 direction was judged wrong, and pane 2's answer right.** Naming #94 as the
+  pattern was imprecise: #94's warrant exists where two commits *legitimately* differ, whereas a
+  census commit differing from the commit under test is **always** an error, so a warrant would
+  license a divergence that is never valid. pane 2's counter — a matching file digest cannot prove a
+  newly pinned commit was *examined* — was called the clearest evidence in the ticket that pane 2 was
+  reasoning rather than complying.
+- **The cost of pane 1 standing in for the gate, measured rather than asserted.** The reviewer's
+  verdict on the three directed repairs: cycle 123 "correct but incomplete" — pane 1 passed the
+  reviewer's own over-broad generalization through unexamined, so it survived an extra cycle because
+  the party reviewing it had already endorsed it; cycle 124 "the best direction in this ticket";
+  cycle 125 "right problem, wrong pattern". Net judgment: correct trade under the actual budget,
+  honestly disclosed, with one measurable cost.
+- **X1 is the ticket's remaining real risk and it is a measurement, not a defect.** Nobody has
+  settled whether the evaluation's configuration actually reaches any non-success shape for the 15
+  grounded cases. If every case takes `:217`, these three repair cycles are insurance; if any takes
+  `:71`, the abstention half is load-bearing on day one. The recommendation is to record the observed
+  shape distribution **during** the authorized #15 Phase 1 runtime start, where it costs nothing.
+- **What the approval does not cover, in the reviewer's own words.** Dimension 6 — pane 1's four
+  status entries — was **not reached at all** and is named "the largest single gap in this approval".
+  Cycle-121 mutation row **M7** remains unreproduced by any party. Sentence-level factual checking of
+  the decision document and D23 was not done; only append-only structure was verified (147/0, 129/0,
+  182/0, zero deletions in `docs/`).
+- Cycle 127 is dispatched for **X2** — the census records one representative `failure_reason` per
+  shape while AX emits several, which could be misread as an enumeration of AX's vocabulary in an
+  artifact whose purpose is to be read as evidence — and for the gap above: **pane 2 independently
+  checks pane 1's four status entries**, because pane 3 is out of weekly budget, pane 2 did not write
+  them, and the rule that the orchestrator does not review its own writing has been enforced on every
+  worker in this ticket. pane 2 checks and reports; it does not edit this file.
+
+### 2026-07-31 — The state space is closed and verified; one unbound relation remains, and it is #94's defect returning inside #92
+
+- **Cycle 124 closed the class, and pane 1 verified every claim independently.** pane 2 ran an
+  AST-assisted read-only census of AX at `1ead133`, found all nine call sites — four
+  `_provider_metadata`, five `_template_result` — and reduced them to **four** distinct wire shapes.
+  pane 1's own derivation matched exactly, with no disagreement on any row. All six shapes were
+  probed through `_answer_path_health` and behave as designed. **551 passed**, eleven gates green
+  solo, docs append-only (132/0, 121/0), HEAD unchanged, `schemas/` clean.
+- **The census provenance is real, not asserted.** pane 1 computed the AX source file's SHA-256
+  independently: `681956917adb17453b8ace3e03dc6da9422177850286be2582f9ff3bacf2c702`, byte-for-byte
+  the value pinned in `tests/fixtures/ax_answer_path_emission_states_v1.json`.
+- **The design call, and it reverses a generalization the cycle-122 reviewer had made.**
+  `performed=False, succeeded=None, reason=None` is a **measurable abstention**, not an outage.
+  Those branches return before provider execution because retrieval or packaging already established
+  that a generated answer was not warranted — no failure is reported. pane 2 disagreed explicitly
+  with generalizing *"not performed means unavailable"* beyond the two reason-bearing states the
+  reviewer had examined, and pane 1 agrees with the reasoning: classifying the most ordinary
+  abstention AX has as an outage would have failed Issue #92's second acceptance criterion quietly,
+  which is worse than the abort it replaced. Availability now reduces to
+  `failure_reason is None` across all four states.
+- **One relation is still missing, and it is Issue #94's defect reappearing inside #92.** The census
+  pins `source.commit_sha = 1ead1331…`; Braincrew separately pins `PINNED_AX_SHA = 1ead1331…`.
+  **Nothing binds them** — pane 1 measured that neither the census artifact nor its test references
+  `PINNED_AX_SHA` at all. They agree today by coincidence of authorship. On the next re-pin nothing
+  forces re-enumeration, so the state model would claim coverage of an AX version it never examined,
+  and an unrepresentable shape aborts the whole capture — the exact failure three cycles have been
+  spent closing. Note also what the census test proves: it asserts the JSON's fields against literals
+  in the test file, so it proves the JSON has not changed, **not** that the enumeration is still true
+  of AX. The binding to `PINNED_AX_SHA` is what would carry freshness.
+- Cycle 125 is dispatched for that one relation, with the #94 decision named as the pattern: bind
+  them, or allow divergence only under a warrant that binds the exact pair and carries measured
+  evidence. Widening the check to accept both values is excluded by the standing standard #94
+  recorded.
+- **Review sequencing, chosen deliberately under budget.** pane 3 is at ~11% of its weekly
+  allowance. Rather than review a moving artifact three times, cycle 126 will be **one consolidated
+  independent review** of the whole 121 + 123 + 124 + 125 delta. The cost is that pane 1 has now
+  directed three repairs on its own verification findings, so the review brief must say exactly what
+  pane 1 directed and why, and invite the reviewer to say that direction was wrong.
+- Still unreached by any pass and carried forward: cycle 121's mutation rows M7, M9 and M11;
+  sentence-level factual checking of the decision document's new sections and card D23; and **W2**,
+  whether the evaluation's configuration actually selects any of these AX paths — the question that
+  decides whether these gaps are urgent or merely correct.
+
+### 2026-07-31 — The W1 repair works, and the same defect returned in a more ordinary path; cycle 124 closes the class instead of the instance
+
+- **Cycle 123 repaired W1 and pane 1 verified it at the layer that matters.** `AnswerPathHealth` now
+  models three states with `llm_call_performed` read as a source fact rather than inferred, and both
+  AX wire shapes — explicit `null` and **key omitted** — are accepted through `_answer_path_health`
+  with `available=False` and AX's own reason preserved. Contradictions, coerced booleans and a
+  missing performed flag are refused. 531 → **547 passed**, all eleven gates green solo, docs
+  append-only (92/0, 94/0), HEAD unchanged, `schemas/` clean.
+  - A caution for future readers: pane 1's first probe called `AnswerPathHealth` **directly** and saw
+    the omitted-key case refused, which looked like a gap. It is not — `_answer_path_health` supplies
+    every key via `.get()`, so the reachable path always passes an explicit `None`. Probing the
+    wrong layer produced a false alarm; the capture-layer probe is the one that answers the question.
+- **Then the same defect returned, and pane 1 found it while verifying the repair.**
+  `_template_result` declares `failure_reason: str | None = None`, and **two of its five call sites
+  omit the argument** while also leaving `provider_attempted` at its `False` default:
+  `service.py:71` (guarded by `retrieval.answer_mode in {INSUFFICIENT_EVIDENCE, OUT_OF_SCOPE}`) and
+  `service.py:87` (guarded by `not evidence`). Both emit
+  `performed=False, succeeded=None, failure_reason=None`, which Braincrew refuses with *"call without
+  success requires a failure reason"* — so `capture_live_experiment` raises and **the whole capture
+  aborts**, exactly W1's failure mode. Both confirmed empirically through `_answer_path_health`.
+- **This instance is worse than W1's.** Those are not degraded or blocked paths: `:71` is AX deciding
+  *at retrieval* that evidence is insufficient or the query is out of scope — and `out_of_scope` is a
+  legal value in Braincrew's own `_answer_mode` set — while `:87` is simply "nothing packaged". **No
+  LLM call was attempted because none was needed.** These are the most ordinary abstentions AX has,
+  and they are the *cautious answer* half of the distinction Issue #92 exists to preserve.
+- **The design question this forces, and it is not the obvious one.** Cycle 123 derives `available`
+  from `llm_call_succeeded is True`, so merely admitting the fourth shape would make a
+  retrieval-level abstention **unavailable** — violating Issue #92's second acceptance criterion for
+  the most common abstention there is. That would be the ticket's other half failing quietly, which
+  is worse than the abort. Whether *"no LLM call was needed"* is a measurable abstention or a
+  machinery failure is left to the implementer to decide and pane 3 to challenge.
+- **The method change is the point of the cycle.** Two cycles, two instances of *"AX emits a shape
+  the model cannot represent, so the capture aborts"*. Fixing the fourth shape by hand invites a
+  fifth, so cycle 124 requires the state space to be **derived from AX's source and proven covered**,
+  with a test derived from the enumeration rather than from the two known instances. This is defence
+  card **D19** applied — stop fixing instances and change the type — at instance two rather than five.
+- pane 1 handed over its **complete** enumeration of all four `_provider_metadata` call sites and all
+  five `_template_result` call sites, with its adjudication beside every row and an instruction to
+  re-derive and adjudicate independently. That is the census discipline the #94 cycle taught: a
+  curated list is how the last two gaps survived.
+- Not yet reached by any pass and carried forward: cycle 121's mutation rows M7, M9 and M11;
+  sentence-level factual checking of the decision document's new section and card D23; and **W2**,
+  whether the evaluation's configuration actually selects any of these AX paths — still unresolved by
+  static inspection, and the thing that decides whether these gaps are urgent or merely correct.
+
+### 2026-07-31 — Cycle 122 returned REQUEST CHANGES: AX's answer-path field has three states and the implementation modelled two
+
+- Cycle 121 (pane 2) implemented Issue #92 as a typed `AnswerPathHealth` warrant plus the
+  **pre-existing** refusal chain — case evaluator → grounded coverage → integrated state →
+  run-summary input check. `grounded_evaluator.py`, `grounded_run.py`, `run_summary.py` and
+  `comparison.py` are unmodified. 521 → **531 passed**, all eleven gates green (pane 1 re-ran them
+  solo).
+- **The trap pane 1 named did not materialise, and the review proved it rather than assuming it.**
+  `available=False` is not silently denominator-dropped. pane 1 mutated `grounded_run.py`'s
+  availability term to `and True` and the acceptance test died with its own message,
+  *"failed calls must not enter grounded quality coverage"*.
+- **The reviewer settled the case nobody had tested.** Both acceptance tests drive every case to the
+  same outcome, so **partial** failure was unexplored — and rejected-alternative #4 rested on the
+  claim that any missing quality evidence blocks publication. The reviewer drove 1-of-15 and 5-of-15
+  failures end to end: both `INVALID`, both `REFUSED` at run-summary. It also measured *why*, which
+  neither pane had recorded: all four grounded coverage floors are **exactly saturated**, so losing
+  any single case breaches one — with two further independent mechanisms behind it. The zero margin
+  is logged as **W4**, a follow-up.
+- **Two more of pane 2's judgments were upheld under stronger evidence than either pane had used.**
+  The validator pane 2 deleted as redundant was proven redundant by an exhaustive state-space search
+  over `(llm_call_succeeded, failure_reason, available, error)` — only two states are reachable and
+  the relation holds in both, zero counterexamples. And where pane 1's brief worried that two
+  mutations died via a *validator* rather than a test's own assertion, the reviewer mutated the thing
+  that matters — reverting both derivation lines to the shipped bug, which constructs cleanly and
+  trips no validator — and the acceptance test's **own assertion** killed it.
+- **W1, blocking, and pane 1 verified every link in the AX source directly.**
+  `AnswerPathHealth.llm_call_succeeded: bool` cannot represent *"no LLM call was attempted"*, and AX
+  emits exactly that as `None`: `answers/service.py:543` is
+  `False if provider_attempted else None`, reached with `provider_attempted=False` from
+  `blocked_no_safe_provider` at `:120`; and `_reference_only_fallback` at `:678` omits the argument
+  entirely, taking the `:725` default of `None`. Its two call sites, `:146` and `:173`, are **normal
+  answering modes in the main flow, not crash paths**. Measured against the working tree: both AX
+  states and a missing key are **refused**, so `capture_live_experiment` raises and **all 24 live
+  cases produce nothing**.
+- Three things compound it. It is **pane 2's rejected alternative #1 happening involuntarily** — that
+  option was rejected for *"discarding the diagnostic artifact"*, which is what the code now does on
+  a reachable input, contradicting the decision document's own rationale. It lands on a **one-shot**
+  authorized runtime start. And the field that would disambiguate it, `llm_call_performed`, is the
+  third of the three unread fields Issue #92 names: pane 1 confirmed mechanically that it is read
+  **zero times in every file under `src/braincrew/`**, and that
+  `{"llm_call_performed": False, "llm_call_succeeded": True}` is currently accepted as fully healthy.
+- Cycle 123 is dispatched: model the third state, bind it by reading `llm_call_performed` rather than
+  inferring it, treat *not performed* as an answer-path failure carrying AX's own `failure_reason`,
+  and refuse the contradictory combination. `StrictBool` (**W3**) folds in — the coercion the reviewer
+  found is direction-safe, so it is hygiene, not a hole.
+- **W5 is pane 1's own, and is a wording imprecision rather than a false claim.** The cycle-121 entry
+  below says `provider_metadata` "appears in exactly three places in `src/`". Measured precisely: at
+  `eac588b`, before implementation, it appears on **three lines across two files**
+  (`ax_http_adapter.py` ×1, `live_experiment.py` ×2); the reviewer measured the post-implementation
+  tree and read "places" as loose. The entry does scope itself with "Pre-dispatch", and its
+  load-bearing half — that the three fields were read nowhere — was true. The old entry is left
+  intact and corrected here.
+- **Reviewer budget was the binding constraint and the review says so.** It reached dimensions 1, 3,
+  4, 5, 7, 8, part of 2 and part of 6, and named what it did not reach: mutation rows M7, M9 and M11;
+  sentence-level factual checking of the decision section and D23; and **W2**, whether the
+  evaluation's AX configuration actually selects those two paths — which it identifies as the single
+  most useful thing a next pass could settle, since it decides whether W1 is urgent or merely correct.
+
+### 2026-07-31 — Issue #92 implementation dispatched (cycle 121)
+
+- Phase: [Issue #92](https://github.com/DHChe/braincrew-datateam-portfolio/issues/92) — a run where
+  every LLM call fails would publish as a valid comparison — is **in implementation** on
+  `feat/issue-92-answer-path-health`, cut from `develop` at `eac588b` (verified equal to
+  `origin/develop`, clean, **521 passing**). The standing three-pane team is adopted: pane 2
+  implements from `/Users/astralpig/ax-issue-45-review/brief-cycle121-issue92.md`, pane 3 reviews in
+  cycle 122, pane 1 owns this file.
+- **The crux, restated so it cannot be halved.** Two failure modes must stay distinguishable:
+  `llm_call_succeeded: False` means the machinery failed and the observation is not evidence about
+  answer quality at all; `llm_call_succeeded: True` with `answer_mode: insufficient_evidence` means
+  the machinery worked and AX chose to abstain, which is a real, measurable and **desirable**
+  outcome. The cheapest implementation of "fail closed" refuses every abstention and destroys the
+  second half, so the ticket requires **both** acceptance tests.
+- Pre-dispatch, pane 1 verified independently: the guard is now at `live_experiment.py:500-503`
+  (the ticket cites 496-500, which moved with #94 — the code is unchanged); `provider_metadata`
+  appears in exactly **three** places in `src/`, so `llm_call_performed`, `llm_call_succeeded` and
+  `failure_reason` are read **nowhere**; `_answer_mode` accepts `insufficient_evidence` as legal;
+  and `GroundedObservation` already carries `available`/`error`.
+- **The trap named in the brief**, because it is the most likely way this ticket goes wrong:
+  `available=False` is the obvious hook, and if an unavailable case is silently dropped from a
+  denominator downstream, a wholly broken run becomes a *smaller* comparison rather than a refused
+  one — the same defect in different clothes. The implementer must establish what the evaluator and
+  comparison layers actually do with an unavailable observation and report it either way.
+- The framing choice — refuse the whole capture, a typed warrant with the comparison layer refusing
+  a quality conclusion, or a justified threshold — is deliberately left to the implementer to argue
+  and pane 3 to challenge. `CostDecisionWarrant` (`comparison.py:284`) is named as the closest
+  structural precedent, alongside the ticket's own warning that silently tolerating a fully broken
+  provider is not obviously the right reading of the warrant pattern.
+- **Reviewer budget is the binding constraint this cycle.** pane 3 is at ~87% of its weekly
+  allowance. Review will run as fewer, larger passes rather than many small ones. Recorded because
+  it changes how the gate is operated, not whether it applies.
+- Completion condition: implementation → independent cycle-122 review → repair if needed →
+  re-review → Git Lifecycle Proposal to the owner. Workers hold no Git write authority. The AX
+  runtime stays stopped; this is a Braincrew code change.
+
 ### 2026-07-31 — Issue #94 merged and closed; #92 is the only open blocker on #15, and #15's blocker list had gone stale a second time
 
 - **[Issue #94](https://github.com/DHChe/braincrew-datateam-portfolio/issues/94) merged into
