@@ -25,6 +25,30 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-01 (after merge).**
+  [Issue #106](https://github.com/DHChe/braincrew-datateam-portfolio/issues/106) is **merged and
+  closed** — `be206ff` on `develop`, PR #107 squash-merged with both CI jobs green. Re-verified on the
+  merged `develop` by pane 1: ruff format and check clean, mypy clean, **581 passed**, tree and
+  `schemas/` clean, and the real 2026-07-31 capture replaying through the committed CLI at exit 0 to
+  `sha256:775a8529…`. GitHub did not auto-close the issue from the `Closes #106` line because the
+  merge target is `develop` rather than the default branch; it was closed explicitly with the outcome
+  recorded. The branch `feat/issue-106-live-capture-replay` was deleted from `origin` and locally
+  after confirming `be206ff`'s tree is identical to the branch tip. **Eight follow-ups were filed
+  individually** — [#108](https://github.com/DHChe/braincrew-datateam-portfolio/issues/108),
+  [#109](https://github.com/DHChe/braincrew-datateam-portfolio/issues/109),
+  [#110](https://github.com/DHChe/braincrew-datateam-portfolio/issues/110),
+  [#111](https://github.com/DHChe/braincrew-datateam-portfolio/issues/111),
+  [#112](https://github.com/DHChe/braincrew-datateam-portfolio/issues/112),
+  [#113](https://github.com/DHChe/braincrew-datateam-portfolio/issues/113),
+  [#114](https://github.com/DHChe/braincrew-datateam-portfolio/issues/114) and
+  [#115](https://github.com/DHChe/braincrew-datateam-portfolio/issues/115) — four `ready-for-agent`
+  and four `needs-triage`, because four of them require a judgement before any code is written.
+  **Nothing is in flight.**
+- **The bullet below was written before that merge and is preserved as the pre-merge record.** It
+  says nothing is committed and names the Git Lifecycle Proposal Gate as the only remaining step,
+  which was true when it was written and stopped being true when the owner authorized the merge. It
+  is superseded rather than rewritten, which is this file's discipline; the bullet above is the
+  current state.
 - **Current state, 2026-08-01.** [Issue #106](https://github.com/DHChe/braincrew-datateam-portfolio/issues/106)
   is **implemented, reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE` with no blocking
   finding, audited before commit — that audit returned `NOT SAFE TO COMMIT` twice, both times on
@@ -765,6 +789,63 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-01 (merge) — Issue #106 merged as `be206ff`; eight follow-ups filed, and the checkpoint that named the Git gate as the only remaining step is now superseded
+
+- **[Issue #106](https://github.com/DHChe/braincrew-datateam-portfolio/issues/106) merged as
+  `be206ff`** (PR #107, squash, both CI jobs green — `frontend` and `python`) and is `CLOSED`. The
+  owner authorized commit, push and pull-request creation in one step and the merge in a second, and
+  the branch deletion in a third. Nothing was staged with `git add -A`; the six paths were named
+  explicitly and `git status --short` was confirmed immediately before committing.
+- **Re-verified on the merged `develop` by pane 1**, not carried over from the pull request: ruff
+  format and check clean, mypy clean, **581 passed**, tree clean, `git status --short schemas/`
+  empty. The real 2026-07-31 capture replays through the committed CLI at **exit 0**, reproducing
+  `sha256:775a85295fb5db2f9cfb6e1aa5504206ea3b629a032452932ca685a7ab1a5049` with 9 retrieval and 15
+  grounded observations — the acceptance criterion #106 set, now measured on the branch that ships it.
+- **The remote CI measured what pane 1 could not.** The six npm and Playwright gates were the one
+  claim resting on an inference rather than a pane 1 measurement — that no changed path lies inside a
+  gate's input glob. The `frontend` job ran them and passed, so the inference is now backed by an
+  independent execution rather than only by reading `package.json`.
+- **The branch was deleted from `origin` and locally**, after confirming that `be206ff`'s tree is
+  identical to the pre-squash branch tip `8dfb718`. A squash merge leaves the branch tip a
+  non-ancestor, so `git branch -d` refuses it; the force delete was taken only after the tree
+  comparison came back empty.
+- **Eight follow-ups filed individually**, at the owner's instruction, rather than as one bundle.
+  `ready-for-agent`: [#108](https://github.com/DHChe/braincrew-datateam-portfolio/issues/108)
+  (`executed_role` unchecked — the fourth reciprocal fact),
+  [#109](https://github.com/DHChe/braincrew-datateam-portfolio/issues/109) (the `retrieval_top_k` and
+  `evidence_limit` bounds), [#110](https://github.com/DHChe/braincrew-datateam-portfolio/issues/110)
+  (`fixed_retrieval_config_digest` not recomputed, which review called the strongest available
+  follow-up) and [#115](https://github.com/DHChe/braincrew-datateam-portfolio/issues/115) (the CLI's
+  `RecursionError` escape, **pre-existing on every schema and not introduced here**).
+  `needs-triage`, because each needs a judgement before code:
+  [#111](https://github.com/DHChe/braincrew-datateam-portfolio/issues/111) — review's own
+  reassessment is that #106 made it *less* serious and it may deserve closing rather than fixing;
+  [#112](https://github.com/DHChe/braincrew-datateam-portfolio/issues/112) — byte-canonicality, where
+  the current behaviour is defensible and the check must be proved not to reject the only live
+  artifact this project has; [#113](https://github.com/DHChe/braincrew-datateam-portfolio/issues/113)
+  — a return-shape divergence whose fix ripples into `replay_run_artifact`'s signature;
+  [#114](https://github.com/DHChe/braincrew-datateam-portfolio/issues/114) — where the 9/15 split
+  should be asserted, not whether.
+- **A staleness this file created and then had to correct, recorded because it is the same defect
+  class twice in one day.** The pre-merge checkpoint said *"Nothing is committed; the only step that
+  remains is the Git Lifecycle Proposal Gate."* Cycle 144's audit had already blocked on a
+  Current-checkpoint claim that decayed the moment the step it named completed, and supplied
+  deliberately stale-proof replacement wording. That wording survived re-auditing — and then the
+  merge falsified it anyway, because *"the only step that remains"* is a claim about the future and
+  no phrasing makes a future claim durable. **The lesson is not better wording.** A
+  Current-checkpoint bullet that names a pending step is stale from the moment that step completes,
+  and the only remedy is that the action which completes it also updates the record. That is what
+  this entry is.
+- **Not claimed, and unchanged by the merge.** No AX runtime was started at any point in this work.
+  Nothing here bears on AX's answer path, the `unsafe_provider_output` conflation, or the twelve
+  unscoreable grounded cases. No candidate run exists, so there is still no comparison, no gate
+  decision and no answer-quality claim. The replay makes the capture *checkable*; it does not make it
+  *correct*, and two of the six forgeries independent review built are still accepted — recorded in
+  the decision document, card D25 and #111.
+- **Next.** Nothing is in flight. The frontier is #15 Phase 1's remaining work and the eight
+  follow-ups above; the two AX tickets filed on 2026-07-31 against `DHChe/AX_portfolio` (#60, #61)
+  remain outside this repository's control.
 
 ### 2026-08-01 — The unrepeatable capture gets a replay path; review broke the first one against the real artifact, and the claim was enumerated rather than described
 
