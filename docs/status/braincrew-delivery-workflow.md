@@ -25,7 +25,20 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- Active phase: **[Issue #86](https://github.com/DHChe/braincrew-datateam-portfolio/issues/86) is
+- Active phase: **nothing is in flight.** [Issue #94](https://github.com/DHChe/braincrew-datateam-portfolio/issues/94)
+  merged into `develop` as **`3822daf`** (PR #96, both CI jobs green) and is `CLOSED`. `develop` is
+  clean and reproduces **521 passed**. The next ticket is
+  [#92](https://github.com/DHChe/braincrew-datateam-portfolio/issues/92), **not** the live
+  measurement — see the 2026-07-31 entry in Transition history for why the ordering is a real
+  dependency rather than a preference.
+- **Read the entries below with their dates, not as current state.** This section was not kept
+  current between 2026-07-28 and 2026-07-31: the bullet immediately following still reads
+  "Active phase" for Issue #86, and Issues #89, #91 and #94 all merged after it without being
+  recorded here. They are preserved unedited because they record what was believed on their dates;
+  **Transition history is the authoritative record of what has actually landed.** This is the same
+  defect class as a stale blocker list — a status field that reads as current when it is not — and
+  it was corrected rather than rewritten.
+- Superseded phase, recorded 2026-07-27: **[Issue #86](https://github.com/DHChe/braincrew-datateam-portfolio/issues/86) is
   implemented, reviewed `APPROVE` with no blocking finding, and published for merge into `develop`
   under explicit user authorization** (commit → push → pull request → squash merge). Branch
   `fix/issue-86-confound-applicability`, cut from `af18c5e`. **This removes the last code blocker on
@@ -715,6 +728,49 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-31 — Issue #94 merged and closed; #92 is the only open blocker on #15, and #15's blocker list had gone stale a second time
+
+- **[Issue #94](https://github.com/DHChe/braincrew-datateam-portfolio/issues/94) merged into
+  `develop` as `3822daf`** (PR #96, python and frontend CI both green), squash-merged with the
+  branch deleted, and closed as `COMPLETED`. Re-verified on the merged `develop`: ruff, mypy and
+  **521 passed**, working tree clean, `schemas/` clean. The pins now read
+  `PINNED_AX_SHA = 1ead1331…` (under test) and `REVIEWED_PROVISIONED_AX_SHA = 2bcaee34…`
+  (the receipt's commit).
+- The commit was made under the precondition cycle 120 attached: `git status --short schemas/`
+  confirmed empty, and **sixteen explicitly named paths staged** rather than `git add -A`.
+- **A stale blocker list, found while deciding what comes next — and it is a recurrence.** #15's
+  list read `#7, #12, #13, #38`, and **all four are now `CLOSED`**, so #15 read as *ready* to any
+  issue-list reader. Meanwhile #92 was open and says "Blocks #15 Phase 1" in its own body, and #94
+  said "Blocks: #15". Both dependencies existed only in the **blocking** issues' prose, never in
+  the blocked issue's list. #15 already carries a 2026-07-27 correction note describing exactly this
+  failure, which did not prevent it happening again. #92 is now listed, and a second correction note
+  was appended rather than the first being edited.
+- **Why #92 must precede the live measurement, as a dependency rather than a preference.** The
+  24-case measurement exists to separate how much of AX's abstention is contract over-reach from how
+  much is genuine under-citation — a question **about abstentions**. #92 is precisely the inability
+  to tell `llm_call_succeeded: False` (the machinery failed, so the observation is not evidence
+  about answer quality at all) from a legitimate `insufficient_evidence` abstention. Running the
+  measurement first would spend an authorized AX runtime start to obtain 24 abstentions that cannot
+  be classified. This repository has met the shape twice: the latency test that passed only because
+  an injected clock gave both runs identical ticks, and the three blockers that stopped #15 Phase 1
+  before it ran.
+- **Follow-up filed:** [#97](https://github.com/DHChe/braincrew-datateam-portfolio/issues/97) — a
+  test writes drift into the **tracked** `schemas/` directory, so two concurrent full-suite runs can
+  leave it durably corrupted with a **self-consistent** `(schema, digest)` pair that only
+  `EXPECTED_SCHEMA_DIGESTS` or `git status` can detect. It needs a production-source schema-directory
+  override, because `seal()` runs the CLI in a subprocess and an in-process monkeypatch cannot reach
+  it. The procedural mitigation landed immediately in `AGENTS.md` instead of waiting: no two panes
+  run full suites concurrently in one shared tree, verify `git status` after any concurrent or
+  interrupted run, and stage explicit paths when committing.
+- **`Current checkpoint` was corrected, not rewritten.** It had listed Issue #86 as the active phase
+  since 2026-07-27 while #89, #91 and #94 merged past it. The stale bullets are preserved with their
+  dates and a pointer naming Transition history as authoritative — the same defect class as the
+  stale blocker list, handled the same way.
+- **Next:** #92 in a fresh session with the three-pane topology adopted. Deliberately not started
+  here: the independent reviewer pane was at ~87% of its weekly budget, and #92 is a design-decision
+  ticket of the same shape as #94, which took six cycles and three review rounds. Starting it with a
+  reviewer that may run dry mid-ticket would degrade exactly the gate that caught T1, U1 and U2.
 
 ### 2026-07-30 — Issue #94 approved after six review cycles; the adjudication corrected pane 1's framing and added a commit precondition
 
