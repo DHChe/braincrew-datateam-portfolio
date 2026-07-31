@@ -414,7 +414,8 @@ def capture_live_experiment(
     )
     roles = tuple(sorted(required_roles))
 
-    corpus_identities: set[tuple[str, str]] = set()
+    corpus_ids: set[str] = set()
+    corpus_digests_by_role: dict[str, str] = {}
     confirmed_roles_by_request: dict[str, tuple[str, ...]] = {}
     for corpus_role in roles:
         corpus_observation = _adapter(
@@ -424,18 +425,14 @@ def capture_live_experiment(
             transport=transport,
         ).corpus_identity(context=_context(run_id, f"corpus-{corpus_role}", "corpus-identity"))
         confirmed_roles_by_request[corpus_role] = tuple(corpus_observation.response.principal_roles)
-        corpus_identities.add(
-            (
-                corpus_observation.response.corpus_id,
-                corpus_observation.response.corpus_digest,
-            )
-        )
+        corpus_ids.add(corpus_observation.response.corpus_id)
+        corpus_digests_by_role[corpus_role] = corpus_observation.response.corpus_digest
     expected_role_evidence = {role: (role,) for role in required_roles}
     if confirmed_roles_by_request != expected_role_evidence:
         raise ValueError("AX-confirmed corpus roles do not match required dataset roles")
-    if len(corpus_identities) != 1:
-        raise ValueError("corpus identity differs across dataset roles")
-    corpus_id, corpus_digest = corpus_identities.pop()
+    if len(corpus_ids) != 1:
+        raise ValueError("corpus ID differs across dataset roles")
+    corpus_id = corpus_ids.pop()
 
     retrieval_observations: list[RetrievalObservation] = []
     for retrieval_case in retrieval_cases:
@@ -580,7 +577,7 @@ def capture_live_experiment(
         dataset_version=snapshot.manifest.dataset_version,
         dataset_digest=snapshot.dataset_digest,
         corpus_id=corpus_id,
-        corpus_digest=corpus_digest,
+        corpus_digests_by_role=corpus_digests_by_role,
         evaluator_versions=EVALUATOR_VERSIONS,
         prompt_id=PROMPT_ID,
         prompt_hash=prompt_hash,

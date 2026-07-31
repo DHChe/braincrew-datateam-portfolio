@@ -28,6 +28,8 @@ USER_ID = "12171ca4-a001-40da-881b-b87cce42e9b2"
 CAPTURED_AT = datetime(2026, 7, 27, 9, 0, tzinfo=UTC)
 ResponseMutation = Literal[
     "corpus_role",
+    "employee_corpus_digest",
+    "employee_corpus_id",
     "retrieval_binding",
     "visibility",
     "answer_binding",
@@ -331,6 +333,20 @@ def _mutate_transport(
             pytest.fail("test transport response must be a JSON object")
         if mutation == "corpus_role" and request.url.path.endswith("corpus-identity"):
             payload["principal_roles"] = ["UnreviewedRole"]
+            mutated = True
+        elif (
+            mutation == "employee_corpus_digest"
+            and request.url.path.endswith("corpus-identity")
+            and request.headers["x-ax-roles"] == "Employee"
+        ):
+            payload["corpus_digest"] = "sha256:" + "8" * 64
+            mutated = True
+        elif (
+            mutation == "employee_corpus_id"
+            and request.url.path.endswith("corpus-identity")
+            and request.headers["x-ax-roles"] == "Employee"
+        ):
+            payload["corpus_id"] = "different-live-corpus-v1"
             mutated = True
         elif (
             mutation == "retrieval_binding"
@@ -1706,56 +1722,48 @@ def test_live_capture_refuses_unwarranted_repository_state(
             _capture(tmp_path, sut_dirty=cast(bool, overrides["sut_dirty"]))
 
 
-def test_live_capture_refuses_inconsistent_role_corpus_identity(tmp_path: Path) -> None:
-    from braincrew.live_experiment import (
-        ReviewedPrincipalBinding,
-        SutStateSubject,
-        SutStateWarrant,
-        capture_live_experiment,
+def test_live_capture_accepts_stable_role_scoped_corpus_digests_across_runs(
+    tmp_path: Path,
+) -> None:
+    baseline, _ = _capture(
+        tmp_path / "baseline",
+        role="baseline",
+        response_mutation="employee_corpus_digest",
     )
+    candidate, _ = _capture(
+        tmp_path / "candidate",
+        role="candidate",
+        response_mutation="employee_corpus_digest",
+    )
+    expected_digests = {
+        "Employee": "sha256:" + "8" * 64,
+        "Executive": "sha256:" + "7" * 64,
+        "HRPractitioner": "sha256:" + "7" * 64,
+    }
 
-    validation = _validated_dataset()
-    original_transport, _ = _capture_transport(validation)
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        response = original_transport.handle_request(request)
-        if (
-            request.url.path == "/v1/evaluation/corpus-identity"
-            and request.headers["x-ax-roles"] == "Employee"
-        ):
-            payload = response.json()
-            payload["corpus_digest"] = "sha256:" + "8" * 64
-            return httpx.Response(200, json=payload)
-        return response
-
-    sut_source_root = tmp_path / "ax"
-    prompt_source = sut_source_root / "backend/src/ax_engine/answers/service.py"
-    prompt_source.parent.mkdir(parents=True)
-    prompt_source.write_text("def prompt_contract():\n    return 'pinned'\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="corpus identity differs across dataset roles"):
-        capture_live_experiment(
-            run_id="baseline-live",
-            role="baseline",
-            captured_at=CAPTURED_AT,
-            evaluation_state=RepositoryState(commit_sha="a" * 40, dirty_worktree=False),
-            sut_state=SutStateWarrant(
-                schema_version="sut-state-warrant-v1",
-                method="read-only-git-check",
-                subject=SutStateSubject(
-                    repository="AX_portfolio",
-                    checkout_path=str(sut_source_root.resolve()),
-                    checked_at=CAPTURED_AT,
-                ),
-                commit_sha=PINNED_AX_SHA,
-                dirty_worktree=False,
-            ),
-            sut_source_root=sut_source_root,
-            base_url="https://ax.example.test",
-            principal=ReviewedPrincipalBinding(tenant_id=TENANT_ID, user_id=USER_ID),
-            dataset_validation=validation,
-            dependency_lock_path=PROJECT_ROOT / "uv.lock",
-            transport=httpx.MockTransport(handler),
+    for capture in (baseline, candidate):
+        provenance = capture.manifest.provenance
+        _check(provenance.corpus_digest is None, "live provenance must not collapse role digests")
+        _check(
+            provenance.corpus_digests_by_role == expected_digests,
+            "live provenance must expose every required role's visible corpus digest",
         )
+    left = baseline.manifest.provenance.model_dump(mode="json", exclude={"evidence_limit"})
+    right = candidate.manifest.provenance.model_dump(mode="json", exclude={"evidence_limit"})
+    _check(left == right, "stable per-role corpus evidence must match across runs")
+
+
+def test_live_capture_refuses_inconsistent_role_corpus_id(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="corpus ID differs across dataset roles"):
+        _capture(tmp_path, response_mutation="employee_corpus_id")
+
+
+def test_live_capture_refuses_incomplete_role_scoped_corpus_coverage(tmp_path: Path) -> None:
+    with pytest.raises(
+        ValueError,
+        match="AX-confirmed corpus roles do not match required dataset roles",
+    ):
+        _capture(tmp_path, response_mutation="corpus_role")
 
 
 def test_live_capture_refuses_an_invalid_frozen_dataset(tmp_path: Path) -> None:
@@ -1766,7 +1774,6 @@ def test_live_capture_refuses_an_invalid_frozen_dataset(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("mutation", "message"),
     [
-        ("corpus_role", "AX-confirmed corpus roles do not match required dataset roles"),
         ("retrieval_binding", "retrieval response does not bind the requested case"),
         ("visibility", "retrieval visibility decision is incomplete"),
         ("answer_binding", "answer response does not bind the requested case"),

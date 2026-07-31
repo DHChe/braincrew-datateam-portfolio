@@ -1914,6 +1914,72 @@ Cycle 125 census-binding defense:
   or growing allow-list was rejected because it would preserve stale evidence without Issue #94's
   genuine provisioning-versus-SUT split. The check is local and needs no AX checkout in CI.
 
+### D24. Compare role-visible corpus digests across runs, not across visibility classes
+
+Decision:
+: A live run keeps one scalar `corpus_id`, requires it to be identical across every required role,
+  and records `corpus_digests_by_role` for the exact AX-confirmed role set. Comparison requires the
+  entire role-to-digest mapping and the scalar ID to match between baseline and candidate. Fixture
+  summaries retain one explicitly unscoped `corpus_digest` and no role map. Locked in
+  [the per-role corpus identity decision](../decisions/2026-07-31-corpus-identity-per-role-across-runs.md);
+  implemented by Issue #101.
+
+Why:
+: AX measured one `corpus_id` for Executive, Employee and HRPractitioner, but Employee's visible
+  digest excluded six tenant uploads. The former within-run equality check made every dataset run
+  spanning those visibility classes impossible. The control exists to prevent baseline/candidate
+  corpus drift, so equality belongs per role across runs.
+
+Rejected alternative:
+: Accepting any count of identities, because it deletes the control; binding only the shared ID and
+  frozen contribution, because it demotes digest drift to evidence; restricting to one visibility
+  class, because it changes the evaluated dataset; and hashing the role map back into one scalar,
+  because it hides the split and silently changes `corpus_digest` semantics.
+
+Trade-off:
+: Every required role is now part of experiment compatibility, so a legitimate role-set change
+  invalidates comparison and needs a new matched pair. The artifact grows slightly. In return, a
+  reader can see the visibility split and no role can disappear through intersection comparison.
+
+Known failure modes:
+: A different within-run `corpus_id` or AX-confirmed role coverage aborts capture. A missing, extra
+  or changed role digest between runs produces
+  `SYS-COMPARISON-CORPUS_DIGESTS_BY_ROLE-MISMATCH`; an ID change produces
+  `SYS-COMPARISON-CORPUS_ID-MISMATCH`; all gates become `INVALID`. Fixture/live digest shapes are
+  mutually exclusive, preventing synthetic fixture evidence from masquerading as role-scoped AX
+  observation.
+
+Validation evidence produced:
+: T-ACCEPT drives the measured Employee digest split through `httpx.MockTransport`, completes
+  capture and asserts all three role digests. T-REFUSE changes Employee's digest only between two
+  summaries and asserts the named compatibility violation plus `INVALID` gates. Mutations of the
+  new W1 equality protection, B1, mode-scoped required provenance, and per-role map-shape clauses
+  killed their named tests; B1 produced three red cases and the shape validator produced two. W2
+  and B2 are pre-existing guards, re-confirmed. Every source and diff hash was restored before the
+  next mutation. The pre-edit baseline was 552 tests. Final gates passed: Ruff and mypy over 71
+  files, 562 pytest tests, Prettier, ESLint, TypeScript, 7 Vitest tests, the static Next.js build,
+  2 Playwright tests, and `git diff --check`. Cycle 129's full independent pane 3 review and cycle
+  131's scoped pane 3 re-review of the repair both returned `APPROVE` with no blocking defect.
+  Cycle 134's pane 2 full-diff pre-commit audit found no blocking code/spec defect but returned
+  `NOT SAFE TO COMMIT` on four durable-record and commit-message findings, including the stale
+  review status here. The status entry itself was audited by pane 2, not pane 3, whose weekly
+  budget was exhausted.
+
+Validation evidence still required:
+: Live AX runtime validation remains unperformed: no real experiment or answer request ran, no
+  provider cost was measured, and no answer-quality claim follows.
+
+Likely follow-ups:
+
+- "Why is `corpus_id` not repeated in the role map?" — W1 already proves one ID across all roles;
+  repeating it would duplicate a value, not add independent evidence.
+- "Why not compare only roles present in both runs?" — That would let missing coverage vanish.
+  Exact role-set equality is part of the confound control.
+- "Why does a fixture retain a scalar?" — Its digest describes hand-authored observations with no
+  role-executed evidence. A role key would invent provenance.
+- "Does this bless Employee's narrower visibility?" — No. It records the measured SUT behaviour and
+  compares like with like; the AX policy itself is out of scope.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.
