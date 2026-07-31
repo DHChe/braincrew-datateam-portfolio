@@ -729,6 +729,64 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-07-31 — Issue #92 merged; the runtime ran, the preflight passed, and the baseline capture found a fourth blocker
+
+- **[Issue #92](https://github.com/DHChe/braincrew-datateam-portfolio/issues/92) merged as `998708e`**
+  (PR #99, both CI jobs green) and is `CLOSED`. Re-verified on the merged `develop`: **552 passed**,
+  tree clean. `CLAUDE.md` then merged as `2331963` (PR #100) — see below for why that was on the
+  critical path.
+- **The runtime boundary was opened under authorization, and the start method was the load-bearing
+  part.** The final containers carry `EMBEDDING_PROVIDER=fake` and `AX_API_PORT=18000`, set in an
+  ephemeral shell on 2026-07-28 and present in **no committed configuration**. `docker compose start`
+  reuses them; `up` would recreate and silently restore `EMBEDDING_PROVIDER=openai` and bind 8000 —
+  the containment break record 09 measured. Containment was verified **before** starting anything, by
+  inspecting the stopped containers: `fake` on both, bind `127.0.0.1:18000` only, `APP_ENV=local`,
+  OpenAI key SHA-256 first-8 `90891895` (the rotated key). After start: `/health/ready` = `ready`,
+  volumes **114** unchanged, port 8000 closed, AX checkout clean at `1ead133` = `PINNED_AX_SHA`.
+- **The preflight passed: exit 0, `READY`, 0 blockers**, 3 corpus + 6 parse observations, logical
+  digest `sha256:ed05713c…`, replayed through the committed CLI to the identical digest.
+  **This is the first time Issue #94's continuity warrant has been exercised against a live AX**: the
+  receipt produced at `2bcaee3` was accepted against SUT `1ead133`. Before #94 that combination
+  failed with a message asserting the receipt came from an *unreviewed* commit, which was false.
+  Scope: it proves the warrant admits the pair it was written for; that it refuses a wrong pair is
+  held by contract tests and seventeen mutations, not by this run.
+- **The baseline capture was refused twice, and both refusals were guards working.** First: *"live
+  capture requires a clean committed Evaluation Plane"* — an uncommitted owner instruction in
+  `CLAUDE.md`. The fix was to commit it, not to relax the guard, which exists so a live artifact
+  names exactly one committed Evaluation Plane state. Second, and this is the finding:
+  *"corpus identity differs across dataset roles"*.
+- **Blocker D, filed as [#101](https://github.com/DHChe/braincrew-datateam-portfolio/issues/101), and
+  it is a design conflict rather than a defect in either system.** `live_experiment.py:436` requires
+  one identical visible corpus digest across the dataset roles. Measured live: Executive and
+  HRPractitioner both return `sha256:ecba4eea…` with the dataset plus six tenant uploads, while
+  **Employee returns `sha256:85b57bb2…` with the frozen dataset only**. `corpus_id` is identical for
+  all three. Employee's narrower view is AX's `employee_visibility_invariant` behaving correctly — a
+  *visible* corpus digest **must** differ for a role with narrower visibility — so the invariant is
+  structurally unsatisfiable for any role set spanning visibility classes, which this dataset's is.
+  The preflight passes because it checks something different: that every role's
+  `contributing_versions` includes the frozen dataset. Both checks are individually sound; they
+  disagree about what *"the same corpus"* means when visibility is role-dependent.
+- **Why nobody found it before:** the 2026-07-28 probes aborted at blocker A, the role mapping,
+  before reaching corpus-identity binding. #91 fixed that, so this line became reachable for the
+  first time today. **No answer call was made and no provider cost was spent** — both refusals happen
+  before any retrieval or answer request.
+- **The boundary was closed** in the recorded order (worker → backend → clamav, all `Exited (143)`),
+  datastores left running as on every prior boundary, volumes **114** unchanged, no listener on
+  `127.0.0.1:18000`. Same reasoning as 2026-07-28: #101 is controlled-test work needing no runtime,
+  so holding a write-capable service open would serve no purpose. No container was created or
+  destroyed this session.
+- **X1 is still unmeasured** — the distribution of AX answer-path emission shapes across the 15
+  grounded cases, which #92's review named as the question deciding whether its three repair cycles
+  were urgent or insurance. The capture refuses before any answer request. Record it during the first
+  capture that actually reaches the answer path, rather than spending provider calls on a probe that
+  produces no artifact.
+- **#15's blocker list was corrected a second time the same day**: `#101` added, with an append-only
+  note. It is now the only open blocker.
+- Evidence outside the repository: `16-runtime-start-and-preflight-2026-07-31.json`,
+  `17-blocker-D-corpus-identity-across-roles.json`, `18-runtime-stop-2026-07-31.json`.
+- **Not claimed.** No experiment has run. No baseline, no candidate, no quality claim. Every quality
+  observation in this repository still comes from `httpx.MockTransport`.
+
 ### 2026-07-31 — An independent audit of pane 1's own entries found four errors; they are corrected here, not rewritten above
 
 - Cycle 126 named pane 1's four status entries **"the largest single gap in this approval"** and did
