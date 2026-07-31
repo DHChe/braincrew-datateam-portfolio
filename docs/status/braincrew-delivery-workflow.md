@@ -25,6 +25,17 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-07-31 night.** #101 is **merged and closed** (`f9d9cfd`, PR #104). The AX
+  runtime was opened and closed again under stage-by-stage authorization, and **the first live
+  experiment capture in this project's history succeeded**. The runtime run began from a `develop`
+  clean at `f9d9cfd` reproducing **562 passed**; the only working-tree change afterwards is this
+  status entry itself. **X1 is measured**, and the twelve misclassifiable inputs it found are why
+  Issue #92's repairs were needed rather than merely prudent. **No answer-quality claim follows from
+  the capture** — twelve of fifteen grounded cases produced no quality evidence at all. The next
+  blocker is in AX's answer path, not in Braincrew. See the 2026-07-31 night entry at the top of
+  Transition history.
+- **The bullet below was written into the commit that exercised the Git authorization, and is kept
+  as that record.** It says no commit or pull request existed yet, which was true when written.
 - **Current state, 2026-07-31 evening.** [Issue #101](https://github.com/DHChe/braincrew-datateam-portfolio/issues/101)
   is **implemented and approved twice**, on branch `feat/issue-101-corpus-identity-per-role` cut
   from `develop` at **`61fe64c`**. **The owner authorized commit → push → pull request**; the merge
@@ -740,6 +751,103 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-07-31 (night) — The first live experiment capture succeeded, X1 says #92 was urgent, and the next blocker is inside AX's answer path
+
+- **[Issue #101](https://github.com/DHChe/braincrew-datateam-portfolio/issues/101) merged as
+  `f9d9cfd`** (PR #104, both CI jobs green) and is `CLOSED`. Re-verified on the merged `develop`:
+  ruff and mypy clean, **562 passed**, tree and `schemas/` clean. GitHub did not auto-close the
+  issue from the `Closes #101` line because the merge target is `develop` rather than the default
+  branch; it was closed explicitly with the outcome recorded.
+- **The runtime boundary was opened and closed again under stage-by-stage authorization**, and the
+  containment checks were run **before** starting anything, which is the check that would have
+  caught the 2026-07-28 break at the moment it happened. All values matched record 16 exactly:
+  `EMBEDDING_PROVIDER=fake` on both containers, `APP_ENV=local`, bind `127.0.0.1:18000` only, OpenAI
+  key SHA-256 first-8 `90891895`, container IDs `1929eafc8f5e`/`fc4cb4f8ffc9`, volumes **114**,
+  AX clean at `1ead133` = `PINNED_AX_SHA`. **No container was created or destroyed.**
+- **Two deviations from the recorded procedure, both disclosed before acting rather than after.**
+  `docker start <container>` was used instead of `docker compose start` — identical effect, and it
+  removes compose-file and env resolution entirely, so recreation is structurally impossible rather
+  than merely unlikely. And the proposed "commit the status doc before opening the runtime" stage was
+  **dropped as unnecessary**: the capture guard reads `dirty_worktree`, the tree was already clean at
+  `f9d9cfd`, and committing then would have produced a commit describing its own merge — the
+  opposite of this repository's `61fe64c` pattern.
+- **The recorded health-check error was not repeated.** Record 16 documents a `*healthy*` substring
+  match that reported success while the backend was `unhealthy`. Exact-equality comparison was used
+  instead, the backend genuinely read `unhealthy` for 200 seconds, and a direct `/health/ready` query
+  confirmed the cause was the staged start — four dependencies `ready`, `worker`
+  `stale_or_missing` — exactly as record 16 diagnosed.
+- **The preflight passed**: exit 0, `READY`, 0 blockers, 3 corpus + 6 parse observations, logical
+  digest `sha256:48e29415…`, replayed through the committed CLI to the identical digest. The
+  handoff receipt's SHA-256 matched the code-pinned constant.
+- **The first live experiment capture in this project's history succeeded**: exit 0, three
+  artifacts, **24 live calls** (9 retrieval + 15 grounded answer). Provider cost was incurred and is
+  **unmeasured**.
+- **#101 was exercised successfully against the authorized live local AX runtime** — `APP_ENV=local`,
+  loopback `127.0.0.1:18000` only. This is not production-deployment evidence. The live artifact
+  carries `corpus_digest: null` and
+  `corpus_digests_by_role` for all three roles, with Employee's `sha256:85b57bb2…` distinct from
+  Executive and HRPractitioner's `sha256:ecba4eea…` under one identical `corpus_id`. The visibility
+  split is preserved rather than flattened, which is what the decision required.
+- **X1 is measured, and the answer is urgent.** Across the 15 grounded cases: **12** returned
+  `llm_call_performed=true, llm_call_succeeded=false, failure_reason="unsafe_provider_output"` →
+  `available=false`; **2** were healthy answers; **1** was an ordinary retrieval-level abstention with
+  no provider call. **What is observed:** all fifteen return HTTP 200 and are contract-valid, and
+  pre-#92 code would have recorded twelve of them as `insufficient_evidence` abstentions and scored
+  them as answer quality. **What is not observed:** no candidate run exists, so the uniform-zero
+  `evidence_limit` 3-vs-5 difference and the published PASS remain the *conditional* failure mode
+  #92's commit message described — a matching candidate run would be needed to exhibit it. The
+  contribution of this capture is that the twelve misclassifiable inputs are now **measured**
+  rather than hypothesised; the PASS itself is not. Cycle 124's widening is also exercised: the
+  single `performed=false` case is correctly `available`, not classified as an outage.
+- **The first live retrieval-quality measurement: Recall@5 = 17/18 = `0.9444`**, MRR@10 = 2/3,
+  authority priority 1/1, `COMPLETED`, zero hard failures, all 9 cases returning 5 candidates.
+  Produced by the committed evaluator over the captured observations, with no additional provider
+  calls. **The evaluator refused the first invocation** — *"run ID and SUT SHA must match the
+  dataset run"* — because it binds an evaluation to the capture it claims to evaluate.
+- **This weakened pane 1's own hypothesis — but it does not refute it, and pane 1's first wording
+  said it did.** pane 1 had proposed that `EMBEDDING_PROVIDER=fake` made retrieval semantically
+  meaningless and thereby caused the answer failures. The Recall@5 measurement covers
+  `retrieval-022`–`030`; the twelve failed answers are `GA-001`–`GA-010`, `VA-006` and `VA-010` —
+  a **disjoint** set of cases with different queries, whose internal retrieval Braincrew never
+  observed, and all twelve carry template `source_texts: []` because they fell through to the
+  fallback. So a system-wide "fake embeddings make retrieval useless" concern is weakened, while
+  **what evidence the failed answer calls actually received remains unmeasured.** This is a
+  labelled hypothesis, not a finding. It is recorded rather than deleted because it is why the
+  retrieval measurement was made, and because pane 1 wrote "refuted" and the audit caught it.
+- **Grounded answers are `INVALID`, and no quality claim follows.** Only 3 of 15 cases were
+  evaluable, all three hard-failed, and **`citation_precision_cases` and `claim_support_cases` are
+  both zero** — no case contributed answer-quality evidence. Run state `INVALID`, 18 of 30 scored.
+  **The gate worked**: the evaluator refused to produce a verdict from insufficient evidence instead
+  of scoring twelve broken cases as abstentions.
+- **The next blocker is in AX, and the evaluation plane is what found it.**
+  `failure_reason="unsafe_provider_output"` is emitted by a **disjunction** at
+  `answers/service.py:184-186`: either the strict citation validator `_citations_valid` rejected the
+  answer, **or** the Korean forbidden-phrase blocklist `_provider_output_unsafe` fired. **The
+  disjunction is measured; which predicate fired for the twelve is not, and neither branch can
+  currently be ranked above the other from this run.** AX logs nothing — 294 backend lines across
+  the capture window, zero errors or warnings, every request 200 — and the observation record does
+  not carry the provider's raw response, so the discarded output is unrecoverable. The defect that
+  **is** established regardless of which branch fired: one `failure_reason` string is emitted for
+  two unrelated causes, so a consumer that records it verbatim, as Braincrew does, reports a safety
+  event for what may be a grounding failure. Two AX tickets are proposed in the evidence: split the
+  conflated reason, and log the discard.
+- **New gaps this run created, recorded rather than fixed.** The committed `replay` CLI **refuses**
+  the capture artifact (`unsupported artifact schema: live-experiment-capture-v1`), so its integrity
+  rests on recomputing digests with the same code that produced them — weaker than the preflight's
+  independent replay, and labelled as such. The parsing aggregate is `0.0000` on all three metrics;
+  it used the **fixture** adapter so it says nothing about AX, and why it is zero was not
+  established. `cost_measurement_status` is **present in the capture provenance with the value
+  `null`** — not absent, as pane 1 first wrote — which the comparison layer treats as missing
+  provenance; whether the run-summary builder supplies it was not verified end to end.
+- **Not claimed.** No answer-quality claim about AX. No candidate run, so no comparison, no gate
+  decision, no release judgment. Provider cost incurred and unmeasured. Nothing about AX parsing.
+- **Next.** A candidate run now would spend provider cost to break the same twelve cases again, so
+  it is not the next step. File the two AX tickets, then decide whether the citation contract or the
+  model is the thing to change. Evidence outside the repository:
+  `20-runtime-boundary-post-101-2026-07-31.json`, `21-first-live-capture-and-x1-2026-07-31.json`,
+  `22-unsafe-provider-output-diagnosis-2026-07-31.json`, plus the capture and evaluation artifact
+  directories.
 
 ### 2026-07-31 (evening) — Issue #101 answered its design question and was approved twice; corpus identity is now compared per role between runs
 
