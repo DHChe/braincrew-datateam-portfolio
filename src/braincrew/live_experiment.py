@@ -12,13 +12,13 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from tempfile import TemporaryDirectory
 from typing import Literal, cast
 from uuid import UUID
 
 import httpx
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 from braincrew.ax_http_adapter import (
     AnswerCitation,
@@ -82,6 +82,8 @@ ADAPTER_VERSIONS = {
     "retrieval": "ax-sut-http-v1",
     "grounded": "ax-sut-http-v1",
 }
+LIVE_RETRIEVAL_CASE_COUNT = 9
+LIVE_GROUNDED_CASE_COUNT = 15
 
 
 class ReviewedPrincipalBinding(StrictContract):
@@ -114,6 +116,17 @@ class CaptureArtifactReference(StrictContract):
     file_name: str = Field(min_length=1)
     content_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     case_count: int = Field(ge=1)
+
+    @field_validator("file_name")
+    @classmethod
+    def require_bare_file_name(cls, file_name: str) -> str:
+        if (
+            file_name in {".", ".."}
+            or Path(file_name).name != file_name
+            or PureWindowsPath(file_name).name != file_name
+        ):
+            raise ValueError("capture artifact file name must be a bare filename")
+        return file_name
 
 
 class LiveExperimentCaptureManifest(StrictContract):
@@ -677,3 +690,122 @@ def write_live_experiment_capture(
             path.unlink(missing_ok=True)
         raise
     return paths
+
+
+def _load_capture_json(path: Path, *, label: str) -> object:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise ValueError(f"{label} file cannot be read: {error}") from error
+    except (UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"{label} file is not valid JSON: {error}") from error
+
+
+def _validate_capture_observation_reference(
+    *,
+    reference: CaptureArtifactReference,
+    observations: RetrievalObservationBatch | GroundedObservationBatch,
+    label: str,
+) -> None:
+    if canonical_digest(observations.model_dump(mode="json")) != reference.content_digest:
+        raise ValueError(f"{label} observation content digest does not reproduce")
+    if len(observations.observations) != reference.case_count:
+        raise ValueError(f"{label} observation case count does not reproduce")
+
+
+def _validate_capture_provenance_agreement(
+    *,
+    manifest: LiveExperimentCaptureManifest,
+    retrieval_observations: RetrievalObservationBatch,
+    grounded_observations: GroundedObservationBatch,
+) -> None:
+    adapter_versions = manifest.provenance.adapter_versions
+    if retrieval_observations.adapter_version != adapter_versions.get("retrieval"):
+        raise ValueError(
+            "retrieval observation adapter version does not match capture manifest provenance"
+        )
+    if grounded_observations.adapter_version != adapter_versions.get("grounded"):
+        raise ValueError(
+            "grounded observation adapter version does not match capture manifest provenance"
+        )
+    if grounded_observations.sut_commit_sha != manifest.sut_state_warrant.commit_sha:
+        raise ValueError(
+            "grounded observation SUT commit SHA does not match capture manifest warrant"
+        )
+
+
+def replay_live_experiment_capture(path: Path) -> dict[str, str]:
+    """Verify observation content digests, counts, case identities, adapters, and SUT SHA.
+
+    Observation files must reproduce their declared content digests and case counts;
+    their case identities must equal the live partition; their adapter versions and
+    the grounded SUT commit SHA must agree with the manifest; and the manifest must
+    reproduce its logical digest. This does not re-run AX or detect a consistently
+    fabricated manifest and observation files.
+    """
+    try:
+        manifest = LiveExperimentCaptureManifest.model_validate(
+            _load_capture_json(path, label="capture manifest")
+        )
+    except ValidationError as error:
+        raise ValueError(f"capture manifest does not validate: {error}") from error
+
+    try:
+        retrieval_observations = RetrievalObservationBatch.model_validate(
+            _load_capture_json(
+                path.parent / manifest.retrieval_observations.file_name,
+                label="retrieval observation",
+            )
+        )
+    except ValidationError as error:
+        raise ValueError(f"retrieval observation file does not validate: {error}") from error
+
+    try:
+        grounded_observations = GroundedObservationBatch.model_validate(
+            _load_capture_json(
+                path.parent / manifest.grounded_observations.file_name,
+                label="grounded observation",
+            )
+        )
+    except ValidationError as error:
+        raise ValueError(f"grounded observation file does not validate: {error}") from error
+
+    _validate_capture_provenance_agreement(
+        manifest=manifest,
+        retrieval_observations=retrieval_observations,
+        grounded_observations=grounded_observations,
+    )
+    _validate_capture_observation_reference(
+        reference=manifest.retrieval_observations,
+        observations=retrieval_observations,
+        label="retrieval",
+    )
+    _validate_capture_observation_reference(
+        reference=manifest.grounded_observations,
+        observations=grounded_observations,
+        label="grounded",
+    )
+
+    retrieval_case_ids = {
+        observation.case_id for observation in retrieval_observations.observations
+    }
+    grounded_case_ids = {observation.case_id for observation in grounded_observations.observations}
+    if (
+        len(retrieval_case_ids) != LIVE_RETRIEVAL_CASE_COUNT
+        or len(grounded_case_ids) != LIVE_GROUNDED_CASE_COUNT
+        or retrieval_case_ids & grounded_case_ids
+        or retrieval_case_ids | grounded_case_ids != set(manifest.live_case_ids)
+    ):
+        raise ValueError("observation case identities do not match the declared live partition")
+
+    recomputed_logical_digest = canonical_digest(
+        manifest.model_dump(mode="json", exclude={"logical_digest"})
+    )
+    if recomputed_logical_digest != manifest.logical_digest:
+        raise ValueError("capture manifest logical digest does not reproduce")
+
+    return {
+        "logical_digest": recomputed_logical_digest,
+        "retrieval_case_count": str(len(retrieval_observations.observations)),
+        "grounded_case_count": str(len(grounded_observations.observations)),
+    }

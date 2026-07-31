@@ -634,6 +634,10 @@ def replay_run_artifact(path: Path) -> dict[str, str]:
     schema_version = raw_artifact.get("schema_version")
     if schema_version == "experiment-comparison-artifact-v1":
         return replay_comparison_artifact(path)
+    if schema_version == "live-experiment-capture-v1":
+        from braincrew.live_experiment import replay_live_experiment_capture
+
+        return replay_live_experiment_capture(path)
     if schema_version == "dataset-run-artifact-v1":
         from braincrew.dataset_run import replay_dataset_run_artifact
 

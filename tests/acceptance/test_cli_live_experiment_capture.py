@@ -2280,3 +2280,365 @@ def test_capture_cli_reports_ax_transient_failure_without_a_traceback(
         "transient failure output must name its failure code",
     )
     _check("Traceback" not in result.output, "transient failure must not print a traceback")
+
+
+def _write_replayable_live_capture(
+    tmp_path: Path,
+) -> tuple[Any, Path, Path, Path]:
+    from braincrew.live_experiment import write_live_experiment_capture
+
+    capture, _ = _capture(tmp_path / "capture-source")
+    manifest_path, retrieval_path, grounded_path = write_live_experiment_capture(
+        capture,
+        tmp_path / "capture",
+    )
+    return capture, manifest_path, retrieval_path, grounded_path
+
+
+def _write_json(path: Path, payload: object) -> None:
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _rehash_manifest_payload(payload: dict[str, Any]) -> None:
+    from braincrew.digest import canonical_digest
+
+    payload["logical_digest"] = canonical_digest(
+        {field: value for field, value in payload.items() if field != "logical_digest"}
+    )
+
+
+def test_replay_live_experiment_capture_reproduces_manifest_digest(
+    tmp_path: Path,
+) -> None:
+    from braincrew.live_experiment import replay_live_experiment_capture
+
+    capture, manifest_path, _, _ = _write_replayable_live_capture(tmp_path)
+
+    summary = replay_live_experiment_capture(manifest_path)
+
+    _check(
+        summary["logical_digest"] == capture.manifest.logical_digest,
+        "live capture replay must reproduce the stored manifest digest",
+    )
+    _check(
+        summary["retrieval_case_count"] == "9",
+        "live capture replay must report all nine retrieval observations",
+    )
+    _check(
+        summary["grounded_case_count"] == "15",
+        "live capture replay must report all fifteen grounded observations",
+    )
+
+
+def test_replay_cli_dispatches_live_experiment_capture(
+    tmp_path: Path,
+) -> None:
+    from braincrew import cli
+
+    capture, manifest_path, _, _ = _write_replayable_live_capture(tmp_path)
+
+    result = CliRunner().invoke(
+        cli.app,
+        ["replay", "--artifact", str(manifest_path)],
+    )
+
+    _check(result.exit_code == 0, "replay CLI must dispatch live capture manifests")
+    _check(
+        capture.manifest.logical_digest in result.output,
+        "replay CLI must print the reproduced manifest digest",
+    )
+
+
+def test_replay_live_experiment_capture_refuses_missing_sibling_file(
+    tmp_path: Path,
+) -> None:
+    from braincrew.live_experiment import replay_live_experiment_capture
+
+    _, manifest_path, retrieval_path, _ = _write_replayable_live_capture(tmp_path)
+    retrieval_path.unlink()
+
+    with pytest.raises(ValueError, match="retrieval observation file cannot be read"):
+        replay_live_experiment_capture(manifest_path)
+
+
+def test_replay_cli_refuses_missing_live_capture_sibling_without_traceback(
+    tmp_path: Path,
+) -> None:
+    from braincrew import cli
+
+    _, manifest_path, retrieval_path, _ = _write_replayable_live_capture(tmp_path)
+    retrieval_path.unlink()
+
+    result = CliRunner().invoke(
+        cli.app,
+        ["replay", "--artifact", str(manifest_path)],
+    )
+
+    _check(result.exit_code == 2, "missing sibling must use the invalid-artifact exit code")
+    _check(
+        "Invalid artifact: retrieval observation file cannot be read" in result.output,
+        "missing sibling refusal must identify the affected observation file",
+    )
+    _check("Traceback" not in result.output, "missing sibling refusal must not print a traceback")
+
+
+def test_replay_live_experiment_capture_refuses_changed_observation_content(
+    tmp_path: Path,
+) -> None:
+    from braincrew.live_experiment import replay_live_experiment_capture
+
+    _, manifest_path, retrieval_path, _ = _write_replayable_live_capture(tmp_path)
+    retrieval_payload = json.loads(retrieval_path.read_text(encoding="utf-8"))
+    retrieval_payload["observations"][0]["query"] = "tampered query"
+    _write_json(retrieval_path, retrieval_payload)
+
+    with pytest.raises(
+        ValueError,
+        match="retrieval observation content digest does not reproduce",
+    ):
+        replay_live_experiment_capture(manifest_path)
+
+
+def test_replay_live_experiment_capture_refuses_changed_observation_case_count(
+    tmp_path: Path,
+) -> None:
+    from braincrew.live_experiment import replay_live_experiment_capture
+
+    _, manifest_path, _, _ = _write_replayable_live_capture(tmp_path)
+    manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_payload["retrieval_observations"]["case_count"] += 1
+    _rehash_manifest_payload(manifest_payload)
+    _write_json(manifest_path, manifest_payload)
+
+    with pytest.raises(
+        ValueError,
+        match="retrieval observation case count does not reproduce",
+    ):
+        replay_live_experiment_capture(manifest_path)
+
+
+def test_replay_live_experiment_capture_refuses_case_identity_drift(
+    tmp_path: Path,
+) -> None:
+    from braincrew.digest import canonical_digest
+    from braincrew.live_experiment import replay_live_experiment_capture
+
+    _, manifest_path, retrieval_path, _ = _write_replayable_live_capture(tmp_path)
+    retrieval_payload = json.loads(retrieval_path.read_text(encoding="utf-8"))
+    retrieval_payload["observations"][0]["case_id"] = "RET-999"
+    _write_json(retrieval_path, retrieval_payload)
+
+    manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_payload["retrieval_observations"]["content_digest"] = canonical_digest(
+        retrieval_payload
+    )
+    _rehash_manifest_payload(manifest_payload)
+    _write_json(manifest_path, manifest_payload)
+
+    with pytest.raises(
+        ValueError,
+        match="observation case identities do not match the declared live partition",
+    ):
+        replay_live_experiment_capture(manifest_path)
+
+
+def test_replay_live_experiment_capture_refuses_changed_manifest_logical_digest(
+    tmp_path: Path,
+) -> None:
+    from braincrew.live_experiment import replay_live_experiment_capture
+
+    _, manifest_path, _, _ = _write_replayable_live_capture(tmp_path)
+    manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_payload["logical_digest"] = "sha256:" + "0" * 64
+    _write_json(manifest_path, manifest_payload)
+
+    with pytest.raises(
+        ValueError,
+        match="capture manifest logical digest does not reproduce",
+    ):
+        replay_live_experiment_capture(manifest_path)
+
+
+def test_replay_live_experiment_capture_refuses_retrieval_adapter_version_disagreement(
+    tmp_path: Path,
+) -> None:
+    from braincrew.digest import canonical_digest
+    from braincrew.live_experiment import replay_live_experiment_capture
+
+    _, manifest_path, retrieval_path, _ = _write_replayable_live_capture(tmp_path)
+    retrieval_payload = json.loads(retrieval_path.read_text(encoding="utf-8"))
+    retrieval_payload["adapter_version"] = "fixture-retrieval-sut-v1"
+    _write_json(retrieval_path, retrieval_payload)
+
+    manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_payload["retrieval_observations"]["content_digest"] = canonical_digest(
+        retrieval_payload
+    )
+    _rehash_manifest_payload(manifest_payload)
+    _write_json(manifest_path, manifest_payload)
+
+    with pytest.raises(
+        ValueError,
+        match="retrieval observation adapter version does not match capture manifest provenance",
+    ):
+        replay_live_experiment_capture(manifest_path)
+
+
+def test_replay_live_experiment_capture_refuses_grounded_adapter_version_disagreement(
+    tmp_path: Path,
+) -> None:
+    from braincrew.digest import canonical_digest
+    from braincrew.live_experiment import replay_live_experiment_capture
+
+    _, manifest_path, _, grounded_path = _write_replayable_live_capture(tmp_path)
+    grounded_payload = json.loads(grounded_path.read_text(encoding="utf-8"))
+    grounded_payload["adapter_version"] = "fixture-grounded-sut-v1"
+    _write_json(grounded_path, grounded_payload)
+
+    manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_payload["grounded_observations"]["content_digest"] = canonical_digest(grounded_payload)
+    _rehash_manifest_payload(manifest_payload)
+    _write_json(manifest_path, manifest_payload)
+
+    with pytest.raises(
+        ValueError,
+        match="grounded observation adapter version does not match capture manifest provenance",
+    ):
+        replay_live_experiment_capture(manifest_path)
+
+
+def test_replay_live_experiment_capture_refuses_grounded_sut_commit_disagreement(
+    tmp_path: Path,
+) -> None:
+    from braincrew.digest import canonical_digest
+    from braincrew.live_experiment import replay_live_experiment_capture
+
+    _, manifest_path, _, grounded_path = _write_replayable_live_capture(tmp_path)
+    grounded_payload = json.loads(grounded_path.read_text(encoding="utf-8"))
+    grounded_payload["sut_commit_sha"] = "b" * 40
+    _write_json(grounded_path, grounded_payload)
+
+    manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_payload["grounded_observations"]["content_digest"] = canonical_digest(grounded_payload)
+    _rehash_manifest_payload(manifest_payload)
+    _write_json(manifest_path, manifest_payload)
+
+    with pytest.raises(
+        ValueError,
+        match="grounded observation SUT commit SHA does not match capture manifest warrant",
+    ):
+        replay_live_experiment_capture(manifest_path)
+
+
+@pytest.mark.parametrize("reference_kind", ["traversal", "absolute"])
+def test_replay_live_experiment_capture_refuses_non_sibling_observation_file_name(
+    tmp_path: Path,
+    reference_kind: str,
+) -> None:
+    from braincrew.live_experiment import replay_live_experiment_capture
+
+    _, manifest_path, retrieval_path, _ = _write_replayable_live_capture(tmp_path)
+    external_dir = tmp_path / "elsewhere"
+    external_dir.mkdir()
+    external_path = external_dir / retrieval_path.name
+    external_path.write_bytes(retrieval_path.read_bytes())
+
+    manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if reference_kind == "traversal":
+        file_name = f"../{external_dir.name}/{external_path.name}"
+    else:
+        file_name = str(external_path)
+    manifest_payload["retrieval_observations"]["file_name"] = file_name
+    _rehash_manifest_payload(manifest_payload)
+    _write_json(manifest_path, manifest_payload)
+
+    with pytest.raises(
+        ValueError,
+        match="capture artifact file name must be a bare filename",
+    ):
+        replay_live_experiment_capture(manifest_path)
+
+
+def test_replay_live_experiment_capture_returns_recomputed_logical_digest(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from braincrew import live_experiment
+    from braincrew.digest import canonical_digest
+
+    capture, manifest_path, _, _ = _write_replayable_live_capture(tmp_path)
+
+    class RecomputedDigest(str):
+        pass
+
+    recomputed_digest = RecomputedDigest(capture.manifest.logical_digest)
+
+    def replay_canonical_digest(value: object) -> str:
+        if isinstance(value, dict) and value.get("schema_version") == "live-experiment-capture-v1":
+            return recomputed_digest
+        return canonical_digest(value)
+
+    monkeypatch.setattr(live_experiment, "canonical_digest", replay_canonical_digest)
+
+    summary = live_experiment.replay_live_experiment_capture(manifest_path)
+
+    _check(
+        summary["logical_digest"] is recomputed_digest,
+        "live capture replay must return the recomputed manifest digest",
+    )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("unexpected_field", "Extra inputs are not permitted"),
+        ("incomplete_partition", "capture case partition must cover all Verification cases"),
+        ("role_evidence_limit", "capture role and evidence limit must agree"),
+        ("execution_mode", "live capture provenance must declare live execution"),
+        ("warrant", "SUT provenance must match the read-only state warrant"),
+    ],
+)
+def test_replay_live_experiment_capture_reconfirms_manifest_contracts(
+    tmp_path: Path,
+    mutation: str,
+    message: str,
+) -> None:
+    from braincrew.live_experiment import replay_live_experiment_capture
+
+    _, manifest_path, retrieval_path, _ = _write_replayable_live_capture(tmp_path)
+    manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if mutation == "unexpected_field":
+        manifest_payload["unexpected"] = True
+    elif mutation == "incomplete_partition":
+        retrieval_payload = json.loads(retrieval_path.read_text(encoding="utf-8"))
+        original_case_id = retrieval_payload["observations"][0]["case_id"]
+        retrieval_payload["observations"][0]["case_id"] = "UNBOUND-CASE"
+        _write_json(retrieval_path, retrieval_payload)
+        manifest_payload["live_case_ids"][
+            manifest_payload["live_case_ids"].index(original_case_id)
+        ] = "UNBOUND-CASE"
+        from braincrew.digest import canonical_digest
+
+        manifest_payload["retrieval_observations"]["content_digest"] = canonical_digest(
+            retrieval_payload
+        )
+    elif mutation == "role_evidence_limit":
+        manifest_payload["provenance"]["evidence_limit"] = 5
+    elif mutation == "execution_mode":
+        provenance = manifest_payload["provenance"]
+        provenance["execution_mode"] = "fixture"
+        provenance["corpus_digest"] = next(iter(provenance["corpus_digests_by_role"].values()))
+        provenance["corpus_digests_by_role"] = None
+    elif mutation == "warrant":
+        manifest_payload["sut_state_warrant"]["dirty_worktree"] = True
+    else:
+        pytest.fail(f"unknown manifest-contract mutation: {mutation}")
+    if mutation in {"incomplete_partition", "role_evidence_limit", "execution_mode", "warrant"}:
+        _rehash_manifest_payload(manifest_payload)
+    _write_json(manifest_path, manifest_payload)
+
+    with pytest.raises(ValueError, match=message):
+        replay_live_experiment_capture(manifest_path)
