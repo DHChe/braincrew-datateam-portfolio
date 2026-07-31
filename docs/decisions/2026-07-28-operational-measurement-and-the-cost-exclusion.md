@@ -282,3 +282,150 @@ published cases carry `cost_relative_delta: null`.
 > `dashboard` and `src`, but the claim was written unscoped, and `f8630e70…` was in fact still in
 > `docs/status/braincrew-delivery-workflow.md`. **A search's scope is part of its result.** Both were
 > caught by independent review before the commit.
+
+## 12. Issue #92 — preserve answer-path failure evidence, but refuse a quality verdict
+
+**Decided:** a live capture preserves every contract-valid AX answer response, including a failed
+generation call, but it carries a typed `AnswerPathHealth` on every live
+`GroundedObservation`. The warrant records AX's observed `llm_call_succeeded` and
+`failure_reason`; missing or contradictory combinations are refused. A failed call becomes
+`available=false` with `error` equal to the exact AX failure reason. A successful call has
+`available=true` and no failure reason, even when `answer_mode` is `insufficient_evidence`.
+
+This is deliberately a synthesis of durable capture and fail-closed comparison. The capture is
+evidence about what the machinery did, so discarding it would destroy the diagnostic fact. It is
+not, however, evidence about answer quality. `evaluate_grounded_case` makes an unavailable case
+`INVALID`; `execute_grounded_fixture` excludes it from Verification quality coverage; the integrated
+dataset run becomes `INVALID`; and `build_experiment_run_summary` requires one completed, scored
+30-case Verification evaluation. `comparison.py` can consume only that completed summary, so no
+separate comparison bypass is introduced. One failed call is enough to break the fixed denominator;
+there is no special exemption for a run that is only partly broken.
+
+A reader holding only the grounded artifact can distinguish the two superficially similar
+`insufficient_evidence` answers:
+
+- **AX declined to answer:** `answer_path.llm_call_succeeded=true`,
+  `answer_path.failure_reason=null`, `available=true`, `error=null`, and
+  `answer_mode="insufficient_evidence"`. It remains a measured case.
+- **AX could not answer in working order:** `answer_path.llm_call_succeeded=false`,
+  `answer_path.failure_reason="provider_error"` (or AX's other exact label), `available=false`,
+  `error` repeats that label, while `answer_mode="insufficient_evidence"` preserves the fallback
+  response that arrived over HTTP 200. It cannot become comparison input.
+
+**Rejected: refuse the whole capture on the first failed call.** That fails closed for publication
+but loses the create-only artifact that explains the failure. Capture and quality publication are
+different claims and now have different gates.
+
+**Rejected: set `available=false` and stop there.** That field is safe only because the complete
+downstream chain was traced and pinned: unavailable cases are not silently removed to make a smaller
+comparison. The coverage count falls below its locked minimum, case evaluation is invalid, and the
+30-case summary builder refuses the input.
+
+**Rejected: fail only when every call fails, or use a percentage threshold.** The measured probe
+reached one grounded answer in twelve calls, so a whole-run-only check would accept a 92%-broken
+path. No evidence justifies a percentage threshold, and the release contract already requires all
+30 Verification cases. A failed generation is machinery evidence, not a low-quality score that can
+be averaged.
+
+**Trade-off:** a failed capture can now be written and replayed even though it can never carry a
+quality verdict. That is intentional: the artifact answers “what failed,” while the missing run
+summary says “quality was not measured.” Every future AX failure label is preserved verbatim rather
+than normalized into a Braincrew-owned taxonomy. This keeps provenance honest but exposes AX's
+known ambiguity: `unsafe_provider_output` currently names both invalid citations and the
+forbidden-phrase safety screen. Issue #92 does not reinterpret or repair that AX-side label.
+
+**Known failure modes and limits:** `provider_metadata` remains a free-form AX response field, so
+Braincrew can validate the two consumed values but cannot prove AX's internal call occurred.
+Malformed combinations fail capture instead of receiving a default. A future AX response-schema
+change therefore requires an explicit adapter update. No Docker service, live endpoint, or
+experiment was used for this decision; the runtime evidence is the already captured Phase 1 probe.
+
+**Validation evidence:** controlled `httpx.MockTransport` acceptance tests cover both required
+halves: all answer calls fail and no run summary can be published; all calls succeed while AX
+legitimately abstains and all 30 cases remain measurable. Contract tests pin the typed
+success/reason relation and require the warrant on live grounded batches. Isolated mutations kill
+each consumed field, each model relation, the abstention distinction, the failure-reason mapping,
+the evaluator invalidation, the coverage exclusion, and the completed-30-case summary barrier;
+each restore is digest-checked before the next mutation. The complete local suite is 531 pytest
+tests, plus the repository's Python, dashboard, build, and browser gates.
+
+### Cycle 123 correction — the AX answer-path result is three-state
+
+The binary description above is incomplete and is superseded by this correction. AX reports three
+source facts, not two: `llm_call_performed`, `llm_call_succeeded`, and `failure_reason`. Braincrew
+accepts exactly these semantic states:
+
+- a performed, successful call: `true`, `true`, `null`;
+- a performed, failed call: `true`, `false`, and a non-empty AX failure reason;
+- an unperformed call: `false`, `null`, and a non-empty AX failure reason.
+
+The third state is reachable in AX's blocked-provider and historical-ambiguity/reference-only paths.
+AX may serialize `llm_call_succeeded=null` or omit it in that state; both forms are preserved as
+`null` when `llm_call_performed=false`. A missing performed state, a performed call with no outcome,
+an unperformed call with a Boolean outcome, failure without a reason, and success with a reason all
+abort capture. Both Boolean fields are strict: integers and strings are not accepted as substitutes.
+Availability is derived only from `llm_call_succeeded is true`, so the two non-success states remain
+diagnostic evidence but cannot enter answer-quality measurement.
+
+Cycle 122 independently exercised partial failures at 1/15 and 5/15 answer calls. Both runs became
+`INVALID` and could not produce a run summary through three load-bearing mechanisms: the fixed
+quality-coverage floor, invalidation of any unavailable case, and the scored-case count required by
+the summary. The deleted availability/reason validator remains redundant. Exhaustive enumeration of
+the old two-state model found no accepted counterexample, and enumeration of the corrected
+three-state model accepts only the three states above with no counterexample to
+`available == (llm_call_succeeded is true)`.
+
+### Cycle 124 correction — the AX source census yields four states
+
+The cycle 123 statement that AX has exactly three semantic answer-path states is also incomplete and
+is superseded here. A complete call-site census of AX commit
+`1ead1331166538e417027a7064179f15c5cfbf61` found four distinct emissions:
+
+- performed success: `true`, `true`, `null` — answer quality is available;
+- performed failure: `true`, `false`, non-empty reason — answer quality is unavailable;
+- not performed with a reason: `false`, `null`, non-empty reason — answer quality is unavailable;
+- not performed without a reason: `false`, `null`, `null` — a normal retrieval-level abstention,
+  so answer quality is available.
+
+The fourth state is emitted by `_template_result` callers at `service.py:71` and `:87`. They return
+before provider execution because retrieval already selected `insufficient_evidence` or
+`out_of_scope`, or because evidence packaging produced nothing. No LLM call was needed and AX
+reports no failure. Treating that state as unavailable would silently violate Issue #92's
+requirement that a legitimate abstention remain measurable.
+
+Availability is therefore derived from the failure evidence, not from whether a provider call
+occurred: `answer_quality_available == (failure_reason is null)`. `answer_mode` is preserved and
+scored independently but is not needed to disambiguate answer-path health. Across the enumerated AX
+source, the reason already separates ordinary no-call abstention from a blocked or degraded
+no-call path. Coupling availability to particular answer modes would duplicate AX control flow and
+would not improve the source fact.
+
+**Rejected: make every unperformed call unavailable.** That closes machinery failures but
+misclassifies the two ordinary abstention branches as outages. **Rejected: use `answer_mode` as an
+additional availability discriminator.** Both ordinary and failed paths can return
+`insufficient_evidence`; the exact failure reason is the discriminating fact, while answer mode
+describes the response semantics.
+
+The executable census is
+`tests/fixtures/ax_answer_path_emission_states_v1.json`. It records the enumeration date, exact AX
+commit, source path and digest, all four `_provider_metadata` sites, all five `_template_result`
+sites, and the four distinct shapes. Contract tests load that artifact rather than maintaining a
+curated state list. A future AX source digest or call-site change requires re-enumeration before a
+new shape can be admitted. Exhaustive enumeration of the Braincrew model accepts exactly the same
+four states and maps both no-reason states to available and both reason-bearing states to
+unavailable.
+
+### Cycle 125 correction — bind the census to the AX commit under test
+
+The census's `source.commit_sha` must equal `PINNED_AX_SHA`. A future AX re-pin therefore fails
+`test_ax_answer_path_census_matches_commit_under_test` until the census is re-enumerated at that
+exact commit. This is strict equality rather than a divergence warrant: unlike the separate
+provisioning and under-test commits in Issue #94, there is no legitimate reason for an answer-path
+census to describe a commit other than the SUT it claims to cover, and a read-only source census is
+cheap to refresh.
+
+**Rejected: accept a different commit when `service.py` has the same digest.** A matching file does
+not prove that the census examined the newly pinned commit, so it cannot replace exact provenance.
+**Rejected: add an allow-list or Issue #94-style warrant.** Either would create a second lifecycle
+for stale census evidence without a present divergence requirement. The contract remains local and
+deterministic; it does not depend on an AX checkout or runtime in CI.

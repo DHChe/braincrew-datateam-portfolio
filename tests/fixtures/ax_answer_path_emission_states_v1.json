@@ -1,0 +1,46 @@
+{
+  "schema_version": "ax-answer-path-emission-state-census-v1",
+  "enumerated_at": "2026-07-31",
+  "source": {
+    "repository": "AX_portfolio",
+    "commit_sha": "1ead1331166538e417027a7064179f15c5cfbf61",
+    "path": "backend/src/ax_engine/answers/service.py",
+    "sha256": "681956917adb17453b8ace3e03dc6da9422177850286be2582f9ff3bacf2c702",
+    "provider_metadata_call_sites": [217, 541, 595, 676],
+    "template_result_call_sites": [71, 87, 111, 157, 187]
+  },
+  "distinct_emission_shapes": [
+    {
+      "id": "performed-success",
+      "source_sites": [217],
+      "llm_call_performed": true,
+      "llm_call_succeeded": true,
+      "failure_reason_example": null,
+      "answer_quality_available": true
+    },
+    {
+      "id": "performed-failure",
+      "source_sites": [146, 157, 173, 187, 595],
+      "llm_call_performed": true,
+      "llm_call_succeeded": false,
+      "failure_reason_example": "provider_error",
+      "answer_quality_available": false
+    },
+    {
+      "id": "not-performed-with-reason",
+      "source_sites": [111, 676],
+      "llm_call_performed": false,
+      "llm_call_succeeded": null,
+      "failure_reason_example": "blocked_no_safe_provider",
+      "answer_quality_available": false
+    },
+    {
+      "id": "not-performed-no-reason",
+      "source_sites": [71, 87],
+      "llm_call_performed": false,
+      "llm_call_succeeded": null,
+      "failure_reason_example": null,
+      "answer_quality_available": true
+    }
+  ]
+}
