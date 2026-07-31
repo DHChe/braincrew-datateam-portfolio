@@ -1980,6 +1980,94 @@ Likely follow-ups:
 - "Does this bless Employee's narrower visibility?" — No. It records the measured SUT behaviour and
   compares like with like; the AX policy itself is out of scope.
 
+### D25. Give the unrepeatable capture a replay path, and state its claim as a closed list
+
+Decision:
+: `replay_live_experiment_capture` re-opens the two observation files a capture manifest names and
+  refuses unless six enumerated conditions hold: strict manifest validation, both files parse,
+  declared content digests and case counts reproduce, case identities equal the declared live
+  partition, adapter versions and the grounded SUT commit SHA agree with the manifest, and the
+  manifest reproduces its own logical digest — with the recomputed value returned, not the stored
+  one. `CaptureArtifactReference.file_name` is constrained at the contract to a bare filename. Locked
+  in [the capture replay decision](../decisions/2026-08-01-live-capture-replay-and-its-enumerated-claim.md);
+  implemented by Issue #106.
+
+Why:
+: The 2026-07-31 capture is the one artifact in the chain that cannot be regenerated, and it was the
+  only one with no replay. Measured: `replay` refused it at exit 2, while the *evaluation* artifact
+  built from it replayed at exit 0. The only committed code that cross-checks a manifest against its
+  observation files sits behind a `COMPLETED`/30-scored gate in `run_summary.py` that this `INVALID`
+  run cannot pass, so artifact integrity was coupled to answer quality. Its integrity rested on an
+  uncommitted script that recomputed digests with the functions that produced them.
+
+Rejected alternative:
+: Narrowing the claim instead of adding the provenance comparisons, because the facts are recorded on
+  both sides precisely so they can be compared and the check is six lines; enforcing the sibling
+  constraint at the replay site rather than the contract, because that refuses the escape instead of
+  making it unrepresentable; returning the stored logical digest, because equality holds only while
+  the comparison above it does; and relaxing `run_summary.py`'s gate to reach the existing
+  cross-check, because that gate protects comparison inputs and the correct fix is a separate
+  integrity path.
+
+Trade-off:
+: The `file_name` constraint narrows `live-experiment-capture-v1`, so any future layout placing
+  observation files in a subdirectory needs a contract change. Provenance comparison runs before the
+  digest comparison, so a doubly-faulty artifact is described by the provenance fault — no false
+  accept is possible, but the message can name the less fundamental problem. The constraint binds the
+  file *name*, not the resolution *target*: a bare-named symlink still reads outside the directory.
+
+Known failure modes:
+: Every refusal **this function raises** is a typed `ValueError` surfacing as CLI exit 2 with no
+  traceback, including a missing sibling file. That is not an absolute about the command: a
+  pathologically nested manifest still raises `RecursionError` inside the CLI's own pre-dispatch
+  `json.loads`, which exits 1 with a traceback — a pre-existing defect on every schema, not one this
+  change introduced, and now a follow-up. The replay cannot detect a forgery in which the manifest and
+  every observation file were fabricated together consistently — inherent to any scheme where one
+  party controls the manifest. Three reciprocal facts are compared; a fourth (`executed_role` against
+  the manifest's role keys) and two declared bounds (`retrieval_top_k`, `evidence_limit`) are not.
+  `executed_role` is unreachable from the capture path; the two bounds could in principle be exceeded
+  by an AX response and are deferred because the real capture's margins are wide.
+
+Validation evidence produced:
+: Independent review constructed six forged triples in which every stored digest is internally
+  consistent; all six were accepted, and cycle 139 returned `REQUEST CHANGES`. pane 1 reproduced the
+  blocking case against the **real** capture: a grounded file declaring the fixture adapter and a
+  different SUT commit, under a manifest still declaring a live run, replayed at exit 0 — and once
+  the fixture adapter is declared, the contract no longer requires answer-path health, so all fifteen
+  `answer_path` records including the twelve `unsafe_provider_output` ones could be deleted and it
+  still replayed at exit 0. After the repair, cycle 141 re-ran that harness unchanged: **the four
+  forgeries the repair targets are refused**, each with a distinct message naming the right fact, and
+  **two remain accepted** — one inconclusive when built, and a `run_id` disagreeing with the file
+  names it points at, which is a recorded follow-up. Mutation verification ran
+  one clause at a time with each restore proved by SHA-256; review checked all twenty labels against
+  `a373e64` byte-identity and found every one correct. pane 1 measured, on real-capture copies
+  outside the repository: the untouched triple replays to `sha256:775a8529…` at exit 0 with 9 and 15
+  observations, seven isolated forgeries each refuse at exit 2 with their own message, and an eighth —
+  `run_id` changed alone — is accepted, reproducing the deferred follow-up. Gates
+  reproduced solo by pane 1: Ruff, mypy, **581 pytest tests**, `git diff --check`, `schemas/` clean.
+  The six npm and Playwright gates were run by pane 2 and their irrelevance verified by pane 3
+  against the gate input globs; pane 1 did not run them.
+
+Validation evidence still required:
+: No live AX runtime was started and none was needed. Nothing here bears on AX's answer path, the
+  `unsafe_provider_output` conflation, or the twelve unscoreable grounded cases. No candidate run
+  exists, so there is still no comparison, no gate decision and no answer-quality claim.
+
+Likely follow-ups:
+
+- "Why enumerate the claim instead of saying it verifies consistency?" — Because "mutually
+  consistent" is unbounded: every review round found one more reciprocal fact, and each read as a
+  defect against the stated claim. A closed list is true, checkable line by line, and finishable.
+- "Doesn't this just recompute digests with the same code again?" — No. The manifest is a pointer;
+  nothing re-opened the files it points at. The new check reads them and compares what both sides
+  independently record.
+- "Then what stops a fabricated capture?" — Nothing in this artifact, and that is stated rather than
+  hidden. The defence against wholesale fabrication is the create-only capture path and the SUT state
+  warrant, not the replay.
+- "Why is the exit-0 case not enough evidence on its own?" — A stronger replay makes exit 0 carry
+  more weight with a reader, so the gap between what it proves and what a reader infers widens. That
+  is the argument for the enumerated claim, not against the check.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

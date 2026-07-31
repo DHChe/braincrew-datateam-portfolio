@@ -25,6 +25,20 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-01.** [Issue #106](https://github.com/DHChe/braincrew-datateam-portfolio/issues/106)
+  is **implemented, reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE` with no blocking
+  finding, audited before commit — that audit returned `NOT SAFE TO COMMIT` twice, both times on
+  pane 1's own records and never on the code, and both rounds were reproduced and corrected — and
+  uncommitted.** Working tree on `develop`, base **`a373e64`**; `git status --short` names **five
+  files — three source, two documentation — plus the untracked decision document**, and
+  `git status --short schemas/` is empty. `uv run pytest -q` reproduces **581 passed**. The first
+  live capture — the one artifact in this project that cannot be regenerated — can now be verified by
+  committed code, and **what that verification establishes is a closed list of six conditions rather
+  than a general claim of consistency.** Independent review broke the first implementation, and
+  pane 1 reproduced the break against the real capture. **Nothing is committed**; the only step that
+  remains is the Git Lifecycle Proposal Gate. See the 2026-08-01 entry at the top of
+  Transition history.
+- **The bullet below is the earlier dated record and is not current state.**
 - **Current state, 2026-07-31 night.** #101 is **merged and closed** (`f9d9cfd`, PR #104). The AX
   runtime was opened and closed again under stage-by-stage authorization, and **the first live
   experiment capture in this project's history succeeded**. The runtime run began from a `develop`
@@ -751,6 +765,121 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-01 — The unrepeatable capture gets a replay path; review broke the first one against the real artifact, and the claim was enumerated rather than described
+
+- **[Issue #106](https://github.com/DHChe/braincrew-datateam-portfolio/issues/106) is implemented,
+  reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE` with no blocking finding, and its claim
+  narrowed in a third cycle.** Working tree on `develop`, base **`a373e64`**, **nothing committed** —
+  this entry is written before the Git Lifecycle Proposal Gate, so at the moment of writing no commit,
+  branch or pull request exists. Cycles 138 (implementation), 139 (independent review), 140 (repair),
+  141 (scoped re-review) and 142 (claim precision). No AX runtime was started and none was needed.
+- **Why the ticket existed, measured by pane 1 on `a373e64` against the real artifacts.** The first
+  live capture — 24 live AX calls, unrepeatable because the provider calls cost money — was the one
+  artifact in the chain with no replay. `braincrew-eval replay` refused the capture manifest at
+  **exit 2** (`unsupported artifact schema: live-experiment-capture-v1`) while replaying the
+  *evaluation* artifact built from it at **exit 0**. **The reproducible half replayed; the
+  irreproducible half did not.**
+- **And the one committed cross-check was unreachable for this run.** `run_summary.py` recomputes both
+  observation content digests and compares case counts, but an earlier clause returns first unless the
+  evaluation is `COMPLETED` with 30 of 30 scored. This run is `INVALID` with 18 of 30, because of the
+  twelve `unsafe_provider_output` cases. `build-run-summary` therefore exits 2 on it. The gate is
+  correct; the consequence was that **artifact integrity was coupled to answer quality.** Until this
+  work, the artifact's integrity rested on an uncommitted script that recomputed digests with the same
+  functions that produced them.
+- **The independent review broke the first implementation, and pane 1 reproduced it on the real
+  capture.** pane 3 built six forged triples in which every stored digest is internally consistent;
+  **all six were accepted**, one of them demonstrated through the committed CLI at exit 0 and the rest
+  at the function. The blocking class: the manifest and the observation files each
+  record the same facts independently — adapter version, SUT commit — and nothing compared them.
+  pane 1 then rebuilt pane 3's forgery against a scratch copy of the **real** 2026-07-31 capture. A
+  grounded file declaring `fixture-grounded-sut-v1` and SUT `bbbb…`, under a manifest still declaring
+  `execution_mode: live` and warrant `1ead1331…`, replayed at **exit 0**.
+- **The second reproduction is why it was blocking rather than untidy.** Once the grounded batch
+  declares the fixture adapter, its contract no longer requires answer-path health — so **all fifteen
+  `answer_path` records were deleted, including the twelve `unsafe_provider_output` records that are
+  the entire X1 measurement**, digests recomputed, and it replayed at **exit 0** again. A capture
+  stripped of the only evidence of AX's answer-path failure was reported as successful under a
+  manifest that still said the run was live. **Exit 0 on that input is worse than refusing to replay
+  at all**, because the refusal is honest and the exit 0 is an affirmative false assurance.
+- **The repair, and what it now establishes.** Three reciprocal facts are compared, the file-name
+  reference is constrained at the contract to a bare filename so directory escape is unrepresentable
+  rather than merely refused, and the **recomputed** logical digest is returned rather than the stored
+  one — the last found by pane 1 independently of review. Locked in
+  [the capture replay decision](../decisions/2026-08-01-live-capture-replay-and-its-enumerated-claim.md),
+  defended as card **D25**.
+- **The claim is now a closed list, and that is the substantive half of the decision.** #106's first
+  wording said the replay verifies the manifest and its observation files are *"mutually consistent."*
+  That phrase is unbounded: cycle 141 immediately found a **fourth** reciprocal fact
+  (`executed_role` against the manifest's role keys) and two declared bounds (`retrieval_top_k`,
+  `evidence_limit`) it does not cover. Each round would find one more, and each would read as a defect
+  against the stated claim. The claim is therefore enumerated — six named conditions — which is true,
+  checkable line by line, and finishable. **The reviewer's own recommendation, adopted.**
+- **What it does not establish, stated rather than hidden.** It does not re-run AX and cannot. It does
+  not detect a forgery in which the manifest and every observation file were fabricated together
+  consistently — inherent to any scheme where one party controls the manifest. It does not compare
+  every fact both sides record; three are compared and three known others are follow-ups.
+  `executed_role` is **unreachable** from the capture path, because it comes from the adapter the
+  capture itself built; the `retrieval_top_k` and `evidence_limit` bounds **could** be exceeded by an
+  AX response and are deferred only because the real capture's margins are wide — 0 to 1 candidates
+  and 0 to 1 citations against limits of 5 and 3.
+- **What the re-review left open, because "approved" is not "closed".** Cycle 141 re-ran its
+  cycle-139 forgery harness unchanged: **four of the six forgeries are now refused**, each naming the
+  right fact; **two are still accepted** — one that was inconclusive when built, and a `run_id`
+  disagreeing with the file names it points at, which is the deferred follow-up. pane 1 reproduced
+  that second acceptance against the real capture: `run_id` changed alone and rehashed replays at
+  **exit 0**. The first wording of the decision document, of **card D25 — the recruiter-facing
+  dossier** — and of the commit message all said *every* forgery was refused; this entry was silent on
+  the post-repair outcome until now. **Cycle 143's pre-commit audit returned `NOT SAFE TO COMMIT` on
+  it** — a false statement about the outcome of the reviewer's own review, in the one sentence a
+  reader uses to conclude the repair is complete, and the decision document contradicted itself two
+  sections later by listing the same gap as a follow-up.
+- **What pane 1 measured itself, and what it did not.** Run by pane 1, solo: ruff format and check,
+  mypy, `pytest -q` **575** after cycle 138 and **581** after cycle 140, `git diff --check`,
+  `git status --short schemas/` empty throughout, and `HEAD` unmoved at `a373e64` with no stash and no
+  new Git object. Against copies of the real capture outside the repository: the untouched triple
+  replays to `sha256:775a8529…` at exit 0 with 9 and 15 observations; a case identity swapped with all
+  digests rehashed, a grounded adapter disagreement, the `answer_path`-stripped variant, a grounded
+  `sut_commit_sha` changed alone, a retrieval `adapter_version` changed alone, a missing sibling file
+  and a `sub/` file name each refuse at **exit 2** with their own message and no traceback. An eighth
+  probe — `run_id` changed alone — is **accepted at exit 0**, which is the deferred follow-up above,
+  measured rather than assumed. **Not run by pane 1:** the six npm and Playwright gates. pane 2 ran them green and pane 3 verified
+  independently that no changed path lies inside any of their input globs — **an inference from the
+  gate configuration, not a measurement of the gates.**
+- **Attribution corrected by review, and it is the rule this repository added on #101.** pane 1's
+  cycle-141 brief labelled the fixture-adapter and `answer_path` forgeries *"pane 1's cycle-139
+  forgery."* They are **pane 3's** constructions, made while pane 1's findings were deliberately
+  withheld from it; pane 1 rebuilt them independently against real data afterwards. The accurate
+  label is *pane 1's independent re-run, on the real capture, of pane 3's forgery*, and it is used
+  that way above.
+- **Two errors in pane 1's own briefs, found by review and adopted.** *"Five replay functions in
+  `result_store.py`"* is wrong — two functions, five schema versions handled inline; the repository's
+  other replay functions live in four other files, and two of the review's findings came from
+  comparing against those. And the npm-gate premise was stated as *"zero JS/TS files changed"* when
+  Prettier and ESLint run over **directories**, so the load-bearing premise is that no changed path
+  lies inside a gate's input glob.
+- **A dispatch-mechanism defect, diagnosed only partly.** pane 2 reported that its cycle-138 brief
+  arrived **truncated**, and cmux's paste counter read 4206 characters against a 6972-character file.
+  The work covered the whole brief, so the truncation is more likely a rendering artifact than a lost
+  payload, and **it is not settled.** Every brief from cycle 139 onward is written to a file and
+  dispatched as a one-line pointer, which removes the failure class rather than diagnosing it.
+- **Not claimed.** No AX runtime was started. Nothing here bears on AX's answer path, the
+  `unsafe_provider_output` conflation, or the twelve unscoreable grounded cases. No candidate run, so
+  no comparison, no gate decision, no answer-quality claim. The replay makes the capture *checkable*;
+  it does not make it *correct*.
+- **The pre-commit audit found two blocking defects, both in pane 1's own writing, and neither in the
+  code.** Cycle 143 audited this entry, the decision document, card D25 and the commit message —
+  pane 1 does not review its own writing. It returned **`NOT SAFE TO COMMIT`** on the false
+  *"every forgery is refused"* claim above, and on a Current-checkpoint bullet that said
+  `git status --short` named **three** files when it names five plus an untracked one, **including the
+  file the sentence is written in.** pane 1 reproduced both before accepting them. Six further
+  non-blocking corrections were adopted, one of which the auditor traced to **its own** cycle-141
+  wording losing a qualification. Append-only discipline was confirmed clean: zero deletions, no
+  dossier card renumbered, no historical entry edited, and `Last updated: 2026-07-25` untouched with
+  its pinned test passing inside the 581.
+- **Next.** A scoped re-audit of these corrections, then the Git Lifecycle Proposal Gate. The
+  follow-ups this work deliberately did not take are enumerated in the decision document and need the
+  owner's authorization before any are filed.
 
 ### 2026-07-31 (night) — The first live experiment capture succeeded, X1 says #92 was urgent, and the next blocker is inside AX's answer path
 
