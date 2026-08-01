@@ -25,6 +25,21 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-01 (instrument freeze and #118).** Instrument-improvement work is
+  **frozen**: [#108](https://github.com/DHChe/braincrew-datateam-portfolio/issues/108)–[#115](https://github.com/DHChe/braincrew-datateam-portfolio/issues/115)
+  are parked with a resume condition, and the implementable frontier is two issues once #118 is set
+  aside as in flight — #97 and #103.
+  [Issue #106](https://github.com/DHChe/braincrew-datateam-portfolio/issues/106) merged as `be206ff`
+  and the repository's first `README.md` merged as `d6b98ec`.
+  [Issue #118](https://github.com/DHChe/braincrew-datateam-portfolio/issues/118) — parsing refusing a
+  drifted observation instead of scoring it zero — is **implemented, reviewed, repaired, re-reviewed
+  `APPROVE`, and uncommitted**: eleven implementation files on `develop` at `d6b98ec`, `uv run pytest -q` reproducing
+  **589 passed**, `git status --short schemas/` empty. **Nothing is committed for #118**; the steps
+  that remain are the pre-commit audit and the Git Lifecycle Proposal Gate. Against the design
+  specification's ten acceptance criteria the release stands at **four met, one met for fixture
+  evidence only, four not met, one not separately assessed** — the engine is far along and the
+  evidence is not. See the 2026-08-01 instrument-freeze entry at the top of Transition history.
+- **The bullet below is the earlier dated record and is not current state.**
 - **Current state, 2026-08-01 (after merge).**
   [Issue #106](https://github.com/DHChe/braincrew-datateam-portfolio/issues/106) is **merged and
   closed** — `be206ff` on `develop`, PR #107 squash-merged with both CI jobs green. Re-verified on the
@@ -789,6 +804,94 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-01 (instrument freeze, README, and a false measurement removed) — the owner redirected from polishing the instrument to moving the evidence, and the first thing that move found was a published zero that was never a measurement
+
+- **The owner asked how far the plan had got, and the answer required correcting an earlier report.**
+  Against the design specification's ten acceptance criteria the release stands at four met, one met
+  for fixture evidence only, four not met and one not separately assessed. The engine is far along
+  and the evidence is not: **one live retrieval measurement exists and no live answer-quality
+  measurement does.** pane 1's first progress report counted the 100-case dataset as delivered on the
+  strength of its frozen manifest; a measured probe showed the current `v3` dataset **has no complete
+  offline run at all** — run against the only committed observation bundles it returns `INVALID` with
+  34 of 100 scored.
+- **Instrument work was frozen.** Of 52 issues at the freeze, 22 came from the original plan and 30 emerged during
+  delivery, and over the preceding four days every completed ticket improved the measuring instrument
+  while none produced a measurement. [#108](https://github.com/DHChe/braincrew-datateam-portfolio/issues/108)–[#115](https://github.com/DHChe/braincrew-datateam-portfolio/issues/115)
+  were **parked, not closed** — the measurements they record are not withdrawn — with a resume
+  condition written on each: reconsider once the instrument is being used rather than tuned. The
+  implementable frontier went from fifteen issues to two.
+- **The repository has a `README.md` for the first time**, merged as `d6b98ec` (PR #117). It was
+  written **after** a measured claim inventory rather than before one, deliberately: pane 2 produced
+  the inventory — every claim, the command that checks it, the actual output, and a verdict — with no
+  README prose in existence, so claims could not be retrofitted to the writing. Three audit rounds
+  then found **three blocking overclaims**, all in pane 1's prose, each reproduced before acceptance:
+  *"every artifact is create-only and replayable"*, which one command falsified with the same error
+  string Issue #106 had just spent five cycles eliminating; an accounting of ten acceptance criteria
+  that named eight; and a diagram attributing Parquet to a stage that emits none — disproved by the
+  README's own documented command.
+- **The audit's judgement on the README's framing, which pane 1 had asked for because it could not
+  judge it:** the opening is earned, because the refusal to score twelve broken cases rests on
+  captured answer-path health, a contract that requires it for live batches, and locked decision D23
+  — not on arithmetic. But the document *undersold the build*, so a paragraph of provable scale was
+  added, every figure measured before it was written.
+- **A scope analysis was tested by refutation before anything was built on it, and pane 1's
+  recommendation was destroyed.** pane 1 proposed authoring six parsing observations and committing
+  the live capture so the `v3` Verification partition would reproduce offline. Review refuted it:
+  `build_dataset_run_artifact`'s live-provenance check (`dataset_run.py:317`) requires a live run's `evaluation_plane_sha` to equal the current commit, the
+  capture pins `f9d9cfd`, and `verification_only` requires both batches live — so **the v3
+  Verification artifact cannot be rebuilt at `HEAD` by anyone**, and committing the fixtures makes it
+  worse in either direction. The recommendation's deliverable was an out-of-tree procedure pinned to a
+  historical commit. **Review proposed a fourth option nobody had: fix the evaluator and author
+  nothing.**
+- **What the analysis did establish, and it closes a gap open since the first live capture.** The
+  parsing aggregate of `0.0000` in the published 2026-07-31 evaluation is explained: the run used
+  `parsing_observations_v1.json` — **byte-identical for all twenty case IDs** — against v2 documents.
+  `parsing-015`'s observation span `"3년 | 16일"` does not occur in `demo-terms-guide-002`. The
+  control that settles it, proposed and run by review after pane 1 failed to think of it: the same
+  observations against the correct dataset version score **`1.0000`** on all five metrics.
+- **[Issue #118](https://github.com/DHChe/braincrew-datateam-portfolio/issues/118) is implemented,
+  reviewed `REQUEST CHANGES`, repaired, re-reviewed `APPROVE`, and refined once more.** Parsing was
+  the only one of three evaluator families with no drift detector, so it reported a false zero as a
+  measurement. It now refuses, as `parsing-quality-v2`, with `parsing-quality-v1` reachable only from
+  stored provenance so published artifacts still replay. Locked in
+  [the parsing drift decision](../decisions/2026-08-01-parsing-drift-refusal-and-evaluator-versioning.md),
+  defended as card **D26**. **Uncommitted at the time of writing**, eleven files on `develop` at
+  `d6b98ec`.
+- **Review found two misdiagnoses in the guard, and a bypass that meant the guard never ran at all —
+  none of which implementation or orchestration had seen.**
+  It refused a legitimate zero-recovery observation of the **correct** document — the same
+  one-code-two-causes defect this project filed against its own SUT as `AX#60`. Fresh runs on two of
+  three committed manifests had **no guard at all**, demonstrated by emitting a fresh `COMPLETED`
+  artifact with 20 `SCORED` cases and aggregate `0.0000`: the defect, still producible. And the
+  predicate misdiagnosed a **correct** document carrying a SUT-assigned span id — which is exactly
+  what the live path produces, since `live_preflight.py:789` copies AX's span id. That last finding
+  moved the predicate from a `(span id, digest)` tuple to the document digest alone, measured to
+  refuse all six published drift cases identically.
+- **The sentence most likely to be written down wrongly later, so it is written here.** The published
+  2026-07-31 artifact **still recomputes six `SCORED 0.0000` parsing cases** under its stored v1
+  dispatch. That is what preserving replayability means. This work stops **new** evaluations from
+  producing a false zero; it does **not** remove the false zero from published evidence.
+- **What pane 1 measured itself.** Ruff, mypy, `pytest -q` **589**, `git diff --check`,
+  `git status --short schemas/` empty. Both blocking findings reproduced before acceptance, and the
+  second misdiagnosis reproduced independently. On the final tree: correct-digest-with-SUT-id
+  **scores** with structure and metadata retained; zero recovery **scores**; a different document
+  digest is **refused**; the v3 probe refuses every case with aggregate `None`; the legitimate v1 path
+  is `COMPLETED` at `1.0000`; and both real artifacts still replay — `sha256:9435c9da…` and
+  `sha256:775a8529…`, the latter being Issue #106's criterion, **which pane 2 did not report and
+  pane 1 had to check.**
+- **Two errors of pane 1's own, corrected rather than buried.** It wrote an acceptance criterion into
+  #118 requiring a fresh run to reproduce a historical digest — unachievable, because a logical digest
+  binds the evaluation-plane commit and dirty state, and reaching it would require fabricating
+  provenance. pane 2 refused and was right; the criterion is corrected in a comment on the issue so
+  the next implementer is not pushed toward the same fabrication. And pane 1 dispatched a repair to a
+  pane with 20% context remaining, then interrupted and reset it before work was lost.
+- **Not claimed.** No AX runtime was started at any point. No live parsing observation exists in this
+  repository, so the guard has never run against a real AX parse response. Nothing here bears on the
+  AX answer path or the twelve unscoreable grounded cases. No candidate run, so no comparison, no gate
+  decision, no answer-quality claim.
+- **Next.** Pre-commit audit of this entry and the durable documents beside it — pane 1 does not
+  review its own writing — then the Git Lifecycle Proposal Gate.
 
 ### 2026-08-01 (merge) — Issue #106 merged as `be206ff`; eight follow-ups filed, and the checkpoint that named the Git gate as the only remaining step is now superseded
 

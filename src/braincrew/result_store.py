@@ -651,6 +651,7 @@ def replay_run_artifact(path: Path) -> dict[str, str]:
             evaluation=evaluate_parsing_run(
                 stored_parsing_result.dataset_snapshot,
                 stored_parsing_result.observation_snapshot,
+                evaluator_version=parsing_artifact.provenance.evaluator.version,
             ),
         )
         recomputed_parsing_digest = canonical_digest(

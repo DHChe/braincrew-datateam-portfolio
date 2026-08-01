@@ -16,6 +16,7 @@ from braincrew.comparison import (
     ExperimentRunSummary,
     compare_runs,
 )
+from braincrew.contracts import PARSING_EVALUATOR_V2
 from braincrew.corpus_authoring import AuthoringBoundaryError, launch_authoring_process
 from braincrew.corpus_qualification import (
     CorpusQualificationError,
@@ -191,7 +192,11 @@ def run_parsing_fixture(
     artifact = build_parsing_run_artifact(
         dataset=dataset,
         observations=observations,
-        evaluation=execute_parsing_fixture(dataset, observations),
+        evaluation=execute_parsing_fixture(
+            dataset,
+            observations,
+            evaluator_version=PARSING_EVALUATOR_V2,
+        ),
         run_id=run_id,
         evaluation_state=evaluation_state,
         sut_sha=sut_sha,
@@ -383,7 +388,11 @@ def run_dataset_fixture(
             raise typer.Exit(code=2)
         live_provenance = capture_manifest.provenance
     evaluation_state = _capture_repository_state()
-    evaluation = execute_dataset_fixture(validation, observations)
+    evaluation = execute_dataset_fixture(
+        validation,
+        observations,
+        parsing_evaluator_version=PARSING_EVALUATOR_V2,
+    )
     try:
         artifact = build_dataset_run_artifact(
             validation=validation,

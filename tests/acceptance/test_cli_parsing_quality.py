@@ -92,7 +92,7 @@ def test_cli_executes_twenty_parsing_cases_to_an_exactly_versioned_artifact(
         "parser_version": "fixture-parser-v1",
         "execution_mode": "fixture",
     }
-    assert artifact["provenance"]["evaluator"] == {"version": "parsing-quality-v1"}
+    assert artifact["provenance"]["evaluator"] == {"version": "parsing-quality-v2"}
     assert artifact["provenance"]["sut"]["commit_sha"] == SUT_SHA
     assert artifact["provenance"]["sut"]["executed"] is False
     assert artifact["logical_result"]["evaluation"]["state"] == "COMPLETED"

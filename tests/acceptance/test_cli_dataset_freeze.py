@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, cast
 
 MANIFEST_PATH = Path("datasets/dataset_manifest_v1.json")
+REBOUND_MANIFEST_PATH = Path("datasets/dataset_manifest_v3.json")
 PARSING_OBSERVATIONS = Path("tests/fixtures/parsing_observations_v1.json")
 RETRIEVAL_OBSERVATIONS = Path("tests/fixtures/retrieval_observations_v1.json")
 GROUNDED_OBSERVATIONS = Path("tests/fixtures/grounded_observations_v1.json")
@@ -28,11 +29,12 @@ def dataset_command(
     run_id: str,
     *,
     parsing_observations: Path = PARSING_OBSERVATIONS,
+    manifest_path: Path = MANIFEST_PATH,
 ) -> tuple[str, ...]:
     return (
         "run-dataset",
         "--manifest",
-        str(MANIFEST_PATH),
+        str(manifest_path),
         "--parsing-observations",
         str(parsing_observations),
         "--retrieval-observations",
@@ -79,6 +81,7 @@ def test_cli_creates_replays_and_repeats_the_full_immutable_fixture_artifact(
     assert artifact["provenance"]["dataset"]["content_digest"] == (
         "sha256:7fb0b58c5ad7c242696bcaef13773eb5dc6358e8127219fa7dc65c19c7a5d71b"
     )
+    assert artifact["provenance"]["evaluator"]["parsing_version"] == "parsing-quality-v2"
     assert artifact["provenance"]["sut"]["commit_sha"] == SUT_SHA
     evaluation = artifact["logical_result"]["evaluation"]
     assert evaluation["total_cases"] == 100
@@ -119,6 +122,57 @@ def test_replay_rejects_rehashed_scoring_content_tampering(tmp_path: Path) -> No
 
     assert replay.returncode == 2
     assert "Invalid artifact" in replay.stderr
+
+
+def test_cli_refuses_drifted_parsing_observations_for_the_rebound_dataset(
+    tmp_path: Path,
+) -> None:
+    result = run_cli(
+        *dataset_command(
+            tmp_path / "artifacts",
+            "dataset-rebound-parsing-drift",
+            manifest_path=REBOUND_MANIFEST_PATH,
+        )
+    )
+
+    assert result.returncode == 0, result.stderr
+    artifact = read_json(Path(json.loads(result.stdout)["artifact_path"]))
+    parsing = artifact["logical_result"]["evaluation"]["parsing"]
+    assert parsing["evaluator_version"] == "parsing-quality-v2"
+    assert parsing["state"] == "INVALID"
+    assert "parsing-015:PARSE_OBSERVATION_DOCUMENT_IDENTITY_MISMATCH" in parsing["invalid_reasons"]
+
+
+def test_cli_v1_manifest_refuses_drifted_parsing_observations_under_v2(
+    tmp_path: Path,
+) -> None:
+    drifted_observations = read_json(PARSING_OBSERVATIONS)
+    for observation in drifted_observations["observations"]:
+        for span_index, span in enumerate(observation["evidence_spans"]):
+            span["id"] = f"foreign-{observation['case_id']}-{span_index}"
+            span["source_text_digest"] = f"sha256:{'f' * 64}"
+    observations_path = tmp_path / "parsing-v1-drifted.json"
+    observations_path.write_text(
+        json.dumps(drifted_observations, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    result = run_cli(
+        *dataset_command(
+            tmp_path / "artifacts",
+            "dataset-v1-parsing-drift",
+            parsing_observations=observations_path,
+        )
+    )
+
+    assert result.returncode == 0, result.stderr
+    artifact = read_json(Path(json.loads(result.stdout)["artifact_path"]))
+    parsing = artifact["logical_result"]["evaluation"]["parsing"]
+    assert artifact["logical_result"]["evaluation"]["state"] == "INVALID"
+    assert parsing["evaluator_version"] == "parsing-quality-v2"
+    assert parsing["state"] == "INVALID"
+    assert parsing["aggregate"] is None
+    assert "parsing-015:PARSE_OBSERVATION_DOCUMENT_IDENTITY_MISMATCH" in parsing["invalid_reasons"]
 
 
 def test_result_store_rejects_collision_without_mutating_the_first_artifact(

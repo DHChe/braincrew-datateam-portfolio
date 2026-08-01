@@ -928,6 +928,47 @@ def test_live_dataset_artifact_refuses_provenance_that_does_not_match_evidence(
         )
 
 
+def test_live_dataset_artifact_refuses_a_parsing_evaluator_version_mismatch(
+    tmp_path: Path,
+) -> None:
+    from braincrew.dataset_run import (
+        DatasetObservationSnapshot,
+        build_dataset_run_artifact,
+        execute_dataset_fixture,
+    )
+
+    capture, _ = _capture(tmp_path)
+    validation = _validated_dataset()
+    observations = DatasetObservationSnapshot(
+        parsing=_perfect_parsing_observations(validation),
+        retrieval=capture.retrieval_observations,
+        grounded=capture.grounded_observations,
+    )
+    evaluation = execute_dataset_fixture(validation, observations)
+    v1_capture_provenance = capture.manifest.provenance.model_copy(
+        update={
+            "evaluator_versions": {
+                **capture.manifest.provenance.evaluator_versions,
+                "parsing": "parsing-quality-v1",
+            }
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="live capture parsing evaluator version does not match dataset evaluation",
+    ):
+        build_dataset_run_artifact(
+            validation=validation,
+            observations=observations,
+            evaluation=evaluation,
+            run_id=capture.manifest.run_id,
+            evaluation_state=RepositoryState(commit_sha="a" * 40, dirty_worktree=False),
+            sut_sha=PINNED_AX_SHA,
+            live_provenance=v1_capture_provenance,
+        )
+
+
 def test_run_summary_builder_derives_the_comparison_input_and_writes_create_only(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -988,6 +1029,10 @@ def test_run_summary_builder_derives_the_comparison_input_and_writes_create_only
     _check(
         baseline_artifact.provenance.evaluator.operational_version == OPERATIONAL_EVALUATOR_VERSION,
         "integrated run evidence must name the implemented operational evaluator",
+    )
+    _check(
+        baseline_artifact.provenance.evaluator.parsing_version == "parsing-quality-v2",
+        "new live captures must use the document-identity parsing evaluator",
     )
     _check(
         sum(case.latency_ms is not None for case in baseline.cases) == 24,

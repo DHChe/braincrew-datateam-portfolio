@@ -5,6 +5,7 @@ from fractions import Fraction
 from typing import Literal
 
 from braincrew.contracts import (
+    PARSING_EVALUATOR_V2,
     EvaluationResult,
     FixtureCase,
     NormalizedObservation,
@@ -14,6 +15,7 @@ from braincrew.contracts import (
     ParsingCaseEvaluation,
     ParsingCoverage,
     ParsingDatasetDocument,
+    ParsingEvaluatorVersion,
     ParsingMetricScore,
     ParsingObservation,
     ParsingObservationBatch,
@@ -362,14 +364,36 @@ def _metric_score(numerator: int, denominator: int) -> ParsingMetricScore:
 def evaluate_parsing_case(
     case: ParsingCase,
     observation: ParsingObservation,
+    *,
+    evaluator_version: ParsingEvaluatorVersion = PARSING_EVALUATOR_V2,
 ) -> ParsingCaseEvaluation:
     if not observation.parse_available:
         return ParsingCaseEvaluation(
             schema_version="parsing-case-evaluation-v1",
-            evaluator_version="parsing-quality-v1",
+            evaluator_version=evaluator_version,
             case_id=case.id,
             status="INVALID",
             invalid_reasons=[observation.failure_code or "PARSE_OBSERVATION_UNAVAILABLE"],
+            evidence_span_recovery=None,
+            structure_preservation=None,
+            metadata_completeness=None,
+            table_preservation=None,
+            list_preservation=None,
+        )
+
+    expected_document_digests = {span.source_text_digest for span in case.expected.evidence_spans}
+    observed_document_digests = {span.source_text_digest for span in observation.evidence_spans}
+    if (
+        evaluator_version == PARSING_EVALUATOR_V2
+        and observation.evidence_spans
+        and not (expected_document_digests & observed_document_digests)
+    ):
+        return ParsingCaseEvaluation(
+            schema_version="parsing-case-evaluation-v1",
+            evaluator_version=evaluator_version,
+            case_id=case.id,
+            status="INVALID",
+            invalid_reasons=["PARSE_OBSERVATION_DOCUMENT_IDENTITY_MISMATCH"],
             evidence_span_recovery=None,
             structure_preservation=None,
             metadata_completeness=None,
@@ -410,7 +434,7 @@ def evaluate_parsing_case(
 
     return ParsingCaseEvaluation(
         schema_version="parsing-case-evaluation-v1",
-        evaluator_version="parsing-quality-v1",
+        evaluator_version=evaluator_version,
         case_id=case.id,
         status="SCORED",
         invalid_reasons=[],
@@ -448,6 +472,7 @@ def evaluate_parsing_run(
     batch: ParsingObservationBatch,
     *,
     verification_only: bool = False,
+    evaluator_version: ParsingEvaluatorVersion = PARSING_EVALUATOR_V2,
 ) -> ParsingRunEvaluation:
     observations_by_case = {observation.case_id: observation for observation in batch.observations}
     evaluated_cases = [
@@ -463,7 +488,7 @@ def evaluate_parsing_run(
         if observation is None:
             case_result = ParsingCaseEvaluation(
                 schema_version="parsing-case-evaluation-v1",
-                evaluator_version="parsing-quality-v1",
+                evaluator_version=evaluator_version,
                 case_id=case.id,
                 status="INVALID",
                 invalid_reasons=["PARSE_OBSERVATION_MISSING"],
@@ -474,7 +499,11 @@ def evaluate_parsing_run(
                 list_preservation=None,
             )
         else:
-            case_result = evaluate_parsing_case(case, observation)
+            case_result = evaluate_parsing_case(
+                case,
+                observation,
+                evaluator_version=evaluator_version,
+            )
         case_results.append(case_result)
         if case_result.status == "INVALID":
             invalid_reasons.extend(f"{case.id}:{reason}" for reason in case_result.invalid_reasons)
@@ -500,7 +529,7 @@ def evaluate_parsing_run(
     if invalid_reasons:
         return ParsingRunEvaluation(
             schema_version="parsing-run-evaluation-v1",
-            evaluator_version="parsing-quality-v1",
+            evaluator_version=evaluator_version,
             state="INVALID",
             invalid_reasons=invalid_reasons,
             coverage=coverage,
@@ -510,7 +539,7 @@ def evaluate_parsing_run(
 
     return ParsingRunEvaluation(
         schema_version="parsing-run-evaluation-v1",
-        evaluator_version="parsing-quality-v1",
+        evaluator_version=evaluator_version,
         state="COMPLETED",
         invalid_reasons=[],
         coverage=coverage,

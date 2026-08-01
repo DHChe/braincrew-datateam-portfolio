@@ -9,8 +9,10 @@ from typing import Literal
 
 from braincrew.comparison import ExperimentProvenance
 from braincrew.contracts import (
+    PARSING_EVALUATOR_V2,
     EvaluationPlaneProvenance,
     ModelIdentity,
+    ParsingEvaluatorVersion,
     ParsingObservationBatch,
     ParsingRunEvaluation,
     PromptIdentity,
@@ -76,7 +78,7 @@ class DatasetAdapterProvenance(StrictDatasetContract):
 
 class DatasetEvaluatorProvenance(StrictDatasetContract):
     version: Literal["dataset-fixture-v1", "dataset-verification-v1"]
-    parsing_version: Literal["parsing-quality-v1"]
+    parsing_version: ParsingEvaluatorVersion
     retrieval_version: Literal["retrieval-quality-v1"]
     grounded_version: Literal["grounded-answer-v1"]
     operational_version: Literal["operational-v1"] | None = None
@@ -122,6 +124,8 @@ def load_dataset_observations(
 def execute_dataset_fixture(
     validation: DatasetValidationReport,
     observations: DatasetObservationSnapshot,
+    *,
+    parsing_evaluator_version: ParsingEvaluatorVersion = PARSING_EVALUATOR_V2,
 ) -> DatasetRunEvaluation:
     if validation.state != "VALID" or validation.snapshot is None:
         return DatasetRunEvaluation(
@@ -169,6 +173,7 @@ def execute_dataset_fixture(
         snapshot.parsing_dataset,
         parsing_observations,
         verification_only=verification_only,
+        evaluator_version=parsing_evaluator_version,
     )
     retrieval = execute_retrieval_fixture(snapshot.retrieval_dataset, observations.retrieval)
     grounded = execute_grounded_fixture(snapshot.grounded_dataset, observations.grounded)
@@ -242,10 +247,12 @@ def _dataset_adapter(observations: DatasetObservationSnapshot) -> DatasetAdapter
 
 def _dataset_evaluator(
     execution_mode: Literal["fixture", "live"],
+    *,
+    parsing_evaluator_version: ParsingEvaluatorVersion,
 ) -> DatasetEvaluatorProvenance:
     return DatasetEvaluatorProvenance(
         version=("dataset-verification-v1" if execution_mode == "live" else "dataset-fixture-v1"),
-        parsing_version="parsing-quality-v1",
+        parsing_version=parsing_evaluator_version,
         retrieval_version="retrieval-quality-v1",
         grounded_version="grounded-answer-v1",
         operational_version=(OPERATIONAL_EVALUATOR_VERSION if execution_mode == "live" else None),
@@ -296,6 +303,11 @@ def build_dataset_run_artifact(
     if validation.state != "VALID" or validation.snapshot is None:
         raise ValueError("a valid dataset snapshot is required for fixture execution")
     adapter = _dataset_adapter(observations)
+    parsing_evaluator_version = (
+        evaluation.parsing.evaluator_version
+        if evaluation.parsing is not None
+        else PARSING_EVALUATOR_V2
+    )
     if adapter.execution_mode == "live":
         if live_provenance is None:
             raise ValueError("live dataset execution requires captured experiment provenance")
@@ -306,6 +318,10 @@ def build_dataset_run_artifact(
             or live_provenance.evaluation_plane_dirty != evaluation_state.dirty_worktree
         ):
             raise ValueError("live dataset provenance does not match the evaluated evidence")
+        if live_provenance.evaluator_versions.get("parsing") != parsing_evaluator_version:
+            raise ValueError(
+                "live capture parsing evaluator version does not match dataset evaluation"
+            )
         sut = _dataset_sut(
             sut_sha,
             execution_mode="live",
@@ -335,7 +351,10 @@ def build_dataset_run_artifact(
         sut=sut,
         dataset=_dataset_provenance(validation.snapshot),
         adapter=adapter,
-        evaluator=_dataset_evaluator(adapter.execution_mode),
+        evaluator=_dataset_evaluator(
+            adapter.execution_mode,
+            parsing_evaluator_version=parsing_evaluator_version,
+        ),
         prompt=prompt,
         model=model,
     )
@@ -382,10 +401,15 @@ def write_dataset_run_artifact(
 def replay_dataset_run_artifact(raw_artifact: object) -> dict[str, str]:
     artifact = DatasetRunArtifactDocument.model_validate(raw_artifact)
     stored = artifact.logical_result
+    parsing_evaluator_version = artifact.provenance.evaluator.parsing_version
     validation = validate_dataset_snapshot(stored.dataset_snapshot)
     if validation.state != "VALID" or validation.snapshot is None:
         raise ValueError("artifact dataset snapshot does not reproduce its frozen digest")
-    recomputed_evaluation = execute_dataset_fixture(validation, stored.observation_snapshot)
+    recomputed_evaluation = execute_dataset_fixture(
+        validation,
+        stored.observation_snapshot,
+        parsing_evaluator_version=parsing_evaluator_version,
+    )
     recomputed_logical_result = DatasetLogicalResult(
         dataset_snapshot=validation.snapshot,
         observation_snapshot=stored.observation_snapshot,
@@ -412,7 +436,10 @@ def replay_dataset_run_artifact(raw_artifact: object) -> dict[str, str]:
             "sut": recomputed_sut,
             "dataset": _dataset_provenance(validation.snapshot),
             "adapter": adapter,
-            "evaluator": _dataset_evaluator(adapter.execution_mode),
+            "evaluator": _dataset_evaluator(
+                adapter.execution_mode,
+                parsing_evaluator_version=parsing_evaluator_version,
+            ),
             "prompt": recomputed_prompt,
             "model": recomputed_model,
         }

@@ -12,6 +12,9 @@ from braincrew.operational_evaluator import OperationalMeasurement
 CommitSha = Annotated[str, Field(pattern=r"^[0-9a-f]{40}$")]
 LogicalDigest = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
 RunId = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")]
+ParsingEvaluatorVersion = Literal["parsing-quality-v1", "parsing-quality-v2"]
+PARSING_EVALUATOR_V1: ParsingEvaluatorVersion = "parsing-quality-v1"
+PARSING_EVALUATOR_V2: ParsingEvaluatorVersion = "parsing-quality-v2"
 
 
 class StrictContract(BaseModel):
@@ -437,7 +440,7 @@ class ParsingMetricScore(StrictContract):
 
 class ParsingCaseEvaluation(StrictContract):
     schema_version: Literal["parsing-case-evaluation-v1"]
-    evaluator_version: Literal["parsing-quality-v1"]
+    evaluator_version: ParsingEvaluatorVersion
     case_id: str
     status: Literal["SCORED", "INVALID"]
     invalid_reasons: list[str]
@@ -489,7 +492,7 @@ class ParsingAggregate(StrictContract):
 
 class ParsingRunEvaluation(StrictContract):
     schema_version: Literal["parsing-run-evaluation-v1"]
-    evaluator_version: Literal["parsing-quality-v1"]
+    evaluator_version: ParsingEvaluatorVersion
     state: Literal["COMPLETED", "INVALID"]
     invalid_reasons: list[str]
     coverage: ParsingCoverage
@@ -504,7 +507,7 @@ class ParsingAdapterProvenance(StrictContract):
 
 
 class ParsingEvaluatorProvenance(StrictContract):
-    version: Literal["parsing-quality-v1"]
+    version: ParsingEvaluatorVersion
 
 
 class ParsingArtifactProvenance(StrictContract):
