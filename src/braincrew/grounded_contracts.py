@@ -297,6 +297,14 @@ class AnswerPathHealth(StrictGroundedContract):
     llm_call_performed: StrictBool
     llm_call_succeeded: StrictBool | None
     failure_reason: str | None = Field(default=None, min_length=1)
+    citation_contract_violation: StrictBool | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    unsafe_provider_output: StrictBool | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
 
     @property
     def answer_quality_available(self) -> bool:

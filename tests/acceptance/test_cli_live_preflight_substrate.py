@@ -17,13 +17,13 @@ from braincrew.ax_http_adapter import (
 )
 from braincrew.digest import canonical_digest
 from braincrew.live_preflight import (
+    PINNED_AX_SHA,
     LivePreflightBlocker,
     build_live_preflight_artifact,
     write_live_preflight_artifact,
 )
 
 PROJECT_ROOT = Path(__file__).parents[2]
-PINNED_AX_SHA = "1ead1331166538e417027a7064179f15c5cfbf61"
 EVALUATION_SHA = "fdbb732ee05a9de5270c91a82f0930da0413107b"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
 USER_ID = "22222222-2222-2222-2222-222222222222"

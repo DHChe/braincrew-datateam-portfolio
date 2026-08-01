@@ -19,7 +19,7 @@ from braincrew.ax_http_adapter import (
     write_capability_manifest,
 )
 
-PINNED_AX_SHA = "1ead1331166538e417027a7064179f15c5cfbf61"
+PINNED_AX_SHA = "3bb27f870d244fbc8debba91eb408e825caa9e03"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
 USER_ID = "22222222-2222-2222-2222-222222222222"
 

@@ -11,10 +11,10 @@ import pytest
 
 from braincrew.ax_http_adapter import AxHttpAdapter, AxHttpAdapterConfig, AxRequestContext
 from braincrew.grounded_contracts import GroundedCitation
+from braincrew.live_preflight import PINNED_AX_SHA
 
 DATASET_PATH = Path("datasets/grounded/grounded_cases_v1.json")
 OBSERVATIONS_PATH = Path("tests/fixtures/grounded_observations_v1.json")
-PINNED_AX_SHA = "1ead1331166538e417027a7064179f15c5cfbf61"
 
 
 def grounded_run_module() -> ModuleType:
