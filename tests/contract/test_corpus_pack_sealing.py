@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
 import unicodedata
 from pathlib import Path
@@ -19,6 +20,7 @@ from ..corpus_pack_v1_fixture import (
 
 REPOSITORY_ROOT = Path(__file__).parents[2]
 SCHEMA_DIR = REPOSITORY_ROOT / "schemas"
+SCHEMA_DIRECTORY_ENVIRONMENT_VARIABLE = "BRAINCREW_SCHEMA_DIRECTORY"
 EXPECTED_SCHEMA_CONTRACTS = {
     "ax-synthetic-seed-content-v1.schema.json": (
         3699,
@@ -46,6 +48,25 @@ def seal(staging_dir: Path, output_root: Path) -> subprocess.CompletedProcess[st
         "--provenance-sidecar",
         str(provenance_sidecar),
     )
+
+
+def _schema_directory_copy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    schema_dir = tmp_path / "schemas"
+    shutil.copytree(SCHEMA_DIR, schema_dir)
+    monkeypatch.setenv(SCHEMA_DIRECTORY_ENVIRONMENT_VARIABLE, str(schema_dir))
+    return schema_dir
+
+
+def _tracked_schema_status() -> str:
+    result = subprocess.run(
+        ["git", "status", "--short", "schemas/"],
+        cwd=REPOSITORY_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    return result.stdout
 
 
 def test_vendored_ax_schema_bytes_and_declared_digests_match_merge_contract() -> None:
@@ -194,29 +215,73 @@ def test_ordered_source_manifest_changes_the_sealed_content_digest(tmp_path: Pat
     assert first["sealed_content_digest"] != second["sealed_content_digest"]
 
 
-def test_schema_drift_fails_closed_even_if_declared_digest_is_also_changed(tmp_path: Path) -> None:
+def test_schema_drift_fails_closed_even_if_declared_digest_is_also_changed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     staging_dir = tmp_path / "staging"
     stage_valid_pack(staging_dir)
     schema_name = "ax-synthetic-seed-content-v1.schema.json"
-    schema_path = SCHEMA_DIR / schema_name
+    schema_path = _schema_directory_copy(tmp_path, monkeypatch) / schema_name
     digest_path = schema_path.with_suffix(".sha256")
-    original_schema = schema_path.read_bytes()
-    original_digest = digest_path.read_bytes()
-    try:
-        drifted_schema = original_schema.replace(b'"corpus_mode"', b'"corpus_m0de"', 1)
-        schema_path.write_bytes(drifted_schema)
-        digest_path.write_text(
-            f"sha256:{hashlib.sha256(drifted_schema).hexdigest()}\n",
-            encoding="utf-8",
-        )
+    assert _tracked_schema_status() == ""
+    drifted_schema = schema_path.read_bytes().replace(b'"corpus_mode"', b'"corpus_m0de"', 1)
+    schema_path.write_bytes(drifted_schema)
+    digest_path.write_text(
+        f"sha256:{hashlib.sha256(drifted_schema).hexdigest()}\n",
+        encoding="utf-8",
+    )
 
-        result = seal(staging_dir, tmp_path / "sealed")
+    result = seal(staging_dir, tmp_path / "sealed")
 
-        assert result.returncode == 2
-        assert "AX_SCHEMA_DRIFT" in result.stderr
-    finally:
-        schema_path.write_bytes(original_schema)
-        digest_path.write_bytes(original_digest)
+    assert result.returncode == 2
+    assert "AX_SCHEMA_DRIFT" in result.stderr
+    assert _tracked_schema_status() == ""
+
+
+def test_schema_byte_drift_fails_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    staging_dir = tmp_path / "staging"
+    stage_valid_pack(staging_dir)
+    schema_path = (
+        _schema_directory_copy(tmp_path, monkeypatch) / "ax-synthetic-seed-content-v1.schema.json"
+    )
+    schema_path.write_bytes(schema_path.read_bytes().replace(b'"corpus_mode"', b'"corpus_m0de"', 1))
+
+    result = seal(staging_dir, tmp_path / "sealed")
+
+    assert result.returncode == 2
+    assert "AX_SCHEMA_DRIFT" in result.stderr
+
+
+def test_declared_schema_digest_drift_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    staging_dir = tmp_path / "staging"
+    stage_valid_pack(staging_dir)
+    schema_path = (
+        _schema_directory_copy(tmp_path, monkeypatch) / "ax-synthetic-seed-content-v1.schema.json"
+    )
+    schema_path.with_suffix(".sha256").write_text(f"sha256:{'0' * 64}\n", encoding="utf-8")
+
+    result = seal(staging_dir, tmp_path / "sealed")
+
+    assert result.returncode == 2
+    assert "AX_SCHEMA_DRIFT" in result.stderr
+
+
+def test_unavailable_schema_directory_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    staging_dir = tmp_path / "staging"
+    stage_valid_pack(staging_dir)
+    monkeypatch.setenv(SCHEMA_DIRECTORY_ENVIRONMENT_VARIABLE, str(tmp_path / "missing-schemas"))
+
+    result = seal(staging_dir, tmp_path / "sealed")
+
+    assert result.returncode == 2
+    assert "AX_SCHEMA_DRIFT" in result.stderr
 
 
 def test_staging_must_be_isolated_from_repository_and_output(tmp_path: Path) -> None:

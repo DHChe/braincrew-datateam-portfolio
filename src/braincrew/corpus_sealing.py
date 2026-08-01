@@ -32,6 +32,7 @@ MAX_TOTAL_SOURCE_BYTES = 32 * 1024 * 1024
 MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 MAX_JSON_NESTING = 64
 PROVENANCE_SIDECAR_NAME = "provenance-review.json"
+SCHEMA_DIRECTORY_ENVIRONMENT_VARIABLE = "BRAINCREW_SCHEMA_DIRECTORY"
 
 Digest = Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")]
 Identifier = Annotated[
@@ -826,6 +827,9 @@ def _verify_vendored_schemas() -> None:
 
 
 def _schema_directory() -> Path:
+    schema_directory_override = os.environ.get(SCHEMA_DIRECTORY_ENVIRONMENT_VARIABLE)
+    if schema_directory_override:
+        return Path(schema_directory_override)
     repository_schema_dir = Path(__file__).resolve().parents[2] / "schemas"
     if repository_schema_dir.is_dir():
         return repository_schema_dir
