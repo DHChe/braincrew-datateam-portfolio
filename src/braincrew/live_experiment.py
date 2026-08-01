@@ -351,6 +351,8 @@ def _answer_path_health(provider_metadata: dict[str, object]) -> AnswerPathHealt
             "llm_call_performed": provider_metadata.get("llm_call_performed"),
             "llm_call_succeeded": provider_metadata.get("llm_call_succeeded"),
             "failure_reason": provider_metadata.get("failure_reason"),
+            "citation_contract_violation": provider_metadata.get("citation_contract_violation"),
+            "unsafe_provider_output": provider_metadata.get("unsafe_provider_output"),
         }
     )
 

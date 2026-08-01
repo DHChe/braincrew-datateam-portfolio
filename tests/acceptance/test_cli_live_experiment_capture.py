@@ -21,7 +21,7 @@ from braincrew.repository import RepositoryState
 
 PROJECT_ROOT = Path(__file__).parents[2]
 DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v3.json"
-PINNED_AX_SHA = "1ead1331166538e417027a7064179f15c5cfbf61"
+PINNED_AX_SHA = "3bb27f870d244fbc8debba91eb408e825caa9e03"
 PROVISIONED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
 TENANT_ID = "ae09ec7f-e2b8-4f83-99bb-7031ef5eb6e2"
 USER_ID = "12171ca4-a001-40da-881b-b87cce42e9b2"
@@ -128,6 +128,8 @@ def _answer_response(
     snippet: str = "",
     answer_path_outcome: AnswerPathOutcome = "succeeded",
     answer_path_failure_reason: str | None = None,
+    citation_contract_violation: bool | None = None,
+    unsafe_provider_output: bool | None = None,
     omit_llm_call_succeeded: bool = False,
     answer_mode: str = "direct_grounded",
 ) -> dict[str, object]:
@@ -169,6 +171,10 @@ def _answer_response(
         provider_metadata["failure_reason"] = answer_path_failure_reason or (
             "provider_error" if answer_path_outcome == "failed" else "blocked_no_safe_provider"
         )
+    if citation_contract_violation is not None:
+        provider_metadata["citation_contract_violation"] = citation_contract_violation
+    if unsafe_provider_output is not None:
+        provider_metadata["unsafe_provider_output"] = unsafe_provider_output
     return {
         "query": query,
         "answer_mode": answer_mode,
@@ -207,6 +213,8 @@ def _capture_transport(
     enforce_grounded_role: bool = True,
     answer_path_outcome: AnswerPathOutcome = "succeeded",
     answer_path_failure_reason: str | None = None,
+    citation_contract_violation: bool | None = None,
+    unsafe_provider_output: bool | None = None,
     omit_llm_call_succeeded: bool = False,
     answer_mode: str = "direct_grounded",
 ) -> tuple[httpx.MockTransport, list[tuple[str, str]]]:
@@ -295,6 +303,8 @@ def _capture_transport(
                         query=case.query,
                         answer_path_outcome=answer_path_outcome,
                         answer_path_failure_reason=answer_path_failure_reason,
+                        citation_contract_violation=citation_contract_violation,
+                        unsafe_provider_output=unsafe_provider_output,
                         omit_llm_call_succeeded=omit_llm_call_succeeded,
                         answer_mode=answer_mode,
                     ),
@@ -310,6 +320,8 @@ def _capture_transport(
                     snippet=text[:80],
                     answer_path_outcome=answer_path_outcome,
                     answer_path_failure_reason=answer_path_failure_reason,
+                    citation_contract_violation=citation_contract_violation,
+                    unsafe_provider_output=unsafe_provider_output,
                     omit_llm_call_succeeded=omit_llm_call_succeeded,
                     answer_mode=answer_mode,
                 ),
@@ -456,6 +468,8 @@ def _capture(
     clock_ns: Callable[[], int] | None = None,
     answer_path_outcome: AnswerPathOutcome = "succeeded",
     answer_path_failure_reason: str | None = None,
+    citation_contract_violation: bool | None = None,
+    unsafe_provider_output: bool | None = None,
     omit_llm_call_succeeded: bool = False,
     answer_mode: str = "direct_grounded",
 ) -> Any:
@@ -490,6 +504,8 @@ def _capture(
         enforce_grounded_role=enforce_grounded_role,
         answer_path_outcome=answer_path_outcome,
         answer_path_failure_reason=answer_path_failure_reason,
+        citation_contract_violation=citation_contract_violation,
+        unsafe_provider_output=unsafe_provider_output,
         omit_llm_call_succeeded=omit_llm_call_succeeded,
         answer_mode=answer_mode,
     )
@@ -633,6 +649,35 @@ def test_failed_answer_path_is_recorded_but_cannot_publish_a_quality_comparison(
         match="run artifact must contain one completed 30-case Verification evaluation",
     ):
         build_experiment_run_summary(capture.manifest, artifact)
+
+
+def test_live_capture_records_provider_discard_predicates(tmp_path: Path) -> None:
+    capture, _ = _capture(
+        tmp_path,
+        answer_path_outcome="failed",
+        answer_path_failure_reason="unsafe_provider_output",
+        citation_contract_violation=False,
+        unsafe_provider_output=True,
+        answer_mode="insufficient_evidence",
+    )
+
+    _check(
+        len(capture.grounded_observations.observations) == 15,
+        "the capture must retain all 15 grounded observations",
+    )
+    for observation in capture.grounded_observations.observations:
+        _check(
+            observation.answer_path.failure_reason == "unsafe_provider_output",
+            "the historical failure label must remain unchanged",
+        )
+        _check(
+            observation.answer_path.citation_contract_violation is False,
+            "the capture must preserve AX's citation-contract predicate",
+        )
+        _check(
+            observation.answer_path.unsafe_provider_output is True,
+            "the capture must preserve AX's unsafe-output predicate",
+        )
 
 
 @pytest.mark.parametrize(

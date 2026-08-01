@@ -25,6 +25,19 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-01 (#121, #122).**
+  [Issue #121](https://github.com/DHChe/braincrew-datateam-portfolio/issues/121) and
+  [Issue #122](https://github.com/DHChe/braincrew-datateam-portfolio/issues/122) — re-pinning the
+  under-test AX commit to `3bb27f8` and recording AX's two new discard predicates without disturbing
+  published evidence — are **implemented, reviewed `APPROVE` with no blocking finding, one review
+  finding applied, and uncommitted**: fourteen source and test files plus three documents on `develop`
+  at `d2b3c29`, `uv run pytest -q` reproducing **598 passed**, `git status --short schemas/` empty.
+  Issue [#97](https://github.com/DHChe/braincrew-datateam-portfolio/issues/97) merged earlier today as
+  `d2b3c29`. **Nothing is committed for #121 or #122**; the step that remains is the Git Lifecycle
+  Proposal Gate. The diagnostic re-capture that would resolve the twelve unknown discards is a live
+  provider run and remains a hard stop pending explicit owner authorization. See the
+  2026-08-01 (#121, #122) entry at the top of Transition history.
+- **The bullet below is the earlier dated record and is not current state.**
 - **Current state, 2026-08-01 (#97).**
   [Issue #97](https://github.com/DHChe/braincrew-datateam-portfolio/issues/97) — the tracked-`schemas/`
   corruption hazard that has been serialising every test run all day — is **implemented, reviewed
@@ -816,6 +829,58 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-01 (#121, #122) — an unreported predicate is recorded as unknown, and the warrant is re-argued rather than transplanted
+
+- **Both issues are implemented and reviewed `APPROVE` with no blocking finding.** Uncommitted at the
+  time of writing: fourteen source and test files on `develop` at `d2b3c29`, plus this status entry,
+  the decision document, and dossier card **D28**. `uv run pytest -q` reproduces **598 passed**
+  (baseline 592). Locked in
+  [the discard-predicate and continuity-warrant decision](../decisions/2026-08-01-unreported-discard-predicate-and-re-argued-continuity-warrant.md).
+- **What the change is.** AX `3bb27f8` split a citation-contract violation from an unsafe-provider
+  block, two causes that had shared one `failure_reason` label. Braincrew now records both predicates
+  as `StrictBool | None` with `exclude_if=lambda value: value is None`, so a record that never reported
+  them dumps byte-identically to the day it was written. **`None` means unknown, not false** — the
+  published 2026-07-31 capture holds **12 of 15** grounded observations discarded under the old single
+  label, and defaulting to `False` would have asserted that none of them was a citation-contract
+  violation, a claim with no evidence behind it.
+- **The warrant was re-derived, not bumped.** `changed_paths` grew from one path to two because
+  `backend/src/ax_engine/answers/contracts.py` is new to this diff. Bumping `under_test_sha` alone
+  would have produced a warrant that reads as true, passes every existing check, and under-reports the
+  diff it warrants.
+- **Verification the orchestrator reproduced rather than accepted.** Both published artifacts still
+  replay (`sha256:775a8529…`, `sha256:9435c9da…`); all 15 stored `AnswerPathHealth` objects round-trip
+  with zero byte differences; the three warrant tree SHAs and the census source hash were re-derived
+  from the AX checkout; mutating the pin alone turns 164 tests red including a production-source guard
+  binding the pin to the packaged contract; removing the citation mapper line alone turns the named
+  capture test red, which also proved that test was not looping over an empty collection. Independent
+  review added four further mutations and searched every JSON file in the repository for the two new
+  keys — 17 hits, all in the census fixture, none in published evidence.
+- **One review finding was applied.** The new capture test looped over its observations with no count
+  assertion and would have passed while asserting nothing had the collection been empty. It now pins
+  15.
+- **A deliberate loss of independent witnesses is written down.** Five test files that had each carried
+  their own SHA literal now import the pin. Measured: moving the pin constant and the packaged YAML
+  together fails 87 tests and **none of the five is among them**. Four witnesses remain. The trade
+  bought structural impossibility of a partial re-pin; the cost is recorded so the next person does not
+  convert one of the remaining four thinking it a duplicate.
+- **Two orchestrator errors, both caught by the review rather than by the orchestrator.** The review
+  brief quoted Issue #94's `Directive:` as *"bind the exact commits, do not degrade to a constant-only
+  assertion"* — **that sentence is not in the commit**; the real directive forbids comparing the two
+  constants to each other and requires the warrant's import-time construction property be kept. The
+  brief also named two files as keeping SHA literals when there are three, and the omitted one turned
+  out to be the largest witness at 71 failures. Both are the same failure as the AX #60 defect earlier
+  in the day: paraphrasing a decision record from memory instead of reading it. The existing rule
+  requires marking brief claims `measured` or `inferred`; that discipline was applied to the evidence
+  table and not to the prose around it.
+- **What is still not established.** The twelve unknown discards stay unknown; only a live diagnostic
+  re-capture against `3bb27f8` can resolve them, and that costs a provider run. The two replay digests
+  were each produced once — the published artifacts are `.gitignore`d benchmark output, so independent
+  review could not locate them and verified the substance by other means instead. The census `sha256`
+  is compared against a code constant, never against the AX working tree, so its accuracy depends on a
+  hand re-enumeration at every re-pin.
+- **Next action.** Git Lifecycle Proposal Gate for #121 and #122. No commit, push, pull request, or
+  merge has been made.
 
 ### 2026-08-01 (#97) — the hazard that had been serialising every run all day is closed, and the affordance that closes it is safe for a reason nobody had stated
 

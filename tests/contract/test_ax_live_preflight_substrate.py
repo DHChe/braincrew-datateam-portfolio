@@ -14,8 +14,8 @@ from braincrew.ax_http_adapter import (
     CorpusIdentityResponse,
     ParseObservationResponse,
 )
+from braincrew.live_preflight import PINNED_AX_SHA
 
-PINNED_AX_SHA = "1ead1331166538e417027a7064179f15c5cfbf61"
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
 USER_ID = "22222222-2222-2222-2222-222222222222"
 TEXT_DIGEST = "sha256:" + "1" * 64

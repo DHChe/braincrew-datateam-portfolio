@@ -2219,6 +2219,85 @@ Likely follow-ups:
 - "What breaks the safety case?" — A second consumer of `_schema_directory()`. That is why the single
   call site is written down as a property to preserve rather than an incidental fact.
 
+### D28. Record an unreported discard predicate as unknown rather than false, and re-argue the continuity warrant instead of transplanting its conclusion
+
+Decision:
+: The under-test AX pin moves to `3bb27f8` — the commit that split a citation-contract violation from
+  an unsafe-provider-output block — and `AnswerPathHealth` gains both predicates as
+  `StrictBool | None` with `Field(default=None, exclude_if=lambda value: value is None)`. The reviewed
+  provisioning continuity warrant is **re-derived** from the new AX diff rather than bumped. Locked in
+  [the discard-predicate and continuity-warrant decision](../decisions/2026-08-01-unreported-discard-predicate-and-re-argued-continuity-warrant.md);
+  implemented by Issues #121 and #122.
+
+Why:
+: Upstream, one `failure_reason` label had covered two distinct causes. Braincrew is the measuring
+  instrument, so when its subject grows a distinction the instrument must record it or silently
+  collapse the two causes on every future run. But the **already published** 2026-07-31 capture
+  contains **12 of 15** grounded observations discarded under that single label by pre-split AX, and
+  no amount of re-reading can say which cause fired. `None` therefore has to mean *unknown* — a third
+  state, not a synonym for `False`.
+
+Rejected alternative:
+: Defaulting both predicates to `False`, which would make every rebuild of the published capture
+  assert that **not one** of those 12 discards was a citation-contract violation — a claim with no
+  evidence behind it, manufactured by a default value, in a repository whose whole proposition is that
+  its claims are measured. Also rejected: making the fields required, which stops the published record
+  loading at all; `default=None` **without** `exclude_if`, which is right in Python and wrong on the
+  wire because `model_dump` would emit `null` keys and change the bytes of published evidence; bumping
+  `under_test_sha` while keeping the old `changed_paths`; changing the historical `failure_reason`
+  label, which AX deliberately preserved; and re-capturing immediately, which costs a provider run and
+  answers a different question — a *new* run's predicates, not the published run's.
+
+Trade-off:
+: The contract now carries two fields that are absent from most records, so a consumer must handle
+  three states rather than two. That asymmetry is the point: it is the honest shape of the evidence.
+  The cost is that `None` is easy to coerce to `False` by accident in any future consumer, which is why
+  it is written into the upstream commit's `Directive:` and into this card.
+
+Known failure modes:
+: **A future `.get(key, False)` re-creates the defect in one character.** The mapper reads
+  `provider_metadata.get("citation_contract_violation")` with no default precisely so an unreported
+  predicate stays `None`; supplying a default silently converts *unknown* into *measured false*.
+  Equally, removing `exclude_if` does not fail loudly — it changes the serialized bytes of records
+  already published, so the failure surfaces as a replay-digest mismatch far from its cause. A
+  continuity warrant carried forward instead of re-argued fails the same way: it reads as true, passes
+  every existing check, and under-reports the diff it warrants. That last one nearly happened here —
+  `changed_paths` grew from one path to two because `answers/contracts.py` is new to this diff.
+  Separately, five test files that had each carried their own SHA literal now import the pin, which
+  **deletes five independent witnesses**: measured by moving the pin constant and the packaged YAML
+  together, 87 tests fail and not one of the five is among them. Four witnesses remain — three files
+  keeping literals plus the census `commit_sha` — and converting any of those four to a derived value
+  would look like removing a duplicate while removing the last check.
+
+Validation evidence produced:
+: All **15/15** stored `AnswerPathHealth` objects round-trip through the new model with **zero byte
+  differences**, each dumping exactly the three legacy keys and acquiring neither new one;
+  `canonical_digest` over the rebuilt set is `sha256:e3ff0964…`. The published capture manifest still
+  replays to `sha256:775a8529…` and the published evaluation artifact to `sha256:9435c9da…`. All three
+  warrant tree SHAs were re-derived from the AX checkout rather than from the previous warrant, and the
+  production diff is exactly two paths — the commit's test file is excluded because `changed_paths` is
+  a claim about production source. `None` and `False` are distinguishable at every layer; `StrictBool`
+  rejects `1`; `extra="forbid"` still raises. Mutating `PINNED_AX_SHA` alone turns **164 tests red**,
+  including `ValueError: configured AX SHA does not match ax-http-v1 contract` — a guard in production
+  source, not merely in the suite — and removing the citation mapper line alone turns the named capture
+  test red, which also proves that test is not looping over an empty collection. Both restorations were
+  proven byte-identical by SHA-256. Gates: ruff, mypy clean, **598 passed**.
+
+Validation evidence still required:
+: **The 12 unknown discards stay unknown.** This change stops new measurements from collapsing the two
+  causes; it cannot recover which cause fired in a run taken before the split existed. Only a
+  diagnostic re-capture against `3bb27f8` can — a live provider run, with cost, gated on explicit
+  owner authorization.
+
+Likely follow-up questions:
+: *"Why not just re-run and fill in the blanks?"* Because the published artifact is create-only; a new
+  run produces a new artifact with its own predicates and leaves the old record's unknowns intact by
+  construction. *"Isn't an optional field that is usually absent a smell?"* It would be if the absence
+  were incidental. Here absence carries information — it marks a record as predating the distinction —
+  and collapsing it into `False` is precisely the error the upstream ticket removed. *"How do you know
+  the byte-identity claim holds for records you did not test?"* It was not sampled: all 15 objects in
+  the published capture were rebuilt and compared.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.
