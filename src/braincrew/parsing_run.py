@@ -5,7 +5,9 @@ from pathlib import Path
 from typing import Any
 
 from braincrew.contracts import (
+    PARSING_EVALUATOR_V2,
     ParsingDatasetDocument,
+    ParsingEvaluatorVersion,
     ParsingObservationBatch,
     ParsingRunEvaluation,
 )
@@ -27,9 +29,11 @@ def execute_parsing_fixture(
     observations: ParsingObservationBatch,
     *,
     verification_only: bool = False,
+    evaluator_version: ParsingEvaluatorVersion = PARSING_EVALUATOR_V2,
 ) -> ParsingRunEvaluation:
     return evaluate_parsing_run(
         dataset,
         observations,
         verification_only=verification_only,
+        evaluator_version=evaluator_version,
     )

@@ -2068,6 +2068,84 @@ Likely follow-ups:
   more weight with a reader, so the gap between what it proves and what a reader infers widens. That
   is the argument for the enumerated claim, not against the check.
 
+### D26. Refuse a drifted parsing observation instead of scoring it zero, and version the evaluator so published evidence still replays
+
+Decision:
+: `parsing-quality-v2` is the evaluator for every fresh evaluation. Under it, an available parsing
+  observation that claims at least one evidence span and whose span `source_text_digest` values do not
+  overlap the case's expected spans is refused with
+  `PARSE_OBSERVATION_DOCUMENT_IDENTITY_MISMATCH`, and no metric is computed. `parsing-quality-v1` is
+  reachable **only** from stored provenance on the two replay paths; no fresh route can select it.
+  Locked in [the parsing drift decision](../decisions/2026-08-01-parsing-drift-refusal-and-evaluator-versioning.md);
+  implemented by Issue #118.
+
+Why:
+: Parsing was the only one of three evaluator families with no drift detector — retrieval refuses on
+  `RETRIEVAL_QUERY_MISMATCH`, grounded on `SYS-GROUNDED-ROLE-MISMATCH`, parsing refused nothing except
+  a failure the SUT self-reports. So an observation made against a different document scored
+  `0.0000` and was reported `SCORED`: a number that reads as a measurement and is not one. It is in a
+  published artifact. The control that settles causation — same observations, same evaluator, correct
+  dataset version — returns `1.0000` on all five metrics.
+
+Rejected alternative:
+: Accepting supersession and letting the published artifact stop replaying, because losing the
+  verifiability of existing evidence to fix a defect is the wrong trade in this repository; keeping a
+  dataset-version-keyed selector for fresh runs, because replay is served independently by the
+  stored-version dispatch and the selector's only effect was to keep the defect producible — review
+  demonstrated it by emitting a fresh `COMPLETED` artifact with 20 `SCORED` cases and aggregate
+  `0.0000`; refusing whenever no expected span is recovered, because an observation that claims no
+  spans has recovered nothing *and that is a measurement*; and authoring v2-consistent observations,
+  which is out of scope and separately unreachable since the v3 Verification artifact cannot be
+  rebuilt at `HEAD`.
+
+Trade-off:
+: A second evaluator version exists and must be dispatched from stored provenance forever. Fresh runs
+  on older manifests now stamp v2 and therefore produce different digests than before — measured
+  behaviourally identical on the legitimate path, all five metrics unchanged. And one overlapping
+  document digest is sufficient to pass, so a document partially rewritten while retaining one
+  expected span's source text is not detected.
+
+Known failure modes:
+: The guard detects total document-identity drift, not partial rewriting. It has never run against a
+  real AX parse response, because no live parsing observation exists in this repository — the
+  SUT-assigned span id shape it protects against is anticipated, not observed. **And the published
+  2026-07-31 artifact still recomputes six `SCORED 0.0000` cases under its stored v1 dispatch.** That
+  is what preserving replayability means: this work stops new false zeros, it does not remove the
+  published one.
+
+Validation evidence produced:
+: Independent review returned `REQUEST CHANGES` on two findings neither implementation nor
+  orchestration had seen — the guard refusing a legitimate zero-recovery observation of the *correct*
+  document, and fresh runs on two of three committed manifests having no guard at all, demonstrated by
+  producing a fresh false-zero artifact. A scoped re-review then found a second misdiagnosis: a correct
+  document carrying a SUT-assigned span id, which is what the live path would produce
+  (`live_preflight.py:789` copies AX's span id). That finding changed the predicate's basis from a
+  `(span id, digest)` tuple to the document digest alone, measured to refuse all six published drift
+  cases identically. Measured by pane 1 on the final tree: correct-digest-with-SUT-id **scores** with
+  structure and metadata retained; zero recovery **scores**; a different document digest is
+  **refused**; the v3 probe refuses every case with aggregate `None`; the legitimate v1 path is
+  `COMPLETED` at `1.0000`; and both real artifacts still replay — `sha256:9435c9da…` and
+  `sha256:775a8529…`, the latter being Issue #106's criterion, which must not regress and did not.
+  Gates reproduced solo: Ruff, mypy, **589 pytest tests**, `git diff --check`, `schemas/` clean.
+
+Validation evidence still required:
+: No AX runtime was started and none was needed. Nothing here bears on the AX answer path or the
+  twelve unscoreable grounded cases. No candidate run exists, so no comparison, no gate decision and
+  no answer-quality claim.
+
+Likely follow-ups:
+
+- "Why version the evaluator instead of just fixing it?" — Because `replay_dataset_run_artifact`
+  recomputes from the stored observation snapshot, so changing the evaluator changes what a stored
+  artifact reproduces to. Without versioning, the only live artifact this project owns would stop
+  replaying.
+- "Doesn't a second version fragment the evaluator?" — It does, and the cost is accepted. The
+  alternative was destroying the verifiability of published evidence.
+- "Why is the published zero still there?" — Because it is what the run actually recomputes under the
+  evaluator it was produced with. Rewriting it would be falsifying evidence to look better.
+- "Why not detect partial rewriting too?" — Widening the predicate is what produced both
+  misdiagnoses review had to remove. The bound is stated instead.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

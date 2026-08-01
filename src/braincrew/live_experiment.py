@@ -37,6 +37,7 @@ from braincrew.comparison import (
     ExperimentProvenance,
 )
 from braincrew.contracts import (
+    PARSING_EVALUATOR_V2,
     RetrievalCandidateObservation,
     RetrievalCase,
     RetrievalObservation,
@@ -72,7 +73,7 @@ PROMPT_ID = "ax-answer-runtime-source-v1"
 PROMPT_SOURCE = Path("backend/src/ax_engine/answers/service.py")
 THRESHOLD_VERSION = "release-thresholds-v1"
 EVALUATOR_VERSIONS = {
-    "parsing": "parsing-quality-v1",
+    "parsing": PARSING_EVALUATOR_V2,
     "retrieval": "retrieval-quality-v1",
     "grounded": "grounded-answer-v1",
     "operational": OPERATIONAL_EVALUATOR_VERSION,
