@@ -2146,6 +2146,79 @@ Likely follow-ups:
 - "Why not detect partial rewriting too?" — Widening the predicate is what produced both
   misdiagnoses review had to remove. The bound is stated instead.
 
+### D27. Stop tests writing to tracked files, and accept a production affordance only because its safety was proved as a conjunction
+
+Decision:
+: `_schema_directory()` consults a `BRAINCREW_SCHEMA_DIRECTORY` environment variable when non-empty —
+  four lines of production source — so the sealing drift test can point its **subprocess** at a copy
+  in `tmp_path` instead of mutating the tracked `schemas/` directory. Locked in
+  [the schema directory override decision](../decisions/2026-08-01-schema-directory-override-and-tracked-file-containment.md);
+  implemented by Issue #97.
+
+Why:
+: The drift test mutated tracked files and restored bytes captured at its start. A second run that
+  captured its "original" inside the first run's drift window wrote the **drifted** bytes back as
+  pristine — **both `finally` blocks completing normally** — leaving a self-consistent
+  `(schema, digest)` pair that every recompute-and-compare check accepts. In a repository whose commit
+  gate is `git status`, that could be committed beside real work; it nearly was. `seal()` runs the CLI
+  in a subprocess, so an in-process `monkeypatch` could not reach it and a production affordance was
+  unavoidable.
+
+Rejected alternative:
+: A CLI flag, because it puts a test-only need into `--help` permanently; a file lock, because tests
+  would still write to tracked files and an interrupted writer remains a hazard; dropping the
+  subprocess test for an in-process one, because the test exists to prove drift fails closed *through
+  the real CLI*; and threading the directory as a parameter, which collapses back into flag-or-variable
+  since the CLI is a separate process. No precedent existed — `git grep os.environ -- src/braincrew`
+  returned nothing before this change, and that is recorded rather than glossed.
+
+Trade-off:
+: The repository gains its first test-facing environment affordance, and an operator whose tracked tree
+  is drifted can point elsewhere and obtain a green seal. That is self-inflicted rather than
+  adversarial, requires deliberate action, and is independently detected by the direct tracked-directory
+  assertion and by `git status`. The sealing receipt records pinned constants, not directory-read
+  digests, so it stays truthful either way.
+
+Known failure modes:
+: **The safety case is a conjunction, not a single property.** `_verify_vendored_schemas()` iterates
+  over `EXPECTED_SCHEMA_DIGESTS` rather than over directory contents, so extra files in an override
+  directory are never inspected — measured: a pristine copy plus an attacker-supplied extra schema is
+  **accepted**. That hole is unreachable only because `_schema_directory()` has exactly one
+  production call site and is used **only for verification**; the other two conjuncts are that the
+  expectation is a code constant and that `corpus_authoring.py` resolves its own schemas path, out of
+  the variable's reach. A future change that *loads* a schema
+  from that directory re-opens it. The `except OSError` clause's mutation was not independently
+  reproduced.
+
+Validation evidence produced:
+: Independent review constructed ten input shapes against the override, plus a no-override baseline — empty string, whitespace,
+  empty directory, partial directory, a file rather than a directory, pristine copy, pristine plus an
+  extra file, symlink, relative path, and a **self-consistent drift** — and found no input where the
+  override changes the outcome rather than the location; the self-consistent drift, which is the
+  laundering attack the affordance would have to permit to be dangerous, is refused. Removing the four
+  lines turns three tests red with `assert 0 == 2`, proving the subprocess genuinely consumes the
+  variable. And review injected a delay inside the drift window and **`SIGKILL`ed `pytest` there** —
+  the exact shape the defect was found by, running no `finally` — with the tracked bytes unchanged.
+  pane 1 reproduced the self-consistent-drift refusal, the extras acceptance, the single call site and
+  the receipt's use of constants. Gates: Ruff, mypy, **592 pytest tests**, `git diff --check`,
+  `schemas/` clean. Per-clause mutation: each digest comparison neutralised alone turned exactly one
+  named test red.
+
+Validation evidence still required:
+: Nothing here touches AX, the answer path, or any evaluation result. It is repository hygiene with no
+  bearing on any claim about the SUT.
+
+Likely follow-ups:
+
+- "Isn't a test-only environment variable a smell?" — Yes, and it is recorded as one. The alternative
+  was tests that corrupt tracked files under concurrency, which is worse in a repository whose commit
+  gate is `git status`.
+- "Why is it safe if extra files are ignored?" — It is not safe because of that; it is safe because
+  nothing ever loads a schema from that directory. Say the conjunction, not the shortcut.
+- "Could an operator abuse it?" — Only against themselves, and two independent checks catch it.
+- "What breaks the safety case?" — A second consumer of `_schema_directory()`. That is why the single
+  call site is written down as a property to preserve rather than an incidental fact.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

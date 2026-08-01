@@ -25,6 +25,18 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-01 (#97).**
+  [Issue #97](https://github.com/DHChe/braincrew-datateam-portfolio/issues/97) — the tracked-`schemas/`
+  corruption hazard that has been serialising every test run all day — is **implemented, reviewed
+  `APPROVE` with no blocking finding, and uncommitted**: five files on `develop` at `a2f5b02`,
+  `uv run pytest -q` reproducing **592 passed**, `git status --short schemas/` empty. Issues
+  [#118](https://github.com/DHChe/braincrew-datateam-portfolio/issues/118) and
+  [#106](https://github.com/DHChe/braincrew-datateam-portfolio/issues/106) merged earlier today as
+  `a2f5b02` and `be206ff`, and the repository's first `README.md` as `d6b98ec`. **Nothing is committed
+  for #97**; the steps that remain are the pre-commit audit and the Git Lifecycle Proposal Gate. Once
+  it lands the implementable frontier is **one issue, #103**. See the 2026-08-01 (#97) entry at the top
+  of Transition history.
+- **The bullet below is the earlier dated record and is not current state.**
 - **Current state, 2026-08-01 (instrument freeze and #118).** Instrument-improvement work is
   **frozen**: [#108](https://github.com/DHChe/braincrew-datateam-portfolio/issues/108)–[#115](https://github.com/DHChe/braincrew-datateam-portfolio/issues/115)
   are parked with a resume condition, and the implementable frontier is two issues once #118 is set
@@ -804,6 +816,70 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-01 (#97) — the hazard that had been serialising every run all day is closed, and the affordance that closes it is safe for a reason nobody had stated
+
+- **[Issue #97](https://github.com/DHChe/braincrew-datateam-portfolio/issues/97) is implemented and
+  reviewed `APPROVE` with no blocking finding.** Uncommitted at the time of writing: five files on
+  `develop` at `a2f5b02` — two source and test, plus three documents, one of them the new decision
+  artifact this ticket's third acceptance criterion required. `uv run pytest -q` reproduces
+  **592 passed**. Locked in
+  [the schema directory override decision](../decisions/2026-08-01-schema-directory-override-and-tracked-file-containment.md),
+  defended as card **D27**.
+- **What the defect was, and why it mattered here.** The sealing drift test mutated the **tracked**
+  `schemas/` directory and restored bytes captured at its start. A second run capturing its "original"
+  inside the first run's drift window wrote the **drifted** bytes back as pristine — **both `finally`
+  blocks completing normally** — leaving a self-consistent `(schema, digest)` pair that every
+  recompute-and-compare check accepts. Only the code-pinned constant or `git status` could detect it.
+  This repository's commit gate **is** `git status`, and the corruption nearly went in beside Issue
+  #94's work. **It has been a live constraint on every cycle since**, forcing pane 1 to serialise every
+  test run by hand.
+- **The fix, and the judgement it required.** `seal()` runs the CLI in a **subprocess**, so an
+  in-process `monkeypatch` cannot reach the code under test — which is why containing a test needed
+  four lines of *production* source: a `BRAINCREW_SCHEMA_DIRECTORY` override consulted by
+  `_schema_directory()`. This repository is right to be wary of production affordances that exist only
+  for tests, and #97 demanded the decision artifact name why it was acceptable.
+- **The obvious safety argument is incomplete, and independent review found the hole in it.** The
+  argument — that the override cannot weaken anything because the selected directory is still checked
+  against the code-pinned `EXPECTED_SCHEMA_DIGESTS` — is sound but insufficient:
+  `_verify_vendored_schemas()` iterates over **that constant**, not over the directory's contents, so
+  extra files are never inspected. **Measured: a pristine copy plus an attacker-supplied extra schema
+  is accepted.** The hole is unreachable only because `_schema_directory()` has **exactly one
+  production call site** and is used **only for verification** — there is no second consumer to steer.
+  **The safety case is a conjunction, and it is contingent**; a future change that *loads* a schema
+  from that directory re-opens it. That is written into the decision document as a property to
+  preserve rather than left as an incidental fact.
+- **What review measured that pane 1 and pane 2 did not.** Ten input shapes against the override, plus a no-override baseline —
+  empty string, whitespace, empty directory, partial directory, a file rather than a directory,
+  pristine copy, pristine plus an extra file, symlink, relative path, and a self-consistent drift —
+  with **no input found where the override changes the outcome rather than the location.** Removing
+  the four lines turns three tests red with `assert 0 == 2`, proving the subprocess genuinely consumes
+  the variable rather than passing for an unrelated reason. **And the demonstration that the ticket's
+  goal is actually met:** review injected a delay inside the drift window and **`SIGKILL`ed `pytest`
+  there** — the exact shape #97 was found by, and one that runs no `finally`. The tracked bytes were
+  unchanged, because nothing is written to them any more.
+- **What pane 1 measured itself.** Ruff, mypy, **592 passed**, `git diff --check`,
+  `git status --short schemas/` empty. A drifted-but-**self-consistent** override directory is refused
+  with `AX_SCHEMA_DRIFT` — the laundering attack the affordance would have to permit to be dangerous;
+  the extras acceptance above; the single call site; that `corpus_authoring.py` resolves its own
+  `source_root / "schemas"` untouched by the variable; and that the sealing receipt records
+  `EXPECTED_SCHEMA_DIGESTS` constants rather than directory-read digests, so it stays truthful
+  regardless of where verification looked.
+- **Recorded rather than discovered later.** The variable is a **test-only bridge, not an operator
+  feature**, and is deliberately undocumented outside the decision document and the source. No
+  precedent existed — `git grep os.environ -- src/braincrew` returned nothing before this change, and
+  that is stated rather than glossed. And the irony is named: the fix for *"tests corrupt the tracked
+  schemas directory"* is an override that lets any process **ignore** that directory. On net the
+  property is strictly better, because tests no longer write to it at all.
+- **Also closed cheaply.** #97 recorded three `returncode == 2` assertions it had **not** audited, any
+  of which could in principle be satisfied by an unrelated `AX_SCHEMA_DRIFT` failure. All three were
+  identified and judged not weak, each for a structural reason — one never enters schema verification,
+  and two return at a create-only branch before it. None was changed.
+- **Not claimed.** Nothing here touches AX, the answer path, or any evaluation result. It is
+  repository hygiene, and it moves no acceptance criterion. Its value is that a class of silent
+  tracked-file corruption is gone and the manual serialisation it forced can stop.
+- **Next.** Pre-commit audit of this entry and the documents beside it — pane 1 does not review its own
+  writing — then the Git Lifecycle Proposal Gate.
 
 ### 2026-08-01 (instrument freeze, README, and a false measurement removed) — the owner redirected from polishing the instrument to moving the evidence, and the first thing that move found was a published zero that was never a measurement
 
