@@ -2353,6 +2353,64 @@ Likely follow-up questions:
   file itself. *"Does the test update the date automatically?"* No. It fails closed when two authored
   statements disagree, preserving review of both the record and its currency claim.
 
+### D30. Make the clean container prove committed fixture behavior, not inaccessible live evidence
+
+Decision:
+: The Issue #16 image starts from a pinned Python 3.12 base, installs a pinned `uv`, and runs `uv sync
+  --frozen --all-groups` before the Python gates and Issue #6 fixture benchmark. It excludes host Git
+  metadata, local environment files, Python caches and bytecode, and dashboard `.next`/`out` build
+  outputs at every depth, from its build context. Its `ax-live-verification-evidence/` pattern is
+  defensive only — the owner-held live artifacts sit outside the repository and were never in the
+  context to exclude. Its Git snapshot is
+  constructed inside the image only because the fixture acceptance test verifies its own Git provenance.
+  The container runs with no host mount and may be run with `--network none`.
+
+Why:
+: A clean fixture check catches undeclared local Python state without pretending it can validate bytes
+  that are deliberately outside the repository. The fixture test needs a repository identity, but copying
+  the developer's `.git` directory would turn host metadata into hidden input. An image-local snapshot
+  preserves the test's self-consistency check while making its identity explicitly non-publishable.
+
+Rejected alternative:
+: Bind-mount the checkout or published-live-artifact directory, because a host mount defeats clean
+  environment evidence and would make unpublished owner-held evidence part of routine automation; copy
+  the artifacts into the repository, because publication is an owner decision and the artifacts may
+  contain evidence that needs a separate review; and call a fresh live rerun byte-identical, because a
+  live SUT/provider observation is new evidence rather than replay of fixed bytes.
+
+Trade-off:
+: The image validates only the committed fixture path and deliberately cannot discharge Issue #16's
+  stored-live-artifact criterion. It creates a synthetic Git commit inside the image, so the ephemeral
+  fixture artifact identifies that snapshot rather than a publication candidate. This is sufficient for
+  test behavior, not for a release claim.
+
+Known failure modes:
+: Removing the image-local Git snapshot makes the fixture acceptance test fail before it can compare
+  provenance; allowing `.git`, `.env`, nested Python caches or bytecode, dashboard build output, or
+  live-artifact paths into the context would reintroduce hidden or sensitive host input; and a CI
+  definition can drift or fail until it runs on a pull request. Docker's default Linux policy does not
+  permit Bubblewrap's user namespace, so the three authoring-boundary tests skip when `bwrap` is absent
+  and fail when it is installed. The image therefore does not request privileged or security-relaxed
+  execution merely to run them. Gitleaks is an automated secret/credential scan, not a substitute for the
+  existing publishability contracts or an assertion that unpublished live evidence is safe to publish.
+
+Validation evidence produced:
+: On 2026-08-02, `docker build --no-cache --tag braincrew-evaluation-fixture:cycle180-final .` and
+  `docker run --rm --network none braincrew-evaluation-fixture:cycle180-final` completed the fixture
+  gates: Ruff format/check, mypy, `595 passed, 3 skipped`, and the ten-test Issue #6 benchmark. Removing
+  the image-local `.git` after its synthetic commit made `30` provenance-related tests fail, then
+  restoring `Dockerfile` reproduced SHA-256
+  `77c883f08179db35ced106dfaefa71b1b146830312e3f8def979eebc8332f856`. Bubblewrap's direct
+  user-namespace probe was refused by Docker's default kernel policy, so no privilege or security
+  relaxation was requested. The GitHub Actions workflow remains unverified until a pull request executes
+  it.
+
+Likely follow-up questions:
+: *"Why not make the container replay the live artifact?"* It cannot honestly do so while the artifact
+  is intentionally external; treating its absence as an invitation to copy it would change an owner
+  decision. *"What can be byte-identical?"* Replay of an already stored artifact's logical values and
+  gate decision; a fresh provider/SUT run is a new measurement and must be reported that way.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.
