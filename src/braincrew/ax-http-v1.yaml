@@ -2,7 +2,7 @@
   "schema_version": "ax-http-contract-v1",
   "adapter_version": "ax-sut-http-v1",
   "sut_repository": "https://github.com/DHChe/AX_portfolio",
-  "sut_commit_sha": "3bb27f870d244fbc8debba91eb408e825caa9e03",
+  "sut_commit_sha": "5b0f5f2ae2cfb4c4870a2228f9aa226e009241f5",
   "discovery_path": "/openapi.json",
   "operations": {
     "preflight": {

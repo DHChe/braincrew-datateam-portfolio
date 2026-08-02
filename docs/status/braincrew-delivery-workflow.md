@@ -25,6 +25,16 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-02 (#134, AX pin and continuity warrant).** [Issue
+  #134](https://github.com/DHChe/braincrew-datateam-portfolio/issues/134) is implemented locally and
+  remains uncommitted. The AX pin and packaged contract now name `5b0f5f2`, and the three-path
+  continuity warrant has been independently reviewed. Cycle 191 adds only the accompanying
+  append-only documentation; no source, test, fixture, AX, evidence, or Git state changes in this
+  checkpoint. #131's implementation has since merged as `4279ba9`; current `HEAD` is `227442b`,
+  while Issue #131 remains open because its approved v3-attachment and parsing-capture acceptance
+  criteria are unmet. The #131 bullet below is deliberately left intact as a dated record of its
+  earlier local-pre-merge state.
+- **The bullet below is an earlier dated record and is not current state.**
 - **Current state, 2026-08-02 (#131, live parsing capture).** [Issue
   #131](https://github.com/DHChe/braincrew-datateam-portfolio/issues/131) is implemented locally and
   remains uncommitted. `capture-live-parsing` converts only AX's read-only parse-observation response
@@ -854,6 +864,34 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-02 (#134) — a re-pin records the whole reviewed source diff, not a copied conclusion
+
+- **Cycle 189 moved the under-test AX pin from `3bb27f8` to `5b0f5f2` locally, with the packaged
+  `ax-http-v1.yaml` contract moved in the same change.** The production guard still rejects a configured
+  SHA that differs from the packaged contract; the four historical literal witnesses and the fifth
+  witness added by #131 remain literal, independent checks rather than imports of `PINNED_AX_SHA`.
+- **The receipt-continuity warrant was re-argued from `d7930978` to `5b0f5f2`.** The reviewed production
+  diff has three paths: `answers/contracts.py`, `answers/service.py`, and `attachments/jobs.py`; AX test
+  paths are deliberately excluded. `jobs.py` adds a pure heading extractor and writes its result only
+  while creating an absent `AttachmentExtraction`. It neither updates an existing extraction nor changes
+  approval, materialization, corpus, migration, seed, principal, or receipt-production state. The
+  `provisioning_state_affected=False` conclusion is bounded to the existing receipt-backed provisioning
+  state; future newly extracted attachments intentionally gain a headings fact.
+- **The answer-path census was re-enumerated against the real AX file.** `answers/service.py` has the
+  same SHA-256 at both commits (`972f15c9d68da856c163d830fdef849d915d05bb08f83dd642bade37a20cd47d`),
+  and all named metadata/template call sites remain the same. Its commit identity and enumeration date
+  now name `5b0f5f2` and `2026-08-02`; this hand check is necessary because the suite does not read the
+  AX checkout.
+- **Sequential validation passed.** Ruff format checked 72 files, Ruff lint passed, mypy found no issue
+  in 72 source files, the full suite reported `608 passed`, and the fixture gate reported `11 passed`.
+  Moving the source pin alone made the suite `171 failed, 437 passed`; an isolated production-adapter
+  construction raised `configured AX SHA does not match ax-http-v1 contract`. Restoring the source
+  reproduced its pre-mutation SHA-256. Reverting only the warrant to its two old paths made the exact
+  receipt-binding assertion fail (`1 failed, 607 passed`), then restoring it reproduced the same SHA-256.
+  No AX runtime, attachment, provider, live capture, evaluation, comparison, container operation,
+  `evidence/` edit, or Git write was performed in this cycle. The next action is independent Cycle 190
+  review; only after that and explicit owner authorization does the Git Lifecycle Proposal Gate apply.
 
 ### 2026-08-02 (#15, #131, AX #63) — the live experiment ran, said "no difference", and refused to score itself
 

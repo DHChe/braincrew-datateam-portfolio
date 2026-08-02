@@ -77,8 +77,8 @@ def test_ax_answer_path_emission_census_pins_every_source_call_site() -> None:
     }
 
     assert census["schema_version"] == "ax-answer-path-emission-state-census-v1"
-    assert census["enumerated_at"] == "2026-08-01"
-    assert source["commit_sha"] == "3bb27f870d244fbc8debba91eb408e825caa9e03"
+    assert census["enumerated_at"] == "2026-08-02"
+    assert source["commit_sha"] == "5b0f5f2ae2cfb4c4870a2228f9aa226e009241f5"
     assert source["sha256"] == "972f15c9d68da856c163d830fdef849d915d05bb08f83dd642bade37a20cd47d"
     assert source["provider_metadata_call_sites"] == [235, 561, 617, 698]
     assert source["template_result_call_sites"] == [75, 91, 115, 161, 203]
