@@ -2298,6 +2298,61 @@ Likely follow-up questions:
   the byte-identity claim holds for records you did not test?"* It was not sampled: all 15 objects in
   the published capture were rebuilt and compared.
 
+### D29. Let a status header make a current claim only when a separate record can refute it
+
+Decision:
+: `Last updated` in the delivery-status header is a current-state claim. It must equal the maximum of every dated
+  `### YYYY-MM-DD` heading between `## Transition history` and the following
+  `## Transition record format`, and every `###` heading in that bounded region must start with such
+  a date. The acceptance test compares that maximum with the
+  independently hand-written header, without assuming newest-first file order. Locked in
+  [the status-currency decision](../decisions/2026-08-02-status-currency-derived-from-transition-history.md);
+  implemented by Issue #103.
+
+Why:
+: The header is the first currency claim a reader sees, while the transition entries are the file's
+  append-only record. Keeping both is useful only if they cannot quietly diverge. A literal test pin
+  had turned a real update into a red suite and then frozen the lie for a week; deriving the check
+  converts the matching edit into an enforceable obligation without rewriting the historical record.
+  Cycle 178 found that using only the top heading still let a later out-of-order dated entry pass, so
+  the comparison now takes the maximum of the whole visible date set.
+
+Rejected alternative:
+: Re-pinning a new literal date, because the next append would recreate the same silent-staleness
+  failure; calling the field a snapshot or removing it, because the history shows it has been a
+  current-state field and those alternatives remove reader-visible orientation rather than maintain
+  its truth; and using Git commit time, because the document exposes entry dates rather than commit
+  metadata and the two can legitimately differ.
+
+Trade-off:
+: A contributor still makes two manual edits when appending a transition record. The system does not
+  generate the header; it makes disagreement fail before publication. That is preferable to a hidden
+  formatter that could make a status claim look current without an explicitly reviewed history entry.
+  The test now accepts ordering as presentation rather than a correctness premise, but it requires
+  every Transition `###` heading to be date-shaped.
+
+Known failure modes:
+: Forgetting the header after adding a later dated entry anywhere in the history, changing the header
+  without changing the maximum entry date, or adding an unparseable `###` entry each makes the named
+  acceptance test red. The guard would become a tautology if it derived both sides from one value, so
+  it must keep the document header and transition-date set as separate inputs. A date range heading is
+  a surviving loud limitation: `### 2026-08-03 – 2026-08-04` is captured as `2026-08-03`, so a header
+  of `2026-08-04` fails even when a reader could call it true. No range headings exist today; use one
+  heading date and put any multi-day span in the body until a range grammar is deliberately added.
+
+Validation evidence produced:
+: The Cycle 176 first-heading check passed with a later `2026-08-05` entry inserted below the top
+  `2026-08-02` entry; the Cycle 178 maximum-date check made that same mutation red. It also rejected a
+  stale header, an unparseable Transition heading, and an altered Issue #47 checkpoint token. The
+  sequential final gates passed: formatting, lint, typing, and **598** tests. The per-mutation restore
+  hashes and command evidence are recorded in the Cycle 178 report; no Git lifecycle action occurred.
+
+Likely follow-up questions:
+: *"Why not show the commit date instead?"* A transition can record work done on one day and land on
+  another; this header orients readers to the latest visible record, which they can verify from the
+  file itself. *"Does the test update the date automatically?"* No. It fails closed when two authored
+  statements disagree, preserving review of both the record and its currency claim.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.
