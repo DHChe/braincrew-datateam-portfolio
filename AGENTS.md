@@ -25,16 +25,18 @@ uv run pytest tests/acceptance/test_cli_fixture_gate.py -q \
   -k test_replay_recomputes_the_same_logical_digest_and_gate_decision
 ```
 
-Run the clean, fixture-only Python container without mounting a host path or using Docker Compose:
+Run the clean Python container without mounting a host path or using Docker Compose:
 
 ```bash
 docker build --no-cache --tag braincrew-evaluation-fixture:local .
 docker run --rm --network none braincrew-evaluation-fixture:local
 ```
 
-The image validates committed fixture inputs only. It deliberately excludes local `.git`, environment
-files, generated outputs, and owner-held published live artifacts; a successful run is not a replay of
-the published live evaluation.
+The image validates committed inputs only: the fixture plane, plus the four reviewed stored-live
+artifacts under `evidence/`, whose stored logical digests it recomputes through the committed `replay`
+path. It excludes local `.git`, environment files, and generated outputs at every depth. A successful
+run replays **stored** artifacts; it is not a fresh live run, and no live-quality or release claim
+follows from it.
 
 Run the dashboard CI gates with:
 

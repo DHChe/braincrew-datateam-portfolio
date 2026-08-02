@@ -1,9 +1,17 @@
 # Locked: the clean container validates committed fixtures, not owner-held published-live artifacts
 
 Date: 2026-08-02
-Status: locked
+Status: locked; **superseded in part 2026-08-02** by
+[the published live evidence replay decision](./2026-08-02-published-live-evidence-replay.md)
 Implements: [Issue #16](https://github.com/DHChe/braincrew-datateam-portfolio/issues/16), except its
 published-live-artifact replay criterion, which remains blocked
+
+> **[Superseded 2026-08-02 — the boundary below was correct while publication was undecided. On the
+> same day the owner authorised publication after a review returned PUBLISHABLE for all four files,
+> which discharged the ground on which §5 rejected copying them. The four artifacts now live in
+> `evidence/` and the container replays them. Every present-tense statement in this document
+> describes the state before that authorisation and is deliberately left unchanged. See
+> [the published live evidence replay decision](./2026-08-02-published-live-evidence-replay.md).]**
 
 ## 1. Measured boundary
 
@@ -56,6 +64,12 @@ new artifact. It is useful new evidence, never byte-identical reproducibility.
 
 - **Copy or commit the owner-held live artifacts.** Publication is an owner decision; copying would evade
   the review boundary and violate this cycle's hard scope.
+
+> **[Superseded 2026-08-02 — this rejection is the one the same day's later decision reverses, and the
+> reason matters: it was rejected because publication was the owner's to decide and had not been
+> decided, not because publishing was unsafe. The owner decided, a publishability review returned
+> PUBLISHABLE with no redaction, and the copy then happened under that authority. The rejection was
+> correct when written; it is not a standing prohibition.]**
 - **Bind-mount a checkout or the external evidence directory.** It makes local state or unpublished
   evidence a hidden runtime input, so the resulting container is not clean verification.
 - **Copy `.git` into the image.** It lets fixture provenance depend on developer-specific history and

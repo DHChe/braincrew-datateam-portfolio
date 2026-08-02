@@ -57,8 +57,8 @@ Explicitly **not** claimed anywhere in this repository:
 - any answer-quality result against live AX;
 - any live release decision — the dashboard's `PASS` is fixture evidence with placeholder commit
   SHAs, and the page says so;
-- a one-command replay of the published live artifacts: those owner-held artifacts remain outside this
-  repository, and the clean container documented below validates committed fixture inputs only;
+- a fresh live rerun as byte-identical reproducibility: the repository-resident stored artifacts can be replayed
+  from fixed bytes, but a new SUT or provider invocation is a new measurement at a new time;
 - Agent evaluation. The failure taxonomy reserves `TRJ-*` and leaves it unused; schema extension
   points exist and are labelled `planned`.
 
@@ -149,37 +149,39 @@ Both print the same `logical_digest`, and the artifact's own provenance records
 `execution_mode: fixture` and `sut.executed: false` — it is a determinism demonstration, not a
 benchmark.
 
-### Clean, fixture-only container
+### Clean, network-isolated container
 
 The clean container uses the locked Python environment and has no host mount. Its build context excludes
 local Git metadata, environment files, Python caches and bytecode, and dashboard `.next`/`out` build
 outputs at every depth. The `ax-live-verification-evidence/` pattern is defensive only: that directory
 lies outside the repository, so nothing was excluded from the context on its account. The fixture
-acceptance test receives only
-an image-local Git snapshot because it checks its own provenance.
+acceptance test receives only an image-local Git snapshot because it checks its own provenance.
 
 ```bash
 docker build --no-cache --tag braincrew-evaluation-fixture:local .
 docker run --rm --network none braincrew-evaluation-fixture:local
 ```
 
-The image runs the Python format, lint, type, full-test, and Issue #6 fixture gates. On Docker's default
+The image runs the Python format, lint, type, full-test, and Issue #6 fixture gates. It includes the four
+owner-authorized stored-live evidence files under `evidence/`, and the Issue #6 replay test exercises
+them through the existing CLI path. On Docker's default
 Linux namespace policy, the three authoring-boundary tests that require Bubblewrap are explicitly skipped:
 installing Bubblewrap makes them fail because the container may not create a user namespace, and this path
-does not request privileged or security-relaxed execution. It does **not** contain or replay a published
-live artifact, and it does not execute AX. The CI workflow has separate named fixture benchmark,
+does not request privileged or security-relaxed execution. It does not execute AX. The CI workflow has separate named fixture benchmark,
 fixture-replay, container, dashboard, and secret-scan steps; the workflow itself remains unverified until a
 pull request runs it.
 
-**Three honest limits on reproduction**, both measured and explicitly bounded:
+**What the container does reproduce:** a one-command replay of the four reviewed stored-live
+artifacts under `evidence/`. It can see them, and the replay test recomputes their stored logical
+results through the committed CLI. That is artifact-integrity evidence, not a live-quality or release
+claim.
 
-1. **There is no one-command replay of the published live evaluation.** The published live artifacts are
-   owner-held outside this repository pending a publication decision. The container intentionally cannot
-   see them, so it verifies fixture evidence only.
-2. **A stored-artifact replay and a fresh live rerun prove different things.** Replay can reproduce the
+**Two honest limits on reproduction**, both measured and explicitly bounded:
+
+1. **A stored-artifact replay and a fresh live rerun prove different things.** Replay can reproduce the
    stored logical metrics and gate decision from fixed bytes. A live SUT/provider rerun produces a new
    observation at a new time and is never presented as byte-identical reproducibility.
-3. **The current `v3` dataset has no complete offline run.** The only committed observation bundles
+2. **The current `v3` dataset has no complete offline run.** The only committed observation bundles
    are `v1`; running `v3` against them yields `INVALID` with 34 of 100 scored — principally because
    the retrieval queries changed between versions, and additionally on grounded coverage and overall
    dataset coverage. The `v1` path above is a legacy fixture, and its dataset digest is not the frozen
@@ -226,12 +228,12 @@ claim.
 First production release is **not complete.** Against the design specification's ten acceptance
 criteria:
 
-- **Met (4)** — the dataset freeze and recorded 70/30 digest; metric goldens and boundary tests;
-  canonical artifacts reconstructing analytical outputs; and Agent evaluation left explicitly
-  unimplemented and unclaimed.
-- **Met for fixture evidence only (2)** — reproducible release-gate output with reasons; and a clean,
-  network-isolated container executes the locked Python environment and fixture checks. This is not
-  published-live-artifact validation.
+- **Met (5)** — the dataset freeze and recorded 70/30 digest; metric goldens and boundary tests;
+  canonical artifacts reconstructing analytical outputs; Agent evaluation left explicitly unimplemented
+  and unclaimed; and a clean, network-isolated container replays the four repository-resident
+  stored-live artifacts.
+- **Met for fixture evidence only (1)** — reproducible release-gate output with reasons. It remains
+  fixture evidence rather than a live AX quality or release claim.
 - **Not met (3)** — a compatible baseline/candidate pair; a complete live Verification run; and
   evidence linkage for every submission claim.
 - **Not separately assessed (1)** — the dashboard static-build and sanitized-export check.
