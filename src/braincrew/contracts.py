@@ -453,7 +453,7 @@ class ParsingCaseEvaluation(StrictContract):
 
 class ParsingObservationBatch(StrictContract):
     schema_version: Literal["parsing-observation-batch-v1"]
-    adapter_version: Literal["fixture-parsing-sut-v1"]
+    adapter_version: Literal["fixture-parsing-sut-v1", "ax-sut-http-v1"]
     parser_version: str
     observations: list[ParsingObservation]
 
