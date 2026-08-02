@@ -755,6 +755,8 @@ def capture_live_parsing_observations(
     text, digest, and spans must independently reproduce the frozen document before
     any observation is emitted.  Dataset expected values are intentionally not read.
     """
+    if evaluation_state.dirty_worktree:
+        raise ValueError("live parsing capture requires a clean committed Evaluation Plane")
     if sut_state.commit_sha != PINNED_AX_SHA:
         raise ValueError("live parsing capture SUT commit does not match the under-test AX commit")
     if sut_state.dirty_worktree:

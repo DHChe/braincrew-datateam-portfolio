@@ -1,6 +1,6 @@
 # Braincrew Portfolio Delivery Workflow Status
 
-Last updated: 2026-08-02
+Last updated: 2026-08-03
 
 ## Purpose
 
@@ -25,6 +25,17 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-03 (#131; clean Evaluation Plane gate).**
+  `capture_live_parsing_observations()` now refuses a dirty Evaluation Plane
+  before it can contact AX, matching its live-experiment sibling. The 2026-08-02
+  parsing manifest's own `evaluation_plane_dirty: true` disclosed the missing
+  control. The provenance field remains in the manifest schema, but a successful
+  live parsing capture can no longer reach it as true through this function. The
+  new refusal test is transport-negative and the former dirty success fixture now
+  uses clean provenance. No live capture, runtime, container, attachment,
+  provider, `evidence/`, dataset, or Git lifecycle action occurred.
+- **The two bullets below are the prior #131/#15 parsing-partition checkpoint and
+  its marker; neither is the current state.**
 - **Current state, 2026-08-02 (#131, #15; live parsing partition recorded).** The owner-authorized
   six-document parsing capture is a real `5b0f5f2` observation partition: its external manifest and
   raw observations independently reproduce exact heading sequences for `parsing-015` through
@@ -898,6 +909,22 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-03 (#131) — the parsing capture now rejects a dirty Evaluation Plane before AX sees it
+
+- **The artifact reported the gap.** The 2026-08-02 live parsing manifest carries
+  `evaluation_plane_dirty: true`; its SUT warrant is clean. The sibling live
+  capture already refuses dirty Evaluation Plane state, and comparison rejects
+  dirty sides, so the parsing path was the inconsistent control boundary.
+- **The repair is a refusal, not a provenance relabel.** The parsing capture now
+  raises its clean-Evaluation-Plane error before SUT, dataset, mapping, or AX
+  work. The manifest field remains meaningful schema provenance, but a dirty
+  value cannot be emitted by a successful capture function call. The focused test
+  fails if the guard is removed because its mock transport must never be called.
+- **The existing evidence contracts remain untouched.** The fixture-only
+  standalone parsing boundary, live adapter label, manifest schema, historical
+  partition refusals, and stored capture are unchanged. No replacement capture is
+  claimed; pane 1 must take it later from a clean committed plane.
 
 ### 2026-08-02 (#131, #15) — the live parsing capture is positive structure evidence, but not a combined run
 
