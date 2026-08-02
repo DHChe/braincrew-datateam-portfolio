@@ -25,6 +25,40 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-02 (#131, #15; live parsing partition recorded).** The owner-authorized
+  six-document parsing capture is a real `5b0f5f2` observation partition: its external manifest and
+  raw observations independently reproduce exact heading sequences for `parsing-015` through
+  `parsing-020`. The unapproved documents have no materialized source, so all six observations have
+  empty evidence spans; this is reported as captured-and-compared, not scored. `run-dataset` correctly
+  refuses to combine the new parsing SHA with the old `3bb27f8` answer/retrieval partition, and the
+  fixture-only `run-parsing` artifact guard correctly refuses a live adapter. The old baseline/candidate
+  comparison remains a valid, separately recorded no-difference comparison; the Issue #15 single-SHA
+  30-case acceptance condition remains unmet. No parsing score, release, `evidence/` publication, code,
+  test, fixture, or Git lifecycle change follows from this documentation checkpoint.
+- **The two bullets below are the prior #131/#136 evidence-span checkpoint and its marker; neither is
+  the current state.**
+- **Current state, 2026-08-02 (#131, #136; evidence-span decision).** The owner has chosen the
+  unapproved-v3-upload route for the separately authorized Issue #131 provisioning step and will
+  publish its `0.0000` `evidence_span_recovery` result with the measured reason: AX reproduces all six
+  frozen text windows and offsets when its returned text is byte-identical, but its internal span ID
+  cannot equal the frozen dataset's case ID. This is not an AX parser-failure claim. The evaluator
+  question remains open in [Issue #136](https://github.com/DHChe/braincrew-datateam-portfolio/issues/136)
+  with no implementation. No attachment, AX runtime, evaluator code/test change, evidence, or Git
+  lifecycle action occurred in this documentation checkpoint. A non-empty-span capture would require materialization and
+  move the corpus identity that the 2026-08-02 baseline/candidate captures bind, so it is a separate
+  re-capture decision.
+- **The two bullets below are the prior #134 checkpoint and its marker; neither is the current state.**
+- **Current state, 2026-08-02 (#134, merged AX pin and continuity warrant).** [Issue
+  #134](https://github.com/DHChe/braincrew-datateam-portfolio/issues/134) is **merged and closed**.
+  [PR #135](https://github.com/DHChe/braincrew-datateam-portfolio/pull/135) squash-merged into
+  `develop` as `b7513ba`; this checkout is at the same commit. Its first pull-request CI run passed
+  `python`, `fixture-container`, `frontend`, and `secrets`.
+  The PR body said `Closes #134`, but GitHub auto-closes that keyword only when its pull request lands
+  on the default branch: this repository's default is `main`, while #135 targeted `develop`. The
+  timeline records the merge reference at 13:56:54Z and a separate `closed` event at 13:57:24Z, so
+  #134 was closed by hand after the clean merge. The #134 bullet below is deliberately left intact as
+  the earlier local-pre-merge record.
+- **The bullet below is an earlier dated record and is not current state.**
 - **Current state, 2026-08-02 (#134, AX pin and continuity warrant).** [Issue
   #134](https://github.com/DHChe/braincrew-datateam-portfolio/issues/134) is implemented locally and
   remains uncommitted. The AX pin and packaged contract now name `5b0f5f2`, and the three-path
@@ -864,6 +898,52 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-02 (#131, #15) — the live parsing capture is positive structure evidence, but not a combined run
+
+- **The capture has a bounded positive result.** The external `ax-sut-http-v1` manifest warrants clean AX
+  `5b0f5f2` and records six observations. An independent comparison against the frozen cases found all
+  six heading sequences exactly equal, element-for-element. The capture remains outside the repository
+  and unreviewed for publication.
+- **The two refusals protect different contracts.** `run-dataset` refuses the mismatch between new
+  parsing `5b0f5f2` and old grounded `3bb27f8` observations before evaluation; `run-parsing` refuses to
+  build a standalone artifact for `ax-sut-http-v1`. The baseline/candidate pair therefore remains valid
+  within its existing `3bb27f8` partition and retains its no-difference conclusion, while the parsing
+  capture cannot be folded into a 30-case same-SHA result.
+- **The owner chose honest separation over a new provider experiment.** Re-capturing answer and retrieval
+  observations at `5b0f5f2` would spend provider budget and answer a new comparison question. Keeping
+  the partitions separate preserves the existing capture basis; the unmet #15 single-commit condition,
+  empty unapproved-upload spans, and absence of a parsing score are explicit limitations, not parser
+  quality claims.
+
+### 2026-08-02 (#131, #136) — the owner chooses the ID-convention publication route without changing the evaluator
+
+- **The corrected measurement is now explicit about what AX does reproduce.** At AX `5b0f5f2`, the
+  pure chunker replay found one exact expected text/window chunk in every Verification document, with
+  chunk counts `3, 8, 3, 8, 3, 8`. AX's structurally generated `:evidence` ID is the sole tuple
+  mismatch, conditional on the live extraction being byte-identical to frozen canonical text. Whitespace
+  normalization makes that prediction void and capture refuses rather than scoring it.
+- **The owner chose the low-impact route.** The next separately authorized #131 step uses unapproved v3
+  uploads and publishes `0.0000` with the ID-convention reason if its document-bound capture succeeds;
+  Issue #136 holds any evaluator-contract reconsideration separately and no evaluator implementation is
+  authorized. The empty-observation evidence-span-only probe reported only this metric, coverage, and
+  run state; no observed field was derived from `case.expected`.
+- **The trade-off is now durable.** Non-empty AX spans require a materialized `TenantSourceDocument`,
+  and that same materialization creates the seed-vector records #131 says the visible corpus digest
+  covers. Preserving the 2026-08-02 baseline/candidate captures and obtaining non-empty spans are
+  mutually exclusive without a later owner-approved re-capture. The v2 identity `INVALID` branch is
+  unreachable for a bundle that passes capture's text and digest guards.
+
+### 2026-08-02 (#134, PR #135) — the re-pin is merged, and feature-to-`develop` closure is explicit
+
+- **PR #135 squash-merged the reviewed #134 re-pin into `develop` as `b7513ba`.** Its first
+  pull-request CI run passed all four checks: `python`, `fixture-container`, `frontend`, and
+  `secrets`. The pin, packaged contract, three-path warrant, five independent literal witnesses, and
+  re-enumerated census are therefore the merged repository state rather than a local checkpoint.
+- **`Closes #134` did not close this issue automatically.** GitHub auto-closes that keyword only for
+  a pull request merged into the default branch. The repository default is `main`, while #135 merged
+  into `develop`; GitHub's timeline records the merge reference and then a separate manual `closed`
+  event. Future feature-to-`develop` tickets must close their issue explicitly after merge.
 
 ### 2026-08-02 (#134) — a re-pin records the whole reviewed source diff, not a copied conclusion
 

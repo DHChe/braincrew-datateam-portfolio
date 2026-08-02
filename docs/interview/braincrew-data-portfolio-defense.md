@@ -2576,7 +2576,113 @@ Likely follow-up questions:
   backfill old rows. *"Why retain literal test pins?"* They are deliberately independent alarms; a test
   derived from the pin cannot detect a pin that moved incorrectly.
 
+### D34. Publish an ID-bound zero as a metric limitation, not a parser-failure verdict
+
+Decision:
+: The owner will use the separately authorized Issue #131 unapproved-v3-upload route and, if its
+  document-bound capture succeeds, publish `evidence_span_recovery` `0.0000` with its cause attached.
+  The cause is the frozen dataset's span-ID convention: AX's generated evidence ID cannot equal the
+  case-specific frozen ID. Issue #136 holds the evaluator-contract question; no tuple, evaluator,
+  dataset, or replay implementation changes here.
+
+Why:
+: A pure replay of AX `5b0f5f2`'s actual chunker found an exact expected text/window chunk in all six
+  Verification documents, with chunk counts `3, 8, 3, 8, 3, 8`. If live `extracted_text` is
+  byte-identical to frozen canonical text, `text`, `start_char`, `end_char`, and
+  `source_text_digest` match; the AX ID has the structural form
+  `<source_id>:chunk:NNNN:evidence` and is the sole mismatch. This makes the score a limitation of the
+  current five-tuple recovery metric, not evidence that AX failed to recover the frozen window. The
+  condition is strict: any whitespace normalization makes the replay prediction void, and Braincrew's
+  full-text/digest capture guard refuses before scoring.
+
+Rejected alternative:
+: Approve/materialize attachments solely to obtain non-empty spans, because non-empty spans require a
+  current `TenantSourceDocument` and materialization also creates the seed-vector records that Issue
+  #131 measured as part of the visible corpus digest; that would invalidate baseline/candidate
+  compatibility and need a separate re-capture decision. Drop `id` from the recovery tuple, because
+  `a2f5b02` explicitly rejected treating the SUT-assigned span ID as document identity and directs
+  that both stored evaluator versions remain replayable. #136 is the owner decision point, not a code
+  authorization.
+
+Trade-off:
+: The chosen unapproved route preserves the 2026-08-02 baseline/candidate corpus identity but produces
+  no current `TenantSourceDocument` and therefore zero returned spans. The bounded
+  empty-observation evidence-span-only probe reports `COMPLETED`, six `SCORED` cases, and `0.0000` for
+  this one metric without deriving any observed field from `case.expected`; it deliberately makes no
+  claim about headings, metadata, tables, or lists. A materialized route could expose the real 3–8
+  chunk spans but would move the baseline-bound corpus identity.
+
+Known failure modes:
+: `parse_available=False`, `text_truncated=True`, returned text/digest drift, or a bad span window all
+  refuse the whole capture bundle. AX can also silently skip a materialized span if its chunk is absent
+  or its unstripped extracted text no longer agrees with an offset produced from `text.strip()`.
+  Conversely, a bundle that passes capture's text and digest guards cannot reach the v2
+  document-identity `INVALID`: its expected and observed non-empty digest sets necessarily intersect.
+
+Validation evidence produced:
+: Independent cycle-193 review and an isolated remeasurement in cycle 194 replayed the AX chunker over
+  all six frozen documents, checked the sole AX `TenantSourceDocument` construction and its companion
+  `SeedVectorRecord` writes, and ran the empty-observation evidence-span-only evaluator probe. No live
+  AX, attachment, container, provider, evaluator mutation, evidence write, or Git lifecycle action was
+  performed.
+
+Likely follow-up questions:
+: *"Why publish a zero if the parser finds the text?"* Because the current metric includes an internal
+  AX ID that cannot be reproduced from frozen case IDs; the publication must say that plainly. *"Why
+  not change the metric now?"* That reverses a reviewed evaluator boundary and belongs to #136.
+  *"Why not materialize and show spans?"* It changes the digest-bound comparison input and turns a
+  preserved-baseline decision into a re-capture decision.
+
 ## Failure taxonomy defense
+
+### D35. Treat partitioned live parsing and full partition assembly as a design boundary, not a defect
+
+Decision:
+: Cycle 195 records live parsing at `5b0f5f2` as a separate, captured-and-compared partition. The project
+  keeps the existing baseline/candidate comparison at `3bb27f8` and does not present the two partitions as
+  one 30-case result. The six observed heading sequences match the frozen Verification documents exactly;
+  that is a bounded live parsing result, not a release or full-evaluation claim.
+
+Why:
+: The live parsing capture warrants AX `5b0f5f2`, while the stored answer/retrieval observations used by
+  the 2026-08-02 baseline/candidate pair warrant `3bb27f8`. `run-dataset` refuses that SUT mismatch before
+  evaluation. Separately, `build_parsing_run_artifact()` refuses the truthful `ax-sut-http-v1` adapter because
+  standalone parsing artifacts remain fixture-only. Commit `4279ba9` explicitly directs future modifiers not
+  to relax the adapter-version and execution-mode boundary independently. The refusals enforce the evidence
+  boundary; they do not diagnose a parser defect.
+
+Rejected alternative:
+: Re-capture answer and retrieval at `5b0f5f2` solely to force a single-SHA run. It would spend additional
+  provider budget and answer a different comparison question, replacing rather than extending the existing
+  baseline/candidate partition. Approve the uploads merely to obtain non-empty spans. That would materialize
+  source documents and move the corpus identity bound by the existing comparison.
+
+Trade-off:
+: The project preserves the valid baseline/candidate comparison and its no-difference conclusion, at the
+  cost of an explicit limitation: Issue #15's single-commit 30-case acceptance condition remains unmet.
+  Unapproved uploads retain no materialized source document, so zero observed spans are expected in this
+  capture. Neither empty spans nor empty metadata is a parser-quality verdict.
+
+Known failure modes:
+: A new parsing SUT SHA cannot be joined to old grounded observations; the `run-dataset` guard refuses it.
+  A standalone live parsing artifact likewise refuses because the adapter is `ax-sut-http-v1`, not
+  `fixture-parsing-sut-v1`. Treating either refusal, empty spans, or empty metadata as a parser-quality
+  failure would confuse an evidence partition with the behavior being measured.
+
+Validation evidence produced:
+: The external parsing manifest and raw observations were independently compared against all six frozen
+  heading lists, each element-for-element. The two observed refusal messages were checked against
+  `src/braincrew/cli.py` and `src/braincrew/result_store.py` and are recorded in
+  `docs/decisions/2026-08-02-parsing-partition-boundary-and-refusal-basis.md`. No runtime was queried in
+  this documentation cycle.
+
+Likely follow-up questions:
+: *"Why is a live capture not a full run?"* It measured six parser responses under one SUT warrant, while
+  the other evaluation observations have another warrant; combining them would erase provenance. *"Why not
+  remove the guard?"* That would reverse a reviewed evaluator boundary and make prior comparison evidence
+  less interpretable. *"Why not approve the uploads?"* Approval changes the corpus-bound state and requires
+  a separate re-capture decision.
+
 
 - `P-*` answers where document understanding failed.
 - `R-*` answers where evidence selection failed.
