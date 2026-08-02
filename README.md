@@ -57,7 +57,8 @@ Explicitly **not** claimed anywhere in this repository:
 - any answer-quality result against live AX;
 - any live release decision — the dashboard's `PASS` is fixture evidence with placeholder commit
   SHAs, and the page says so;
-- a clean-container or one-command reproduction (see [Running it](#running-it));
+- a one-command replay of the published live artifacts: those owner-held artifacts remain outside this
+  repository, and the clean container documented below validates committed fixture inputs only;
 - Agent evaluation. The failure taxonomy reserves `TRJ-*` and leaves it unused; schema extension
   points exist and are labelled `planned`.
 
@@ -91,7 +92,7 @@ operational), all four versioned in the live capture's provenance, a **frozen HT
 (`src/braincrew/ax-http-v1.yaml`) pinned to a specific SUT commit with per-operation schema digests
 and a mocked contract suite, a create-only artifact store emitting canonical JSON — with Parquet
 alongside it for comparison evidence — three ordered release gates, corpus sealing and qualification
-receipts, a statically exported dashboard, and **581 tests**.
+receipts, a statically exported dashboard, and **598 tests**.
 
 **Every artifact is create-only, and every artifact the `replay` command accepts re-derives its
 stored digest through committed code and refuses on any mismatch.** One class — the corpus
@@ -121,8 +122,13 @@ No customer, employee or company document is in this repository.
 
 ```bash
 uv sync --frozen --all-groups     # Python 3.12, locked
-uv run pytest -q                  # 581 tests
-uv run ruff check . && uv run mypy
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy
+uv run pytest -q                  # 598 tests
+uv run pytest tests/acceptance/test_cli_fixture_gate.py -q
+uv run pytest tests/acceptance/test_cli_fixture_gate.py -q \
+  -k test_replay_recomputes_the_same_logical_digest_and_gate_decision
 ```
 
 The fastest end-to-end demonstration is the offline fixture path — a full 100-case evaluation, then a
@@ -143,17 +149,44 @@ Both print the same `logical_digest`, and the artifact's own provenance records
 `execution_mode: fixture` and `sut.executed: false` — it is a determinism demonstration, not a
 benchmark.
 
-**Two honest limits on reproduction**, both measured rather than assumed:
+### Clean, fixture-only container
 
-1. **There is no one-command reproduction** in the sense the design specification promises. The path
-   above is three commands and requires a fixture bundle.
-2. **The current `v3` dataset has no complete offline run.** The only committed observation bundles
+The clean container uses the locked Python environment and has no host mount. Its build context excludes
+local Git metadata, environment files, Python caches and bytecode, and dashboard `.next`/`out` build
+outputs at every depth. The `ax-live-verification-evidence/` pattern is defensive only: that directory
+lies outside the repository, so nothing was excluded from the context on its account. The fixture
+acceptance test receives only
+an image-local Git snapshot because it checks its own provenance.
+
+```bash
+docker build --no-cache --tag braincrew-evaluation-fixture:local .
+docker run --rm --network none braincrew-evaluation-fixture:local
+```
+
+The image runs the Python format, lint, type, full-test, and Issue #6 fixture gates. On Docker's default
+Linux namespace policy, the three authoring-boundary tests that require Bubblewrap are explicitly skipped:
+installing Bubblewrap makes them fail because the container may not create a user namespace, and this path
+does not request privileged or security-relaxed execution. It does **not** contain or replay a published
+live artifact, and it does not execute AX. The CI workflow has separate named fixture benchmark,
+fixture-replay, container, dashboard, and secret-scan steps; the workflow itself remains unverified until a
+pull request runs it.
+
+**Three honest limits on reproduction**, both measured and explicitly bounded:
+
+1. **There is no one-command replay of the published live evaluation.** The published live artifacts are
+   owner-held outside this repository pending a publication decision. The container intentionally cannot
+   see them, so it verifies fixture evidence only.
+2. **A stored-artifact replay and a fresh live rerun prove different things.** Replay can reproduce the
+   stored logical metrics and gate decision from fixed bytes. A live SUT/provider rerun produces a new
+   observation at a new time and is never presented as byte-identical reproducibility.
+3. **The current `v3` dataset has no complete offline run.** The only committed observation bundles
    are `v1`; running `v3` against them yields `INVALID` with 34 of 100 scored — principally because
    the retrieval queries changed between versions, and additionally on grounded coverage and overall
    dataset coverage. The `v1` path above is a legacy fixture, and its dataset digest is not the frozen
    `v3` digest quoted above.
 
-No clean-container reproduction has been performed.
+The container command is intentionally a clean **fixture** reproduction, not a release or live-quality
+claim.
 
 ---
 
@@ -196,9 +229,11 @@ criteria:
 - **Met (4)** — the dataset freeze and recorded 70/30 digest; metric goldens and boundary tests;
   canonical artifacts reconstructing analytical outputs; and Agent evaluation left explicitly
   unimplemented and unclaimed.
-- **Met for fixture evidence only (1)** — reproducible release-gate output with reasons.
-- **Not met (4)** — a compatible baseline/candidate pair; a complete live Verification run;
-  clean-container reproduction; and evidence linkage for every submission claim.
+- **Met for fixture evidence only (2)** — reproducible release-gate output with reasons; and a clean,
+  network-isolated container executes the locked Python environment and fixture checks. This is not
+  published-live-artifact validation.
+- **Not met (3)** — a compatible baseline/candidate pair; a complete live Verification run; and
+  evidence linkage for every submission claim.
 - **Not separately assessed (1)** — the dashboard static-build and sanitized-export check.
 
 The blocking dependency **for live answer quality** is in the SUT, not here: until AX#61 makes the discarded provider output

@@ -21,6 +21,32 @@ Run the Issue #6 tracer-bullet benchmark and deterministic replay check with:
 
 ```bash
 uv run pytest tests/acceptance/test_cli_fixture_gate.py -q
+uv run pytest tests/acceptance/test_cli_fixture_gate.py -q \
+  -k test_replay_recomputes_the_same_logical_digest_and_gate_decision
+```
+
+Run the clean, fixture-only Python container without mounting a host path or using Docker Compose:
+
+```bash
+docker build --no-cache --tag braincrew-evaluation-fixture:local .
+docker run --rm --network none braincrew-evaluation-fixture:local
+```
+
+The image validates committed fixture inputs only. It deliberately excludes local `.git`, environment
+files, generated outputs, and owner-held published live artifacts; a successful run is not a replay of
+the published live evaluation.
+
+Run the dashboard CI gates with:
+
+```bash
+npm ci
+npm run format:check
+npm run lint
+npm run typecheck
+npm test -- --run
+npm run build
+npx playwright install --with-deps chromium
+npm run test:e2e
 ```
 
 Before committing any change, also run:
@@ -30,7 +56,9 @@ git diff --check
 git status --short
 ```
 
-The complete 100-case and live AX benchmarks are not introduced by Issue #6 and must not be claimed by these commands.
+The complete 100-case and live AX benchmarks are not introduced by Issue #6 and must not be claimed by
+these commands. A fresh live rerun is new evidence, never byte-identical reproduction; only replay of a
+stored artifact can make that kind of identity claim.
 
 ## Golden Rules
 

@@ -37,8 +37,39 @@ jobs:
       - name: Type check
         run: uv run mypy
 
-      - name: Test and replay fixture artifact
+      - name: Run full Python test suite
         run: uv run pytest -q
+
+      - name: Run Issue #6 fixture benchmark
+        run: uv run pytest tests/acceptance/test_cli_fixture_gate.py -q
+
+      - name: Recompute fixture replay digest and gate decision
+        run: uv run pytest tests/acceptance/test_cli_fixture_gate.py -q -k test_replay_recomputes_the_same_logical_digest_and_gate_decision
+
+  fixture-container:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Build clean fixture-only container
+        run: docker build --tag braincrew-evaluation-fixture:ci .
+
+      - name: Run Python gates and fixture benchmark without a host mount
+        run: docker run --rm --network none braincrew-evaluation-fixture:ci
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out full history for scanning
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Scan tracked history for secrets and credential-like material
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   frontend:
     runs-on: ubuntu-latest

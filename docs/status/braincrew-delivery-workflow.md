@@ -25,6 +25,15 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-02 (#16, fixture portion only).**
+  [Issue #16](https://github.com/DHChe/braincrew-datateam-portfolio/issues/16) remains open: the unblocked
+  clean, network-isolated fixture container is implemented locally and uncommitted, while deterministic
+  replay of published live artifacts remains blocked by the owner-held publication decision and open
+  Issue #15. The completed container gate reported `595 passed, 3 skipped` plus `10 passed` for the
+  Issue #6 fixture benchmark; it neither contains the external artifacts nor executes AX. CI definitions
+  await a pull-request run. No Git lifecycle action, Docker Compose invocation, AX-container contact, or
+  live-artifact copy belongs to this cycle. See the 2026-08-02 (#16) Transition history entry below.
+- **The bullet below is the earlier dated record and is not current state.**
 - **Current state, 2026-08-01 (#121, #122).**
   [Issue #121](https://github.com/DHChe/braincrew-datateam-portfolio/issues/121) and
   [Issue #122](https://github.com/DHChe/braincrew-datateam-portfolio/issues/122) — re-pinning the
@@ -829,6 +838,51 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-02 (#16) — a clean container verifies fixtures while the published-live boundary stays explicit
+
+- **Issue #16 remains open for its published-live-artifact criteria.** Issues #13 and #14 are closed,
+  but #15 is open; no live run, AX service, or provider was started here. The owner-held published live
+  artifacts remain outside this repository pending a publication decision and were neither inspected,
+  copied, nor added to the build context.
+- **The unblocked fixture path is implemented locally.** A Dockerfile pins the Python 3.12 base and `uv`,
+  synchronizes `uv.lock` with `--frozen --all-groups`, and runs Python quality gates plus the Issue #6
+  fixture benchmark without a host mount or runtime network. `.dockerignore` excludes Git metadata,
+  local environment files, Python caches and bytecode, and dashboard `.next`/`out` build outputs at every
+  depth. The external-artifact pattern is defensive only: that directory lies outside the repository, so
+  nothing was excluded on its account.
+- **CI now names what it can actually see.** The Python job separates the full suite, Issue #6 fixture
+  benchmark, and fixture replay digest check; a dedicated container job runs the same fixture-only path;
+  the existing frontend job retains static-dashboard checks; and Gitleaks scans tracked history. These
+  are CI definitions, not claims that a GitHub Actions run has already passed. Review noted that the
+  Gitleaks action is the one new job carrying an external condition — `gitleaks-action@v2` requires a
+  `GITLEAKS_LICENSE` for organisation-owned repositories — so its first pull-request run is what
+  establishes whether it can run here at all.
+- **Validation is in progress.** The clean container must build and pass its isolated gates without a
+  privilege or security-policy exception. On Docker's default Linux policy, the three Bubblewrap-dependent
+  authoring-boundary tests skip because user namespaces are unavailable; installing Bubblewrap makes them
+  fail rather than making the container more complete. The workflow YAML remains unverified until a pull
+  request runs. The decision record and defense card D30 distinguish stored-artifact replay from a fresh
+  live rerun and preserve the owner decision boundary.
+- **Completion update, measured 2026-08-02.**
+  `docker build --no-cache --tag braincrew-evaluation-fixture:cycle180-final .` succeeded, then
+  `docker run --rm --network none braincrew-evaluation-fixture:cycle180-final` completed Ruff format
+  and check, mypy, `595 passed, 3 skipped`, and the ten-test Issue #6 fixture gate. The three skips name
+  the unavailable OS sandbox backend. A one-clause mutation that removed the image-local `.git` after its
+  synthetic commit made `30` provenance checks fail (`565 passed, 3 skipped`); restoring `Dockerfile`
+  reproduced SHA-256 `77c883f08179db35ced106dfaefa71b1b146830312e3f8def979eebc8332f856`. Bubblewrap's
+  direct user-namespace probe was denied by Docker's default kernel policy, so no privileged or
+  security-relaxed run was requested. This completes only the fixture portion; CI and external
+  published-live-artifact criteria remain pending their separate conditions.
+
+- **Correction to the 2026-08-01 (#121, #122) entry above and to commit `52ae146`, both left
+  unchanged.** Those records describe the published live artifacts as `.gitignore`d benchmark output.
+  Measured 2026-08-02 during Issue #16 review: `git check-ignore -v ax-live-verification-evidence`
+  matches nothing, `.gitignore` names only `artifacts/`, and the directory is
+  `/Users/astralpig/ax-live-verification-evidence/` — **outside the repository entirely**, so no ignore
+  rule applies to it. The consequence stated there is unaffected: a clean environment still cannot see
+  those files, which is why the container validates fixture evidence only. The commit message is
+  immutable and the entry above is append-only history; this pointer is the correction of record.
 
 ### 2026-08-02 (#103) — the status header is current only when its latest visible transition date agrees
 
