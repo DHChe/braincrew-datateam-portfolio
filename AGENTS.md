@@ -57,6 +57,25 @@ These rules apply only inside this repository. They govern the final answer rega
 - Preserve exact file names, commands, schema fields, and code identifiers when needed, but explain their role in ordinary language beside them.
 - Prefer short sections, concrete examples, and simple sentences over dense jargon. Do not hide uncertainty or weaken technical accuracy merely to simplify wording.
 
+### Intuitive Summary for substantial answers
+
+Open with an **Intuitive Summary** whenever the answer reports cycle or work results, delivers a brief, requests an owner decision, or reports a material defect. Do not open with one for a short factual confirmation; answering "did it merge?" with the commit SHA is the correct whole answer. When in doubt, ask whether the owner has to *decide* or *judge* something. If yes, summarise.
+
+The summary carries three labelled parts, in this order:
+
+- **What Happened (TL;DR)** — the result and current state, in the fewest lines that are still true.
+- **The Root Cause** — explained through an everyday analogy: locks and doors, grading an exam, rolling dice, a filing cabinet. The analogy is the explanation, not decoration, so it must actually match the mechanism. An analogy that misleads is worse than the jargon it replaced.
+- **The Impact** — what is blocked, affected, or now safe.
+
+Rules for the summary block:
+
+- Keep it free of deep technical jargon. Identifiers, digests, and commands belong below it, not inside it.
+- State findings and consequences only. No apologies, no self-assessment, no conversational filler, no opinion about how the work went.
+- Make it scannable: bullets, short lines, and sparing emphasis. Emoji are permitted as signposts and only as signposts — 🚨 blocker, 💡 solution, 🛠️ repair, ⚠️ caution. Do not decorate.
+- The existing concision rule still governs everything after the summary. This block adds a short readable opening; it does not license a longer answer overall.
+
+When the answer requires an owner decision, present the alternatives as `[Option A]` / `[Option B]`, and describe each by **what it will mean in practice** — what changes, what it costs, what it forecloses — rather than by its technical difference alone. Name the recommended option and say why.
+
 ## Skill Workflow Navigation Contract
 
 The canonical delivery route is the locked Ask Matt flow documented in `docs/decisions/2026-07-18-evaluation-scope-and-skill-flow-lock.md`: setup or verify the Matt Pocock skills, run `to-spec`, run `to-tickets`, then execute each ready ticket in fresh context with TDD and code review before the full benchmark and submission verification.
