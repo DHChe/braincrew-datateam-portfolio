@@ -395,8 +395,17 @@ def test_issue_46_removes_dataset_v2_from_the_future_seal_to_qualification_path(
 def test_delivery_status_records_the_published_review_repair_and_new_frontier() -> None:
     status = STATUS_PATH.read_text(encoding="utf-8")
     current_checkpoint = _section(status, "## Current checkpoint", "## Transition history")
+    transition_history = _section(status, "## Transition history", "## Transition record format")
+    transition_heading_dates = re.findall(
+        r"^### (?P<date>\d{4}-\d{2}-\d{2})\b",
+        transition_history,
+        flags=re.MULTILINE,
+    )
+    transition_heading_count = len(re.findall(r"^### ", transition_history, flags=re.MULTILINE))
 
-    assert "Last updated: 2026-07-25" in status
+    assert transition_heading_dates
+    assert len(transition_heading_dates) == transition_heading_count
+    assert status.splitlines()[2] == f"Last updated: {max(transition_heading_dates)}"
     assert ISSUE_47_MERGE_COMMIT in current_checkpoint
     assert APPROVED_BRIEF_DIGEST in current_checkpoint
     assert "10,680-byte brief" in current_checkpoint

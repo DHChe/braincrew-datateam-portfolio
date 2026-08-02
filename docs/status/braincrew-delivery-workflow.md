@@ -1,6 +1,6 @@
 # Braincrew Portfolio Delivery Workflow Status
 
-Last updated: 2026-07-25
+Last updated: 2026-08-02
 
 ## Purpose
 
@@ -829,6 +829,36 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-02 (#103) — the status header is current only when its latest visible transition date agrees
+
+- **[Issue #103](https://github.com/DHChe/braincrew-datateam-portfolio/issues/103) is implemented
+  locally; no Git lifecycle action has been performed.** `Last updated` is a current-state field, not
+  a preserved Issue #47 snapshot. It now names the maximum date among Transition history entries — the
+  record a reader can inspect inside this append-only file — rather than a repository commit timestamp
+  that the file does not show.
+- **The coupling is derived, not re-pinned.**
+  `test_delivery_status_records_the_published_review_repair_and_new_frontier` captures every dated
+  `### YYYY-MM-DD` Transition heading, requires every `###` entry here to start with such a date, and
+  compares the independently hand-written header with the maximum date. A later entry inserted out of
+  order, a changed header, or an unparseable entry turns the test red; no literal date remains in the
+  test and the guard does not depend on newest-first file order. The scanned region is bounded at both
+  ends, `## Transition history` to `## Transition record format`. Review found and pane 1 reproduced
+  that an unbounded scan let an example `### 2099-01-01` heading in the format section carry a matching
+  false `Last updated: 2099-01-01` to green, while rejecting a legitimate undated `### Required fields`
+  subheading there; the bound closes the first and removes the second.
+- **The historical record is intact.** No existing Transition entry was rewritten or deleted, and the
+  test's Issue #47-era Current checkpoint assertions remain unchanged. The last recorded move was
+  `2026-07-24` to `2026-07-25` in `f411fae`; that commit's `Rejected:` and `Directive:` concern AX's
+  five-file upload cap, not this header's semantics. The decision and failure modes are recorded in
+  [the status-currency decision](../decisions/2026-08-02-status-currency-derived-from-transition-history.md)
+  and defense card **D29**.
+- **Cycle 178 validation is complete.** The prior first-heading check passed after a later
+  `2026-08-05` entry was inserted below the `2026-08-02` heading, proving that the old guard was
+  fail-open. The strengthened guard made that mutation, a stale `2026-08-01` header, and an
+  unparseable `### current` heading RED, then restored the status byte-for-byte after each mutation.
+  The Issue #47 checkpoint mutation also remained RED. Sequential `ruff format --check`, `ruff check`,
+  `mypy`, and `pytest -q` gates passed (598 tests); no Git lifecycle action has been performed.
 
 ### 2026-08-01 (#121, #122) — an unreported predicate is recorded as unknown, and the warrant is re-argued rather than transplanted
 
