@@ -1,9 +1,9 @@
 {
   "schema_version": "ax-answer-path-emission-state-census-v1",
-  "enumerated_at": "2026-08-01",
+  "enumerated_at": "2026-08-02",
   "source": {
     "repository": "AX_portfolio",
-    "commit_sha": "3bb27f870d244fbc8debba91eb408e825caa9e03",
+    "commit_sha": "5b0f5f2ae2cfb4c4870a2228f9aa226e009241f5",
     "path": "backend/src/ax_engine/answers/service.py",
     "sha256": "972f15c9d68da856c163d830fdef849d915d05bb08f83dd642bade37a20cd47d",
     "provider_metadata_call_sites": [235, 561, 617, 698],

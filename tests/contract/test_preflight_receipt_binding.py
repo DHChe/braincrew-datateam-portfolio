@@ -16,7 +16,7 @@ from braincrew.dataset_registry import DatasetValidationReport, validate_dataset
 
 PROJECT_ROOT = Path(__file__).parents[2]
 DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v3.json"
-PINNED_AX_SHA = "3bb27f870d244fbc8debba91eb408e825caa9e03"
+PINNED_AX_SHA = "5b0f5f2ae2cfb4c4870a2228f9aa226e009241f5"
 PROVISIONED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
 UNRELATED_AX_SHA = "7b6f480c52583a3ff12e3af809eba6510a7a2348"
 EVALUATION_SHA = "93c8e8dabab855b7f2f700df73cd04ce38995f29"
@@ -236,8 +236,9 @@ def test_reviewed_provisioning_receipt_is_accepted_for_newer_sut_for_warranted_r
         "provisioned_source_tree_sha": "846c06ba9461c97a75b16caf7b85570e0c0f14fd",
         "last_equivalent_source_tree_sha": "846c06ba9461c97a75b16caf7b85570e0c0f14fd",
         "changed_paths": [
-            "backend/src/ax_engine/answers/service.py",
             "backend/src/ax_engine/answers/contracts.py",
+            "backend/src/ax_engine/answers/service.py",
+            "backend/src/ax_engine/attachments/jobs.py",
         ],
         "provisioning_state_affected": False,
     }

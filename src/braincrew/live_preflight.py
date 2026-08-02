@@ -35,7 +35,7 @@ SHA256_PATTERN = r"^sha256:[0-9a-f]{64}$"
 COMMIT_SHA_PATTERN = r"^[0-9a-f]{40}$"
 SAFE_ID_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$"
 SAFE_DETAIL_PATTERN = r"^[A-Za-z0-9_.:-]{1,160}$"
-PINNED_AX_SHA = "3bb27f870d244fbc8debba91eb408e825caa9e03"
+PINNED_AX_SHA = "5b0f5f2ae2cfb4c4870a2228f9aa226e009241f5"
 REVIEWED_PROVISIONED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
 REVIEWED_HANDOFF_RECEIPT_SHA256 = "8d59a7907894532d702d0b7c658b8b28bc8370670b69f04884c42d8d1843c767"
 PARSING_AUTHORIZATION_ROLE = "HRPractitioner"
@@ -149,12 +149,13 @@ REVIEWED_PROVISIONING_CONTINUITY_WARRANT = ReceiptSutContinuityWarrant(
     method="reviewed-ax-source-diff",
     provisioned_at_sha="2bcaee3495fd7b3f624398819575cd86a5a15c47",
     last_provisioning_equivalent_sha="d7930978d7b0cb41668a86acd9fe77c16068801d",
-    under_test_sha="3bb27f870d244fbc8debba91eb408e825caa9e03",
+    under_test_sha="5b0f5f2ae2cfb4c4870a2228f9aa226e009241f5",
     provisioned_source_tree_sha="846c06ba9461c97a75b16caf7b85570e0c0f14fd",
     last_equivalent_source_tree_sha="846c06ba9461c97a75b16caf7b85570e0c0f14fd",
     changed_paths=(
-        "backend/src/ax_engine/answers/service.py",
         "backend/src/ax_engine/answers/contracts.py",
+        "backend/src/ax_engine/answers/service.py",
+        "backend/src/ax_engine/attachments/jobs.py",
     ),
     provisioning_state_affected=False,
 )

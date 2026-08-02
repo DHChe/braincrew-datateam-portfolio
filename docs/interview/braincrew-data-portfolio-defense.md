@@ -2523,6 +2523,59 @@ Likely follow-up questions:
   *"Did this make parsing pass?"* No. It makes the measurement path honest; current runtime inputs
   still prevent the measurement.
 
+### D33. Re-pin the SUT only after reading every changed production path again
+
+Decision:
+: The under-test AX commit moves from `3bb27f8` to `5b0f5f2`, together with the packaged
+  `ax-http-v1.yaml` identity. The existing receipt remains at `2bcaee3`, with `d7930978` as the last
+  provisioning-equivalent commit, so `REVIEWED_PROVISIONING_CONTINUITY_WARRANT` must name all three
+  source paths in the newly reviewed range: `answers/contracts.py`, `answers/service.py`, and
+  `attachments/jobs.py`. It is not a copied two-path conclusion.
+
+Why:
+: A pin is an assertion about the subject under test (SUT, the system being measured), while the receipt
+  proves an older provisioning event. The warrant is the bridge between them, and a bridge is credible
+  only after its entire new span is inspected. The new attachment-pipeline diff adds
+  `_headings_from_text()` and records `"headings"` in `AttachmentExtraction.page_or_section_map` only
+  inside `if extraction is None:`. It does not update an existing extraction, backfill old rows, or
+  alter approvals, materialization, corpus state, migrations, seeds, principals, or receipt production.
+  Therefore `provisioning_state_affected=False` is warranted for the already provisioned state, while
+  remaining explicitly limited: a future fresh extraction at `5b0f5f2` does record a new headings fact.
+
+Rejected alternative:
+: Change only `under_test_sha`, because it would hide `attachments/jobs.py` while still passing the
+  current structural validator; infer headings at read time or backfill existing rows, because AX's own
+  decision keeps parse observations as stored facts; and convert remaining hardcoded test literals into
+  imports, because that removes independent witnesses rather than eliminating a duplicate.
+
+Trade-off:
+: The warrant remains a human-reviewed statement about a bounded source diff rather than a runtime proof
+  that a server or future extraction is equivalent to the receipt-backed state. The exact range and the
+  `jobs.py` limitation are recorded so the next re-pin must inspect the next diff again.
+
+Known failure modes:
+: Moving `PINNED_AX_SHA` without the YAML contract raises the production binding error. Moving the pin
+  while retaining the old two-path warrant under-reports the reviewed diff and may still pass existing
+  checks. The answer-path census source hash alone cannot prove that the new commit was enumerated, so
+  its SHA-256 and line-level call-site census are rechecked by hand whenever the pin changes.
+
+Validation evidence produced:
+: Ruff format checked 72 files, Ruff lint passed, mypy found no issue in 72 source files, the full suite
+  reported `608 passed`, and the fixture gate reported `11 passed`. Moving only the source pin made the
+  full suite `171 failed, 437 passed`, and a direct `AxHttpAdapter` construction raised the production
+  message `configured AX SHA does not match ax-http-v1 contract`; restoring
+  `live_preflight.py` reproduced SHA-256
+  `d0af2fd177b71990a837c23bd7c334276bcf33496176f10cf02fbcd6478fb4e5`. Reverting only the warrant
+  to its prior two paths made the exact receipt-binding assertion fail (`1 failed, 607 passed`), then
+  reproduced that same SHA-256 after restoration. No live AX, provider, attachment, container, or Git
+  lifecycle operation is part of this decision.
+
+Likely follow-up questions:
+: *"Does adding headings affect provisioning?"* It affects future fresh extraction output, not the
+  receipt-backed state: the changed code creates a map only when no extraction exists and does not
+  backfill old rows. *"Why retain literal test pins?"* They are deliberately independent alarms; a test
+  derived from the pin cannot detect a pin that moved incorrectly.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

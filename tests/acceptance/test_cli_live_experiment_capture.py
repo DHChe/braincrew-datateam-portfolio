@@ -21,7 +21,7 @@ from braincrew.repository import RepositoryState
 
 PROJECT_ROOT = Path(__file__).parents[2]
 DATASET_MANIFEST = PROJECT_ROOT / "datasets" / "dataset_manifest_v3.json"
-PINNED_AX_SHA = "3bb27f870d244fbc8debba91eb408e825caa9e03"
+PINNED_AX_SHA = "5b0f5f2ae2cfb4c4870a2228f9aa226e009241f5"
 PROVISIONED_AX_SHA = "2bcaee3495fd7b3f624398819575cd86a5a15c47"
 TENANT_ID = "ae09ec7f-e2b8-4f83-99bb-7031ef5eb6e2"
 USER_ID = "12171ca4-a001-40da-881b-b87cce42e9b2"
