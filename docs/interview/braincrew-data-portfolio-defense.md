@@ -2360,8 +2360,9 @@ Decision:
   --frozen --all-groups` before the Python gates and Issue #6 fixture benchmark. It excludes host Git
   metadata, local environment files, Python caches and bytecode, and dashboard `.next`/`out` build
   outputs at every depth, from its build context. Its `ax-live-verification-evidence/` pattern is
-  defensive only — the owner-held live artifacts sit outside the repository and were never in the
-  context to exclude. Its Git snapshot is
+  defensive only — at the time of this decision the owner-held live artifacts sat outside the
+  repository and were never in the context to exclude; four of them were published under D31
+  later the same day. Its Git snapshot is
   constructed inside the image only because the fixture acceptance test verifies its own Git provenance.
   The container runs with no host mount and may be run with `--network none`.
 
@@ -2372,15 +2373,23 @@ Why:
   preserves the test's self-consistency check while making its identity explicitly non-publishable.
 
 Rejected alternative:
-: Bind-mount the checkout or published-live-artifact directory, because a host mount defeats clean
+: **Superseded in part 2026-08-02 by D31 — the second rejection below, copying the artifacts
+  into the repository, was reversed the same day. Its stated ground was that publication is an
+  owner decision and that a separate review was needed; the owner decided and the review
+  returned PUBLISHABLE with no redaction, discharging both. The bind-mount and
+  byte-identical rejections still stand. The text below is left unchanged.**
+  Bind-mount the checkout or published-live-artifact directory, because a host mount defeats clean
   environment evidence and would make unpublished owner-held evidence part of routine automation; copy
   the artifacts into the repository, because publication is an owner decision and the artifacts may
   contain evidence that needs a separate review; and call a fresh live rerun byte-identical, because a
   live SUT/provider observation is new evidence rather than replay of fixed bytes.
 
 Trade-off:
-: The image validates only the committed fixture path and deliberately cannot discharge Issue #16's
-  stored-live-artifact criterion. It creates a synthetic Git commit inside the image, so the ephemeral
+: **Superseded 2026-08-02 by D31 — the owner authorised publication the same day, the four reviewed
+  artifacts now live in `evidence/`, and the image replays them. The sentences below described the
+  state before that authorisation and are left unchanged.** The image validates only the committed
+  fixture path and deliberately cannot discharge Issue #16's stored-live-artifact criterion. It
+  creates a synthetic Git commit inside the image, so the ephemeral
   fixture artifact identifies that snapshot rather than a publication candidate. This is sufficient for
   test behavior, not for a release claim.
 
@@ -2410,6 +2419,53 @@ Likely follow-up questions:
   is intentionally external; treating its absence as an invitation to copy it would change an owner
   decision. *"What can be byte-identical?"* Replay of an already stored artifact's logical values and
   gate decision; a fresh provider/SUT run is a new measurement and must be reported that way.
+
+### D31. Publish reviewed stored-live evidence as a fixed replay boundary
+
+Decision:
+: The owner authorized four 2026-07-31 stored-live evidence files, with no redaction, for placement
+  under `evidence/`. The capture manifest and its grounded and retrieval observations are siblings
+  because the manifest pins bare file names and content digests; the evaluation artifact has its own
+  directory. The test invokes the existing `replay` CLI and pins the capture logical digest
+  `sha256:775a85295fb5db2f9cfb6e1aa5504206ea3b629a032452932ca685a7ab1a5049` and evaluation logical
+  digest `sha256:9435c9daaa21e4e3129dad997a9dff79717452a2c1f112acfd7a95ba3e80f6fb` as literals.
+
+Why:
+: Issue #16 needs a clean environment to replay published evidence without hidden host input. Fixed
+  bytes permit a reviewer to recompute the stored 15-grounded/9-retrieval capture and `INVALID`
+  evaluation result. The same fixed boundary deliberately preserves the distinction between replay and
+  a fresh AX/provider observation.
+
+Rejected alternative:
+: Reformatting the JSON, because a changed byte breaks the evidence's stored identity; separating the
+  two capture observations, because the manifest deliberately requires sibling bare-file references;
+  copying any of the other 33 source files, because their publication status was not authorized; and
+  treating a replay as a new live rerun, because it cannot measure mutable external behavior.
+
+Trade-off:
+: Publication permanently fixes the historical evaluation digest, the 242 recorded corpus digests, AX
+  commit `1ead133`, and dataset `3.0.0`. A later corpus change will no longer match the published
+  artifact. That is the intended reproducibility property, not a silent limitation.
+
+Known failure modes:
+: A single changed expected digest digit makes the acceptance test fail; a single changed byte in a
+  copied evaluation artifact makes `replay` refuse the stored logical digest. A fresh live run can still
+  differ, and Issue #15 remains open, so this card must never upgrade stored replay into a current
+  live-quality or release claim. The owner-approved publishability review applies only to the four
+  candidates; it does not make the other source-directory files safe to publish.
+
+Validation evidence produced:
+: SHA-256 compared every destination file directly to its read-only source. The new test was RED while
+  the files were absent, then GREEN with the literal digests. Host gates reported Ruff and mypy clean,
+  `599 passed`, and the eleven-test Issue #6 file passed; the no-network image reported `596 passed,
+  3 skipped`, then the same eleven-test file passed. No Docker Compose call, AX container contact, or
+  live SUT/provider invocation occurred.
+
+Likely follow-up questions:
+: *"Does this prove the live result is still true?"* No. It proves the published stored evidence
+  replays faithfully. *"Why keep an `INVALID` artifact?"* Its invalid state is part of the historical
+  evidence and prevents a reader from mistaking it for a successful live quality result. *"Why not
+  publish the rest later?"* Each candidate needs its own review and explicit owner authorization.
 
 ## Failure taxonomy defense
 

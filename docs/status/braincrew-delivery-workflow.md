@@ -25,15 +25,17 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
-- **Current state, 2026-08-02 (#16, fixture portion only).**
-  [Issue #16](https://github.com/DHChe/braincrew-datateam-portfolio/issues/16) remains open: the unblocked
-  clean, network-isolated fixture container is implemented locally and uncommitted, while deterministic
-  replay of published live artifacts remains blocked by the owner-held publication decision and open
-  Issue #15. The completed container gate reported `595 passed, 3 skipped` plus `10 passed` for the
-  Issue #6 fixture benchmark; it neither contains the external artifacts nor executes AX. CI definitions
-  await a pull-request run. No Git lifecycle action, Docker Compose invocation, AX-container contact, or
-  live-artifact copy belongs to this cycle. See the 2026-08-02 (#16) Transition history entry below.
-- **The bullet below is the earlier dated record and is not current state.**
+- **Current state, 2026-08-02 (#16, stored-live replay publication).**
+  [Issue #16](https://github.com/DHChe/braincrew-datateam-portfolio/issues/16) is implemented locally
+  and remains uncommitted: the owner-authorized four-file stored-live evidence set now sits under
+  `evidence/`, byte-identical to its read-only source, and the existing CLI replays both published
+  artifacts from a clean, network-isolated container. Host gates reported `599 passed` and the Issue #6
+  file reported `11 passed`; the container reported `596 passed, 3 skipped`, then `11 passed`. This
+  proves stored-artifact integrity and replay only, not current live AX quality, a release decision, or a
+  fresh byte-identical rerun; Issue #15 remains open. CI definitions still await a pull-request run. No
+  Git lifecycle action, Docker Compose invocation, AX-container contact, or live SUT/provider execution
+  occurred. See the new 2026-08-02 (#16) Transition history entry below.
+- **The bullets below are earlier dated records and are not current state.**
 - **Current state, 2026-08-01 (#121, #122).**
   [Issue #121](https://github.com/DHChe/braincrew-datateam-portfolio/issues/121) and
   [Issue #122](https://github.com/DHChe/braincrew-datateam-portfolio/issues/122) — re-pinning the
@@ -838,6 +840,36 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-02 (#16) — reviewed stored-live evidence becomes a clean replay boundary
+
+- **The owner-authorized publication is implemented locally and remains uncommitted.** Exactly four
+  reviewed 2026-07-31 files now live under `evidence/`: a capture manifest with its two sibling
+  observation files, plus the baseline evaluation artifact. The manifest's bare-file references decide
+  the sibling layout. SHA-256 compared every destination directly to the read-only source; no JSON was
+  reformatted, reserialized, or reindented.
+- **The existing replay path now has a literal regression guard.** The new Issue #6 acceptance test
+  replays the capture to `sha256:775a85295fb5db2f9cfb6e1aa5504206ea3b629a032452932ca685a7ab1a5049`
+  with 15 grounded and 9 retrieval cases, and the evaluation artifact to
+  `sha256:9435c9daaa21e4e3129dad997a9dff79717452a2c1f112acfd7a95ba3e80f6fb` with `run_state`
+  `INVALID`. It first failed while the artifacts were absent; changing one expected digit later made the
+  named test fail, and changing one byte in a temporary artifact copy made replay refuse its digest.
+- **Clean-container evidence now includes the stored artifacts.** Neither `.gitignore` nor
+  `.dockerignore` matches `evidence/`. The Braincrew-only `--network none` image built successfully and
+  reported Ruff and mypy clean, `596 passed, 3 skipped`, then `11 passed` for the Issue #6 file. This
+  included no Docker Compose call, AX-container contact, host mount, or live SUT/provider run.
+- **Issue #16 moves only as far as the evidence permits.** Clean stored-artifact replay, byte identity,
+  the replay-versus-rerun documentation boundary, and the owner-approved four-file publication scope
+  are met locally. Hosted CI remains unverified until a pull request runs it. Issue #15 remains open, so
+  the rule that a fresh live rerun is not byte-identical remains a documentation boundary rather than a
+  new live-execution demonstration. The other 33 source-directory files remain outside the reviewed
+  publication scope and were neither copied nor quoted.
+- **Three statements below, under this same Transition history, now read as stale and are deliberately
+  not corrected.** The earlier 2026-08-02 (#16) entry and the 2026-07-31 record describe the published
+  live artifacts as owner-held outside the repository, which stopped being true when the owner
+  authorised publication later on 2026-08-02. This section is append-only; editing a dated entry so it
+  matches a later state would falsify the record. The correction of record is this entry and
+  [the published live evidence replay decision](../decisions/2026-08-02-published-live-evidence-replay.md).
 
 ### 2026-08-02 (#16) — a clean container verifies fixtures while the published-live boundary stays explicit
 

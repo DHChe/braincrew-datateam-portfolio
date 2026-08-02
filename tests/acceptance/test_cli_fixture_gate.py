@@ -8,6 +8,24 @@ from typing import Any, cast
 
 FIXTURE_PATH = Path(__file__).parents[1] / "fixtures" / "issue_6_case_v1.json"
 SUT_SHA = "b" * 40
+PUBLISHED_LIVE_CAPTURE_MANIFEST_PATH = (
+    Path(__file__).parents[2]
+    / "evidence"
+    / "capture-baseline-2026-07-31"
+    / "issue-15-phase1-baseline-2026-07-31.capture-manifest.json"
+)
+PUBLISHED_LIVE_EVALUATION_ARTIFACT_PATH = (
+    Path(__file__).parents[2]
+    / "evidence"
+    / "eval-baseline-2026-07-31"
+    / "issue-15-phase1-baseline-2026-07-31.json"
+)
+PUBLISHED_LIVE_CAPTURE_LOGICAL_DIGEST = (
+    "sha256:775a85295fb5db2f9cfb6e1aa5504206ea3b629a032452932ca685a7ab1a5049"
+)
+PUBLISHED_LIVE_EVALUATION_LOGICAL_DIGEST = (
+    "sha256:9435c9daaa21e4e3129dad997a9dff79717452a2c1f112acfd7a95ba3e80f6fb"
+)
 
 
 def git_output(*arguments: str) -> str:
@@ -109,6 +127,25 @@ def test_replay_recomputes_the_same_logical_digest_and_gate_decision(tmp_path: P
     replay_summary = json.loads(replay_result.stdout)
     assert replay_summary["gate_decision"] == run_summary["gate_decision"]
     assert replay_summary["logical_digest"] == run_summary["logical_digest"]
+
+
+def test_replay_reproduces_published_live_artifact_digests() -> None:
+    capture_result = run_cli("replay", "--artifact", str(PUBLISHED_LIVE_CAPTURE_MANIFEST_PATH))
+
+    assert capture_result.returncode == 0, capture_result.stderr
+    capture_summary = json.loads(capture_result.stdout)
+    assert capture_summary["logical_digest"] == PUBLISHED_LIVE_CAPTURE_LOGICAL_DIGEST
+    assert capture_summary["grounded_case_count"] == "15"
+    assert capture_summary["retrieval_case_count"] == "9"
+
+    evaluation_result = run_cli(
+        "replay", "--artifact", str(PUBLISHED_LIVE_EVALUATION_ARTIFACT_PATH)
+    )
+
+    assert evaluation_result.returncode == 0, evaluation_result.stderr
+    evaluation_summary = json.loads(evaluation_result.stdout)
+    assert evaluation_summary["logical_digest"] == PUBLISHED_LIVE_EVALUATION_LOGICAL_DIGEST
+    assert evaluation_summary["run_state"] == "INVALID"
 
 
 def test_run_rejects_overwriting_an_existing_artifact(tmp_path: Path) -> None:

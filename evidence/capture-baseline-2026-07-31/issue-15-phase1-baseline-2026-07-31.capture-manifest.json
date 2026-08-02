@@ -1,0 +1,138 @@
+{
+  "captured_at": "2026-07-31T09:55:04.389180Z",
+  "fixture_case_ids": [
+    "parsing-015",
+    "parsing-016",
+    "parsing-017",
+    "parsing-018",
+    "parsing-019",
+    "parsing-020"
+  ],
+  "grounded_observations": {
+    "case_count": 15,
+    "content_digest": "sha256:1c556c9d54bc5766596b24424ab7f007d45920546b71ce257dcc29ab59d062a2",
+    "file_name": "issue-15-phase1-baseline-2026-07-31.grounded-observations.json"
+  },
+  "live_case_ids": [
+    "retrieval-022",
+    "retrieval-023",
+    "retrieval-024",
+    "retrieval-025",
+    "retrieval-026",
+    "retrieval-027",
+    "retrieval-028",
+    "retrieval-029",
+    "retrieval-030",
+    "GA-001",
+    "GA-002",
+    "GA-003",
+    "GA-004",
+    "GA-005",
+    "GA-006",
+    "GA-007",
+    "GA-008",
+    "GA-009",
+    "GA-010",
+    "VA-006",
+    "VA-007",
+    "VA-008",
+    "VA-009",
+    "VA-010"
+  ],
+  "logical_digest": "sha256:775a85295fb5db2f9cfb6e1aa5504206ea3b629a032452932ca685a7ab1a5049",
+  "provenance": {
+    "adapter_versions": {
+      "grounded": "ax-sut-http-v1",
+      "parsing": "fixture-parsing-sut-v1",
+      "retrieval": "ax-sut-http-v1"
+    },
+    "corpus_digest": null,
+    "corpus_digests_by_role": {
+      "Employee": "sha256:85b57bb29e5ff95bd45c777c683d38b4f8e94d7eec90488070671d6f688d314f",
+      "Executive": "sha256:ecba4eeaa5edc24172522bd1b2ec75bd3e79aa13ea7b409a764b58ca1eb44a76",
+      "HRPractitioner": "sha256:ecba4eeaa5edc24172522bd1b2ec75bd3e79aa13ea7b409a764b58ca1eb44a76"
+    },
+    "corpus_id": "ax-visible-retrieval:ae09ec7f-a7bc-5bf8-a645-8b3f1e623850",
+    "cost_measurement_status": null,
+    "dataset_digest": "sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d",
+    "dataset_id": "braincrew-evaluation-dataset",
+    "dataset_version": "3.0.0",
+    "dependency_lock_digest": "sha256:adaad3c2abdcec73ebc0d01a91bde49bdf2be8d638e7aee1a80081a1e5b6d67d",
+    "evaluation_plane_dirty": false,
+    "evaluation_plane_sha": "f9d9cfdf67c6afca5e5fdf5397dd4a3724e9a4cf",
+    "evaluator_versions": {
+      "grounded": "grounded-answer-v1",
+      "operational": "operational-v1",
+      "parsing": "parsing-quality-v1",
+      "retrieval": "retrieval-quality-v1"
+    },
+    "evidence_limit": 3,
+    "execution_mode": "live",
+    "fixed_retrieval_config_digest": "sha256:f8dd6876751e95c5b6006f78a70326ab2971e839dc58be6988001bb4580b4d31",
+    "latency_definition": null,
+    "model_name": "gpt-5.4-mini",
+    "model_parameters": {
+      "reporting_status": "not_exposed_by_ax-http-v1"
+    },
+    "model_provider": "openai",
+    "prompt_hash": "sha256:681956917adb17453b8ace3e03dc6da9422177850286be2582f9ff3bacf2c702",
+    "prompt_id": "ax-answer-runtime-source-v1",
+    "retrieval_top_k": 5,
+    "runtime_environment_digest": "sha256:1c396bd6e8fac09597e7bc8fcfdab5278775f6cf76c84f78f10ef664f16c7670",
+    "sut_dirty": false,
+    "sut_sha": "1ead1331166538e417027a7064179f15c5cfbf61",
+    "threshold_digest": "sha256:0ae1b5ae05535a5d4cb6908c86e9bda35071b7294debec0a6c52dd2cd6b054f0",
+    "threshold_version": "release-thresholds-v1"
+  },
+  "retrieval_observations": {
+    "case_count": 9,
+    "content_digest": "sha256:22a1b3c5460f1642eb4e2165f0efa5e969a00460731d868e4f5b230824b74fe6",
+    "file_name": "issue-15-phase1-baseline-2026-07-31.retrieval-observations.json"
+  },
+  "role": "baseline",
+  "run_id": "issue-15-phase1-baseline-2026-07-31",
+  "schema_version": "live-experiment-capture-v1",
+  "sut_state_warrant": {
+    "commit_sha": "1ead1331166538e417027a7064179f15c5cfbf61",
+    "dirty_worktree": false,
+    "method": "read-only-git-check",
+    "schema_version": "sut-state-warrant-v1",
+    "subject": {
+      "checked_at": "2026-07-31T09:55:04.389180Z",
+      "checkout_path": "AX_portfolio",
+      "repository": "AX_portfolio"
+    }
+  },
+  "verification_case_ids": [
+    "parsing-015",
+    "parsing-016",
+    "parsing-017",
+    "parsing-018",
+    "parsing-019",
+    "parsing-020",
+    "retrieval-022",
+    "retrieval-023",
+    "retrieval-024",
+    "retrieval-025",
+    "retrieval-026",
+    "retrieval-027",
+    "retrieval-028",
+    "retrieval-029",
+    "retrieval-030",
+    "GA-001",
+    "GA-002",
+    "GA-003",
+    "GA-004",
+    "GA-005",
+    "GA-006",
+    "GA-007",
+    "GA-008",
+    "GA-009",
+    "GA-010",
+    "VA-006",
+    "VA-007",
+    "VA-008",
+    "VA-009",
+    "VA-010"
+  ]
+}

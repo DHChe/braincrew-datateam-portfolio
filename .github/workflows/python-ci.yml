@@ -46,6 +46,9 @@ jobs:
       - name: Recompute fixture replay digest and gate decision
         run: uv run pytest tests/acceptance/test_cli_fixture_gate.py -q -k test_replay_recomputes_the_same_logical_digest_and_gate_decision
 
+      - name: Replay the published stored-live artifacts and compare logical digests
+        run: uv run pytest tests/acceptance/test_cli_fixture_gate.py -q -k test_replay_reproduces_published_live_artifact_digests
+
   fixture-container:
     runs-on: ubuntu-latest
     steps:

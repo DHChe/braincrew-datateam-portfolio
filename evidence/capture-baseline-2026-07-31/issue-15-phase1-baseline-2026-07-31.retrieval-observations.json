@@ -1,0 +1,591 @@
+{
+  "adapter_version": "ax-sut-http-v1",
+  "observations": [
+    {
+      "candidates": [
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 1,
+          "record_id": "demo-safety-policy-009",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-022-required-022-primary",
+          "rank": 2,
+          "record_id": "demo-safety-policy-009",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 3,
+          "record_id": "demo-safety-policy-009",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-022-required-022-primary",
+          "rank": 4,
+          "record_id": "demo-safety-policy-009",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-022-required-022-primary",
+          "rank": 5,
+          "record_id": "demo-safety-policy-009",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        }
+      ],
+      "case_id": "retrieval-022",
+      "failure_code": null,
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "33.728083"
+      },
+      "query": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy의 현재 원칙을 retrieval-022 검토 관점에서 설명해 주세요",
+      "retrieval_available": true,
+      "schema_version": "retrieval-observation-v1"
+    },
+    {
+      "candidates": [
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 1,
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-023-required-023-primary",
+          "rank": 2,
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-023-required-023-primary",
+          "rank": 3,
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 4,
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 5,
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        }
+      ],
+      "case_id": "retrieval-023",
+      "failure_code": null,
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "9.38875"
+      },
+      "query": "Performance, Learning, and Internal Mobility Policy의 현재 원칙을 retrieval-023 검토 관점에서 설명해 주세요",
+      "retrieval_available": true,
+      "schema_version": "retrieval-observation-v1"
+    },
+    {
+      "candidates": [
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-024-required-024-primary",
+          "rank": 1,
+          "record_id": "demo-lifecycle-policy-013",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 2,
+          "record_id": "demo-lifecycle-policy-013",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-024-required-024-primary",
+          "rank": 3,
+          "record_id": "demo-lifecycle-policy-013",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 4,
+          "record_id": "demo-lifecycle-policy-013",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 5,
+          "record_id": "demo-lifecycle-policy-013",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        }
+      ],
+      "case_id": "retrieval-024",
+      "failure_code": null,
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "8.781084"
+      },
+      "query": "Onboarding, Organizational Change, Separation, and Records Policy의 현재 원칙을 retrieval-024 검토 관점에서 설명해 주세요",
+      "retrieval_available": true,
+      "schema_version": "retrieval-observation-v1"
+    },
+    {
+      "candidates": [
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-025-required-025-primary",
+          "rank": 1,
+          "record_id": "demo-terms-policy-001",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 2,
+          "record_id": "demo-terms-policy-001",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-025-required-025-secondary",
+          "rank": 3,
+          "record_id": "demo-pay-policy-005",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 20,
+          "evidence_span_id": null,
+          "rank": 4,
+          "record_id": "demo-terms-guide-002",
+          "record_kind": "company_reference",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 20,
+          "evidence_span_id": null,
+          "rank": 5,
+          "record_id": "demo-pay-brochure-006",
+          "record_kind": "company_reference",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        }
+      ],
+      "case_id": "retrieval-025",
+      "failure_code": null,
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "9.019708"
+      },
+      "query": "Employment Terms and Worker Responsibilities의 현재 원칙을 retrieval-025 검토 관점에서 설명해 주세요",
+      "retrieval_available": true,
+      "schema_version": "retrieval-observation-v1"
+    },
+    {
+      "candidates": [
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 1,
+          "record_id": "demo-pay-policy-005",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-026-required-026-primary",
+          "rank": 2,
+          "record_id": "demo-pay-policy-005",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 3,
+          "record_id": "demo-pay-policy-005",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 4,
+          "record_id": "demo-pay-policy-005",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 5,
+          "record_id": "demo-pay-policy-005",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        }
+      ],
+      "case_id": "retrieval-026",
+      "failure_code": null,
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "7.414667"
+      },
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy의 현재 원칙을 retrieval-026 검토 관점에서 설명해 주세요",
+      "retrieval_available": true,
+      "schema_version": "retrieval-observation-v1"
+    },
+    {
+      "candidates": [
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 1,
+          "record_id": "demo-conduct-policy-007",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-027-required-027-primary",
+          "rank": 2,
+          "record_id": "demo-conduct-policy-007",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 20,
+          "evidence_span_id": "demo-conduct-notes-008:chunk:002:evidence:000",
+          "rank": 3,
+          "record_id": "demo-conduct-notes-008",
+          "record_kind": "company_reference",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 4,
+          "record_id": "demo-conduct-policy-007",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-027-required-027-primary",
+          "rank": 5,
+          "record_id": "demo-conduct-policy-007",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        }
+      ],
+      "case_id": "retrieval-027",
+      "failure_code": null,
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "7.447416"
+      },
+      "query": "Respect, Grievance, Discipline, and Reporting Policy의 현재 원칙을 retrieval-027 검토 관점에서 설명해 주세요",
+      "retrieval_available": true,
+      "schema_version": "retrieval-observation-v1"
+    },
+    {
+      "candidates": [
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 1,
+          "record_id": "demo-safety-policy-009",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-028-required-028-primary",
+          "rank": 2,
+          "record_id": "demo-safety-policy-009",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 3,
+          "record_id": "demo-safety-policy-009",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-028-required-028-primary",
+          "rank": 4,
+          "record_id": "demo-safety-policy-009",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-028-required-028-primary",
+          "rank": 5,
+          "record_id": "demo-safety-policy-009",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        }
+      ],
+      "case_id": "retrieval-028",
+      "failure_code": null,
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "9.056375"
+      },
+      "query": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy의 현재 원칙을 retrieval-028 검토 관점에서 설명해 주세요",
+      "retrieval_available": true,
+      "schema_version": "retrieval-observation-v1"
+    },
+    {
+      "candidates": [
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 1,
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-029-required-029-primary",
+          "rank": 2,
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-029-required-029-primary",
+          "rank": 3,
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 4,
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 5,
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        }
+      ],
+      "case_id": "retrieval-029",
+      "failure_code": null,
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "7.63875"
+      },
+      "query": "Performance, Learning, and Internal Mobility Policy의 현재 원칙을 retrieval-029 검토 관점에서 설명해 주세요",
+      "retrieval_available": true,
+      "schema_version": "retrieval-observation-v1"
+    },
+    {
+      "candidates": [
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-030-required-030-primary",
+          "rank": 1,
+          "record_id": "demo-lifecycle-policy-013",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 2,
+          "record_id": "demo-lifecycle-policy-013",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 1,
+          "evidence_span_id": "retrieval-030-required-030-primary",
+          "rank": 3,
+          "record_id": "demo-lifecycle-policy-013",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 4,
+          "record_id": "demo-lifecycle-policy-013",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        },
+        {
+          "authority_level": 60,
+          "evidence_span_id": null,
+          "rank": 5,
+          "record_id": "demo-lifecycle-policy-013",
+          "record_kind": "company_rule",
+          "source_text_digest": null,
+          "visibility_allowed": true,
+          "visibility_reason": "executive_full_access"
+        }
+      ],
+      "case_id": "retrieval-030",
+      "failure_code": null,
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "7.7695"
+      },
+      "query": "Onboarding, Organizational Change, Separation, and Records Policy의 현재 원칙을 retrieval-030 검토 관점에서 설명해 주세요",
+      "retrieval_available": true,
+      "schema_version": "retrieval-observation-v1"
+    }
+  ],
+  "schema_version": "retrieval-observation-batch-v1"
+}

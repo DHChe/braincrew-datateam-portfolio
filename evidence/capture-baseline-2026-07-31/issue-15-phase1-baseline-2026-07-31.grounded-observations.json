@@ -1,0 +1,517 @@
+{
+  "adapter_version": "ax-sut-http-v1",
+  "observations": [
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "GA-001",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "Employee",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "6754.120208"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "GA-002",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "Executive",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "5455.27525"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "GA-003",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "HRPractitioner",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "5409.103833"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "GA-004",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "Employee",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "5072.716875"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "GA-005",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "Executive",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "5243.756416"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "GA-006",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "HRPractitioner",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "5517.630375"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "GA-007",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "Employee",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "7027.704625"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "GA-008",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "Executive",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "6242.5595"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "GA-009",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "HRPractitioner",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "6272.134334"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "GA-010",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "Employee",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "5476.981625"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "VA-006",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "Executive",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "7975.824833"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "direct_grounded",
+      "answer_path": {
+        "failure_reason": null,
+        "llm_call_performed": true,
+        "llm_call_succeeded": true
+      },
+      "available": true,
+      "case_id": "VA-007",
+      "citations": [
+        {
+          "claim_paths": [
+            "summary",
+            "answer",
+            "grounds[0]",
+            "grounds[1]",
+            "grounds[2]",
+            "review_points[0]",
+            "review_points[1]",
+            "review_points[2]",
+            "additional_checks[0]",
+            "additional_checks[1]",
+            "additional_checks[2]",
+            "risk_warning"
+          ],
+          "evidence_span_id": "demo-growth-policy-011:chunk:006:evidence:000",
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:d08a3be33996de854227939ac6cb04f2d64c22a9399b49d1844af16241f8fd67"
+        },
+        {
+          "claim_paths": [
+            "summary",
+            "answer",
+            "grounds[0]"
+          ],
+          "evidence_span_id": "demo-growth-policy-011:chunk:000:evidence:000",
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:c11700474763fb174a33e8adbc2ff042038f03dc3685e11d0c667a24d348959c"
+        }
+      ],
+      "error": null,
+      "executed_role": "Employee",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "6223.397458"
+      },
+      "source_texts": [
+        {
+          "record_id": "demo-growth-policy-011",
+          "record_kind": "company_rule",
+          "source_text_digest": "sha256:c11700474763fb174a33e8adbc2ff042038f03dc3685e11d0c667a24d348959c",
+          "text": "# Synthetic Demo: Performance, Learning, and Internal Mobility"
+        }
+      ],
+      "structured_answer": {
+        "additional_checks": [
+          "사내 정책 저장소에서 VA-007의 문서 식별자, 개정일, 효력일을 확인하세요.",
+          "인사·조직 이동 관련 별도 정책(승인권자, eligibility, transfer window 등)과의 우선순위를 검토하세요.",
+          "해당 규정이 특정 지역/법인/직군에 한정되는지 확인하세요."
+        ],
+        "answer": "VA-007에 적용할 원칙을 단정할 수 없습니다. 현재 증거에는 ‘Internal mobility’라는 섹션 제목과 문서 제목 수준만 확인되며, VA-007의 규정 문구나 적용 요건은 제시되지 않았습니다. 따라서 역사적 정합성만으로 특정 원칙을 확정하지 말고, 현재 적용 가능한 최신 사내 규정 및 버전 기준으로 재검토해야 합니다.",
+        "grounds": [
+          "제공된 증거는 내부 이동(Internal mobility) 섹션 제목만 보여주며, VA-007 조항 내용은 포함하지 않습니다.",
+          "문서가 ‘Superseded’된 것으로 보이더라도, 어떤 원칙이 VA-007에 적용되는지는 해당 조항의 원문과 버전 관계를 확인해야만 판단할 수 있습니다.",
+          "현재 증거만으로는 역사적 정합성의 존재 여부도 불명확하므로, 현행 규정 적용성 검토가 필요합니다."
+        ],
+        "review_points": [
+          "VA-007의 원문 조항과 정의가 포함된 최신/해당 시점 버전을 확인하세요.",
+          "대체(superseded) 전후 버전 간에 적용 범위, 예외, 절차가 어떻게 달라졌는지 비교하세요.",
+          "해당 조항이 현재에도 유효한지, 또는 폐지·수정되어 다른 규정으로 대체되었는지 확인하세요."
+        ],
+        "risk_warning": "현재 증거만으로 특정 원칙을 단정하면 오판 위험이 큽니다. 역사적 정합성이 불명확한 경우에는 원문 확인과 현행 적용성 검토 없이 결론을 내리지 마세요.",
+        "summary": "제공된 증거만으로는 ‘Superseded Manager Mobility Guide’의 VA-007에 적용할 구체 원칙을 확인할 수 없습니다. 현재 확인되는 것은 내부 이동(Internal mobility) 섹션의 존재뿐이어서, 현재 법령/현행 사내 규정 적용성 검토가 필요합니다."
+      }
+    },
+    {
+      "answer_mode": "review_required",
+      "answer_path": {
+        "failure_reason": null,
+        "llm_call_performed": true,
+        "llm_call_succeeded": true
+      },
+      "available": true,
+      "case_id": "VA-008",
+      "citations": [],
+      "error": null,
+      "executed_role": "Executive",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "6857.160542"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "문서 관리 시스템에서 VA-008의 문서번호, 개정이력, 폐기 여부를 확인하세요.",
+          "포스터가 교육용/홍보용인지, 규정용/의무지침인지 구분하세요.",
+          "해당 시점의 인사·안전·복리후생 정책 중 우선순위 규정을 확인하세요."
+        ],
+        "answer": "이 자료만으로는 VA-008에 적용할 원칙을 특정할 수 없습니다. 제공된 Archived Wellbeing Poster는 회사 참고자료로, 단독으로 규범적 근거가 되지 않습니다. 따라서 VA-008에 대해서는 (1) 해당 포스터의 실제 적용 시점, (2) VA-008의 현재 규정 또는 최신 사내 기준, (3) 다른 우선 적용 문서와의 충돌 여부를 함께 확인해야 합니다.",
+        "grounds": [
+          "제공된 Archived Wellbeing Poster는 company_reference로 표시되어 있어, 회사 참고자료 맥락만 제공합니다.",
+          "현재 retrieved evidence에는 VA-008의 본문, 적용 조항, 또는 최신 규정 내용이 없습니다.",
+          "historical_version_resolution이 null이므로 역사적 적용관계는 unresolved 상태입니다."
+        ],
+        "review_points": [
+          "VA-008의 최신 문서 버전과 시행일을 확인하세요.",
+          "Archived Wellbeing Poster가 VA-008에 실제로 연결되는지 문서 체계상 대조하세요.",
+          "상충하는 정책, 공지, 표준운영절차가 있는지 확인하세요.",
+          "역사적 적용관계가 unresolved이므로, 현재법 또는 현재 유효한 사내규정 기준의 적용성 검토가 필요합니다."
+        ],
+        "risk_warning": "현재 제공된 evidence는 회사 참고자료뿐이어서, VA-008에 대한 확정적 원칙이나 적용 결론을 내리면 안 됩니다. 역사적 적용관계가 unresolved인 경우에는 현재법 적용성 검토가 필요하며, 검증되지 않은 텍스트 불일치나 확정적 판단으로 이어지지 않도록 주의해야 합니다.",
+        "summary": "Archived Wellbeing Poster는 회사 참고자료일 뿐이므로, VA-008에 적용할 원칙은 이 자료만으로 확정할 수 없습니다. 역사적 적용관계가 확인되지 않아 현재법 기준의 적용 여부를 별도로 검토해야 합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": null,
+        "llm_call_performed": false,
+        "llm_call_succeeded": null
+      },
+      "available": true,
+      "case_id": "VA-009",
+      "citations": [],
+      "error": null,
+      "executed_role": "Employee",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "29.315125"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    },
+    {
+      "answer_mode": "insufficient_evidence",
+      "answer_path": {
+        "failure_reason": "unsafe_provider_output",
+        "llm_call_performed": true,
+        "llm_call_succeeded": false
+      },
+      "available": false,
+      "case_id": "VA-010",
+      "citations": [],
+      "error": "unsafe_provider_output",
+      "executed_role": "Executive",
+      "operational": {
+        "cost_status": "unmeasured",
+        "cost_usd": null,
+        "latency_definition": "client wall-clock from adapter call start through terminal response validation, including retries; excludes corpus identity and evaluator time",
+        "latency_ms": "7204.72975"
+      },
+      "source_texts": [],
+      "structured_answer": {
+        "additional_checks": [
+          "관련 문서를 추가하거나 HRAdmin/Executive가 원문 근거를 확인하세요."
+        ],
+        "answer": "현재 사용 가능한 승인된 근거만으로는 안전하게 답변할 수 없습니다.",
+        "grounds": [],
+        "review_points": [],
+        "risk_warning": "",
+        "summary": "권한이 있거나 충분한 근거가 아직 부족합니다."
+      }
+    }
+  ],
+  "schema_version": "grounded-observation-batch-v1",
+  "sut_commit_sha": "1ead1331166538e417027a7064179f15c5cfbf61"
+}
