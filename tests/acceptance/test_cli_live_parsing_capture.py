@@ -74,6 +74,55 @@ def _poison_parsing_expected_values(validation: Any) -> Any:
     )
 
 
+def test_live_parsing_capture_refuses_a_dirty_evaluation_plane_before_contacting_ax(
+    tmp_path: Path,
+) -> None:
+    from braincrew.live_experiment import (
+        ReviewedPrincipalBinding,
+        SutStateSubject,
+        SutStateWarrant,
+        capture_live_parsing_observations,
+    )
+
+    validation = _validated_dataset()
+    snapshot = validation.snapshot
+    _check(snapshot is not None, "live parsing capture requires a dataset snapshot")
+    attachment_ids = {
+        case.document.id: f"attachment-{case.id}"
+        for case in snapshot.parsing_dataset.cases
+        if case.split == "verification"
+    }
+
+    def handler(_: httpx.Request) -> httpx.Response:
+        pytest.fail("dirty Evaluation Plane must refuse before contacting AX")
+
+    with pytest.raises(
+        ValueError,
+        match="live parsing capture requires a clean committed Evaluation Plane",
+    ):
+        capture_live_parsing_observations(
+            run_id="issue-131-dirty-evaluation-plane",
+            captured_at=CAPTURED_AT,
+            evaluation_state=RepositoryState(commit_sha="a" * 40, dirty_worktree=True),
+            sut_state=SutStateWarrant(
+                schema_version="sut-state-warrant-v1",
+                method="read-only-git-check",
+                subject=SutStateSubject(
+                    repository="AX_portfolio",
+                    checkout_path=str(tmp_path / "ax"),
+                    checked_at=CAPTURED_AT,
+                ),
+                commit_sha=PINNED_AX_SHA,
+                dirty_worktree=False,
+            ),
+            base_url="https://ax.example.test",
+            principal=ReviewedPrincipalBinding(tenant_id=TENANT_ID, user_id=USER_ID),
+            attachment_ids_by_document_id=attachment_ids,
+            dataset_validation=validation,
+            transport=httpx.MockTransport(handler),
+        )
+
+
 def test_live_parsing_capture_uses_only_the_ax_response_not_dataset_expected_values(
     tmp_path: Path,
 ) -> None:
@@ -145,7 +194,7 @@ def test_live_parsing_capture_uses_only_the_ax_response_not_dataset_expected_val
     capture = capture_live_parsing_observations(
         run_id="issue-131-parsing-v3",
         captured_at=CAPTURED_AT,
-        evaluation_state=RepositoryState(commit_sha="a" * 40, dirty_worktree=True),
+        evaluation_state=RepositoryState(commit_sha="a" * 40, dirty_worktree=False),
         sut_state=SutStateWarrant(
             schema_version="sut-state-warrant-v1",
             method="read-only-git-check",
@@ -173,8 +222,8 @@ def test_live_parsing_capture_uses_only_the_ax_response_not_dataset_expected_val
         "the batch parser version must come from AX",
     )
     _check(
-        capture.manifest.evaluation_plane_dirty is True,
-        "an uncommitted capture implementation must remain observable in its provenance",
+        capture.manifest.evaluation_plane_dirty is False,
+        "a clean capture must record its clean Evaluation Plane provenance",
     )
     _check(
         capture.manifest.sut_state_warrant.commit_sha == PINNED_AX_SHA,
@@ -503,6 +552,78 @@ def test_live_parsing_capture_cli_derives_identity_and_accepts_only_a_versioned_
         "CLI must record a dirty Evaluation Plane rather than invent a clean state",
     )
     _check("--tenant-id" not in result.output, "CLI must not expose a caller-supplied principal")
+
+
+def test_live_parsing_capture_cli_dirty_evaluation_plane_exits_two_through_library_guard(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from braincrew import cli
+    from braincrew.live_experiment import (
+        LiveParsingAttachmentMapping,
+        ReviewedPrincipalBinding,
+    )
+
+    receipt = tmp_path / "handoff.json"
+    receipt.write_text("{}\n", encoding="utf-8")
+    mapping_path = tmp_path / "mapping.json"
+    mapping_path.write_text("{}\n", encoding="utf-8")
+    sut_checkout = tmp_path / "ax"
+    sut_checkout.mkdir()
+    output_dir = tmp_path / "output"
+    mapping = LiveParsingAttachmentMapping(
+        schema_version="live-parsing-attachment-mapping-v1",
+        document_attachment_ids={f"demo-{index}": f"attachment-{index}" for index in range(1, 7)},
+    )
+
+    def fake_repository_state(path: Path | None = None) -> RepositoryState:
+        if path is None:
+            return RepositoryState(commit_sha="a" * 40, dirty_worktree=True)
+        _check(path == sut_checkout, "CLI must inspect the requested SUT checkout")
+        return RepositoryState(commit_sha=PINNED_AX_SHA, dirty_worktree=False)
+
+    def fake_binding(_: Path) -> ReviewedPrincipalBinding:
+        return ReviewedPrincipalBinding(tenant_id=TENANT_ID, user_id=USER_ID)
+
+    def fake_mapping(_: Path) -> LiveParsingAttachmentMapping:
+        return mapping
+
+    def unexpected_write(*_: object) -> tuple[Path, Path]:
+        pytest.fail("dirty Evaluation Plane must refuse before writing a parsing artifact")
+
+    monkeypatch.setattr(cli, "capture_repository_state", fake_repository_state)
+    monkeypatch.setattr(cli, "load_reviewed_principal_binding", fake_binding)
+    monkeypatch.setattr(cli, "load_live_parsing_attachment_mapping", fake_mapping)
+    monkeypatch.setattr(cli, "write_live_parsing_observation_capture", unexpected_write)
+
+    result = CliRunner().invoke(
+        cli.app,
+        [
+            "capture-live-parsing",
+            "--output-dir",
+            str(output_dir),
+            "--run-id",
+            "issue-131-dirty-cli",
+            "--base-url",
+            "https://ax.example.test",
+            "--handoff-receipt",
+            str(receipt),
+            "--attachment-mapping",
+            str(mapping_path),
+            "--sut-checkout",
+            str(sut_checkout),
+        ],
+    )
+
+    _check(
+        result.exit_code == 2, f"dirty Evaluation Plane exited {result.exit_code}: {result.output}"
+    )
+    _check(
+        "Live parsing capture rejected: "
+        "live parsing capture requires a clean committed Evaluation Plane" in result.output,
+        f"dirty Evaluation Plane did not preserve the typed CLI refusal: {result.output}",
+    )
+    _check(not output_dir.exists(), "dirty Evaluation Plane produced a parsing artifact")
 
 
 def test_integrated_provenance_keeps_live_label_and_fixture_run_refuses_it() -> None:
