@@ -25,6 +25,17 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-03 (#131; clean replacement parsing capture).** The
+  external replacement manifest for `issue-131-parsing-2026-08-03` records a
+  clean Evaluation Plane at `6c4f5ae`, a clean `5b0f5f2` SUT warrant, six exact
+  frozen-dataset heading sequences, and zero evidence spans. It supersedes the
+  2026-08-02 capture as the artifact of record and resolves the post-guard
+  permissiveness gap. `live-parsing-capture-v1` still has no replay route, so its
+  logical digest is not independently reproducible through `replay`. Neither
+  parsing capture is published under `evidence/` or has had a public-suitability
+  review.
+- **The two bullets below are the prior #131 clean Evaluation Plane gate
+  checkpoint and its marker; neither is the current state.**
 - **Current state, 2026-08-03 (#131; clean Evaluation Plane gate).**
   `capture_live_parsing_observations()` now refuses a dirty Evaluation Plane
   before it can contact AX, matching its live-experiment sibling. The 2026-08-02
@@ -909,6 +920,21 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-03 (#131) — clean replacement parsing capture resolves the post-guard permit gap
+
+- **The successful replacement supplies the previously missing positive case.** Its
+  external manifest records run `issue-131-parsing-2026-08-03`, logical digest
+  `sha256:a29848fb58bfaf361ad848459fcfff878d96186e9de12913c9deff3d0aa692a8`, clean
+  Evaluation Plane commit `6c4f5ae`, and a clean `5b0f5f2` SUT warrant. The six
+  observed heading sequences exactly match the frozen dataset, and all six have
+  zero evidence spans. It supersedes the 2026-08-02 capture as the artifact of
+  record without changing that earlier gap-reporting record.
+- **Its limitations stay explicit.** `live-parsing-capture-v1` still has no
+  `replay` route, so the digest is not independently reproducible through
+  `replay`. Neither parsing capture is published under `evidence/` or has had a
+  public-suitability review. This documentation checkpoint changes no source,
+  test, fixture, runtime, attachment, provider, or Git state.
 
 ### 2026-08-03 (#131) — the parsing capture now rejects a dirty Evaluation Plane before AX sees it
 

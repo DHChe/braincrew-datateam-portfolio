@@ -58,3 +58,24 @@ comparison, live-experiment capture, dataset-run, and parsing-run artifacts, but
 not this schema; its logical digest therefore cannot currently be independently
 reproduced through `replay`. This pre-existing gap is recorded for the next clean
 capture and remains out of scope here: no replay route is implemented.
+
+## Replacement clean capture
+
+The replacement `live-parsing-capture-v1` exists outside the repository at
+`/Users/astralpig/ax-live-verification-evidence/run-2026-08-03-parsing/`. Its
+manifest names run `issue-131-parsing-2026-08-03` with logical digest
+`sha256:a29848fb58bfaf361ad848459fcfff878d96186e9de12913c9deff3d0aa692a8`.
+It records `evaluation_plane_dirty: false` at Evaluation Plane commit
+`6c4f5ae1bf2f59751224e487e2a3c7c601b13976`, a clean
+`5b0f5f2ae2cfb4c4870a2228f9aa226e009241f5` SUT warrant, six exact frozen-dataset
+heading sequences, and zero evidence spans across all six observations.
+
+This successful capture resolves `6c4f5ae`'s `Not-tested:` statement: "the guard
+is proven to refuse and unproven to permit - no live capture has been taken since
+it landed." It supersedes the 2026-08-02 capture as the artifact of record; the
+2026-08-02 record remains unchanged as the artifact that reported the gap.
+
+The known limitation remains: `live-parsing-capture-v1` has no `replay` route, so
+this digest is not independently reproducible through `replay`. Neither parsing
+capture is published under `evidence/`, and neither has had a public-suitability
+review.
