@@ -855,6 +855,45 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-08-02 (#15, #131, AX #63) — the live experiment ran, said "no difference", and refused to score itself
+
+- **Both live runs executed against AX `3bb27f8`.** Preflight `READY` with 0 blockers; baseline
+  (`evidence_limit=3`) and candidate (`evidence_limit=5`), 24 live cases each, exit 0. The runtime was
+  started and returned container-by-container to its prior state. Artifacts are outside the repository
+  in `/Users/astralpig/ax-live-verification-evidence/run-2026-08-02/`, unreviewed for publication.
+- **The comparison's answer is "no difference".** The two runs differ only in `evidence_limit`. Every
+  one of 15 grounded cases reached an identical answer-path verdict, the same single case succeeded
+  (`VA-008`), all 9 retrieval results were identical, and 1 of 15 answers differed textually.
+- **The historical discard label was misleading, and this corrects it.** All 13 discards carry
+  `citation_contract_violation=True, unsafe_provider_output=False`. **Not one is a safety block.** The
+  pre-split label read as a guardrail firing; it was the answer failing its own citation contract.
+  This answers [#125](https://github.com/DHChe/braincrew-datateam-portfolio/issues/125).
+- **The run is `INVALID` and that is the guard working.** 11 of 30 scored; the six Verification parsing
+  cases refuse with `PARSE_OBSERVATION_DOCUMENT_IDENTITY_MISMATCH`, the #118 guard declining a v1
+  bundle against v3 documents. `build-run-summary` then refuses, so no comparison artifact exists —
+  acceptance criterion 3 producing INVALID rather than a positive claim.
+- **AX #63 merged as `5b0f5f2` under an owner-approved scope exception.** Extraction now records
+  markdown headings. Verified independently: the same function reproduces the expected headings for
+  **20 of 20** parsing cases from document text alone, and live it returned exactly the four headings
+  dataset v3 expects for `demo-pay-policy-005`.
+- **Measured, and it is what saves the 48 provider calls: an unapproved attachment does not move the
+  corpus digest.** 130 / 166 / 166 for Employee, Executive and HRPractitioner — unchanged before
+  upload, after upload, after the AX change, and after deleting the test attachments. The digest covers
+  embedded `seed_vector_records`, created only at materialization, which only `approve` triggers.
+  **The 2026-08-02 captures survive; no re-capture is needed.**
+- **Two orchestrator false alarms, both caught by re-measuring, both reported to the owner before
+  correction.** First: six corpus documents were reported as newly exposed by publication; a
+  title-wise search found all 13 already tracked. Second: identical Executive and HRPractitioner
+  digests were reported as a defect; the count had spanned two tenants while the service filters on
+  one. Both share a shape — aggregating without the scoping condition. A third, milder instance
+  followed: a repository status check run from the wrong working directory.
+- **What blocks the next step.** Braincrew pins AX `3bb27f8`; AX head is `5b0f5f2`. Capturing parsing
+  at the new commit while the existing observations sit at the old one would place two SUT commits in
+  one run, which #15 forbids. A re-pin comes first, in the shape of #121. Attachments extracted before
+  AX #63 return empty headings permanently — there is no re-extract route — so the six v3 documents
+  must be uploaded fresh. `evidence_spans` remains unmeasured and is the next gate after the re-pin.
+
+
 ### 2026-08-02 (#131) — live parser observations need an independently bound document, and the current runtime has none to bind
 
 - **[Issue #131](https://github.com/DHChe/braincrew-datateam-portfolio/issues/131) is implemented
