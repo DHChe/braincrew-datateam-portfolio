@@ -25,6 +25,20 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-02 (#131, live parsing capture).** [Issue
+  #131](https://github.com/DHChe/braincrew-datateam-portfolio/issues/131) is implemented locally and
+  remains uncommitted. `capture-live-parsing` converts only AX's read-only parse-observation response
+  after proving that its returned text, digest, and spans match the frozen dataset-v3 document; it does
+  not read the parsing answer key. The current AX runtime has only the six older `synthetic-rule-*`
+  attachments, not v3's six `demo-*` documents, so no new parsing bundle or baseline/candidate
+  re-evaluation has been written. Creating those attachments would change runtime data and is out of
+  scope. No container-state command, answer/retrieval capture, `evidence/` write, or Git write occurred.
+  One read-only search during the cycle transiently swept `evidence/` into its scan results; nothing
+  there was created, modified, copied or staged, and its four files remain byte-identical. It is
+  recorded because the sentence above is a list of negatives, and a reader checking only that list
+  would not otherwise learn that the path was read at all.
+  See the 2026-08-02 (#131) Transition history entry below.
+- **The bullet below is an earlier dated record and is not current state.**
 - **Current state, 2026-08-02 (#16, stored-live replay publication).**
   [Issue #16](https://github.com/DHChe/braincrew-datateam-portfolio/issues/16) is implemented locally
   and remains uncommitted: the owner-authorized four-file stored-live evidence set now sits under
@@ -840,6 +854,38 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-02 (#131) — live parser observations need an independently bound document, and the current runtime has none to bind
+
+- **[Issue #131](https://github.com/DHChe/braincrew-datateam-portfolio/issues/131) is implemented
+  locally and remains uncommitted.** The new `capture-live-parsing` command uses AX's existing
+  read-only `GET /v1/evaluation/attachments/{attachment_id}/parse-observation` contract for exactly
+  the six dataset-v3 Verification parsing cases. Its response converter creates a
+  `parsing-observation-v1` batch with adapter version `ax-sut-http-v1`; headings, metadata, table,
+  list, spans, parser name, and parser version come from AX's response, never `case.expected`.
+- **The artifact has a separate truth boundary.** `live-parsing-capture-v1` binds the frozen dataset,
+  the six document-to-attachment identities, the SUT state warrant, the observed Evaluation Plane
+  dirty flag, and a create-only sibling observation digest. It does not change the existing 24 live /
+  6 fixture `capture-live-experiment` partition or widen the fixture-only
+  `ParsingAdapterProvenance`; `af18c5e`'s rejection of a fixture falsely labelled live still applies
+  to that old artifact shape.
+- **No live parsing artifact was produced.** Read-only runtime inspection found only the older six
+  `synthetic-rule-015` through `synthetic-rule-020` approved attachments. None corresponds to v3's
+  `demo-terms-guide-002` through `demo-conduct-policy-007` documents, and the endpoint accepts only
+  attachment IDs. Creating a matching attachment or altering runtime data is prohibited for this
+  cycle, so the capture and reuse-only baseline/candidate re-evaluation remain blocked by an input
+  precondition rather than replaced with a fixture or a fabricated mapping.
+- **The new guard is executable.** The first acceptance test was RED before the converter existed;
+  its GREEN form poisons all six answer-key headings and metadata and still observes only AX-response
+  values through exactly six GET parse calls. A second test supplies another frozen document and
+  confirms refusal. A CLI test fixes receipt-derived principal identity, a versioned attachment map,
+  and truthful Evaluation Plane dirtiness. No answer/retrieval request, provider invocation,
+  container-state command, `evidence/` write, Git write, dataset-v3 change, or
+  `parsing-quality-v2` change occurred.
+- **Next.** An explicitly authorized AX data-provisioning step must make the six v3 documents approved
+  attachments and issue the corresponding versioned mapping. Only then may this command capture the
+  six parser observations and re-evaluate the already-stored 24 retrieval/grounded observations; a
+  resulting `INVALID` decision remains an honest terminal measurement, not a reason to widen scope.
 
 ### 2026-08-02 (#16) — reviewed stored-live evidence becomes a clean replay boundary
 

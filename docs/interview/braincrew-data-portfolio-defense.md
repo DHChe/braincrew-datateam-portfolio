@@ -2467,6 +2467,62 @@ Likely follow-up questions:
   evidence and prevents a reader from mistaking it for a successful live quality result. *"Why not
   publish the rest later?"* Each candidate needs its own review and explicit owner authorization.
 
+### D32. Bind a live parser response to the frozen document before using it as evaluation input
+
+Decision:
+: Issue #131 adds a dedicated six-case `live-parsing-capture-v1` path. It sends only AX's read-only
+  parse-observation request, converts response fields to `parsing-observation-v1`, and labels the
+  batch `ax-sut-http-v1`. The manifest carries AX's parser name/version, a SUT state warrant, the
+  actual Evaluation Plane dirty flag, dataset-v3 identity, and the document-to-attachment mapping.
+  Every response must reproduce the frozen document's complete text, digest, and span bounds before
+  it can be written. The existing 24-case live capture and the fixture-only parsing-run provenance
+  stay unchanged.
+
+Why:
+: The six v3 parsing cases were fixture-carried because `af18c5e` correctly rejected a false state in
+  which a fixture parser was merely relabelled live. AX now exposes an observation endpoint, so the
+  correct repair is not a wider old provenance literal but a new artifact with an independently checked
+  document identity. The converter never reads `case.expected`: answer-key data is an evaluator input,
+  not evidence of what AX parsed.
+
+Rejected alternative:
+: Reuse or relabel the old fixture because its source digests identify different documents; widen
+  `ParsingAdapterProvenance.execution_mode` because that recreates the fixture-as-live lie rejected in
+  `af18c5e`; derive headings, metadata, table, list, or spans from the expected answer because that
+  lets an exam grade itself; query AX for a mapping and accept its answer as proof because the lookup
+  and asserted fact share the same unverified source; or create the missing v3 attachments now because
+  that mutates the runtime data outside this cycle's authority.
+
+Trade-off:
+: The path needs a separately supplied, versioned v3 document-to-attachment mapping. That is an
+  operational precondition, but it is not trusted by itself: a wrong mapping fails the returned
+  content/digest check. Capturing nothing is preferable to recording six observations against the
+  wrong documents. The observed AX instance currently has only the older attachment set, so this
+  ticket has no new live bundle or re-evaluation result yet.
+
+Known failure modes:
+: Mismatched attachment IDs, document text/digests, span digest/bounds/text, truncated text, missing
+  parser identity, and conflicting parser identities all refuse before writes. A clean SUT warrant
+  cannot prove that its checkout is the server answering the base URL; that observability limit from
+  D16 remains explicit. A successful future capture supplies parser observations, not a release or
+  general live-quality claim.
+
+Validation evidence produced:
+: RED first: importing the absent converter failed. GREEN: the acceptance test poisons all six expected
+  headings and metadata and confirms the batch records only mocked AX output, exactly six read-only
+  parse requests, and `ax-sut-http-v1`. A separate test returns another frozen document and verifies
+  the converter refuses it. CLI tests pin receipt-derived principal identity, a versioned mapping input,
+  truthful dirty-state recording, and no caller-supplied tenant option. Full repository gates and the
+  live re-evaluation remain reported in the cycle evidence; the latter is blocked until v3 attachments
+  exist.
+
+Likely follow-up questions:
+: *"Why not use the existing fixture?"* It is valid evidence about another document, not this one; the
+  v2 guard correctly refuses the substitution. *"Why is a supplied mapping safe?"* It is only a route
+  to a GET endpoint; AX must then return the exact frozen text and digest or the capture writes nothing.
+  *"Did this make parsing pass?"* No. It makes the measurement path honest; current runtime inputs
+  still prevent the measurement.
+
 ## Failure taxonomy defense
 
 - `P-*` answers where document understanding failed.

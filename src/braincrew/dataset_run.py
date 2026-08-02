@@ -71,7 +71,7 @@ class DatasetRegistryArtifactProvenance(StrictDatasetContract):
 
 class DatasetAdapterProvenance(StrictDatasetContract):
     execution_mode: Literal["fixture", "live"]
-    parsing_version: Literal["fixture-parsing-sut-v1"]
+    parsing_version: Literal["fixture-parsing-sut-v1", "ax-sut-http-v1"]
     retrieval_version: Literal["fixture-retrieval-sut-v1", "ax-sut-http-v1"]
     grounded_version: Literal["fixture-grounded-sut-v1", "ax-sut-http-v1"]
 

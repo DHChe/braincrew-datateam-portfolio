@@ -48,8 +48,11 @@ from braincrew.live_experiment import (
     SutStateSubject,
     SutStateWarrant,
     capture_live_experiment,
+    capture_live_parsing_observations,
+    load_live_parsing_attachment_mapping,
     load_reviewed_principal_binding,
     write_live_experiment_capture,
+    write_live_parsing_observation_capture,
 )
 from braincrew.live_preflight import (
     PINNED_AX_SHA,
@@ -850,6 +853,94 @@ def capture_live_experiment_command(
     typer.echo(
         json.dumps(
             {"artifact_paths": [path.name for path in artifact_paths]},
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+@app.command("capture-live-parsing")
+def capture_live_parsing_command(
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    run_id: Annotated[str, typer.Option("--run-id")],
+    base_url: Annotated[str, typer.Option("--base-url")],
+    handoff_receipt_path: Annotated[
+        Path,
+        typer.Option(
+            "--handoff-receipt",
+            exists=True,
+            dir_okay=False,
+            readable=True,
+        ),
+    ],
+    attachment_mapping_path: Annotated[
+        Path,
+        typer.Option(
+            "--attachment-mapping",
+            exists=True,
+            dir_okay=False,
+            readable=True,
+        ),
+    ],
+    sut_checkout: Annotated[
+        Path,
+        typer.Option(
+            "--sut-checkout",
+            exists=True,
+            file_okay=False,
+            readable=True,
+        ),
+    ],
+) -> None:
+    """Capture the six v3 Verification parser observations create-only."""
+    _validate_artifact_id(run_id, label="run ID")
+    dataset_validation = validate_dataset_bundle(FROZEN_DATASET_MANIFEST)
+    if dataset_validation.state != "VALID":
+        codes = ",".join(item.code for item in dataset_validation.violations)
+        typer.echo(f"Invalid frozen dataset: {codes}", err=True)
+        raise typer.Exit(code=2)
+    try:
+        evaluation_state = _capture_repository_state()
+        sut_state = capture_repository_state(sut_checkout)
+        checked_at = datetime.now(UTC)
+        principal = load_reviewed_principal_binding(handoff_receipt_path)
+        attachment_mapping = load_live_parsing_attachment_mapping(attachment_mapping_path)
+        capture = capture_live_parsing_observations(
+            run_id=run_id,
+            captured_at=checked_at,
+            evaluation_state=evaluation_state,
+            sut_state=SutStateWarrant(
+                schema_version="sut-state-warrant-v1",
+                method="read-only-git-check",
+                subject=SutStateSubject(
+                    repository="AX_portfolio",
+                    checkout_path=sut_checkout.name,
+                    checked_at=checked_at,
+                ),
+                commit_sha=sut_state.commit_sha,
+                dirty_worktree=sut_state.dirty_worktree,
+            ),
+            base_url=base_url,
+            principal=principal,
+            attachment_ids_by_document_id=attachment_mapping.document_attachment_ids,
+            dataset_validation=dataset_validation,
+        )
+        artifact_paths = write_live_parsing_observation_capture(capture, output_dir)
+    except subprocess.CalledProcessError as error:
+        typer.echo("Unable to capture SUT Git provenance", err=True)
+        raise typer.Exit(code=2) from error
+    except AxHttpFailure as error:
+        typer.echo(f"Live parsing capture failed: {error.failure_code}", err=True)
+        raise typer.Exit(code=2) from error
+    except (OSError, ValueError, ValidationError) as error:
+        typer.echo(f"Live parsing capture rejected: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    typer.echo(
+        json.dumps(
+            {
+                "artifact_paths": [path.name for path in artifact_paths],
+                "logical_digest": capture.manifest.logical_digest,
+            },
             ensure_ascii=False,
             sort_keys=True,
         )

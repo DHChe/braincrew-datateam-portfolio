@@ -8,7 +8,7 @@ import os
 import platform
 import sys
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -38,6 +38,11 @@ from braincrew.comparison import (
 )
 from braincrew.contracts import (
     PARSING_EVALUATOR_V2,
+    EvidenceSpanExpectation,
+    ParsingListExpectation,
+    ParsingObservation,
+    ParsingObservationBatch,
+    ParsingTableExpectation,
     RetrievalCandidateObservation,
     RetrievalCase,
     RetrievalObservation,
@@ -85,6 +90,8 @@ ADAPTER_VERSIONS = {
 }
 LIVE_RETRIEVAL_CASE_COUNT = 9
 LIVE_GROUNDED_CASE_COUNT = 15
+LIVE_PARSING_CASE_COUNT = 6
+LIVE_PARSING_ROLE = "HRPractitioner"
 
 
 class ReviewedPrincipalBinding(StrictContract):
@@ -170,6 +177,73 @@ class LiveExperimentCapture:
     grounded_observations: GroundedObservationBatch
 
 
+class LiveParsingCaptureManifest(StrictContract):
+    """Create-only provenance for live parser observations outside the 24-case capture."""
+
+    schema_version: Literal["live-parsing-capture-v1"]
+    run_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+    captured_at: datetime
+    evaluation_plane_commit_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    evaluation_plane_dirty: bool
+    dataset_id: Literal["braincrew-evaluation-dataset"]
+    dataset_version: str = Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+$")
+    dataset_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    sut_state_warrant: SutStateWarrant
+    verification_case_ids: tuple[str, ...] = Field(
+        min_length=LIVE_PARSING_CASE_COUNT,
+        max_length=LIVE_PARSING_CASE_COUNT,
+    )
+    document_attachment_ids: dict[str, str] = Field(
+        min_length=LIVE_PARSING_CASE_COUNT,
+        max_length=LIVE_PARSING_CASE_COUNT,
+    )
+    adapter_version: Literal["ax-sut-http-v1"]
+    parser_name: str = Field(min_length=1)
+    parser_version: str = Field(min_length=1)
+    parsing_observations: CaptureArtifactReference
+    logical_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def bind_live_parsing_identity(self) -> LiveParsingCaptureManifest:
+        if self.sut_state_warrant.commit_sha != PINNED_AX_SHA:
+            raise ValueError(
+                "live parsing capture SUT commit does not match the under-test AX commit"
+            )
+        if self.sut_state_warrant.dirty_worktree:
+            raise ValueError("live parsing capture requires a clean SUT checkout")
+        if len(set(self.verification_case_ids)) != LIVE_PARSING_CASE_COUNT:
+            raise ValueError("live parsing capture case identities must be unique")
+        if len(set(self.document_attachment_ids.values())) != LIVE_PARSING_CASE_COUNT:
+            raise ValueError("live parsing capture attachment identities must be unique")
+        return self
+
+
+@dataclass(frozen=True)
+class LiveParsingObservationCapture:
+    manifest: LiveParsingCaptureManifest
+    observations: ParsingObservationBatch
+
+
+class LiveParsingAttachmentMapping(StrictContract):
+    """Operator-supplied v3 document-to-AX attachment identities for one capture."""
+
+    schema_version: Literal["live-parsing-attachment-mapping-v1"]
+    document_attachment_ids: dict[str, str] = Field(
+        min_length=LIVE_PARSING_CASE_COUNT,
+        max_length=LIVE_PARSING_CASE_COUNT,
+    )
+
+    @model_validator(mode="after")
+    def require_distinct_attachment_ids(self) -> LiveParsingAttachmentMapping:
+        if any(not attachment_id for attachment_id in self.document_attachment_ids.values()):
+            raise ValueError(
+                "live parsing attachment mapping contains an empty attachment identity"
+            )
+        if len(set(self.document_attachment_ids.values())) != LIVE_PARSING_CASE_COUNT:
+            raise ValueError("live parsing attachment mapping must contain distinct attachments")
+        return self
+
+
 def load_reviewed_principal_binding(path: Path) -> ReviewedPrincipalBinding:
     # The reviewed receipt loader owns the digest, SHA, completion, subject, and
     # attachment-binding checks. This command exposes only its reviewed principal.
@@ -180,6 +254,19 @@ def load_reviewed_principal_binding(path: Path) -> ReviewedPrincipalBinding:
         tenant_id=binding.tenant_id,
         user_id=binding.subject_id,
     )
+
+
+def load_live_parsing_attachment_mapping(path: Path) -> LiveParsingAttachmentMapping:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise ValueError(f"live parsing attachment mapping cannot be read: {error}") from error
+    except (UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"live parsing attachment mapping is not valid JSON: {error}") from error
+    try:
+        return LiveParsingAttachmentMapping.model_validate(payload)
+    except ValidationError as error:
+        raise ValueError(f"live parsing attachment mapping does not validate: {error}") from error
 
 
 def _sha256_bytes(payload: bytes) -> str:
@@ -650,6 +737,193 @@ def capture_live_experiment(
     )
 
 
+def capture_live_parsing_observations(
+    *,
+    run_id: str,
+    captured_at: datetime,
+    evaluation_state: RepositoryState,
+    sut_state: SutStateWarrant,
+    base_url: str,
+    principal: ReviewedPrincipalBinding,
+    attachment_ids_by_document_id: Mapping[str, str],
+    dataset_validation: DatasetValidationReport,
+    transport: httpx.BaseTransport | None = None,
+) -> LiveParsingObservationCapture:
+    """Capture exactly the six v3 Verification parser observations from AX.
+
+    The attachment mapping only chooses the read-only AX endpoint.  AX's returned
+    text, digest, and spans must independently reproduce the frozen document before
+    any observation is emitted.  Dataset expected values are intentionally not read.
+    """
+    if sut_state.commit_sha != PINNED_AX_SHA:
+        raise ValueError("live parsing capture SUT commit does not match the under-test AX commit")
+    if sut_state.dirty_worktree:
+        raise ValueError("live parsing capture requires a clean SUT checkout")
+    if dataset_validation.state != "VALID" or dataset_validation.snapshot is None:
+        raise ValueError("live parsing capture requires the validated frozen dataset")
+
+    snapshot = dataset_validation.snapshot
+    parsing_cases = tuple(
+        sorted(
+            (case for case in snapshot.parsing_dataset.cases if case.split == "verification"),
+            key=lambda case: case.id,
+        )
+    )
+    if len(parsing_cases) != LIVE_PARSING_CASE_COUNT:
+        raise ValueError("live parsing capture requires exactly six Verification parsing cases")
+    expected_document_ids = {case.document.id for case in parsing_cases}
+    if len(expected_document_ids) != LIVE_PARSING_CASE_COUNT:
+        raise ValueError("live parsing capture requires one document per Verification parsing case")
+    if set(attachment_ids_by_document_id) != expected_document_ids:
+        raise ValueError("attachment mapping must cover exactly the Verification parsing documents")
+    if any(
+        not isinstance(attachment_id, str) or not attachment_id
+        for attachment_id in attachment_ids_by_document_id.values()
+    ):
+        raise ValueError("attachment mapping contains an invalid attachment identity")
+    attachment_ids = {
+        document_id: attachment_ids_by_document_id[document_id]
+        for document_id in sorted(expected_document_ids)
+    }
+    if len(set(attachment_ids.values())) != LIVE_PARSING_CASE_COUNT:
+        raise ValueError(
+            "attachment mapping must bind one attachment to each Verification document"
+        )
+
+    adapter = _adapter(
+        base_url=base_url,
+        principal=principal,
+        role=LIVE_PARSING_ROLE,
+        transport=transport,
+    )
+    observations: list[ParsingObservation] = []
+    parser_names: set[str] = set()
+    parser_versions: set[str] = set()
+    for case in parsing_cases:
+        attachment_id = attachment_ids[case.document.id]
+        parsed = adapter.parse(
+            context=_context(run_id, case.id, "parse-observation"),
+            attachment_id=attachment_id,
+        ).response
+        if parsed.attachment_id != attachment_id:
+            raise ValueError("live parsing response attachment identity does not match the mapping")
+        if not parsed.parse_available:
+            raise ValueError(
+                "live parsing response is unavailable for "
+                f"{case.id}: {parsed.failure_code or 'unknown'}"
+            )
+        if parsed.failure_code is not None or not parsed.parser_name or not parsed.parser_version:
+            raise ValueError("live parsing response has an incomplete parser identity")
+        if parsed.text_truncated:
+            raise ValueError("live parsing response text is truncated")
+
+        document_text = case.document.canonical_text
+        document_digest = _sha256_bytes(document_text.encode("utf-8"))
+        if parsed.extracted_text != document_text:
+            raise ValueError(
+                "live parsing response text does not match the frozen parsing document"
+            )
+        if parsed.extracted_text_digest != document_digest:
+            raise ValueError(
+                "live parsing response digest does not match the frozen parsing document"
+            )
+
+        evidence_spans: list[EvidenceSpanExpectation] = []
+        for span in parsed.evidence_spans:
+            if span.source_text_digest != document_digest:
+                raise ValueError(
+                    "live parsing evidence span digest does not match the frozen document"
+                )
+            if (
+                span.end_char > len(document_text)
+                or document_text[span.start_char : span.end_char] != span.text
+            ):
+                raise ValueError("live parsing evidence span does not match the frozen document")
+            evidence_spans.append(
+                # The Expectation types are reused as observation carriers. Every value below comes
+                # from the AX response; nothing here reads case.expected, despite the type name.
+                EvidenceSpanExpectation(
+                    id=span.id,
+                    text=span.text,
+                    start_char=span.start_char,
+                    end_char=span.end_char,
+                    source_text_digest=span.source_text_digest,
+                )
+            )
+        observations.append(
+            ParsingObservation(
+                schema_version="parsing-observation-v1",
+                case_id=case.id,
+                parse_available=True,
+                parser_version=parsed.parser_version,
+                failure_code=None,
+                evidence_spans=evidence_spans,
+                headings=list(parsed.headings),
+                metadata=dict(parsed.metadata),
+                table=(
+                    None
+                    if parsed.table is None
+                    else ParsingTableExpectation(
+                        columns=list(parsed.table.columns),
+                        rows=[list(row) for row in parsed.table.rows],
+                    )
+                ),
+                list=(
+                    None
+                    if parsed.list is None
+                    else ParsingListExpectation(
+                        items=list(parsed.list.items),
+                        ordered=parsed.list.ordered,
+                    )
+                ),
+            )
+        )
+        parser_names.add(parsed.parser_name)
+        parser_versions.add(parsed.parser_version)
+
+    if len(parser_names) != 1 or len(parser_versions) != 1:
+        raise ValueError("live parsing responses disagree on parser identity")
+    parser_name = parser_names.pop()
+    parser_version = parser_versions.pop()
+    observation_batch = ParsingObservationBatch(
+        schema_version="parsing-observation-batch-v1",
+        adapter_version="ax-sut-http-v1",
+        parser_version=parser_version,
+        observations=observations,
+    )
+    observation_reference = CaptureArtifactReference(
+        file_name=f"{run_id}.parsing-observations.json",
+        content_digest=canonical_digest(observation_batch.model_dump(mode="json")),
+        case_count=len(observation_batch.observations),
+    )
+    manifest = LiveParsingCaptureManifest(
+        schema_version="live-parsing-capture-v1",
+        run_id=run_id,
+        captured_at=captured_at,
+        evaluation_plane_commit_sha=evaluation_state.commit_sha,
+        evaluation_plane_dirty=evaluation_state.dirty_worktree,
+        dataset_id=snapshot.manifest.dataset_id,
+        dataset_version=snapshot.manifest.dataset_version,
+        dataset_digest=snapshot.dataset_digest,
+        sut_state_warrant=sut_state,
+        verification_case_ids=tuple(case.id for case in parsing_cases),
+        document_attachment_ids=attachment_ids,
+        adapter_version="ax-sut-http-v1",
+        parser_name=parser_name,
+        parser_version=parser_version,
+        parsing_observations=observation_reference,
+        logical_digest="sha256:" + "0" * 64,
+    )
+    manifest = manifest.model_copy(
+        update={
+            "logical_digest": canonical_digest(
+                manifest.model_dump(mode="json", exclude={"logical_digest"})
+            )
+        }
+    )
+    return LiveParsingObservationCapture(manifest=manifest, observations=observation_batch)
+
+
 def _serialized(model: BaseModel) -> str:
     return (
         json.dumps(
@@ -679,6 +953,34 @@ def write_live_experiment_capture(
         _serialized(capture.retrieval_observations),
         _serialized(capture.grounded_observations),
     )
+    linked: list[Path] = []
+    try:
+        with TemporaryDirectory(dir=output_dir) as temporary:
+            temporary_dir = Path(temporary)
+            for index, (path, payload) in enumerate(zip(paths, payloads, strict=True)):
+                staged = temporary_dir / str(index)
+                staged.write_text(payload, encoding="utf-8")
+                os.link(staged, path)
+                linked.append(path)
+    except OSError:
+        for path in linked:
+            path.unlink(missing_ok=True)
+        raise
+    return paths
+
+
+def write_live_parsing_observation_capture(
+    capture: LiveParsingObservationCapture,
+    output_dir: Path,
+) -> tuple[Path, Path]:
+    paths = (
+        output_dir / f"{capture.manifest.run_id}.parsing-capture-manifest.json",
+        output_dir / capture.manifest.parsing_observations.file_name,
+    )
+    if any(path.exists() for path in paths):
+        raise FileExistsError("live parsing capture artifact already exists")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    payloads = (_serialized(capture.manifest), _serialized(capture.observations))
     linked: list[Path] = []
     try:
         with TemporaryDirectory(dir=output_dir) as temporary:

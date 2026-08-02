@@ -150,6 +150,8 @@ def build_parsing_run_artifact(
     evaluation_state: RepositoryState,
     sut_sha: str,
 ) -> ParsingRunArtifactDocument:
+    if observations.adapter_version != "fixture-parsing-sut-v1":
+        raise ValueError("standalone parsing-run artifacts require fixture parsing observations")
     provenance = ParsingArtifactProvenance(
         evaluation_plane=EvaluationPlaneProvenance(
             commit_sha=evaluation_state.commit_sha,
