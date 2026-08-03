@@ -143,3 +143,25 @@ that the prior run certifies a new documentation commit. At any release decision
 come from the active release PR's actual head, four same-head successful jobs, and zero unresolved
 independent-review blockers. PR #142 remains Draft, `main` merge remains unauthorized, and the private
 CV facts remain owner-supplied work outside this repository.
+
+## Completed-release supersession after PR #142
+
+The final sentence immediately above is a preserved pre-release record, not the current GitHub state.
+PR #142 later advanced from Draft under separate owner authorization and merged reviewed `develop`
+head `058e45a51a933da5d5fad4d3185e078d9ce18356` into `main` as
+`5c8330aa28ef5a0c98b1e04f068d81cf48fd5a5e`. Before that merge, pull-request run `30818712060` and
+push run `30818708920` each passed `python`, `fixture-container`, `secrets`, and `frontend` on the exact
+candidate head. Independent Standards, Spec, submission-document, and PR-body reviews reported no
+remaining release blocker, and GitHub reported zero unresolved review threads.
+
+Post-merge run `30821571815` then passed the same four jobs on exact `main` merge commit `5c8330aa`.
+This closes the public repository release gate without converting stored-artifact replay into evidence
+of a fresh live AX/provider run. It changes no source, test, dependency, dataset, stored evidence,
+evaluator, metric, gate, comparison result, or live `INVALID` result.
+
+This audit does not make a new mutable PR or branch the permanent live pointer. The documentation-only
+successor containing this supersession cannot record its own eventual merge SHA. Any later lifecycle
+decision must therefore read the actual local, remote, and pull-request heads, require all four jobs on
+the exact candidate head, and require zero unresolved independent-review blocker. The public repository
+release is evidenced through the named PR #142 merge and post-merge run; owner completion of private CV
+facts remains separate work outside the repository.
