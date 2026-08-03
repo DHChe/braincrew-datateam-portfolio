@@ -52,7 +52,8 @@ Answer direction:
 ### D2. Use a separate Evaluation Plane repository with an HTTP SUT Adapter
 
 Decision:
-: `braincrew-datateam-portfolio` owns evaluation evidence; AX_portfolio remains the product SUT.
+: `evidence-first-rag-evaluation` (formerly `braincrew-datateam-portfolio`) owns evaluation evidence;
+  AX_portfolio remains the product SUT.
 
 Why:
 : Separate histories prevent evaluation logic from depending on AX internals and make the submission independently reviewable.
@@ -447,13 +448,23 @@ Issue #14 implementation decision:
 : Export only a replay-validated `experiment-comparison-artifact-v1` JSON/Parquet pair into a strict `dashboard-export-v1`, then render that frozen projection with Next.js static export. The exporter copies canonical scores, deltas, failure counts, logical digest, ordered gate trace, and decision; neither Python projection code nor React recalculates Issue #13 semantics.
 
 Frontend toolchain decision:
-: Use root-managed `npm@11.12.1` with committed `package-lock.json` lockfile v3, Node.js `>=20.19.0`, Next.js `16.2.10`, React `19.2.7`, TypeScript `5.9.3`, ESLint `9.39.5`, Vitest `4.1.10`, and Playwright `1.61.1` with package-pinned Chromium. The lockfile pins patched transitive PostCSS `8.5.10`; clean install and audit report no known vulnerability. The full contract is `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`, and `npm run test:e2e`.
+: Use root-managed `npm@11.12.1` with committed `package-lock.json` lockfile v3, Node.js `>=20.19.0`, Next.js `16.2.12`, React `19.2.7`, TypeScript `5.9.3`, ESLint `9.39.5`, Vitest `4.1.10`, and Playwright `1.61.1` with package-pinned Chromium. The lockfile pins patched transitive PostCSS `8.5.25` and sharp `0.35.3`; clean install and audit report no known vulnerability. The full contract is `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`, and `npm run test:e2e`, with CI explicitly installing the pinned npm first.
 
 Why this toolchain:
 : The repository had no frontend manifest, lockfile, workspace, or existing package-manager convention. npm ships with Node and `npm ci` fails when the manifest and lock disagree, so it adds no global bootstrap dependency. Vitest is sufficient for the readonly export/view-model contracts, while Playwright checks the actual `dashboard/out` files in Chromium rather than a mutable development server.
 
 Rejected alternatives:
-: pnpm, Yarn, and Bun add a second package-manager bootstrap without repository evidence that their workspace or speed advantages are needed. ESLint 10 was rejected after its plugin peer ranges conflicted with `eslint-config-next@16.2.10`; the latest compatible ESLint 9 line avoids overriding the linter ecosystem. Jest duplicates the TypeScript contract-test role with more configuration. Cypress adds another browser-test ecosystem when Playwright already pins browser compatibility. A dynamic Next.js server, API route, PostgreSQL connection, or DuckDB-in-browser query was rejected because it would turn frozen presentation into a mutable runtime.
+: pnpm, Yarn, and Bun add a second package-manager family without repository evidence that their workspace or speed advantages are needed. ESLint 10 was rejected after its plugin peer ranges conflicted with the selected Next.js lint plugins; the compatible ESLint 9 line avoids overriding the linter ecosystem. Ignoring the audit because the dashboard is static was also rejected: build-time dependencies still execute in developer and CI environments. Jest duplicates the TypeScript contract-test role with more configuration. Cypress adds another browser-test ecosystem when Playwright already pins browser compatibility. A dynamic Next.js server, API route, PostgreSQL connection, or DuckDB-in-browser query was rejected because it would turn frozen presentation into a mutable runtime.
+
+Submission-security maintenance decision (2026-08-03):
+: Patch Next.js and `eslint-config-next`, override the vulnerable PostCSS and sharp transitive lines,
+  and pin npm in CI while preserving application behavior and the frozen evidence boundary. The
+  accepted cost is a larger lockfile diff and a sharp `0.35.3` override outside Next.js `16.2.12`'s
+  declared optional range `^0.34.5`. This application does not import `next/image`; compatibility is a
+  measured local warrant, not an upstream support claim. Failure modes are a future image path relying
+  on the unsupported range, platform-specific sharp installation failure, or a patch release changing
+  export behavior; the pinned npm audit, Linux container, static build, unit tests, Playwright smoke,
+  and explicit no-`next/image` search collectively guard the current boundary.
 
 Trade-offs and failure modes:
 : The lockfile is large, Python and TypeScript remain separate toolchains, and the first browser smoke downloads Chromium. The critical risks are schema drift, accidentally publishing credentials or private strings, recalculating canonical values in React, and testing a dev server instead of the static export. Replay-before-export, strict publishability validation, readonly TypeScript contracts, golden total/decision equality, `output: "export"`, and a Playwright smoke against `dashboard/out` are the required controls.
@@ -552,6 +563,15 @@ Validation evidence:
   from the receipt. The final repository gate reports `239 passed`; the authoring and reused sealing
   boundary subset reports `32 passed`; frozen sync, Ruff format/lint, mypy, installed CLI help, and
   Git whitespace validation also pass.
+
+Repository-rename follow-up:
+: Renaming the public repository exposed a gap in the exact remote allow-list: the current
+  `evidence-first-rag-evaluation` origin was rejected even though arbitrary-remote rejection tests stayed
+  green against a fixture using the former name. A public-CLI test first reproduced
+  `BRAINCREW_SOURCE_INVALID`. The repair adds the current HTTPS and SSH identities while retaining the
+  former GitHub names as compatibility aliases; it does not broaden acceptance by owner, hostname, or
+  string pattern. This is identity continuity after a GitHub rename, not a relaxation of the authoring
+  isolation boundary.
 
 Likely follow-ups:
 

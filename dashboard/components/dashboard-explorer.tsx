@@ -108,7 +108,7 @@ export function DashboardExplorer({
               both same-commit live runs are INVALID after 13 of 15 grounded
               answers were discarded for citation-contract violations, leaving
               no answer-quality evidence.{" "}
-              <a href="https://github.com/DHChe/braincrew-datateam-portfolio/blob/develop/docs/decisions/2026-08-03-same-commit-30-case-run-and-grounded-coverage-correction.md">
+              <a href="https://github.com/DHChe/evidence-first-rag-evaluation/blob/develop/docs/decisions/2026-08-03-same-commit-30-case-run-and-grounded-coverage-correction.md">
                 Decision record
               </a>
             </p>
