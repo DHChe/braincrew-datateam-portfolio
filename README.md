@@ -12,32 +12,67 @@ That rule is why this README tells you what has *not* been measured before it te
 
 ## The result worth reading first
 
-On 2026-07-31 this plane ran its first live capture against an authorized local AX runtime: 24 live
-calls, 9 retrieval and 15 grounded-answer.
+Across three recorded live measurement sessions at `1ead133` → `3bb27f8` →
+`5b0f5f2`, this plane has repeated one honest result: when no grounded case
+supplies answer-quality evidence, it refuses to manufacture an answer-quality
+verdict.
 
-**The evaluation refused to produce an answer-quality verdict, and that refusal is the finding.**
+The 2026-07-31 live capture first surfaced that refusal. On 2026-08-03, an
+owner-authorized same-commit re-capture put all 30 Verification cases at AX
+`5b0f5f2`: parsing reached `COMPLETED` for 6 of 6 cases and retrieval reached
+`COMPLETED` for 9 of 9. That removes the earlier parsing-partition barrier; it
+does not make an AX answer-quality claim.
 
-Twelve of the fifteen grounded cases came back HTTP 200, contract-valid, and carrying
-`failure_reason="unsafe_provider_output"` — the provider answer had been discarded and a template
-substituted. Every one of them *looks* like a cautious abstention from the outside. An evaluator that
-scored the visible answer would have recorded twelve abstentions and computed a quality number from
-them.
+**The grounded evaluation still refuses to produce a quality verdict, and that
+refusal is the finding.** In each unpublished 2026-08-03 same-commit artifact,
+thirteen of fifteen grounded cases returned HTTP 200 after the provider answer
+was discarded under `citation_contract_violation=True`; all thirteen have
+`unsafe_provider_output=False`, so they are not safety blocks. The two remaining
+answer paths are abstention/review paths and also provide no usable grounded
+answer-quality evidence. Both same-commit runs therefore remain `INVALID` with
+`citation_precision_cases` and `claim_support_cases` at **zero**.
 
-Instead the run came out `INVALID`, 18 of 30 cases scored, with
-`citation_precision_cases` and `claim_support_cases` both **zero** — no case contributed
-answer-quality evidence, so no answer-quality claim was published.
+The count is run-specific, not a repository-wide aggregate. The published
+2026-07-31 [capture](evidence/capture-baseline-2026-07-31/issue-15-phase1-baseline-2026-07-31.capture-manifest.json)
+and [evaluation](evidence/eval-baseline-2026-07-31/issue-15-phase1-baseline-2026-07-31.json)
+artifacts record twelve discarded answer paths under the older
+`failure_reason="unsafe_provider_output"` label. The 2026-08-03 thirteen-and-zero
+predicate result belongs to the owner-held
+`/Users/astralpig/ax-live-verification-evidence/run-2026-08-03-30case/` artifacts,
+which are not published in this repository. The count changed from twelve to
+thirteen between runs, but neither run supplies citation-precision or
+claim-support evidence, so the conclusion did not change.
 
-Two defects in the SUT were filed from that run:
+### Upstream defects this plane found
 
-- [AX#60](https://github.com/DHChe/AX_portfolio/issues/60) — one `failure_reason` string is emitted
-  for two unrelated causes (a strict citation-contract failure and a Korean unsafe-advice blocklist),
-  so a consumer recording it verbatim reports a safety event for what may be a grounding failure.
-- [AX#61](https://github.com/DHChe/AX_portfolio/issues/61) — the discard is logged nowhere. Across the
-  capture window the backend produced 294 log lines with zero errors or warnings and every request
-  200. An operator watching logs or status codes sees a healthy service.
+This evaluation plane surfaced two defects in its SUT, and both are now fixed
+upstream:
 
-**A degraded answer path that is invisible to logs, status codes and response shape was surfaced by a
-harness that inspects per-case provider metadata.** That is what this project is for.
+- [AX #60](https://github.com/DHChe/AX_portfolio/issues/60) (**CLOSED**) used one
+  `failure_reason` string for unrelated citation-contract and safety causes, so a
+  consumer could report a safety event when the answer instead failed grounding.
+- [AX #61](https://github.com/DHChe/AX_portfolio/issues/61) (**CLOSED**) left a
+  discarded provider answer invisible in logs; its capture window had 294 lines,
+  zero errors or warnings, and HTTP 200 for every request.
+
+The upstream [fix `3bb27f8`](https://github.com/DHChe/AX_portfolio/commit/3bb27f870d244fbc8debba91eb408e825caa9e03)
+closes both issues. The current SUT pin, `5b0f5f2`, descends from that fix, whose
+additive predicate fields make the 2026-08-03 observation legible as thirteen
+citation-contract violations and zero safety blocks instead of one ambiguous
+failure label.
+
+No comparison artifact exists: `comparison.py` requires both baseline and
+candidate runs to be `COMPLETED`, while both are `INVALID`. The recruiter-facing
+dashboard consequently keeps its golden fixture rather than receiving made-up
+live comparison data; it now labels that fixture **“Fixture evidence — not a
+live AX verification,”** and its [end-to-end assertion](tests/frontend/e2e/dashboard.spec.ts)
+pins both that label and the fixture-only comparison boundary.
+
+**The parsing partition was a real barrier, but the grounded failure was already
+in the 2026-08-02 artifact and was misattributed.** The new run corrects that
+record: re-pinning and re-capturing cannot fix this SUT answer-path behavior. The
+full measured table and correction are in the
+[same-commit run decision](docs/decisions/2026-08-03-same-commit-30-case-run-and-grounded-coverage-correction.md).
 
 ---
 
@@ -45,22 +80,42 @@ harness that inspects per-case provider metadata.** That is what this project is
 
 | | Offline / fixture | Live SUT |
 | --- | --- | --- |
-| Parsing | 20-case evaluator, completed | **not evaluated** |
-| Retrieval | 30-case evaluator, completed | **Recall@5 = 17/18 (0.9444)**, MRR@10 = 2/3, authority priority 1/1, on the 9 Verification cases |
-| Grounded answer / visibility / abstention | 50-case evaluator, completed | **not evaluated** — run `INVALID`, see above |
+| Parsing | 20-case evaluator, completed | **COMPLETED** — 6 of 6 Verification heading sequences at one SUT commit; zero spans are not a parser-quality score |
+| Retrieval | 30-case evaluator, completed | **COMPLETED** — 9 of 9 Verification cases at that same commit; earlier 9-case metrics remain a separate measurement |
+| Grounded answer / visibility / abstention | 50-case evaluator, completed | **unmeasurable** — both same-commit runs are `INVALID` with zero answer-quality coverage, see above |
 | Operational (latency, cost) | contract and comparison paths exercised | latency captured; **provider cost incurred and unmeasured** |
-| Comparison and release gates | fixture pair compared, gate decision reproduced | **no compatible baseline/candidate pair exists** |
+| Comparison and release gates | fixture pair compared, gate decision reproduced | **no live comparison artifact exists** — compatible same-commit runs are both `INVALID` |
 | Agent trajectory evaluation | — | **planned, not implemented, not claimed** |
+
+### Capability status matrix
+
+The table above describes measurement detail. This matrix separately records
+whether a capability was executed and verified, never executed, or only reserved
+for future work.
+
+| Capability | Status | Executed evidence or boundary |
+| --- | --- | --- |
+| Parsing | **evaluated** | 6 of 6 `COMPLETED` in the unpublished 2026-08-03 `run-2026-08-03-30case/` artifacts; zero spans are not a parser-quality score. |
+| Retrieval | **evaluated** | 9 of 9 `COMPLETED` in the same unpublished 2026-08-03 artifacts. |
+| Grounded answer, visibility, and abstention | **evaluated; no answer-quality result** | Both unpublished 2026-08-03 artifacts are `INVALID` with zero citation-precision and claim-support coverage. |
+| Operational latency | **evaluated** | Captured in the unpublished 2026-08-03 baseline and candidate artifacts. |
+| Provider cost | **not evaluated** | The live artifacts record cost as unmeasured; no cost value is claimed. |
+| Stored-artifact replay | **evaluated** | The published [2026-07-31 capture](evidence/capture-baseline-2026-07-31/issue-15-phase1-baseline-2026-07-31.capture-manifest.json) and [evaluation](evidence/eval-baseline-2026-07-31/issue-15-phase1-baseline-2026-07-31.json) can be replayed; this does not validate live AX. |
+| Live comparison and release decision | **not evaluated** | No live comparison artifact exists because both compatible 2026-08-03 runs are `INVALID`. |
+| Agent trajectory evaluation | **planned — not implemented, not claimed** | The [scope-lock decision](docs/decisions/2026-07-18-evaluation-scope-and-skill-flow-lock.md) reserves `TRJ-*` as an unused failure-taxonomy code; no source-level trajectory extension point, capability, run, or artifact exists. |
 
 Explicitly **not** claimed anywhere in this repository:
 
 - any answer-quality result against live AX;
+- a live comparison artifact, answer-quality verdict, or release decision from the
+  same-commit 30-case run;
 - any live release decision — the dashboard's `PASS` is fixture evidence with placeholder commit
   SHAs, and the page says so;
 - a fresh live rerun as byte-identical reproducibility: the repository-resident stored artifacts can be replayed
   from fixed bytes, but a new SUT or provider invocation is a new measurement at a new time;
-- Agent evaluation. The failure taxonomy reserves `TRJ-*` and leaves it unused; schema extension
-  points exist and are labelled `planned`.
+- Agent evaluation. The [scope-lock decision](docs/decisions/2026-07-18-evaluation-scope-and-skill-flow-lock.md)
+  reserves the unused `TRJ-*` failure-taxonomy code; it does not introduce a source-level trajectory
+  extension point, capability, run, or artifact.
 
 ---
 
@@ -87,12 +142,12 @@ normalized observations ──▶ evaluators ──▶ run artifact (canonical J
                           three ordered release gates ──▶ PASS / FAIL / INVALID
 ```
 
-Concretely: **14 CLI commands**, **four evaluator families** (parsing, retrieval, grounded answer,
+Concretely: **15 [CLI commands](src/braincrew/cli.py)**, **four evaluator families** (parsing, retrieval, grounded answer,
 operational), all four versioned in the live capture's provenance, a **frozen HTTP adapter contract**
 (`src/braincrew/ax-http-v1.yaml`) pinned to a specific SUT commit with per-operation schema digests
 and a mocked contract suite, a create-only artifact store emitting canonical JSON — with Parquet
 alongside it for comparison evidence — three ordered release gates, corpus sealing and qualification
-receipts, a statically exported dashboard, and **598 tests**.
+receipts, a statically exported dashboard, and **610 tests**.
 
 **Every artifact is create-only, and every artifact the `replay` command accepts re-derives its
 stored digest through committed code and refuses on any mismatch.** One class — the corpus
@@ -114,7 +169,11 @@ Its source corpus was authored **evaluation-blind** — inside an OS capability 
 capability classes, leaving an independence receipt. That property attaches to the corpus, which the
 dataset then binds to; the dataset manifest itself records `synthetic`, `CC0-1.0`, `reviewed`.
 
-No customer, employee or company document is in this repository.
+The reviewed [evaluation dataset](datasets/DATASET_CARD_V3.md) uses source material declared
+`synthetic` and `CC0-1.0` in its [manifest](datasets/dataset_manifest_v3.json), rather than customer,
+employee, or company documents. The [four published evidence files](docs/decisions/2026-08-02-published-live-evidence-replay.md)
+were separately approved with no redaction, and the [`secrets` CI job](.github/workflows/python-ci.yml)
+scans tracked history for secrets and credential-like material.
 
 ---
 
@@ -125,7 +184,7 @@ uv sync --frozen --all-groups     # Python 3.12, locked
 uv run ruff format --check .
 uv run ruff check .
 uv run mypy
-uv run pytest -q                  # 598 tests
+uv run pytest -q                  # 610 tests
 uv run pytest tests/acceptance/test_cli_fixture_gate.py -q
 uv run pytest tests/acceptance/test_cli_fixture_gate.py -q \
   -k test_replay_recomputes_the_same_logical_digest_and_gate_decision
@@ -135,19 +194,23 @@ The fastest end-to-end demonstration is the offline fixture path — a full 100-
 replay that must reproduce the same digest:
 
 ```bash
+demo_dir="$(mktemp -d /tmp/braincrew-demo.XXXXXX)"
+
 uv run braincrew-eval run-dataset \
   --manifest datasets/dataset_manifest_v1.json \
   --parsing-observations tests/fixtures/parsing_observations_v1.json \
   --retrieval-observations tests/fixtures/retrieval_observations_v1.json \
   --grounded-observations tests/fixtures/grounded_observations_v1.json \
-  --output-dir /tmp/braincrew --run-id demo --sut-sha <40-hex>
+  --output-dir "$demo_dir" --run-id demo \
+  --sut-sha c318b2192006bdb36a5bd5b3a2bc403425b45701
 
-uv run braincrew-eval replay --artifact /tmp/braincrew/demo.json
+uv run braincrew-eval replay --artifact "$demo_dir/demo.json"
 ```
 
 Both print the same `logical_digest`, and the artifact's own provenance records
 `execution_mode: fixture` and `sut.executed: false` — it is a determinism demonstration, not a
-benchmark.
+benchmark. Its recorded SUT SHA differs from the live `5b0f5f2` pin because this is fixture evidence
+with its own recorded provenance, not a live AX run.
 
 ### Clean, network-isolated container
 
@@ -208,11 +271,10 @@ claim.
 
 ## Engineering conventions
 
-- **Independent review and a pre-commit audit before anything lands.** On the most recent ticket
-  these produced five blocking findings — one in the code, four in the delivery record's own prose,
-  one of which had already reached the interview dossier. Each was reproduced before being accepted,
-  and where reproduction amounted to re-reading the author's own prose rather than measuring
-  something, the audit record says so.
+- **Independent review and a pre-commit audit before anything lands.** The current
+  [claim-to-evidence audit](docs/verification/claim-to-evidence-audit-2026-08-03.md) makes the
+  review traceable: it lists each README claim, its primary-evidence category, and any unsupported
+  or stale wording.
 - **A worker's report is not evidence.** Load-bearing claims are reproduced independently before they
   enter a durable document, and each is labelled measured or inferred with the measurer named.
 - **Guards are mutation-verified one clause at a time**, and each row is labelled either new
@@ -234,13 +296,20 @@ criteria:
   stored-live artifacts.
 - **Met for fixture evidence only (1)** — reproducible release-gate output with reasons. It remains
   fixture evidence rather than a live AX quality or release claim.
-- **Not met (3)** — a compatible baseline/candidate pair; a complete live Verification run; and
-  evidence linkage for every submission claim.
+- **Not met (3)** — a live comparison artifact (the compatible same-commit runs are both `INVALID`),
+  a complete live Verification run with answer-quality coverage, and evidence linkage for every
+  submission claim.
 - **Not separately assessed (1)** — the dashboard static-build and sanitized-export check.
 
-The blocking dependency **for live answer quality** is in the SUT, not here: until AX#61 makes the discarded provider output
-observable, the cause of the twelve failures cannot be identified, and a candidate run would spend
-provider budget to break the same twelve cases again.
+The blocking dependency **for live answer quality** is in the SUT, not here:
+thirteen citation-contract violations discard provider answers and the remaining
+two grounded paths add no usable quality evidence. A same-commit re-capture
+reproduced that behavior rather than fixing it.
 
-Licensed work in progress. Design decisions, their rejected alternatives and their failure modes are
-in `docs/decisions/`; the reasoning behind each is defended in `docs/interview/`.
+Work in progress. **No licence is granted for this repository** — it carries no `LICENSE` file, so the
+default applies and all rights are reserved. The evaluation dataset is a separate matter and declares
+its own provenance: `datasets/dataset_manifest_v3.json` records `source_type: synthetic` and
+`license: CC0-1.0`.
+
+Design decisions, their rejected alternatives and their failure modes are in `docs/decisions/`; the
+reasoning behind each is defended in `docs/interview/`.

@@ -99,6 +99,20 @@ export function DashboardExplorer({
           </strong>
           <span>Evaluation Plane {data.baseline.evaluation_plane_sha}</span>
           <span>AX SUT {data.baseline.sut_sha}</span>
+          {data.baseline.execution_mode === "fixture" ? (
+            <p
+              className="evidence-mode-reason"
+              data-testid="live-comparison-boundary"
+            >
+              This PASS is a fixture-gate result, not a live release verdict:
+              both same-commit live runs are INVALID after 13 of 15 grounded
+              answers were discarded for citation-contract violations, leaving
+              no answer-quality evidence.{" "}
+              <a href="https://github.com/DHChe/braincrew-datateam-portfolio/blob/develop/docs/decisions/2026-08-03-same-commit-30-case-run-and-grounded-coverage-correction.md">
+                Decision record
+              </a>
+            </p>
+          ) : null}
         </div>
       </header>
 

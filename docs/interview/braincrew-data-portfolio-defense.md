@@ -2683,6 +2683,69 @@ Likely follow-up questions:
   less interpretable. *"Why not approve the uploads?"* Approval changes the corpus-bound state and requires
   a separate re-capture decision.
 
+### D36. Correct the record when the old artifact already contains the deeper failure
+
+Decision:
+: Record the owner-authorized same-commit 30-case re-capture at AX `5b0f5f2` as a
+  bounded structural result: parsing is `COMPLETED` 6/6 and retrieval is
+  `COMPLETED` 9/9. Do not call it a comparison, answer-quality, or release result.
+  The grounding partition remains `INVALID` with zero Verification citation-precision
+  and claim-support coverage, so neither baseline nor candidate can become a
+  comparison artifact.
+
+Why:
+: The initial 2026-08-02 Issue #15 closing comment blamed the missing 30-case
+  assembly on the parsing partition. Its same-day correction records that the
+  2026-08-02 baseline artifact already had `grounded: INVALID` and the identical
+  zero coverage. The first comment is left intact precisely because the evidence
+  was available but not read. The fresh run removed the real parsing assembly
+  barrier and reproduced the independent SUT answer-path failure at a second
+  commit. Thirteen provider answers are discarded under
+  `citation_contract_violation=True` and `unsafe_provider_output=False`; the two
+  remaining paths add no usable answer-quality evidence.
+
+Rejected alternative:
+: Feed partial live results into the recruiter dashboard or manufacture a
+  comparison. `comparison.py:427` requires both runs to be `COMPLETED`, while both
+  exact-input reconstructions are `INVALID`. A dashboard that portrayed those
+  inputs as a live comparison would break the portfolio's rule that every claim
+  must be executed and verified. Rewrite the earlier comment or dated partition
+  record. That would erase the fact that the error was an unread artifact, not a
+  missing measurement.
+
+Trade-off:
+: The project gains a one-commit 30-case assembly with two completed partitions,
+  but loses the simpler story that a re-pin could unlock answer quality. The
+  dashboard keeps its golden fixture, which a frontend cycle labelled **“Fixture
+  evidence — not a live AX verification,”** so it does not imply it receives live
+  comparison data.
+
+Known failure modes:
+: Treating HTTP 200, a legacy `failure_reason`, successful parsing, or successful
+  retrieval as answer-quality evidence would turn a fail-closed result into an
+  overclaim. Re-running the same current SUT can reproduce the failure; it cannot
+  make grounded coverage nonzero. The external capture inputs are not published
+  under `evidence/` and have no public-suitability review.
+
+Validation evidence produced:
+: Cycle 200 independently recomputed the preflight digest, both external capture
+  manifest digests, and both evaluation logical digests from the exact external
+  inputs without writing an artifact. It re-executed the committed evaluator in
+  memory: baseline and candidate are `INVALID` for
+  `grounded:SYS-GROUNDED-COVERAGE-INVALID` and
+  `DATASET_CASE_COVERAGE_INVALID`; the old 2026-08-02 baseline has the same
+  grounded state and zero coverage. The same cycle read both contradictory Issue
+  #15 comments and confirmed the comparison guard.
+
+Likely follow-up questions:
+: *"Did the re-capture fix AX?"* No: it proved parsing and retrieval can assemble
+  at one commit, then reproduced the deeper grounded failure. *"Why not show the
+  partial live result on the dashboard?"* It is useful evidence, but it is not a
+  comparison artifact; displaying one as such would fabricate the claim. *"Why
+  preserve the mistaken comment?"* Because it demonstrates the evidence-first
+  rule in practice: an error should be corrected by an additional dated record,
+  not erased.
+
 
 - `P-*` answers where document understanding failed.
 - `R-*` answers where evidence selection failed.

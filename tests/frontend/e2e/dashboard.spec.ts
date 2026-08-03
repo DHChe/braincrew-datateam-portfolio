@@ -12,8 +12,19 @@ test("renders the immutable comparison and its three-gate decision trace", async
   await expect(page.getByText("15 publishable cases")).toBeVisible();
   await expect(page.getByText("6 canonical metrics")).toBeVisible();
   await expect(
-    page.getByText("Fixture evidence — not a live AX verification"),
+    page.getByText("Fixture evidence — not a live AX verification", {
+      exact: true,
+    }),
   ).toBeVisible();
+  await expect(page.getByTestId("live-comparison-boundary")).toContainText(
+    "This PASS is a fixture-gate result, not a live release verdict: both same-commit live runs are INVALID after 13 of 15 grounded answers were discarded for citation-contract violations, leaving no answer-quality evidence.",
+  );
+  await expect(
+    page.getByRole("link", { name: "Decision record" }),
+  ).toHaveAttribute(
+    "href",
+    "https://github.com/DHChe/braincrew-datateam-portfolio/blob/develop/docs/decisions/2026-08-03-same-commit-30-case-run-and-grounded-coverage-correction.md",
+  );
   await expect(page.getByTestId("logical-digest")).toContainText(
     "d426e04c0c2b960d8c8c17efc216688891b2078faaaa51ff226c137c2f8694ae",
   );
