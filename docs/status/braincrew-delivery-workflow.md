@@ -25,6 +25,21 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-03 (Draft PR #141 repaired head verified; documentation-only synchronization).**
+  Local, remote, and PR head all resolve to
+  `2fc440b2f3da9f086e0a180fe90d70729790b15d`. GitHub Actions run
+  `30795299567` executed that exact head and passed `python`, `fixture-container`, `secrets`, and
+  `frontend`; GitHub reports PR #141 `OPEN`, `Draft`, `CLEAN`, and unmerged. The post-CI Standards and
+  Spec reviews returned `APPROVE` with zero findings. The submission-document review reproduced one
+  current-state defect: the append-only audit still ended with hosted CI and independent review listed
+  as pending. This checkpoint and the matching audit deltas are the bounded documentation-only repair;
+  they add no source, test, dependency, dataset, evidence, metric, gate, live-run, or private-CV change.
+  This local documentation delta must pass independent re-review before a Git lifecycle action. Its
+  later published head must pass the same four hosted jobs. Reviewed integration through `develop` to
+  `main` and owner completion of the private CV facts remain separate submission gates; merge remains
+  excluded without a new owner authorization.
+- **The Draft PR #141 repair checkpoint immediately below is the prior pre-verification state, not the
+  current state.**
 - **Current state, 2026-08-03 (Draft PR #141 independent-review repair).** The first hosted run for
   `chore/submission-readiness` at `a089b645a89321fb57905f60111f1a1343289e96` passed `python`,
   `fixture-container`, `secrets`, and `frontend`. Independent review then reproduced two submission

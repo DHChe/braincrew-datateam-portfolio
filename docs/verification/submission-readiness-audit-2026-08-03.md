@@ -80,3 +80,24 @@ metric, gate, live run, or private application material enters that repair.
 The remaining submission gates are a successful hosted run and independent review on the repaired PR
 head, reviewed integration through `develop` to `main`, and completion of the private CV facts. Draft
 status and the explicit no-merge boundary remain unchanged.
+
+## Repaired-head verification and current decision
+
+The paragraph immediately above is the preserved pre-verification gate. It was superseded when
+`2fc440b2f3da9f086e0a180fe90d70729790b15d` became the matching local, remote, and PR head. GitHub
+Actions run `30795299567` executed that exact commit and passed all four required jobs: `python`,
+`fixture-container`, `secrets`, and `frontend`. The run installed `npm 11.12.1`, reported zero known
+install-time vulnerabilities, built the static dashboard, passed two Playwright tests, ran the Python
+suite in both the Python and network-isolated container jobs, and passed the 11-test fixture gate.
+
+Post-CI Standards and Spec review both returned `APPROVE` with zero findings. Submission-document
+review found one blocking state-record defect and no product defect: this audit still described the
+repaired head's hosted run and review as pending. This append-only section, together with the matching
+workflow-status and claim-audit deltas, is the bounded repair. It changes no implementation, evaluation
+evidence, metric, gate, live result, or private application material and must pass independent re-review
+before publication.
+
+The code-bearing repaired head is therefore verified. The repository is not yet ready to send as the
+final recruiter URL: the documentation-only synchronization must be published and pass the same hosted
+checks, PR #141 must undergo separately authorized reviewed integration through `develop` to `main`, and
+the owner must complete the private CV facts. PR #141 remains Draft and merge remains unauthorized.

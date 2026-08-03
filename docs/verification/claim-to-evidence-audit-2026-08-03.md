@@ -209,3 +209,20 @@ launcher and its fixture still recognized only `braincrew-datateam-portfolio`. A
 test reproduced `BRAINCREW_SOURCE_INVALID` before repair. The accepted correction preserves the former
 remote URLs as compatibility aliases while adding the current HTTPS and SSH identities; it does not
 relax arbitrary-remote rejection or any sandbox capability boundary.
+
+## Cycle 209 delta — repaired-head verification and documentation-state repair
+
+The repaired code-bearing head is
+`2fc440b2f3da9f086e0a180fe90d70729790b15d`; local, remote, and PR heads matched when measured.
+GitHub Actions run `30795299567` executed that exact SHA and passed `python`, `fixture-container`,
+`secrets`, and `frontend`. The run reported `npm 11.12.1`, zero known install-time vulnerabilities,
+Python `610 passed, 3 skipped` in both the Python and container jobs, 11 passing fixture-gate tests,
+three generated static pages, and two passing Playwright tests. These are hosted verification facts for
+that named head, not evidence of a fresh live AX or provider run.
+
+Post-CI independent Standards and Spec reviews returned `APPROVE` with zero findings. The submission
+document review found one blocking bookkeeping defect: the latest submission audit and workflow status
+still ended before the repaired head's hosted verification. The append-only Cycle 209 entries repair
+that state record without changing any README claim, evaluator, execution contract, stored evidence, or
+live `INVALID` result. The documentation-only delta requires re-review before its Git lifecycle action;
+its eventual published head must pass the same four hosted jobs.
