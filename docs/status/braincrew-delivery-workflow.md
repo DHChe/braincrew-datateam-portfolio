@@ -25,6 +25,26 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-03 (self-reference-safe submission gate).** The executable source, tests,
+  dependencies, dataset, and stored evidence last changed at code-bearing commit
+  `2fc440b2f3da9f086e0a180fe90d70729790b15d`. The first documentation-only successor,
+  `d53d6fabffa7e1aec534f366332713904477c8e4`, was published and GitHub Actions run `30796490848`
+  passed `python`, `fixture-container`, `secrets`, and `frontend`. Final review then found that the
+  checkpoint below still presented the earlier `2fc440b` branch-head measurement as a live pointer and
+  that README presented Linux's 610 passes as the total test count instead of distinguishing 613
+  collected from 610 passed plus 3 designed skips. Those are documentation-state defects, not code or
+  CI failures. They are corrected by this successor record and the bound README wording.
+
+  A commit cannot contain its own Git SHA because the SHA is derived from the commit and its contents.
+  This file therefore does not designate any embedded SHA as the continuously current branch or PR
+  head. At an integration decision, the authoritative live gate is GitHub PR #141 itself: local,
+  remote, and PR head must agree; `python`, `fixture-container`, `secrets`, and `frontend` must all be
+  successful on that exact head; and independent review must have no unresolved blocker. The static
+  SHAs and run IDs here remain dated evidence checkpoints only. Reviewed integration through `develop`
+  to `main` and owner completion of the private CV facts remain separate submission gates; Draft status
+  and the no-merge boundary remain in force without new owner authorization.
+- **The repaired-head checkpoint immediately below records the measurement before its
+  documentation-only successor; it is not a live branch-head pointer.**
 - **Current state, 2026-08-03 (Draft PR #141 repaired head verified; documentation-only synchronization).**
   Local, remote, and PR head all resolve to
   `2fc440b2f3da9f086e0a180fe90d70729790b15d`. GitHub Actions run

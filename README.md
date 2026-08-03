@@ -165,7 +165,8 @@ operational), all four versioned in the live capture's provenance, a **frozen HT
 (`src/braincrew/ax-http-v1.yaml`) pinned to a specific SUT commit with per-operation schema digests
 and a mocked contract suite, a create-only artifact store emitting canonical JSON — with Parquet
 alongside it for comparison evidence — three ordered release gates, corpus sealing and qualification
-receipts, a statically exported dashboard, and **610 tests**.
+receipts, a statically exported dashboard, and **613 collected Python tests at code-bearing commit
+`2fc440b`**.
 
 **Every artifact is create-only, and every artifact the `replay` command accepts re-derives its
 stored digest through committed code and refuses on any mismatch.** One class — the corpus
@@ -202,11 +203,16 @@ uv sync --frozen --all-groups     # Python 3.12, locked
 uv run ruff format --check .
 uv run ruff check .
 uv run mypy
-uv run pytest -q                  # 610 tests
+uv run pytest -q
 uv run pytest tests/acceptance/test_cli_fixture_gate.py -q
 uv run pytest tests/acceptance/test_cli_fixture_gate.py -q \
   -k test_replay_recomputes_the_same_logical_digest_and_gate_decision
 ```
+
+At code-bearing commit `2fc440b`, pytest collects 613 tests: the local macOS run passed all 613, while
+the hosted Linux and network-isolated container runs each reported 610 passed and 3 designed sandbox
+skips. Later submission-readiness commits through `d53d6fa` changed documentation only and did not
+change test collection.
 
 The dashboard uses the repository-pinned `npm@11.12.1` contract:
 

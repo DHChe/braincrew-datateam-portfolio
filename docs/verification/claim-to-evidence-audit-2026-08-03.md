@@ -226,3 +226,21 @@ still ended before the repaired head's hosted verification. The append-only Cycl
 that state record without changing any README claim, evaluator, execution contract, stored evidence, or
 live `INVALID` result. The documentation-only delta requires re-review before its Git lifecycle action;
 its eventual published head must pass the same four hosted jobs.
+
+## Cycle 210 delta — dynamic-head boundary and test-count correction
+
+Cycle 209's eventual publication occurred as documentation-only commit
+`d53d6fabffa7e1aec534f366332713904477c8e4`. GitHub Actions run `30796490848` executed that exact
+commit and passed `python`, `fixture-container`, `secrets`, and `frontend`. Its committed-head review
+found two documentation claims that failed current-state inspection: the workflow status still called
+the earlier `2fc440b` measurement the current branch head, and README called 610 Linux passes the test
+count although pytest collects 613 tests and Linux deliberately skips three sandbox cases.
+
+The repair makes the claim types explicit. Static repository documents may record a measured commit
+and run, but they do not act as the live branch-head oracle: a commit cannot contain its own SHA without
+changing that SHA. PR #141's head and checks are the authoritative dynamic evidence at an integration
+decision, and readiness requires matching local, remote, and PR heads, four successful jobs on that
+exact SHA, and zero unresolved independent-review blockers. README now binds the collection claim to
+code-bearing commit `2fc440b`: 613 collected, 613 passed on the measured local macOS run, and 610 passed
+plus 3 designed skips on the measured hosted Linux and network-isolated container runs. No source,
+test, dependency, dataset, stored evidence, evaluator, gate, or live result changes in this correction.

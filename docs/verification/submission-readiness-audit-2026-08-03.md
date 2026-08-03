@@ -101,3 +101,25 @@ The code-bearing repaired head is therefore verified. The repository is not yet 
 final recruiter URL: the documentation-only synchronization must be published and pass the same hosted
 checks, PR #141 must undergo separately authorized reviewed integration through `develop` to `main`, and
 the owner must complete the private CV facts. PR #141 remains Draft and merge remains unauthorized.
+
+## Dynamic-head boundary and final audit rule
+
+The remaining-publication sentence immediately above is now a dated pre-publication record.
+Documentation-only commit `d53d6fabffa7e1aec534f366332713904477c8e4` was published, and GitHub
+Actions run `30796490848` passed `python`, `fixture-container`, `secrets`, and `frontend` on that exact
+head. Its final review found no executable defect; it found that a static document was again presenting
+an earlier measured SHA as the continuously current branch head, plus a README count that did not
+separate 613 collected tests from Linux's 610 passes and 3 designed skips.
+
+The durable correction is a boundary rather than another self-expiring “latest SHA” claim. A Git
+commit cannot include its own SHA because changing the document changes the object whose SHA is being
+computed. Static audit records therefore name only commits and runs already measured. At any future
+integration decision, current publication status must be read from PR #141: local, remote, and PR head
+must match; all four required jobs must have succeeded on that exact head; and independent review must
+have no unresolved blocker. A prior successful run does not certify a later documentation successor.
+
+The README now binds the 613-test collection count to code-bearing commit `2fc440b` and separately
+reports the platform outcomes; later submission-readiness commits through `d53d6fa` changed
+documentation only. The remaining recruiter-submission gates are reviewed integration through
+`develop` to `main` and owner completion of the private CV facts. PR #141 remains Draft and merge
+remains unauthorized.
