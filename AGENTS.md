@@ -38,17 +38,17 @@ path. It excludes local `.git`, environment files, and generated outputs at ever
 run replays **stored** artifacts; it is not a fresh live run, and no live-quality or release claim
 follows from it.
 
-Run the dashboard CI gates with:
+Run the dashboard CI gates with the repository-pinned npm version:
 
 ```bash
-npm ci
-npm run format:check
-npm run lint
-npm run typecheck
-npm test -- --run
-npm run build
+npx --yes npm@11.12.1 ci
+npx --yes npm@11.12.1 run format:check
+npx --yes npm@11.12.1 run lint
+npx --yes npm@11.12.1 run typecheck
+npx --yes npm@11.12.1 test -- --run
+npx --yes npm@11.12.1 run build
 npx playwright install --with-deps chromium
-npm run test:e2e
+npx --yes npm@11.12.1 run test:e2e
 ```
 
 Before committing any change, also run:

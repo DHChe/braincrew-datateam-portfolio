@@ -8,6 +8,7 @@ import pytest
 
 from tests.authoring_boundary_fixture import (
     BRIEF_RELATIVE_PATH,
+    CURRENT_BRAINCREW_REMOTES,
     EXPECTED_BRAINCREW_REMOTE,
     create_clean_braincrew_source,
     launch_arguments,
@@ -67,6 +68,33 @@ def test_launch_authoring_requires_an_empty_staging_directory(tmp_path: Path) ->
     assert result.returncode == 2
     assert "AUTHORING_STAGING_NOT_EMPTY" in result.stderr
     assert (staging_dir / "existing.txt").read_text(encoding="utf-8") == "existing\n"
+
+
+@pytest.mark.parametrize("origin_url", CURRENT_BRAINCREW_REMOTES)
+def test_launch_authoring_accepts_the_current_repository_remote(
+    tmp_path: Path,
+    origin_url: str,
+) -> None:
+    source_root = create_clean_braincrew_source(
+        tmp_path,
+        origin_url=origin_url,
+    )
+    staging_dir = tmp_path / "staging"
+    staging_dir.mkdir()
+    (staging_dir / "existing.txt").write_text("existing\n", encoding="utf-8")
+
+    result = run_cli(
+        *launch_arguments(
+            source_root=source_root,
+            staging_dir=staging_dir,
+            receipt_path=tmp_path / "receipt.json",
+            tool_path=successful_tool(tmp_path / "tool"),
+        )
+    )
+
+    assert result.returncode == 2
+    assert "AUTHORING_STAGING_NOT_EMPTY" in result.stderr
+    assert "BRAINCREW_SOURCE_INVALID" not in result.stderr
 
 
 def test_launch_authoring_rejects_a_non_braincrew_git_remote(tmp_path: Path) -> None:

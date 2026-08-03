@@ -193,3 +193,72 @@ read as "nothing is unverified":
 - The hosted CI workflow requires a pull request to execute and remains unverified until one runs.
 - A clean clone and a fresh virtual environment were not created; every command above was run in this
   working checkout.
+
+## Cycle 208 delta — hosted verification and repository-rename regression
+
+The four open bullets immediately above remain the Cycle 207 pre-publication record. PR #141 later
+supplied hosted evidence at `a089b645a89321fb57905f60111f1a1343289e96`: GitHub Actions installed and
+reported `npm 11.12.1`, completed the locked frontend chain with zero known install-time vulnerabilities,
+and passed `python`, `fixture-container`, `secrets`, and `frontend`. The container build/run and hosted-CI
+gaps are therefore resolved for that published head. A dedicated local clean-clone rehearsal remains
+unperformed and is not inferred from Actions checkout.
+
+The post-CI independent review also found a claim-to-runtime mismatch outside the original README
+inventory: the public repository had been renamed to `evidence-first-rag-evaluation`, but the authoring
+launcher and its fixture still recognized only `braincrew-datateam-portfolio`. A public-CLI regression
+test reproduced `BRAINCREW_SOURCE_INVALID` before repair. The accepted correction preserves the former
+remote URLs as compatibility aliases while adding the current HTTPS and SSH identities; it does not
+relax arbitrary-remote rejection or any sandbox capability boundary.
+
+## Cycle 209 delta — repaired-head verification and documentation-state repair
+
+The repaired code-bearing head is
+`2fc440b2f3da9f086e0a180fe90d70729790b15d`; local, remote, and PR heads matched when measured.
+GitHub Actions run `30795299567` executed that exact SHA and passed `python`, `fixture-container`,
+`secrets`, and `frontend`. The run reported `npm 11.12.1`, zero known install-time vulnerabilities,
+Python `610 passed, 3 skipped` in both the Python and container jobs, 11 passing fixture-gate tests,
+three generated static pages, and two passing Playwright tests. These are hosted verification facts for
+that named head, not evidence of a fresh live AX or provider run.
+
+Post-CI independent Standards and Spec reviews returned `APPROVE` with zero findings. The submission
+document review found one blocking bookkeeping defect: the latest submission audit and workflow status
+still ended before the repaired head's hosted verification. The append-only Cycle 209 entries repair
+that state record without changing any README claim, evaluator, execution contract, stored evidence, or
+live `INVALID` result. The documentation-only delta requires re-review before its Git lifecycle action;
+its eventual published head must pass the same four hosted jobs.
+
+## Cycle 210 delta — dynamic-head boundary and test-count correction
+
+Cycle 209's eventual publication occurred as documentation-only commit
+`d53d6fabffa7e1aec534f366332713904477c8e4`. GitHub Actions run `30796490848` executed that exact
+commit and passed `python`, `fixture-container`, `secrets`, and `frontend`. Its committed-head review
+found two documentation claims that failed current-state inspection: the workflow status still called
+the earlier `2fc440b` measurement the current branch head, and README called 610 Linux passes the test
+count although pytest collects 613 tests and Linux deliberately skips three sandbox cases.
+
+The repair makes the claim types explicit. Static repository documents may record a measured commit
+and run, but they do not act as the live branch-head oracle: a commit cannot contain its own SHA without
+changing that SHA. PR #141's head and checks are the authoritative dynamic evidence at an integration
+decision, and readiness requires matching local, remote, and PR heads, four successful jobs on that
+exact SHA, and zero unresolved independent-review blockers. README now binds the collection claim to
+code-bearing commit `2fc440b`: 613 collected, 613 passed on the measured local macOS run, and 610 passed
+plus 3 designed skips on the measured hosted Linux and network-isolated container runs. No source,
+test, dependency, dataset, stored evidence, evaluator, gate, or live result changes in this correction.
+
+## Cycle 211 delta — develop integration and active-release gate
+
+Cycle 210 correctly separated dated evidence from a live PR gate, but it fixed the live pointer to PR
+#141 rather than to the active lifecycle stage. PR #141 subsequently merged into `develop` as
+`43c96aa9a63580aa0d13d60d2624281cd4cb9434`; post-merge run `30815892795` passed `python`,
+`fixture-container`, `secrets`, and `frontend` on that exact commit. Draft
+[PR #142](https://github.com/DHChe/evidence-first-rag-evaluation/pull/142) then became the active
+`develop`-to-`main` release gate, and run `30816574010` passed the same four jobs at that pre-repair
+head.
+
+The corrected claim is lifecycle-relative: a static record may name already measured commits and runs,
+but release readiness must read the **currently active release PR**. Its actual head must match the
+relevant local and remote head, all four required jobs must succeed on that exact SHA, and independent
+review must report zero unresolved blocker. A successful PR #141 or earlier PR #142 run cannot certify
+a later documentation successor. This delta changes no README claim, source, test, dependency, dataset,
+stored evidence, evaluator, metric, gate, or live `INVALID` result. PR #142 remains Draft and `main`
+merge remains unauthorized pending new-head verification and separate owner approval.

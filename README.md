@@ -1,12 +1,31 @@
-# Braincrew Evaluation Plane
+# Evidence-First RAG Evaluation Plane
 
-An evidence-first evaluation plane for a Korean HR/labor RAG system.
+An evidence-first evaluation plane for a Korean HR/labor RAG system, originally built as a
+Braincrew Data Team portfolio case study.
 
 It treats [AX_portfolio](https://github.com/DHChe/AX_portfolio) as a **Subject Under Test (SUT)** — a
 separate, still-evolving product measured across a versioned HTTP contract — and it is built on one
 rule: **claim only what was executed and reproducibly verified.**
 
 That rule is why this README tells you what has *not* been measured before it tells you what has.
+
+---
+
+## Three-minute reviewer path
+
+1. Read **The result worth reading first** below: the central result is a justified refusal to issue
+   an answer-quality verdict when the evidence coverage is zero.
+2. Scan [How it works](#how-it-works) and the [repository map](#repository-map) to see the boundary
+   between the Evaluation Plane and the evolving AX product under test.
+3. Run the offline 100-case fixture and deterministic replay in [Running it](#running-it). This proves
+   the stored logical result can be recomputed; it is not presented as a fresh live benchmark.
+4. Use the [three-minute demonstration script](docs/submission/three-minute-demo.md) for the shortest
+   guided walkthrough, including what each step does and does not prove.
+
+The author used AI coding agents for most implementation work and owned the problem framing,
+evaluation scope, agent orchestration, review criteria, correction decisions, and claim boundaries.
+That division of work is disclosed because the portfolio is evidence of evaluation judgment and
+domain-to-system translation, not a claim of unaided code authorship.
 
 ---
 
@@ -37,9 +56,8 @@ The count is run-specific, not a repository-wide aggregate. The published
 and [evaluation](evidence/eval-baseline-2026-07-31/issue-15-phase1-baseline-2026-07-31.json)
 artifacts record twelve discarded answer paths under the older
 `failure_reason="unsafe_provider_output"` label. The 2026-08-03 thirteen-and-zero
-predicate result belongs to the owner-held
-`/Users/astralpig/ax-live-verification-evidence/run-2026-08-03-30case/` artifacts,
-which are not published in this repository. The count changed from twelve to
+predicate result belongs to owner-held artifacts that are not published in this repository; their
+exact external storage path is intentionally omitted from this reviewer-facing page. The count changed from twelve to
 thirteen between runs, but neither run supplies citation-precision or
 claim-support evidence, so the conclusion did not change.
 
@@ -147,7 +165,8 @@ operational), all four versioned in the live capture's provenance, a **frozen HT
 (`src/braincrew/ax-http-v1.yaml`) pinned to a specific SUT commit with per-operation schema digests
 and a mocked contract suite, a create-only artifact store emitting canonical JSON — with Parquet
 alongside it for comparison evidence — three ordered release gates, corpus sealing and qualification
-receipts, a statically exported dashboard, and **610 tests**.
+receipts, a statically exported dashboard, and **613 collected Python tests at code-bearing commit
+`2fc440b`**.
 
 **Every artifact is create-only, and every artifact the `replay` command accepts re-derives its
 stored digest through committed code and refuses on any mismatch.** One class — the corpus
@@ -184,10 +203,28 @@ uv sync --frozen --all-groups     # Python 3.12, locked
 uv run ruff format --check .
 uv run ruff check .
 uv run mypy
-uv run pytest -q                  # 610 tests
+uv run pytest -q
 uv run pytest tests/acceptance/test_cli_fixture_gate.py -q
 uv run pytest tests/acceptance/test_cli_fixture_gate.py -q \
   -k test_replay_recomputes_the_same_logical_digest_and_gate_decision
+```
+
+At code-bearing commit `2fc440b`, pytest collects 613 tests: the local macOS run passed all 613, while
+the hosted Linux and network-isolated container runs each reported 610 passed and 3 designed sandbox
+skips. Later submission-readiness commits through `d53d6fa` changed documentation only and did not
+change test collection.
+
+The dashboard uses the repository-pinned `npm@11.12.1` contract:
+
+```bash
+npx --yes npm@11.12.1 ci
+npx --yes npm@11.12.1 run format:check
+npx --yes npm@11.12.1 run lint
+npx --yes npm@11.12.1 run typecheck
+npx --yes npm@11.12.1 test -- --run
+npx --yes npm@11.12.1 run build
+npx playwright install --with-deps chromium
+npx --yes npm@11.12.1 run test:e2e
 ```
 
 The fastest end-to-end demonstration is the offline fixture path — a full 100-case evaluation, then a
@@ -231,8 +268,11 @@ them through the existing CLI path. On Docker's default
 Linux namespace policy, the three authoring-boundary tests that require Bubblewrap are explicitly skipped:
 installing Bubblewrap makes them fail because the container may not create a user namespace, and this path
 does not request privileged or security-relaxed execution. It does not execute AX. The CI workflow has separate named fixture benchmark,
-fixture-replay, container, dashboard, and secret-scan steps; the workflow itself remains unverified until a
-pull request runs it.
+fixture-replay, container, dashboard, and secret-scan steps. The first hosted run on
+[PR #141](https://github.com/DHChe/evidence-first-rag-evaluation/pull/141), at commit
+`a089b645a89321fb57905f60111f1a1343289e96`, passed the `python`, `fixture-container`, `secrets`, and
+`frontend` jobs. That is hosted validation of the committed fixture, replay, container, and dashboard
+paths; it is not a live AX execution or quality result.
 
 **What the container does reproduce:** a one-command replay of the four reviewed stored-live
 artifacts under `evidence/`. It can see them, and the replay test recomputes their stored logical
@@ -290,16 +330,21 @@ claim.
 First production release is **not complete.** Against the design specification's ten acceptance
 criteria:
 
-- **Met (5)** — the dataset freeze and recorded 70/30 digest; metric goldens and boundary tests;
+- **Met (6)** — the dataset freeze and recorded 70/30 digest; metric goldens and boundary tests;
   canonical artifacts reconstructing analytical outputs; Agent evaluation left explicitly unimplemented
-  and unclaimed; and a clean, network-isolated container replays the four repository-resident
-  stored-live artifacts.
+  and unclaimed; a clean, network-isolated container replays the four repository-resident
+  stored-live artifacts; and the static dashboard build plus sanitized-export boundary pass in the
+  local submission audit.
 - **Met for fixture evidence only (1)** — reproducible release-gate output with reasons. It remains
   fixture evidence rather than a live AX quality or release claim.
 - **Not met (3)** — a live comparison artifact (the compatible same-commit runs are both `INVALID`),
   a complete live Verification run with answer-quality coverage, and evidence linkage for every
   submission claim.
-- **Not separately assessed (1)** — the dashboard static-build and sanitized-export check.
+
+The local submission audit ran the pinned npm 11 toolchain, reported zero known npm-audit
+vulnerabilities, built the static dashboard, and passed its unit and browser tests. PR #141 then ran
+the same declared `npm@11.12.1` contract on GitHub and passed all four hosted quality jobs on its first
+published head.
 
 The blocking dependency **for live answer quality** is in the SUT, not here:
 thirteen citation-contract violations discard provider answers and the remaining

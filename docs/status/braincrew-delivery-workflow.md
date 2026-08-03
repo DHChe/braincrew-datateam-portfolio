@@ -25,6 +25,86 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-03 (develop integration complete; Draft release PR #142 active).**
+  [PR #141](https://github.com/DHChe/evidence-first-rag-evaluation/pull/141) merged the reviewed
+  submission repair into `develop` as merge commit
+  `43c96aa9a63580aa0d13d60d2624281cd4cb9434`. GitHub Actions run `30815892795` then passed
+  `python`, `fixture-container`, `secrets`, and `frontend` on that exact `develop` commit.
+  [PR #142](https://github.com/DHChe/evidence-first-rag-evaluation/pull/142) is the active
+  `develop`-to-`main` release gate. Its first run, `30816574010`, passed the same four jobs at
+  `43c96aa9a63580aa0d13d60d2624281cd4cb9434`; that run is dated evidence for the pre-repair release
+  head and does not certify this documentation successor.
+
+  At any Ready or merge decision, the authoritative live state must be read from the **currently
+  active release PR**, not from a permanently named historical PR: local, remote, and PR head must
+  agree; `python`, `fixture-container`, `secrets`, and `frontend` must all succeed on that exact head;
+  and independent review must have no unresolved blocker. PR #142 remains Draft, `main` merge remains
+  unauthorized, and owner completion of the private CV facts remains a separate submission gate.
+- **The self-reference-safe checkpoint immediately below is a dated PR #141 record from before the
+  active PR #142 release phase; despite its preserved heading, it is not the current live pointer.**
+- **Current state, 2026-08-03 (self-reference-safe submission gate).** The executable source, tests,
+  dependencies, dataset, and stored evidence last changed at code-bearing commit
+  `2fc440b2f3da9f086e0a180fe90d70729790b15d`. The first documentation-only successor,
+  `d53d6fabffa7e1aec534f366332713904477c8e4`, was published and GitHub Actions run `30796490848`
+  passed `python`, `fixture-container`, `secrets`, and `frontend`. Final review then found that the
+  checkpoint below still presented the earlier `2fc440b` branch-head measurement as a live pointer and
+  that README presented Linux's 610 passes as the total test count instead of distinguishing 613
+  collected from 610 passed plus 3 designed skips. Those are documentation-state defects, not code or
+  CI failures. They are corrected by this successor record and the bound README wording.
+
+  A commit cannot contain its own Git SHA because the SHA is derived from the commit and its contents.
+  This file therefore does not designate any embedded SHA as the continuously current branch or PR
+  head. At an integration decision, the authoritative live gate is GitHub PR #141 itself: local,
+  remote, and PR head must agree; `python`, `fixture-container`, `secrets`, and `frontend` must all be
+  successful on that exact head; and independent review must have no unresolved blocker. The static
+  SHAs and run IDs here remain dated evidence checkpoints only. Reviewed integration through `develop`
+  to `main` and owner completion of the private CV facts remain separate submission gates; Draft status
+  and the no-merge boundary remain in force without new owner authorization.
+- **The repaired-head checkpoint immediately below records the measurement before its
+  documentation-only successor; it is not a live branch-head pointer.**
+- **Current state, 2026-08-03 (Draft PR #141 repaired head verified; documentation-only synchronization).**
+  Local, remote, and PR head all resolve to
+  `2fc440b2f3da9f086e0a180fe90d70729790b15d`. GitHub Actions run
+  `30795299567` executed that exact head and passed `python`, `fixture-container`, `secrets`, and
+  `frontend`; GitHub reports PR #141 `OPEN`, `Draft`, `CLEAN`, and unmerged. The post-CI Standards and
+  Spec reviews returned `APPROVE` with zero findings. The submission-document review reproduced one
+  current-state defect: the append-only audit still ended with hosted CI and independent review listed
+  as pending. This checkpoint and the matching audit deltas are the bounded documentation-only repair;
+  they add no source, test, dependency, dataset, evidence, metric, gate, live-run, or private-CV change.
+  This local documentation delta must pass independent re-review before a Git lifecycle action. Its
+  later published head must pass the same four hosted jobs. Reviewed integration through `develop` to
+  `main` and owner completion of the private CV facts remain separate submission gates; merge remains
+  excluded without a new owner authorization.
+- **The Draft PR #141 repair checkpoint immediately below is the prior pre-verification state, not the
+  current state.**
+- **Current state, 2026-08-03 (Draft PR #141 independent-review repair).** The first hosted run for
+  `chore/submission-readiness` at `a089b645a89321fb57905f60111f1a1343289e96` passed `python`,
+  `fixture-container`, `secrets`, and `frontend`. Independent review then reproduced two submission
+  blockers: the renamed `evidence-first-rag-evaluation` origin was absent from the authoring launcher's
+  exact repository allow-list, and reviewer-facing documents still described the pre-publication CI
+  state. The owner selected the bounded repair: preserve the former repository URLs as compatibility
+  aliases, add the current HTTPS/SSH identities and a public-CLI regression test, update the dashboard
+  decision link, and supersede the stale status wording without changing evaluation evidence, metrics,
+  gates, or the `INVALID` live boundary. PR #141 remains Draft; every new head must pass the same four
+  hosted jobs before another independent review. Merge remains explicitly excluded.
+- **The two bullets below are the prior publication-authorization and local-audit checkpoints; neither
+  is the current state.**
+- **Current state, 2026-08-03 (submission-readiness Git publication authorized).** The owner approved
+  creation of `chore/submission-readiness`, one Lore commit containing only the public repository
+  submission changes, push to `origin`, and a pull request targeting `develop`. Merge is explicitly
+  excluded. The sibling `/Users/astralpig/braincrew-submission-private` directory containing the CV,
+  application email, study plan, and practice records is outside the repository and outside the commit.
+  Completion requires the remote branch, commit, and pull-request head to agree; hosted checks then
+  become the active gate.
+- **Current state, 2026-08-03 (submission security and reproducibility audit).** A pinned
+  `npm@11.12.1` clean install reproduced four high-severity audit findings in the prior dashboard
+  dependency graph. Next.js and `eslint-config-next` are now `16.2.12`, transitive PostCSS is
+  `8.5.25`, and sharp is `0.35.3`; the same pinned audit reports zero known vulnerabilities. CI now
+  installs the declared npm version instead of relying on the Node image's bundled npm. Host-side
+  format, lint, type, unit, static-build, and Playwright checks pass; a no-cache, network-isolated
+  container also passes the Python and fixture gates. Hosted CI remains unverified until a pull
+  request runs. No commit, push, pull request, or merge has been performed for this audit.
+
 - **Current state, 2026-08-03 (#15; same-commit 30-case re-capture).** The owner-authorized external
   run now assembles all 30 Verification cases at `5b0f5f2`: parsing is `COMPLETED` 6/6 and retrieval is
   `COMPLETED` 9/9. Both baseline and candidate remain `INVALID`, however, because grounded answer

@@ -568,6 +568,13 @@ and a generated canonical digest inventory. The post-qualification
 `ax-synthetic-seed-pack-v1.schema.json` is not mounted. The authoring tool receives only that
 read-only input directory and the empty writable staging directory through a cleared environment.
 
+The Git worktree identity remains exact rather than hostname- or owner-pattern based. After the public
+repository was renamed, the accepted identities became the canonical HTTPS and SSH forms of
+`DHChe/evidence-first-rag-evaluation`, with the former `DHChe/braincrew-datateam-portfolio` forms retained
+only as GitHub rename-compatibility aliases. Arbitrary repositories remain rejected. This preserves the
+original non-Braincrew-remote boundary while allowing a clean clone of the current public submission to
+use the launcher.
+
 Filesystem and network independence are operating-system capabilities, not prompt claims. On the
 verified macOS path the launcher uses the built-in `sandbox-exec` deny-by-default profile; on Linux
 it can use a preinstalled Bubblewrap backend and otherwise fails closed as
