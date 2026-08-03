@@ -1,0 +1,74 @@
+{
+  "schema_version": "dataset-manifest-v2",
+  "dataset_id": "braincrew-evaluation-dataset",
+  "dataset_version": "3.0.0",
+  "case_count": 100,
+  "allocation": {
+    "parsing": 20,
+    "retrieval": 30,
+    "grounded_answer": 40,
+    "visibility_abstention": 10
+  },
+  "split_counts": {
+    "Calibration": 70,
+    "Verification": 30
+  },
+  "minimum_verification_denominators": {
+    "evidence_span_recovery": 6,
+    "recall_at_5": 9,
+    "claim_support_precision": 10,
+    "citation_precision": 10,
+    "answer_mode_accuracy": 15,
+    "abstention_accuracy": 5
+  },
+  "components": {
+    "parsing": {
+      "path": "parsing/parsing_cases_v2.json",
+      "schema_version": "parsing-dataset-v1",
+      "content_digest": "sha256:33e17fbb4d3f5485df1482de37e472e1b20fceef922c9b1dda90f8d9dfc25f73"
+    },
+    "retrieval": {
+      "path": "retrieval/retrieval_cases_v2.json",
+      "schema_version": "retrieval-dataset-v1",
+      "content_digest": "sha256:9687ead24590cab1b9d244ef876f226545a1fb1aa2013c50e4be7a63430c8408"
+    },
+    "grounded": {
+      "path": "grounded/grounded_cases_v2.json",
+      "schema_version": "grounded-dataset-v1",
+      "content_digest": "sha256:f76a9a1fa9a6a4b467f76ce7649dc7c15f5ad7c615d6cbb20ed3394e486d94b2"
+    }
+  },
+  "provenance": {
+    "source_type": "synthetic",
+    "license": "CC0-1.0",
+    "review_status": "reviewed"
+  },
+  "dataset_card": {
+    "path": "DATASET_CARD_V3.md",
+    "provenance_status": "complete",
+    "license_status": "approved"
+  },
+  "risk_policy": {
+    "parsing_default": "standard",
+    "retrieval_standard": "standard",
+    "retrieval_adversarial": "high",
+    "grounded_field": "risk_level"
+  },
+  "leakage_policy": {
+    "duplicate_content": "reject_across_splits",
+    "banned_answer_keys": [
+      "reference_answer",
+      "gold_answer",
+      "answer_key",
+      "expected_answer_text"
+    ]
+  },
+  "source_corpus": {
+    "id": "braincrew-independent-hr-corpus",
+    "version": "1.0.0",
+    "sealed_content_digest": "sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4",
+    "provenance_digest": "sha256:eb43fc824cd54bf10e8805b5fdeb1915bcaac368cb458ce8981a481cd7d4fce1",
+    "sealing_receipt_digest": "sha256:bc508b6001facbef67bacd7e0c1d4d5123f04bc1e33d2849b5e7d455183df62b"
+  },
+  "content_digest": "sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d"
+}

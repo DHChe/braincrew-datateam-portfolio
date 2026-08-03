@@ -4,9 +4,12 @@
 !.env.example
 
 # OMX session-local runtime state
+.omc/
 .omx/
+.serena/
 
 # Language and tool caches
+.venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -14,5 +17,12 @@ __pycache__/
 .ruff_cache/
 node_modules/
 .next/
+out/
+*.tsbuildinfo
+playwright-report/
+test-results/
 dist/
 coverage/
+
+# Local evaluation outputs
+artifacts/

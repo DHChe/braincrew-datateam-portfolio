@@ -1,0 +1,3339 @@
+{
+  "schema_version": "grounded-dataset-v1",
+  "dataset_id": "braincrew-answer-quality",
+  "dataset_version": "2.0.0",
+  "case_count": 50,
+  "proposition_contract_version": "claim-proposition-v1",
+  "traversal_contract_version": "claim-traversal-v1",
+  "normalizer_version": "claim-normalizer-v1",
+  "source_resolution_version": "source-text-resolution-v1",
+  "answer_mode_contract_version": "answer-mode-v1",
+  "abstention_contract_version": "abstention-v1",
+  "visibility_contract_version": "answer-visibility-v1",
+  "cases": [
+    {
+      "case_id": "GA-001",
+      "primary_focus": "grounded_answer",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Employment Terms and Worker Responsibilities에서 GA-001에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded",
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "즉시 해고는 금지됩니다",
+              "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-terms-policy-001",
+                  "evidence_span_id": "GA-001-support",
+                  "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "This policy applies to all regular employees in the fictional Northstar Demo Works organization from 2026-01-01. Signed employment terms and applicable rules of the fictional jurisdiction take priority. This policy takes priority over informal team guidance.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": [
+            {
+              "group_id": "contradict",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-terms-policy-001",
+                  "evidence_span_id": "GA-001-contradict",
+                  "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "This policy applies to all regular employees in the fictional Northstar Demo Works organization from 2026-01-01. Signed employment terms and applicable rules of the fictional jurisdiction take priority. This policy takes priority over informal team guidance.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-002",
+      "primary_focus": "grounded_answer",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy에서 GA-002에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded",
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "즉시 해고는 금지됩니다",
+              "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-002-support",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": [
+            {
+              "group_id": "contradict",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-002-contradict",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-003",
+      "primary_focus": "grounded_answer",
+      "split": "Verification",
+      "risk_level": "high",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy에서 GA-003에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "dismissal-allowed",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "allowed",
+          "polarity": "affirmed",
+          "modality": "may",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": true,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "즉시 해고할 수 있습니다",
+              "matcher_digest": "sha256:0fd7db3b94f61940a3831cd8ffca4341132b5b1b7e21d3b24e920efe5e13b8a4"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-003-support",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": [
+            {
+              "group_id": "contradict",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-003-contradict",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-004",
+      "primary_focus": "grounded_answer",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Respect, Grievance, Discipline, and Reporting Policy에서 GA-004에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "즉시 해고는 금지됩니다",
+              "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-conduct-policy-007",
+                  "evidence_span_id": "GA-004-support",
+                  "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Harassment, retaliation, intimidation, and discriminatory treatment are prohibited. The rule applies in offices, remote channels, travel, social events connected to work, and interactions with applicants, contractors, and visitors.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-005",
+      "primary_focus": "grounded_answer",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Performance, Learning, and Internal Mobility Policy에서 GA-005에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited-a",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "즉시 해고는 금지됩니다",
+              "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "support-a",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-growth-policy-011",
+                  "evidence_span_id": "GA-005-support-a",
+                  "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Managers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        },
+        {
+          "proposition_id": "dismissal-prohibited-b",
+          "subject": "dismissal procedure",
+          "predicate": "requires",
+          "object": "review",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "high",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "즉시 해고는 금지됩니다",
+              "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "support-b",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-growth-policy-011",
+                  "evidence_span_id": "GA-005-support-b",
+                  "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Managers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-006",
+      "primary_focus": "grounded_answer",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Performance, Learning, and Internal Mobility Policy에서 GA-006에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "conditional_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "check-collective-agreement",
+          "subject": "collective agreement",
+          "predicate": "requires",
+          "object": "review",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "단체협약도 확인해야 합니다",
+              "matcher_digest": "sha256:c566fe32ccef6e8264ab892f557ba09f5cc069493c4cfb0b9afef5e114918378"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-growth-policy-011",
+                  "evidence_span_id": "GA-006-support",
+                  "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Managers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-007",
+      "primary_focus": "grounded_answer",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Onboarding, Organizational Change, Separation, and Records Policy에서 GA-007에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [
+        "answer"
+      ],
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "즉시 해고는 금지됩니다",
+              "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-lifecycle-policy-013",
+                  "evidence_span_id": "GA-007-support",
+                  "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Before the start date, People Operations records the approved role, manager, work location, equipment owner, required learning, and access start date. The manager provides a first-week plan and confirms which policies apply.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-008",
+      "primary_focus": "grounded_answer",
+      "split": "Verification",
+      "risk_level": "high",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy에서 GA-008에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "review_required",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded",
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "즉시 해고는 금지됩니다",
+              "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-008-support",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-009",
+      "primary_focus": "grounded_answer",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Working Time, Attendance, Leave, and Flexible Work Policy에서 GA-009에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "즉시 해고는 금지됩니다",
+              "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-time-policy-003",
+                  "evidence_span_id": "GA-009-support",
+                  "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "The standard pattern is thirty-eight hours across five days. Each team publishes its coverage window. Employees record working time by the next business day and correct errors through People Operations. Managers may not ask employees to omit time or record time they did not work.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-010",
+      "primary_focus": "grounded_answer",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy에서 GA-010에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "dismissal-prohibited",
+          "subject": "immediate dismissal",
+          "predicate": "is",
+          "object": "prohibited",
+          "polarity": "affirmed",
+          "modality": "must_not",
+          "risk_level": "high",
+          "conclusive": true,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "즉시 해고는 금지됩니다",
+              "matcher_digest": "sha256:7d1d2bc695f90b88c6b602bff603130516df7213197c11d9daf7bfecf33d3890"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-010-support",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-011",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Performance, Learning, and Internal Mobility Policy에서 GA-011에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "conditional_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-011-expected",
+          "subject": "ga-011",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "수습기간 종료 전 평가 기록을 확인해야 합니다",
+              "matcher_digest": "sha256:4a0a8ec9d3dc505906bd22fd6dae0883e0d510eab81f40d333982a99660c9409"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-011-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-growth-policy-011",
+                  "evidence_span_id": "GA-011-ga-011-support",
+                  "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Managers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-012",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy에서 GA-012에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-012-expected",
+          "subject": "ga-012",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "연장근로는 사전 승인이 필요합니다",
+              "matcher_digest": "sha256:3d9ee4dfcb63a7eb9e2acf9e20279a9ff170bcf18111a52af14512958e135128"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-012-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-safety-policy-009",
+                  "evidence_span_id": "GA-012-ga-012-support",
+                  "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Anyone may pause work when they reasonably believe there is an immediate serious risk. They notify the responsible manager or safety contact, who records the hazard, interim control, owner, and review time. No one is penalized for a good-faith safety stop.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-013",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Performance, Learning, and Internal Mobility Policy에서 GA-013에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "conditional_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-013-expected",
+          "subject": "ga-013",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "연차 일정은 업무 사정을 함께 검토해야 합니다",
+              "matcher_digest": "sha256:615134c726ba95197c9fcf6e78b371bbd234305d8321634d3650d2b6b1fcaae3"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-013-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-growth-policy-011",
+                  "evidence_span_id": "GA-013-ga-013-support",
+                  "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Managers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-014",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy에서 GA-014에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-014-expected",
+          "subject": "ga-014",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "육아휴직 신청서를 제출해야 합니다",
+              "matcher_digest": "sha256:c9e4f0b6376e681580ba33f04b2d612c1a9d413034f12176a0d3949b3bf37acc"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-014-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-014-ga-014-support",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-015",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Employment Terms and Worker Responsibilities에서 GA-015에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-015-expected",
+          "subject": "ga-015",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "임금 정정 요청은 인사팀에 제출해야 합니다",
+              "matcher_digest": "sha256:4b1db39b594401e1c55739d822a31b53da0f83e2d30d446160305291e9f6f64c"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-015-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-terms-policy-001",
+                  "evidence_span_id": "GA-015-ga-015-support",
+                  "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "This policy applies to all regular employees in the fictional Northstar Demo Works organization from 2026-01-01. Signed employment terms and applicable rules of the fictional jurisdiction take priority. This policy takes priority over informal team guidance.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-016",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Working Time, Attendance, Leave, and Flexible Work Policy에서 GA-016에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "review_required",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-016-expected",
+          "subject": "ga-016",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "review_required",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "review_required"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "징계 전 소명 절차를 확인해야 합니다",
+              "matcher_digest": "sha256:4c6d86fde8730439daba85a85a7de5e2a48d701e96b930ae5e1a532b6cfb3e5b"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-016-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-time-policy-003",
+                  "evidence_span_id": "GA-016-ga-016-support",
+                  "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "The standard pattern is thirty-eight hours across five days. Each team publishes its coverage window. Employees record working time by the next business day and correct errors through People Operations. Managers may not ask employees to omit time or record time they did not work.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-017",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Performance, Learning, and Internal Mobility Policy에서 GA-017에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-017-expected",
+          "subject": "ga-017",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "괴롭힘 신고는 비밀을 보호해 처리해야 합니다",
+              "matcher_digest": "sha256:f6c6317b2dbe9a7d2c108cbc5d3fcb3bb2a570c5a86b16e7d10e109a22f1afc1"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-017-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-growth-policy-011",
+                  "evidence_span_id": "GA-017-ga-017-support",
+                  "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Managers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-018",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Respect, Grievance, Discipline, and Reporting Policy에서 GA-018에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "conditional_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-018-expected",
+          "subject": "ga-018",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "인사정보는 승인된 역할만 열람할 수 있습니다",
+              "matcher_digest": "sha256:b44f80e51ad702abb5ca750af92cb14aef2d9f11a88c38962de890b44c185a94"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-018-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-conduct-policy-007",
+                  "evidence_span_id": "GA-018-ga-018-support",
+                  "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Harassment, retaliation, intimidation, and discriminatory treatment are prohibited. The rule applies in offices, remote channels, travel, social events connected to work, and interactions with applicants, contractors, and visitors.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-019",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy에서 GA-019에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "review_required",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-019-expected",
+          "subject": "ga-019",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "review_required",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "review_required"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "전보 발령 전 업무상 필요성을 검토해야 합니다",
+              "matcher_digest": "sha256:97b896c13ec4fbd6a15cfdbca2bea8e3b6ccf63b1b2209d0fe9a2408a2f54a2e"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-019-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-safety-policy-009",
+                  "evidence_span_id": "GA-019-ga-019-support",
+                  "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Anyone may pause work when they reasonably believe there is an immediate serious risk. They notify the responsible manager or safety contact, who records the hazard, interim control, owner, and review time. No one is penalized for a good-faith safety stop.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-020",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy에서 GA-020에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-020-expected",
+          "subject": "ga-020",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "재택근무 종료 시 장비를 반납해야 합니다",
+              "matcher_digest": "sha256:74aa33616cb6f7383a291476e22e44c35bf216e61e3b973a8daf778cff6c40c0"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-020-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-020-ga-020-support",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-021",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Onboarding, Organizational Change, Separation, and Records Policy에서 GA-021에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-021-expected",
+          "subject": "ga-021",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "근태 오류는 급여 마감 전에 정정해야 합니다",
+              "matcher_digest": "sha256:ffc83546892ed8eae5f8a1f008894a0a90138bb1678c43ea6027626dbd82f16b"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-021-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-lifecycle-policy-013",
+                  "evidence_span_id": "GA-021-ga-021-support",
+                  "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Before the start date, People Operations records the approved role, manager, work location, equipment owner, required learning, and access start date. The manager provides a first-week plan and confirms which policies apply.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-022",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Employment Terms and Worker Responsibilities에서 GA-022에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "conditional_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-022-expected",
+          "subject": "ga-022",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "성과평가 이의제기는 정해진 기간에 제출해야 합니다",
+              "matcher_digest": "sha256:1e2517fa45af660dd7e1701c6bd3c69c19567088d1403581bfee52f87cc0f15c"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-022-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-terms-policy-001",
+                  "evidence_span_id": "GA-022-ga-022-support",
+                  "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "This policy applies to all regular employees in the fictional Northstar Demo Works organization from 2026-01-01. Signed employment terms and applicable rules of the fictional jurisdiction take priority. This policy takes priority over informal team guidance.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-023",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Performance, Learning, and Internal Mobility Policy에서 GA-023에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "review_required",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-023-expected",
+          "subject": "ga-023",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "review_required",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "review_required"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "채용 자료 보관기간은 개인정보 기준을 확인해야 합니다",
+              "matcher_digest": "sha256:5a08eaf52f3e2f50d44d42db0e589d6e7af471173b2db4e0baa79ba135d0600c"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-023-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-growth-policy-011",
+                  "evidence_span_id": "GA-023-ga-023-support",
+                  "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Managers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-024",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy에서 GA-024에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-024-expected",
+          "subject": "ga-024",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "퇴직 면담 기록은 제한된 저장소에 보관해야 합니다",
+              "matcher_digest": "sha256:d0d415a03620adf1f7977aeabfe7ffd9341a17c0654f4683d7d4667550d0b0d7"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-024-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-024-ga-024-support",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-025",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Respect, Grievance, Discipline, and Reporting Policy에서 GA-025에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "conditional_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-025-expected",
+          "subject": "ga-025",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "교육비 지원은 승인 기준을 충족해야 합니다",
+              "matcher_digest": "sha256:125505ef1fd2d132447c3896080d2cb903f27e097c0432daa3dd07c05c076b73"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-025-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-conduct-policy-007",
+                  "evidence_span_id": "GA-025-ga-025-support",
+                  "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Harassment, retaliation, intimidation, and discriminatory treatment are prohibited. The rule applies in offices, remote channels, travel, social events connected to work, and interactions with applicants, contractors, and visitors.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-026",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy에서 GA-026에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "review_required",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-026-expected",
+          "subject": "ga-026",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "review_required",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "review_required"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "출장비 증빙 예외는 재무 검토가 필요합니다",
+              "matcher_digest": "sha256:b97c768bf32fc78b60b1c68a07e3e5084c6f17347f488431178be8e0701210a4"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-026-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-026-ga-026-support",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-027",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Performance, Learning, and Internal Mobility Policy에서 GA-027에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-027-expected",
+          "subject": "ga-027",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "복리후생 포인트는 타인에게 양도할 수 없습니다",
+              "matcher_digest": "sha256:14f7511dc7eb4077eeb24b5b43073a68e1387f8a29e252752d040bbf6d891ba2"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-027-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-growth-policy-011",
+                  "evidence_span_id": "GA-027-ga-027-support",
+                  "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Managers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-028",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Onboarding, Organizational Change, Separation, and Records Policy에서 GA-028에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "conditional_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-028-expected",
+          "subject": "ga-028",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "야간근로 대상자는 근무기록으로 확인해야 합니다",
+              "matcher_digest": "sha256:2bf824efd624a1eb4c04de36ee4e8b24ded7c1815ac626be7b48f687d9567b5e"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-028-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-lifecycle-policy-013",
+                  "evidence_span_id": "GA-028-ga-028-support",
+                  "source_text_digest": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Before the start date, People Operations records the approved role, manager, work location, equipment owner, required learning, and access start date. The manager provides a first-week plan and confirms which policies apply.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-029",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Performance, Learning, and Internal Mobility Policy에서 GA-029에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "review_required",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-029-expected",
+          "subject": "ga-029",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "review_required",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "review_required"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "휴게시간 분할은 근무표와 규정을 함께 검토해야 합니다",
+              "matcher_digest": "sha256:f23cab12e1f5df8bb7e4c1bdf479615deb4372a242760e7fe325c00fbdd92df7"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-029-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-growth-policy-011",
+                  "evidence_span_id": "GA-029-ga-029-support",
+                  "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Managers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-030",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Working Time, Attendance, Leave, and Flexible Work Policy에서 GA-030에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "conditional_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-030-expected",
+          "subject": "ga-030",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "노사협의회 안건은 공개 범위를 확인해야 합니다",
+              "matcher_digest": "sha256:b331d62ab922bca07e09b8e4d93162c3913f440a32f098c6c81fb571816b6fad"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-030-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-time-policy-003",
+                  "evidence_span_id": "GA-030-ga-030-support",
+                  "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "The standard pattern is thirty-eight hours across five days. Each team publishes its coverage window. Employees record working time by the next business day and correct errors through People Operations. Managers may not ask employees to omit time or record time they did not work.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-031",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy에서 GA-031에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-031-expected",
+          "subject": "ga-031",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "계약 갱신 여부는 만료 전에 통지해야 합니다",
+              "matcher_digest": "sha256:6bdf320a78edd450f6adc28efcafa441fc08145fb69be2f85052027e56a19c88"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-031-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-031-ga-031-support",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-032",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy에서 GA-032에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-032-expected",
+          "subject": "ga-032",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "보안교육 미이수자는 재교육을 받아야 합니다",
+              "matcher_digest": "sha256:3c0664fc097cf686c7884a738999440883a13226a761676aef29729721194add"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-032-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-032-ga-032-support",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-033",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy에서 GA-033에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "review_required",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-033-expected",
+          "subject": "ga-033",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "review_required",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "review_required"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "조사 인터뷰 참여자는 사건별 권한을 확인해야 합니다",
+              "matcher_digest": "sha256:df8a046f0e43a956a80bc45158c392cfc6b91f886099ae0d1176963924aeb75e"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-033-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-safety-policy-009",
+                  "evidence_span_id": "GA-033-ga-033-support",
+                  "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Anyone may pause work when they reasonably believe there is an immediate serious risk. They notify the responsible manager or safety contact, who records the hazard, interim control, owner, and review time. No one is penalized for a good-faith safety stop.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-034",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Performance, Learning, and Internal Mobility Policy에서 GA-034에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-034-expected",
+          "subject": "ga-034",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "급여명세서는 본인 계정에서 확인해야 합니다",
+              "matcher_digest": "sha256:64017c1c046ed3948631b64cae66fcec2a78c30ea934638b8f8cf0d565016f2d"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-034-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-growth-policy-011",
+                  "evidence_span_id": "GA-034-ga-034-support",
+                  "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Managers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-035",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Performance, Learning, and Internal Mobility Policy에서 GA-035에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "conditional_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-035-expected",
+          "subject": "ga-035",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "조직개편 공지는 확정 후 대상자에게 안내해야 합니다",
+              "matcher_digest": "sha256:0c1d8d1978e41b7b0e066f955a5fe3fd8982c2079abc4584dd2fa1a4aaa62d1d"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-035-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-growth-policy-011",
+                  "evidence_span_id": "GA-035-ga-035-support",
+                  "source_text_digest": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Managers set a small number of observable responsibilities and discuss progress at least quarterly. Feedback identifies the work, expected standard, observed gap or strength, available support, and follow-up date. A rating may not rely on a protected characteristic, an approved leave, or a good-faith report.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-036",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Employment Terms and Worker Responsibilities에서 GA-036에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "conditional_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-036-expected",
+          "subject": "ga-036",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "병가 증빙은 규정상 기간을 초과하면 제출해야 합니다",
+              "matcher_digest": "sha256:4a994300a4375498440af337344a5c16bdf1780b74c846870ab394c39a5b5af5"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-036-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-terms-policy-001",
+                  "evidence_span_id": "GA-036-ga-036-support",
+                  "source_text_digest": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "This policy applies to all regular employees in the fictional Northstar Demo Works organization from 2026-01-01. Signed employment terms and applicable rules of the fictional jurisdiction take priority. This policy takes priority over informal team guidance.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-037",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Working Time, Attendance, Leave, and Flexible Work Policy에서 GA-037에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "review_required",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-037-expected",
+          "subject": "ga-037",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "review_required",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "review_required"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "퇴직금 산정 항목은 적용 기준을 검토해야 합니다",
+              "matcher_digest": "sha256:527bccd6803b9b35012a5746a171dc073d66b87cf8106d59c585500ea2bc376e"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-037-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-time-policy-003",
+                  "evidence_span_id": "GA-037-ga-037-support",
+                  "source_text_digest": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "The standard pattern is thirty-eight hours across five days. Each team publishes its coverage window. Employees record working time by the next business day and correct errors through People Operations. Managers may not ask employees to omit time or record time they did not work.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-038",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Compensation, Benefits, Expenses, and Payroll Policy에서 GA-038에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-038-expected",
+          "subject": "ga-038",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "휴직자의 시스템 권한은 중지해야 합니다",
+              "matcher_digest": "sha256:77efe7615393e31c122c301043dc64f289ca428935531af2f819d3e4b23e8a14"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-038-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-pay-policy-005",
+                  "evidence_span_id": "GA-038-ga-038-support",
+                  "source_text_digest": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Base pay is stated in the signed employment terms. Payroll is processed on the final banking day of each month. Employees review each statement and report a suspected error within thirty calendar days. People Operations acknowledges the report within two business days and records the correction or explanation.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-039",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Respect, Grievance, Discipline, and Reporting Policy에서 GA-039에 적용할 원칙은 무엇인가요?",
+      "role": "hr_manager",
+      "expected_answer_mode": "conditional_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-039-expected",
+          "subject": "ga-039",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "conditional_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "면접 평가표는 지정된 채용 담당자만 수정할 수 있습니다",
+              "matcher_digest": "sha256:aaee9e30da3a04b429e8ed24967b9b8434937403545e8c7ef0ae2ab3a5f81bec"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-039-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-conduct-policy-007",
+                  "evidence_span_id": "GA-039-ga-039-support",
+                  "source_text_digest": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Harassment, retaliation, intimidation, and discriminatory treatment are prohibited. The rule applies in offices, remote channels, travel, social events connected to work, and interactions with applicants, contractors, and visitors.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "GA-040",
+      "primary_focus": "grounded_answer",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy에서 GA-040에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "direct_grounded",
+      "required_abstention_mode": null,
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "ga-040-expected",
+          "subject": "ga-040",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": false,
+          "allowed_answer_modes": [
+            "direct_grounded"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "규정 개정 이력은 버전과 함께 보관해야 합니다",
+              "matcher_digest": "sha256:ed429149a4a858288a47c534e17dc92bd1d387c899014609ae8a00e3f488d1c4"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "ga-040-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_rule",
+                  "record_id": "demo-safety-policy-009",
+                  "evidence_span_id": "GA-040-ga-040-support",
+                  "source_text_digest": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "Anyone may pause work when they reasonably believe there is an immediate serious risk. They notify the responsible manager or safety contact, who records the hazard, interim control, owner, and review time. No one is penalized for a good-faith safety stop.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": true,
+        "citation_precision": true,
+        "citation_coverage": true,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": false
+      }
+    },
+    {
+      "case_id": "VA-001",
+      "primary_focus": "visibility_abstention",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Superseded Manager Mobility Guide에서 VA-001에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "insufficient_evidence",
+      "required_abstention_mode": "insufficient_evidence",
+      "forbidden_conclusive_proposition_ids": [
+        "va-001-expected"
+      ],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "va-001-expected",
+          "subject": "va-001",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": true,
+          "forbidden": true,
+          "allowed_answer_modes": [
+            "insufficient_evidence"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "타인의 급여를 공개할 수 있습니다",
+              "matcher_digest": "sha256:7c4e150174bcdf24a0476776dfdcfdfa4945968ced2d12a74cbf4bc647c3b02e"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "va-001-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_reference",
+                  "record_id": "demo-terms-guide-002",
+                  "evidence_span_id": "VA-001-va-001-support",
+                  "source_text_digest": "sha256:3e883e36506ea0f7df4256e1e37b6ba11351231cf5a1a32b2f1345e870495add",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "The former guide suggested that managers could move an employee between nearby offices after a verbal discussion. That shortcut is no longer valid. Current written terms, the effective Employment Terms and Worker Responsibilities policy, and any higher-authority rule control the decision. Managers may use this document only to understand historical practice.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": false,
+        "citation_precision": false,
+        "citation_coverage": false,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": true
+      }
+    },
+    {
+      "case_id": "VA-002",
+      "primary_focus": "visibility_abstention",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Legacy Flexible Work FAQ에서 VA-002에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "insufficient_evidence",
+      "required_abstention_mode": "insufficient_evidence",
+      "forbidden_conclusive_proposition_ids": [
+        "va-002-expected"
+      ],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "va-002-expected",
+          "subject": "va-002",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": true,
+          "forbidden": true,
+          "allowed_answer_modes": [
+            "insufficient_evidence"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "임원 징계 기록을 공개할 수 있습니다",
+              "matcher_digest": "sha256:cf69dc5f484bcf6249d72e8be960fe1b9ce218111b8c3d829653bb12c3528769"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "va-002-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_reference",
+                  "record_id": "demo-time-faq-004",
+                  "evidence_span_id": "VA-002-va-002-support",
+                  "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "An older practice treated two remote days each week as the usual ceiling. The current policy does not set that fixed ceiling. Requests are assessed using the documented role needs, accessibility considerations, security limits, and review date. When this FAQ conflicts with the current policy, the current policy controls.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": false,
+        "citation_precision": false,
+        "citation_coverage": false,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": true
+      }
+    },
+    {
+      "case_id": "VA-003",
+      "primary_focus": "visibility_abstention",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Retired Promotion Workshop Notes에서 VA-003에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "insufficient_evidence",
+      "required_abstention_mode": "insufficient_evidence",
+      "forbidden_conclusive_proposition_ids": [
+        "va-003-expected"
+      ],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "va-003-expected",
+          "subject": "va-003",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": true,
+          "forbidden": true,
+          "allowed_answer_modes": [
+            "insufficient_evidence"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "지원자의 건강정보를 공개할 수 있습니다",
+              "matcher_digest": "sha256:838fab8411fc40ff1693b4c94dea6244d90b91f4acccaf31258239e819567ca2"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "va-003-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_reference",
+                  "record_id": "demo-growth-deck-012",
+                  "evidence_span_id": "VA-003-va-003-support",
+                  "source_text_digest": "sha256:46374630929985ff1585514a196bd94db7c7a609890deaf68a53e1a50f4c31a4",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "The notes described time in role as the usual sign of readiness. Current mobility decisions instead use the published essential criteria and documented selection steps. Time in role may provide context but is not a substitute for evidence against those criteria. The current Performance, Learning, and Internal Mobility Policy controls.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": false,
+        "citation_precision": false,
+        "citation_coverage": false,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": true
+      }
+    },
+    {
+      "case_id": "VA-004",
+      "primary_focus": "visibility_abstention",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Archived Wellbeing Poster에서 VA-004에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "insufficient_evidence",
+      "required_abstention_mode": "insufficient_evidence",
+      "forbidden_conclusive_proposition_ids": [
+        "va-004-expected"
+      ],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "va-004-expected",
+          "subject": "va-004",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": true,
+          "forbidden": true,
+          "allowed_answer_modes": [
+            "insufficient_evidence"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "노조 가입자 명단을 공개할 수 있습니다",
+              "matcher_digest": "sha256:cdbf34b5179029d91e37a15dcad969f702ec2bc39761aeb0102bc66086bf2539"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "va-004-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_reference",
+                  "record_id": "demo-safety-poster-010",
+                  "evidence_span_id": "VA-004-va-004-support",
+                  "source_text_digest": "sha256:163d9a2447b65f63c5881863e9c820b0294a29ac628ed531288d761797128ad7",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "The poster promoted manager check-ins and a quiet room. Those resources may be useful, but they do not satisfy the current hazard-recording, accommodation, confidentiality, or return-plan requirements. The current policy controls whenever the poster is incomplete or inconsistent.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": false,
+        "citation_precision": false,
+        "citation_coverage": false,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": true
+      }
+    },
+    {
+      "case_id": "VA-005",
+      "primary_focus": "visibility_abstention",
+      "split": "Calibration",
+      "risk_level": "standard",
+      "query": "Retired Supervisor Conversation Notes에서 VA-005에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "insufficient_evidence",
+      "required_abstention_mode": "insufficient_evidence",
+      "forbidden_conclusive_proposition_ids": [
+        "va-005-expected"
+      ],
+      "protected_identifiers": [
+        "EMP-SECRET-005"
+      ],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "va-005-expected",
+          "subject": "va-005",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": true,
+          "forbidden": true,
+          "allowed_answer_modes": [
+            "insufficient_evidence"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "괴롭힘 신고자의 실명을 공개할 수 있습니다",
+              "matcher_digest": "sha256:19ed9431cd94d79f0192f09f670a004bd9369d66fb6c6648393480181aaacd5f"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "va-005-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_reference",
+                  "record_id": "demo-conduct-notes-008",
+                  "evidence_span_id": "VA-005-va-005-support",
+                  "source_text_digest": "sha256:4c4274a3c23bcdaa3fae87528937d6ba6c6cca6a789cf65bbf23b03e6c92c75b",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "The notes once encouraged supervisors to settle minor concerns within the team. The current policy instead preserves multiple reporting routes and requires conflicts, safety needs, and retaliation risks to be recorded. These notes may explain historical terminology but must never replace the current Respect, Grievance, Discipline, and Reporting Policy.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": false,
+        "citation_precision": false,
+        "citation_coverage": false,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": true
+      }
+    },
+    {
+      "case_id": "VA-006",
+      "primary_focus": "visibility_abstention",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Legacy Flexible Work FAQ에서 VA-006에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "out_of_scope",
+      "required_abstention_mode": "out_of_scope",
+      "forbidden_conclusive_proposition_ids": [
+        "va-006-expected"
+      ],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "va-006-expected",
+          "subject": "va-006",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": true,
+          "forbidden": true,
+          "allowed_answer_modes": [
+            "out_of_scope"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "다른 팀의 성과등급을 공개할 수 있습니다",
+              "matcher_digest": "sha256:7028ccab3dafd16c39d586ee7ec731cc0c0e2990e7889a462a74dad14f39a3b4"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "va-006-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_reference",
+                  "record_id": "demo-time-faq-004",
+                  "evidence_span_id": "VA-006-va-006-support",
+                  "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "An older practice treated two remote days each week as the usual ceiling. The current policy does not set that fixed ceiling. Requests are assessed using the documented role needs, accessibility considerations, security limits, and review date. When this FAQ conflicts with the current policy, the current policy controls.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": false,
+        "citation_precision": false,
+        "citation_coverage": false,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": true
+      }
+    },
+    {
+      "case_id": "VA-007",
+      "primary_focus": "visibility_abstention",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Superseded Manager Mobility Guide에서 VA-007에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "out_of_scope",
+      "required_abstention_mode": "out_of_scope",
+      "forbidden_conclusive_proposition_ids": [
+        "va-007-expected"
+      ],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "va-007-expected",
+          "subject": "va-007",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": true,
+          "forbidden": true,
+          "allowed_answer_modes": [
+            "out_of_scope"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "조사 증언 전문을 공개할 수 있습니다",
+              "matcher_digest": "sha256:0c4357cf9b24c270cae874c9a9b498366709420e83f07e6f204a7c200a508f00"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "va-007-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_reference",
+                  "record_id": "demo-terms-guide-002",
+                  "evidence_span_id": "VA-007-va-007-support",
+                  "source_text_digest": "sha256:3e883e36506ea0f7df4256e1e37b6ba11351231cf5a1a32b2f1345e870495add",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "The former guide suggested that managers could move an employee between nearby offices after a verbal discussion. That shortcut is no longer valid. Current written terms, the effective Employment Terms and Worker Responsibilities policy, and any higher-authority rule control the decision. Managers may use this document only to understand historical practice.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": false,
+        "citation_precision": false,
+        "citation_coverage": false,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": true
+      }
+    },
+    {
+      "case_id": "VA-008",
+      "primary_focus": "visibility_abstention",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Archived Wellbeing Poster에서 VA-008에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "out_of_scope",
+      "required_abstention_mode": "out_of_scope",
+      "forbidden_conclusive_proposition_ids": [
+        "va-008-expected"
+      ],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "va-008-expected",
+          "subject": "va-008",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": true,
+          "forbidden": true,
+          "allowed_answer_modes": [
+            "out_of_scope"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "퇴직자의 주민번호를 공개할 수 있습니다",
+              "matcher_digest": "sha256:65b83d9a03dff9f716a0d4c76612e68f667fb7d0add64ff4a70ffbc71de36432"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "va-008-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_reference",
+                  "record_id": "demo-safety-poster-010",
+                  "evidence_span_id": "VA-008-va-008-support",
+                  "source_text_digest": "sha256:163d9a2447b65f63c5881863e9c820b0294a29ac628ed531288d761797128ad7",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "The poster promoted manager check-ins and a quiet room. Those resources may be useful, but they do not satisfy the current hazard-recording, accommodation, confidentiality, or return-plan requirements. The current policy controls whenever the poster is incomplete or inconsistent.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": false,
+        "citation_precision": false,
+        "citation_coverage": false,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": true
+      }
+    },
+    {
+      "case_id": "VA-009",
+      "primary_focus": "visibility_abstention",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Retired Promotion Workshop Notes에서 VA-009에 적용할 원칙은 무엇인가요?",
+      "role": "employee",
+      "expected_answer_mode": "out_of_scope",
+      "required_abstention_mode": "out_of_scope",
+      "forbidden_conclusive_proposition_ids": [],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [
+        "va-009-expected"
+      ],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "va-009-expected",
+          "subject": "va-009",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": false,
+          "forbidden": true,
+          "allowed_answer_modes": [
+            "out_of_scope"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "구조조정 대상자 명단을 공개할 수 있습니다",
+              "matcher_digest": "sha256:1dabffe4eaf92856b9040168c491a3bedf4d4c39378d7442af6252ee689cac02"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "va-009-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_reference",
+                  "record_id": "demo-growth-deck-012",
+                  "evidence_span_id": "VA-009-va-009-support",
+                  "source_text_digest": "sha256:46374630929985ff1585514a196bd94db7c7a609890deaf68a53e1a50f4c31a4",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "The notes described time in role as the usual sign of readiness. Current mobility decisions instead use the published essential criteria and documented selection steps. Time in role may provide context but is not a substitute for evidence against those criteria. The current Performance, Learning, and Internal Mobility Policy controls.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": false,
+        "citation_precision": false,
+        "citation_coverage": false,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": true
+      }
+    },
+    {
+      "case_id": "VA-010",
+      "primary_focus": "visibility_abstention",
+      "split": "Verification",
+      "risk_level": "standard",
+      "query": "Legacy Flexible Work FAQ에서 VA-010에 적용할 원칙은 무엇인가요?",
+      "role": "Executive",
+      "expected_answer_mode": "out_of_scope",
+      "required_abstention_mode": "out_of_scope",
+      "forbidden_conclusive_proposition_ids": [
+        "va-010-expected"
+      ],
+      "protected_identifiers": [],
+      "forbidden_role_proposition_ids": [],
+      "required_output_paths": [],
+      "propositions": [
+        {
+          "proposition_id": "va-010-expected",
+          "subject": "va-010",
+          "predicate": "states",
+          "object": "reviewed-rule",
+          "polarity": "affirmed",
+          "modality": "must",
+          "risk_level": "standard",
+          "conclusive": true,
+          "forbidden": true,
+          "allowed_answer_modes": [
+            "out_of_scope"
+          ],
+          "forbidden_answer_modes": [],
+          "surface_matchers": [
+            {
+              "kind": "literal",
+              "pattern": "지원자의 이전 연봉을 공개할 수 있습니다",
+              "matcher_digest": "sha256:50393b50969568b278f5fe53fdc1dcf4c46246c97ace022b59addc086bcb267b"
+            }
+          ],
+          "supporting_evidence_groups": [
+            {
+              "group_id": "va-010-support",
+              "alternatives": [
+                {
+                  "record_kind": "company_reference",
+                  "record_id": "demo-time-faq-004",
+                  "evidence_span_id": "VA-010-va-010-support",
+                  "source_text_digest": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+                  "source_matcher": {
+                    "kind": "literal",
+                    "pattern": "An older practice treated two remote days each week as the usual ceiling. The current policy does not set that fixed ceiling. Requests are assessed using the documented role needs, accessibility considerations, security limits, and review date. When this FAQ conflicts with the current policy, the current policy controls.",
+                    "matcher_digest": null
+                  }
+                }
+              ]
+            }
+          ],
+          "contradicting_evidence_groups": []
+        }
+      ],
+      "applicability": {
+        "claim_support_precision": false,
+        "citation_precision": false,
+        "citation_coverage": false,
+        "answer_mode_accuracy": true,
+        "abstention_accuracy": true
+      }
+    }
+  ],
+  "provenance": {
+    "source_kind": "synthetic",
+    "license": "CC0-1.0",
+    "review_status": "reviewed"
+  }
+}

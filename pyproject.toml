@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "braincrew-evaluation-plane"
+version = "0.1.0"
+description = "Evidence-first evaluation plane for the Braincrew Data Team portfolio"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "duckdb>=1.4,<2",
+  "httpx>=0.28,<1",
+  "pydantic>=2.11,<3",
+  "typer>=0.16,<1",
+]
+
+[project.scripts]
+braincrew-eval = "braincrew.cli:app"
+
+[dependency-groups]
+dev = [
+  "mypy>=1.17,<2",
+  "pytest>=8.4,<9",
+  "ruff>=0.12,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/braincrew"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/braincrew/ax-http-v1.yaml" = "braincrew/ax-http-v1.yaml"
+"schemas" = "braincrew/schemas"
+"datasets" = "braincrew/datasets"
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]

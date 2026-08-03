@@ -1,0 +1,691 @@
+# Evidence-First HR/Labor RAG Evaluation Plane — Design
+
+Date: 2026-07-18  
+Status: PR review corrections for claim coverage and same-SHA scheduling independently approved; pending push and user review
+
+## 1. Objective
+
+Build a first-production-release Evaluation Plane for Braincrew's Data Team portfolio within ten days. It evaluates the capabilities actually available in AX_portfolio, produces reproducible baseline-candidate evidence, diagnoses failure mechanisms, and enforces explicit release gates.
+
+The portfolio must demonstrate evaluation dataset construction, RAG quality measurement, experiment comparison, quality monitoring, and product-facing AI engineering. It must not pretend that AX_portfolio is complete or claim Agent evaluation that was not implemented and verified.
+
+## 2. Product thesis
+
+AX_portfolio is the evolving HR/labor Subject Under Test (SUT). The Evaluation Plane is an independent measurement product.
+
+The submission narrative is:
+
+> While an HR/labor AX product was evolving, I introduced measurable quality criteria, a versioned evaluation dataset, failure taxonomy, experiment comparison, and release gates for the capabilities that were actually available and tested. The evaluation contracts are designed to extend to Agent trajectories, but Agent evaluation is not claimed in this submission.
+
+## 3. Goals
+
+- Evaluate document parsing, retrieval, grounded answering, visibility, abstention, latency, token usage, and estimated cost.
+- Build exactly 100 structured and versioned evaluation cases.
+- Compare compatible baseline and candidate runs against the same frozen Verification split.
+- Preserve every published run's SUT, dataset, evaluator, threshold, prompt, model, and environment provenance.
+- Produce an auditable release-gate decision and representative failure analysis.
+- Provide a polished static dashboard, reproducible command, concise demo, resume bullets, and interview defense material.
+- Preserve schema extension points for future Agent trajectory observations without registering or claiming Agent evaluation.
+
+## 4. Non-goals
+
+- Building another general Agent or RAG product.
+- Evaluating all AX_portfolio capabilities.
+- Copying or importing AX internal modules into the evaluator.
+- Using private customer, employee, or company documents.
+- Running a broad research-paper-scale model benchmark.
+- Automatically modifying AX based on evaluation results.
+- Allowing an LLM judge to determine release eligibility by itself.
+- Operating a multi-user experiment service, dynamic Results API, or new PostgreSQL result database in the first release.
+
+Unavailable product capabilities are labeled `planned` or `not evaluated`.
+
+## 5. Repository and Git boundaries
+
+`braincrew-datateam-portfolio` owns datasets, evaluators, experiment artifacts, comparison logic, dashboard, and submission material. AX_portfolio remains a separate repository and owns product retrieval, PostgreSQL, pgvector, answer generation, and product runtime behavior.
+
+The repositories communicate through a documented HTTP SUT Adapter. AX may receive only narrowly scoped observability changes through its own branch and review process when required fields are unavailable.
+
+Git branches are:
+
+- `main`: stable recruiter-facing release;
+- `develop`: verified integration baseline;
+- `docs/evaluation-plane-design`: design and planning;
+- short-lived `feat/*`, `fix/*`, and `chore/*` branches from the latest verified `develop`.
+
+Features return to `develop` by reviewed pull request. A fully verified release moves from `develop` to `main` by release pull request and receives a frozen submission tag.
+
+## 6. Architecture
+
+```text
+Dataset Registry
+      ↓
+Experiment Runner
+      ↓
+SUT Adapter ──HTTP──> AX_portfolio
+      ↓
+Normalized Observation
+      ↓
+Evaluator Registry
+      ↓
+Immutable Result Store
+      ↓
+Comparison and Release Gate
+      ↓
+Dashboard and Report Exporter
+```
+
+The flow is one-way and evidence-preserving. No presentation component can change observations, scores, or gate decisions.
+
+## 7. Component responsibilities
+
+### Dataset Registry
+
+Owns versioned cases, corpus references, expected evidence, visibility constraints, evaluator configuration, split assignments, provenance, and content digests. It neither executes the SUT nor calculates scores.
+
+### Experiment Runner
+
+Owns orchestration, timeouts, retries, case attempts, execution mode, and version capture. Metric-specific score calculation is prohibited here.
+
+### SUT Adapter
+
+Maps standard evaluation requests to AX HTTP endpoints and normalizes responses. It does not score, invent missing values, hide contract mismatch, or import AX internals.
+
+The versioned `ax-sut-http-v1` interface has `preflight`, `corpus_identity`, `parse`, `retrieve`, `answer`, and permission-checked `source_text` operations. The packaged mapping freezes methods, paths, schema digests, and field mappings in `ax-http-v1.yaml`:
+
+- `GET /health/ready`;
+- `GET /v1/evaluation/corpus-identity`;
+- `GET /v1/evaluation/attachments/{attachment_id}/parse-observation`;
+- `POST /v1/retrieval/search`;
+- `POST /v1/answers/generate`;
+- `GET /v1/retrieval/source-text/{record_kind}/{record_id}`;
+
+Canonical requests carry run, case, evaluation correlation, tenant, role, corpus, query or document, `top_k`, evidence limit, and timeout fields as applicable. Canonical observations carry opaque AX identifiers, order and rank, source/chunk/span identifiers, source class, authority, visibility, snippets, allowed full text, structured answer, Answer Mode, citations, provider metadata, timings, AX correlation identifiers, and explicit availability flags.
+
+EvidenceSpan offsets are zero-based Unicode code-point offsets over canonical source text, inclusive at `start_char` and exclusive at `end_char`, and include the source-text digest. Citation identity is `(record_kind, record_id, evidence_span_id, source_text_digest)`.
+
+Local/test runs use AX role headers; bearer credentials remain environment-only. Only public or synthetic corpora are allowed. Preflight records capabilities and schema digests. Required missing operations or fields fail closed when they violate coverage. Authentication and contract failures are permanent; only timeout, `429`, and `5xx` are retryable.
+
+Issue #7 implementation lock:
+
+- `ax-sut-http-v1` is pinned to AX_portfolio commit `c318b2192006bdb36a5bd5b3a2bc403425b45701`; `ax-http-v1.yaml` is the packaged operation, request/response field-mapping, and exact Pydantic response-schema-digest contract.
+- Preflight checks `/health/ready` and the live OpenAPI path inventory. It records `preflight`, `retrieve`, `answer`, and `source_text` as available only when their frozen methods and paths exist.
+- The pinned AX build has no endpoint that exposes parsed text, sections, tables/lists, and EvidenceSpan offsets. `parse` is therefore unavailable with `AX_PARSE_OBSERVABILITY_UNAVAILABLE`; the Adapter performs no guessed request and the parsing benchmark remains blocked until AX adds its separately reviewed local/test-only observation boundary.
+- The pinned AX build also exposes no verifiable corpus identity. Preflight records the caller-declared public or synthetic corpus with `verified_by_sut=false` and `AX_CORPUS_IDENTITY_NOT_EXPOSED`; this is evidence of a capability gap, not a successful corpus check.
+- Canonical requests preserve run, case, evaluation correlation, UUID tenant, user, roles, timeout, query or record identity, `top_k`, and evidence limit. Live responses preserve AX correlations, retrieval identities, visibility decisions, structured answer fields, citations, provider metadata, source text provenance, latency, and every attempt.
+- timeout, `429`, and `5xx` use at most two retries after the first attempt. Other HTTP failures and response-schema failures are permanent and are never retried. Create-only capability manifests prevent accidental local overwrite.
+
+Issue #42 substrate lock:
+
+- The Adapter contract is advanced to merged AX commit `72805930d9addd8ea41743d1922acf8de621c3f8`, where the local/test-only evaluation router publishes strict `ax-corpus-identity-v1` and `ax-parse-observation-v1` responses. Braincrew freezes their exact paths, request/response mappings, and Pydantic schema digests without importing AX implementation code.
+- `corpus_identity` and `parse` now return canonical request identity, the complete strict response, and every HTTP attempt. Attachment path values are percent-encoded. Timeout, `429`, and `5xx` retain the Issue #7 three-attempt ceiling; other `4xx` responses stop after the first attempt and retain only a bounded token-like AX detail for later policy mapping.
+- `live-preflight-evidence-v1` is a transport-evidence substrate, not a READY decision. It stores corpus identity, request roles, state, parser and source-text digests, span identities/digests/offsets, structure counts, attempts, and caller-supplied typed blockers. Raw extracted text, span text, credentials, authorization material, database URLs, and private paths are absent.
+- The artifact is create-only and content-digested. `braincrew-eval replay` strictly reloads it, recomputes the logical digest, and rejects tampering or raw-field injection. Issue #42 adds no live execution command and produces no parsing score, benchmark result, or quality claim.
+- Issue #34 remains the policy owner for canonical principal UUID validation, AX principal-detail mapping, the six reviewed attachment mappings, active owner and exact `HRPractitioner` role, mapping versus existing `LIVE_*` blocker classification, and the conditions required before Issue #38 may create a READY artifact.
+
+### Normalized Observation
+
+Preserves the answer, retrieved evidence, citations, Answer Mode, role context, timing, token and cost information when available, errors, attempt history, and provenance required for evaluation.
+
+### Evaluator Registry
+
+Runs registered parsing, retrieval, grounded-answer, and operational evaluators. Deterministic evaluators are authoritative where possible. LLM-judge results are explicitly supplementary.
+
+### Immutable Result Store
+
+Stores manifests, observations, metrics, failure labels, and aggregate outputs as append-only artifacts. Corrections create a new run or version.
+
+#### Issue #6 tracer-bullet artifact contract
+
+The first executable slice freezes two Typer commands: `braincrew-eval run` executes one `fixture-case-v1` document, while `braincrew-eval replay` re-evaluates one stored `run-artifact-v1`. The module form `python -m braincrew.cli` exposes the same commands for acceptance testing.
+
+`run-artifact-v1` separates a volatile run envelope from canonical logical content:
+
+- `run` contains `run_id`, `execution_mode=fixture`, and creation time;
+- `provenance` records the automatically captured Evaluation Plane commit and dirty-worktree state, declared non-executed SUT identity, dataset content digest, `fixture-sut-v1`, `exact-answer-v1`, and explicit prompt/model placeholders;
+- `logical_result` contains the versioned case snapshot, normalized observation, exact-answer evaluation, and gate decision;
+- `logical_digest` is SHA-256 over canonical UTF-8 JSON containing `provenance` and recomputed `logical_result`, with sorted object keys and no insignificant whitespace.
+
+The run envelope and artifact path are excluded from `logical_digest`, so the same versioned fixture inputs and contracts reproduce the same logical identity under a different `run_id`. Provenance remains inside the digest boundary so a SUT, dataset, adapter, evaluator, prompt, or model identity change cannot masquerade as the same logical result.
+
+The Evaluation Plane commit is not accepted from a CLI argument. The command reads its own repository `HEAD` and dirty-worktree state immediately before building the artifact. The fixture-only SUT SHA remains a declared identity with `executed=false` and `dirty_worktree=null`, because this ticket does not inspect or execute an AX checkout.
+
+The dataset content digest covers only the dataset identity, case contract, and public-or-synthetic source provenance. It excludes the fixture SUT response and prompt/model placeholders, which are execution configuration and observation inputs rather than dataset identity. The enclosing logical digest still covers those execution contracts through provenance and the normalized result.
+
+The local JSON store uses create-only file semantics for `<run_id>.json`. A collision fails without changing existing bytes; corrections use a new run ID. Replay does not trust the stored score or gate: it recomputes them from the stored case snapshot and normalized observation, then rejects a mismatched logical payload or digest. This is application-level append-only evidence, not a claim of tamper-proof remote storage.
+
+Pydantic validates the complete `run-artifact-v1` envelope and every nested run, provenance, observation, evaluation, and gate contract before storage and replay. A missing envelope or incompatible nested schema fails explicitly instead of replaying a partial artifact.
+
+Because `run_id` becomes a local filename, `run-artifact-v1` accepts only 1–64 ASCII letters, digits, dots, underscores, and hyphens, beginning with a letter or digit. Evaluation Plane and SUT commit identities accept exactly 40 lowercase hexadecimal characters. Invalid identifiers fail before output creation, preventing path traversal and malformed provenance from entering the artifact store.
+
+The fixture SUT records `executed=false` and `model.name=not-called`. It proves the CLI-to-gate and replay seams only; it does not claim a live AX call, production metric coverage, or model execution.
+
+The executable slice preserves the architecture boundary in code: the fixture adapter creates only a normalized observation, the evaluator computes only the exact-answer score, the gate converts that score to a decision, the result store owns schema validation, digesting, append-only writes and replay, and the runner only orchestrates those components.
+
+#### Issue #8 parsing-quality artifact contract
+
+`parsing-dataset-v1` freezes 20 synthetic HR parsing cases at dataset `braincrew-parsing-quality@1.0.0` with exactly 14 Calibration and 6 Verification cases. The Pydantic contract rejects a different count or split, duplicate case IDs, unknown fields, malformed table rows, and EvidenceSpan text, offset, or source-digest drift. Each expected EvidenceSpan records zero-based Unicode code-point offsets with inclusive `start_char`, exclusive `end_char`, and the SHA-256 digest of canonical source text.
+
+Dataset ground truth and fixture observations are separate versioned inputs. `parsing_observations_v1.json` is validated as `parsing-observation-batch-v1` under `fixture-parsing-sut-v1` and `fixture-parser-v1`; every available per-case observation must carry that exact parser version. Missing, duplicate, unknown, or version-drifted observations are rejected or make the run invalid rather than being silently ignored. Fixture observations prove deterministic evaluator and result-store behavior only; they do not claim live AX parsing quality.
+
+`parsing-quality-v1` computes case-level EvidenceSpan recovery, structure preservation, metadata completeness, and applicable table/list preservation. Every score retains exact integer numerator and denominator; display decimals use half-even rounding to four places. Dataset aggregates are case-level macro means represented as reduced exact fractions, and table/list denominators include only applicable cases. The Verification EvidenceSpan denominator must be exactly 6 for this slice.
+
+The runner emits `COMPLETED` only when all 20 expected cases are scored and the Verification EvidenceSpan denominator is 6. Any unavailable or missing parse observation, unexpected case, or denominator shortfall emits `INVALID`, preserves case diagnostics, omits the aggregate, and never emits `PASS` or a release-gate decision. This keeps parsing capability evidence distinct from a future compatible baseline-candidate release comparison.
+
+`parsing-run-artifact-v1` stores the complete dataset and observation snapshots, case results, coverage, exact aggregates when valid, and provenance for the automatically captured Evaluation Plane state, declared non-executed SUT SHA, dataset content digest, adapter/parser versions, evaluator version, and explicit non-applicable prompt/model identities. Its logical digest covers provenance and logical content but excludes volatile run ID, timestamp, and path. The result store uses create-only `<run_id>.json` files; a collision cannot mutate existing bytes.
+
+The pinned AX contract remains unchanged. The Issue #7 live smoke proved `parse` unavailable with `AX_PARSE_OBSERVABILITY_UNAVAILABLE`; Issue #8 therefore supplies a fixture-complete path and a tested invalid live-capability outcome without adding or inferring an AX parsing endpoint.
+
+#### Issue #9 retrieval-quality artifact contract
+
+`retrieval-dataset-v1` freezes 30 synthetic HR/labor retrieval cases at dataset `braincrew-retrieval-quality@1.0.0` with exactly 21 Calibration and 9 Verification cases. Every case records role, query, corpus version, exact required evidence groups, preferred authority, forbidden identities, evaluator applicability, provenance, and review state. Retrieval identity is the exact tuple `(record_kind, record_id, evidence_span_id, source_text_digest)`; nullable members are compared as stored and fuzzy semantic matching is prohibited.
+
+Required evidence is grouped so any exact alternative can satisfy one group. Returned array order defines one-based rank. Duplicate identities keep their first occurrence and later duplicates do not create another hit. Recall@5 is matched required groups within the first five unique identities divided by all required groups, even when a duplicate means the fifth unique identity originally appeared after rank 5. MRR@10 is the reciprocal rank of the first unique identity satisfying any required group, or `0/1` when no such identity appears. Authority priority is applicable only with reviewed resolved ground truth and scores `1/1` only when the first relevant unique result has the case's preferred authority level. Every exact score retains integer numerator and denominator, requires `numerator <= denominator`, and stores a display value that exactly matches half-even rounding to four places; aggregates are unweighted case-level macro means represented as reduced fractions. A published aggregate metric with zero applicable cases invalidates the run with an explicit denominator reason instead of dividing by zero or omitting the metric silently.
+
+Expected source identity quality is explicit rather than silently filtered. A `missing` or `ambiguous` identity with `denominator_zero` retains its declared evidence group in Recall@5 and MRR@10 with score zero and emits `R-EXPECTED-SOURCE-IDENTITY-UNRESOLVED`. The same unresolved identity with policy `invalid` emits an `INVALID` case with no quality scores. All 9 Verification cases must carry resolved Recall@5 ground truth, so the Verification denominator cannot fall below 9 without invalidating the run.
+
+Forbidden visibility is an exact zero-tolerance identity check over every returned unique candidate. Any forbidden tuple emits deterministic critical failure `R-FORBIDDEN-VISIBILITY`, identifies the affected case in `hard_failure_cases`, and remains visible beside aggregate diagnostics. The forbidden scan runs before invalid-return paths, so an unavailable, query-mismatched, or invalid-policy observation that still contains a returned forbidden identity remains `INVALID` while preserving its hard-failure evidence. A fully scored run remains `COMPLETED` because the canonical run-state contract reserves `FAILED` for execution that could not finish; a later release gate must fail any compatible run containing this hard failure. Missing, unavailable, query-mismatched, or unexpected observations make the run `INVALID`, suppress the aggregate, and never disappear from coverage.
+
+`retrieval-run-artifact-v1` stores the full dataset and observation snapshots, including query, retrieved identity, rank, authority, and visibility decision; case evaluations; exact macro aggregates; and automatically captured Evaluation Plane, declared non-executed SUT, dataset content digest, `fixture-retrieval-sut-v1`, and `retrieval-quality-v1` provenance. Its logical digest covers provenance and logical content but excludes volatile run ID, timestamp, and path. The create-only result store rejects run-ID collisions without mutating existing bytes. Replay reloads the complete retrieval envelope, recomputes every case and aggregate from the stored dataset and observations, and rejects either logical-content or digest drift. `COMPLETED` and `INVALID` describe the evidence state here; `hard_failure_cases` is the separate zero-tolerance release-gate input, and none of these fields is itself a release `PASS` decision.
+
+The pinned `ax-sut-http-v1` live smoke uses the same dataset and evaluator identities against AX commit `c318b2192006bdb36a5bd5b3a2bc403425b45701`. The final synthetic request completed successfully but returned zero candidates; the durable evidence therefore records an empty retrieved-identity/rank/authority list and zero Recall@5, MRR@10, and authority scores without claiming positive live retrieval quality. AX still does not verify the declared corpus identity, so this one-case smoke cannot replace the future complete live benchmark.
+
+### Comparison and Release Gate
+
+Rejects incompatible runs, computes paired baseline-candidate deltas, applies frozen thresholds, and records a pass, fail, or invalid decision with reasons.
+
+### Dashboard and Report Exporter
+
+Generates sanitized versioned JSON exports and renders interactive static comparisons, gate traces, and representative failures. It cannot execute experiments or mutate evidence.
+
+#### Issue #14 static-dashboard and publication-boundary implementation lock
+
+Issue #14 accepts only a validated `experiment-comparison-artifact-v1` JSON artifact with its canonical sibling Parquet artifact. Export first invokes deterministic comparison replay, rejects a missing or non-reproducing canonical pair, then projects a new `dashboard-export-v1` document. The export copies the canonical decision, logical digest, gate traces, metric totals and deltas, operational deltas, failure-taxonomy counts, and case-level metric/failure evidence; it never recalculates a score, delta, taxonomy count, gate, or decision. Frontend code treats these fields as readonly display data and cannot submit changed canonical values back to Python or any service.
+
+Publication is fail closed. The strict comparison schema rejects unknown source fields before export. The exporter reuses the canonical `DatasetManifest` contract, requires the dataset identity and digest to match the synthetic `CC0-1.0` manifest, and accepts only the frozen public label families `CASE-###`, `GA-###`, `parsing-###`, and `retrieval-###`; a credential-like, email-like, path-like, or otherwise non-public identifier rejects the complete export rather than attempting a lossy redaction. Raw source text, prompts, model secrets, HTTP headers, private document content, PostgreSQL rows, DuckDB contents, and arbitrary observation payloads are absent from `dashboard-export-v1`. Case-level evidence is limited to stable public case labels, canonical metric values/deltas, latency/cost deltas, and deterministic failure identities.
+
+`dashboard-export-v1` also copies each run's canonical `execution_mode`, Evaluation Plane SHA, and SUT SHA. The static page must display fixture evidence explicitly as “not a live AX verification”; it cannot infer a live claim from a passing fixture golden. This provenance marker, the dataset digest, comparison logical digest, totals, and ordered gates remain visible review evidence rather than hidden build metadata.
+
+The frontend toolchain is locked before the first UI RED: root-managed `npm@11.12.1` with committed `package-lock.json` lockfile v3; Node.js `>=20.19.0`; Next.js `16.2.10`; React and React DOM `19.2.7`; TypeScript `5.9.3`; Prettier `3.9.5`; ESLint `9.39.5` with `eslint-config-next@16.2.10`; Vitest `4.1.10`; and Playwright `1.61.1` with package-pinned Chromium. ESLint 10 was rejected after the first clean install exposed incompatible peer ranges in the Next.js lint plugins. The lockfile overrides transitive PostCSS to `8.5.10`, the first patched line compatible with the chosen stack, and the frozen install reports zero npm-audit findings. The canonical commands are `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`, and `npm run test:e2e`. Static export uses Next.js `output: "export"` and produces `dashboard/out`; the browser smoke serves only that directory and asserts the golden dashboard totals, logical digest, and ordered three-gate decision trace.
+
+npm and `package-lock.json` were chosen because the repository had no frontend package-manager evidence and npm ships with Node, so the frozen install needs no extra global tool. pnpm, Yarn, and Bun were rejected because their workspace or performance benefits do not outweigh introducing a second bootstrap contract for one static application. Jest was rejected in favor of the smaller Vitest TypeScript contract surface; Cypress was rejected because Playwright supplies the required package-version/browser-version coupling and static-output smoke without another test ecosystem. The accepted costs are a larger lockfile, two language toolchains, and a first-run Chromium download. Known failure modes are schema drift between Python and TypeScript, accidental export of sensitive strings, totals or decisions recomputed in React, unsupported Next.js server features entering a static route, stale golden data, and a browser test that exercises a development server instead of the exported files; the export contract, readonly TypeScript schema, build configuration, golden equality tests, and Playwright static-server check must fail on each boundary.
+
+This ticket does not run experiments, read PostgreSQL or DuckDB from the browser, execute a live AX Verification experiment, add Agent trajectory evaluation, change Issue #13 thresholds/digests/compatibility/gate meaning, or create a frontend-specific scoring implementation.
+
+## 8. Dataset contract
+
+The dataset contains exactly 100 cases:
+
+```text
+Primary focus                 Calibration  Verification  Total
+Parsing                                14             6     20
+Retrieval                              21             9     30
+Grounded answer                        30            10     40
+Visibility and abstention               5             5     10
+Total                                  70            30    100
+```
+
+Primary focus allocation:
+
+```text
+Parsing                         20
+Retrieval                       30
+Grounded answer                 40
+Visibility and abstention       10
+Total                          100
+```
+
+The Verification split is reproducible and frozen, not described as a secret statistical holdout. Its assignment and content digest are frozen before final candidate tuning. Any correction requires a new dataset version and invalidates incompatible comparisons.
+
+Minimum applicable Verification denominators are 6 for EvidenceSpan recovery, 9 for Recall@5, 10 each for claim-support and citation precision, 15 for Answer Mode accuracy, and 5 for abstention accuracy. Actual denominators are reported. Falling below any primary minimum makes the run `INVALID`.
+
+Each case contains a stable identifier, dataset version, split, focus and tags, role, query, document references, corpus versions, expected and alternative EvidenceSpans, forbidden evidence, visibility rules, expected Answer Mode, a versioned proposition catalog, required-output paths, forbidden propositions, evaluator applicability, difficulty, provenance, license, and review history. Cases cannot narrow the evaluator-derived coverage of generated answer paths.
+
+### Issue #12 integrated dataset-freeze implementation lock
+
+Issue #12 freezes `braincrew-evaluation-dataset@1.0.0` in `datasets/dataset_manifest_v1.json` and publishes its status in `datasets/DATASET_CARD.md`. The manifest composes, rather than copies, the existing versioned parsing, retrieval, and grounded datasets. Validation normalizes them into exactly 100 globally unique cases with the locked 20/30/40/10 primary-focus allocation, 70/30 Calibration/Verification split, risk classification, provenance and `CC0-1.0` license status. The frozen integrated scoring-content digest is `sha256:7fb0b58c5ad7c242696bcaef13773eb5dc6358e8127219fa7dc65c19c7a5d71b`; it covers the normalized manifest contract and every scoring-relevant field in all three component datasets. Any scoring-relevant edit requires updated component and integrated digests and therefore a new compatible dataset version before comparison.
+
+Validation is fail closed. Missing components or dataset card, component paths outside the dataset bundle, duplicate or unstable identities, duplicate scoring content, wrong component schema declarations, count or split drift, absent or unreviewed provenance, component/case source-type disagreement with the integrated provenance declaration, unapproved component- or case-level license, invalid risk policy, focus-specific applicability drift, insufficient Verification applicability, Calibration/Verification scoring-content overlap, banned free-text answer keys, expected grounded-answer literals embedded in queries, and digest mismatch produce `INVALID` rather than a partial aggregate. Retrieval cases must apply Recall@5 and MRR@10; all 40 grounded-answer cases must apply claim support, citation precision, citation coverage, and Answer Mode; all 10 visibility/abstention cases must apply Answer Mode and abstention. Case-level provenance status is derived from the validated review state rather than asserted as a constant. These semantic invariants are shared by bundle load and snapshot replay, including path, source-type, and dataset-level license checks. Minimum Verification denominators remain EvidenceSpan recovery 6, Recall@5 9, claim support 10, citation precision 10, Answer Mode 15, and abstention 5.
+
+`braincrew-eval run-dataset` combines the frozen parsing, retrieval, and grounded fixture observations into one immutable `dataset-run-artifact-v1`. It retains case-level and aggregate component results, the normalized dataset snapshot, exact Evaluation Plane and declared SUT provenance, and a logical digest that excludes run-envelope identity so independent executions can be compared. Replay recomputes dataset validation and every component evaluation before accepting the stored logical digest. The existing 20-, 30-, and 50-case commands and replay contracts remain independently executable; Issue #12 also repairs the previously unsupported `parsing-run-artifact-v1` replay path.
+
+The rejected alternatives were concatenating all cases into a fourth authoritative copy, hashing only case IDs or top-level metadata, silently dropping invalid cases or reducing denominators, and treating the public Verification split as secret. They were rejected because they invite source drift, allow scoring changes to escape invalidation, or turn missing evidence into better-looking scores. The accepted trade-off is that even a legitimate scoring correction invalidates the frozen digest and needs explicit versioning. Failure modes include content-equivalent cases with different IDs, answer text embedded in dataset keys, schema declarations that disagree with component contracts, missing license evidence, and replay artifacts rehashed after snapshot tampering. This ticket remains fixture-authoritative and does not implement Issue #13 comparison or release gates, live baseline/candidate runs, dashboard work, LLM-as-judge scoring, AX product changes, or Agent trajectory evaluation.
+
+### Issue #13 experiment-comparison and release-gate implementation lock
+
+Issue #13 introduces `experiment-run-summary-v1` as the strict Verification-only comparison input and `experiment-comparison-artifact-v1` as the immutable result. The summary stores a completed baseline or candidate role, explicit `verification` split, candidate-plan version, case-level primary and retrieval metrics, per-case evaluator applicability, operational latency and cost, deterministic failure identities, and exact provenance for Evaluation Plane and SUT SHAs plus dirty flags, dataset and corpus IDs/versions/digests, parsing/retrieval/grounded/operational evaluator versions, prompt identity/hash, model provider/name/parameters, retrieval configuration, adapter versions, threshold version/digest, dependency-lock digest, runtime-environment digest, and fixture/live execution mode. Corpus digest evidence is execution-mode-specific: a fixture summary carries one unscoped `corpus_digest` for its hand-authored observations and no claim that AX role scoping occurred; a live summary carries `corpus_digests_by_role` for exactly the AX-confirmed dataset roles and no collapsed scalar digest. Live capture still requires one `corpus_id` across all required roles. Comparison fails closed when either run is not `COMPLETED`, either repository state is dirty, case coverage, per-case applicability, or metric denominators differ, a Verification denominator is below the locked 6/9/10/10/15/5 minima, required provenance is missing, any locked compatibility dimension differs, or the baseline and candidate differ in `corpus_id` or in the complete role-to-digest mapping, including missing or extra role keys. Required digests use canonical `sha256:<64 lowercase hex>` form.
+
+The first comparison remains `candidate-plan-v1`: both runs require `top_k=5`; baseline requires `evidence_limit=3`; candidate requires `evidence_limit=5`. The `fixed_retrieval_config_digest` explicitly excludes that intended evidence-limit variable; every fixed compatibility field must match. Because evidence packaging is the only intended variable, per-case Recall@5, MRR@10, and authority-priority results are mandatory confound evidence when the corresponding evaluator applicability is declared applicable; an applicable missing value or any difference makes the comparison `INVALID`, while a declared-inapplicable metric is not a confound candidate. This fixture-authoritative implementation does not claim that the live AX experiment has executed.
+
+Case deltas and unweighted macro means use exact decimal arithmetic over applicable cases. Per-case metric applicability, metric-denominator equality, and the locked Verification minima are checked before comparison, preventing a candidate from moving one metric's applicability between cases or comparing an under-covered run. Failure evidence is restricted to the frozen `P/R/A/O/SYS` families and aggregated as baseline, candidate, and signed delta counts by stable code and family. The first frozen critical codes cannot be downgraded or assigned to an unlisted critical code, every failure identity must reference an evaluator version present in its run provenance, and critical identities remain the deterministic `(case_id, failure_code, evaluator_version)` tuple used to identify removed and newly introduced critical failures.
+
+The three gates are ordered and fail closed. Gate 1 fails on any candidate critical identity. Gate 2 permits no primary-quality regression greater than 2 percentage points, p95 latency increase greater than 15 percent, or mean compatible-case cost increase greater than 20 percent. Gate 3 is evaluated only after Gates 1 and 2 pass and requires a primary-metric improvement of at least 3 percentage points, removal of a baseline critical identity without a candidate critical identity, p95 latency reduction of at least 15 percent, or compatible-case cost reduction of at least 20 percent. Incompatible or confounded evidence makes all three traces `INVALID`; a failed prior gate prevents Gate 3 from appearing to pass.
+
+The Immutable Result Store owns create-only canonical JSON and analytical Parquet carrying one row per case and primary metric; comparison logic does not write files or own DuckDB. Source metric, latency, and cost decimals must fit `DECIMAL(38, 28)` exactly before comparison, so Parquet never rounds an accepted source value. Per-case latency and cost relative deltas are nullable: a zero baseline and positive candidate is unavailable for that case but does not suppress a separately computable p95 or mean aggregate. A derived per-case relative value outside the Parquet range makes the comparison `INVALID` and is stored as null rather than overflowing; aggregate operational decimals remain exact in JSON and gate arithmetic. The logical digest excludes comparison ID and input run IDs but includes both immutable run snapshots, compatibility and confound findings, case and macro deltas, operational deltas, failure taxonomy, gate trace, decision, and reasons. Before that digest is exposed, every nested mapping in the accepted run summaries and derived comparison evidence is recursively frozen; a caller cannot mutate metrics, model parameters, deltas, or taxonomy counts while retaining stale gates and digest. Pydantic rejects `NaN` and positive or negative infinity as non-finite input before comparison arithmetic. Replay recomputes the full comparison and verifies every canonical Parquet row. The `.duckdb` file is a disposable query cache rebuilt by the Result Store from Parquet and is never canonical evidence.
+
+`comparison_id` uses the same 1-to-64-character safe ASCII identifier contract as other artifact envelopes at the model boundary, not only in Typer, so library callers cannot introduce absolute or traversal paths. JSON and Parquet are fully written under one temporary directory before either final path appears. The Result Store publishes them through create-only hard links and removes the first newly published path if the second publication fails, preserving any competing pre-existing bytes. This is failure-safe for reported write and race errors but is not claimed as a crash-atomic filesystem transaction.
+
+The 15-case Verification fixtures meet every locked minimum denominator. The PASS candidate improves claim-support precision by exactly 3 percentage points with retrieval confounds present and unchanged. The FAIL candidate violates the p95 latency limit by increasing it 16 percent. The INVALID candidate changes the model identity. RED/GREEN tests also freeze missing and malformed provenance, operational evaluator provenance, retrieval-confound absence and drift, per-case applicability, denominator equality and minima, frozen critical severity, failure evaluator identity, ordered gates, baseline/candidate taxonomy deltas, recursive in-memory mapping immutability, safe comparison IDs, zero-baseline case versus aggregate separation, exact source-decimal range and scale, derived-relative overflow invalidation, failure-safe JSON/Parquet pair publication, Parquet tamper rejection, repeating-decimal replay, append-only collision handling, and deterministic PASS/FAIL/INVALID digest replay through the installed CLI. A separate regression check proves Pydantic already turns every non-finite primary or retrieval decimal into a controlled `ValidationError` rather than entering gate arithmetic.
+
+Rejected alternatives were a weighted composite score, treating DuckDB as the source of truth, comparing aggregates without case identities and denominators, allowing the candidate to change retrieval depth, silently rounding Parquet decimals, and running Gate 3 independently of prior failures. They were rejected because they can hide safety failures, erase applicability drift, corrupt canonical evidence, or misattribute improvement. The accepted trade-off is stricter invalidation and duplicate JSON/Parquet evidence in exchange for portable auditability. Known failure modes are incomplete summary provenance, forged `COMPLETED` inputs from an untrusted producer, external mutation of local files, and a process crash between the two create-only final links; schema validation and replay detect evidence drift but local storage is not claimed as cryptographic object lock or a transactional filesystem.
+
+This ticket excludes dashboard implementation, live Verification execution, AX product changes, LLM-judge authority, and Agent trajectory evaluation. A future live runner must produce the same summary contract from pinned immutable run artifacts before any submission-quality live claim.
+
+## 9. Failure taxonomy
+
+- `P-*`: parsing structure, table, list, metadata, or EvidenceSpan failure;
+- `R-*`: evidence miss, authority inversion, visibility leak, or distractor capture;
+- `A-*`: unsupported claim, citation mismatch, incomplete support, wrong mode, failed abstention, unsafe overclaim, or role leakage;
+- `O-*`: latency, cost, timeout, or malformed-response failure;
+- `SYS-*`: adapter, provenance, compatibility, or replay failure;
+- `TRJ-*`: reserved and unused by the first release.
+
+One observation may receive multiple labels. Taxonomy diagnoses mechanisms, metrics measure prevalence, and gates decide release eligibility.
+
+The versioned taxonomy assigns `critical`, `major`, `minor`, or `diagnostic` severity. Gate-authoritative critical identities are deterministic `(case_id, failure_code, evaluator_contract_version)` tuples:
+
+- forbidden returned source/chunk/span identity: `R-FORBIDDEN-VISIBILITY`;
+- case-declared protected identifier or forbidden role claim in the answer: `A-ROLE-LEAKAGE`;
+- unsupported conclusive claim on a high-risk case: `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`;
+- wrong mode or forbidden conclusive claim on a required-abstention case: `A-FAILED-ABSTENTION`;
+- required provenance missing: `SYS-PROVENANCE-MISSING`;
+- incompatible or under-covered comparison: `SYS-COMPARISON-INVALID`.
+
+A baseline critical identity is removed only if its case remains applicable and the identity is absent in the candidate. Any candidate critical identity absent from baseline is new. LLM-judge output cannot create, clear, or reclassify critical identity.
+
+## 10. Metrics
+
+Parsing metrics:
+
+- structure-preservation pass rate;
+- EvidenceSpan recovery rate;
+- metadata completeness;
+- applicable table and list preservation.
+
+Retrieval metrics:
+
+- Recall@5;
+- MRR@10;
+- authority-priority hit rate;
+- forbidden-visibility leakage rate.
+
+Grounded-answer metrics:
+
+- claim-support precision;
+- citation precision and coverage;
+- Answer Mode accuracy;
+- abstention accuracy.
+
+Operational metrics:
+
+- success rate;
+- p50 and p95 latency;
+- input and output tokens;
+- estimated cost per compatible case and run.
+
+Primary quality metrics are EvidenceSpan recovery, Recall@5, claim-support precision, citation precision, Answer Mode accuracy, and abstention accuracy.
+
+### Metric contract v2
+
+Every primary metric is a case score in `[0, 1]`; dataset results are unweighted macro means over applicable cases. Micro-pooling is prohibited. Gold evidence uses requirement groups with exact acceptable alternatives. Parsing spans match document ID, source digest, and inclusive/exclusive code-point offsets. Retrieval and citations match record kind, record ID, span ID, and source digest. Any declared alternative satisfies its group.
+
+- EvidenceSpan recovery = matched required span groups / required span groups.
+- Recall@5 = required evidence groups appearing in the first five unique returned evidence identities / required evidence groups.
+- Claim-support precision = supported generated claim atoms / all generated claim atoms. Unsupported, contradicted, ambiguous, and unmapped atoms remain in the denominator with score zero.
+- Citation precision = unique citations belonging to a matched proposition's supporting evidence groups for one of their declared existing claim paths / all unique citations.
+- Answer Mode accuracy is exact normalized-enum equality.
+- Abstention accuracy requires the expected abstention mode and absence of case-declared forbidden conclusive claims.
+
+#### Claim-proposition contract v1
+
+The first release uses a closed-world deterministic proposition catalog for the frozen dataset rather than claiming unrestricted natural-language understanding. Each case declares stable proposition IDs, subject/predicate/object concepts, affirmed or denied polarity, modality, risk and conclusion flags, versioned literal or regular-expression surface matchers, supporting and contradicting evidence groups, and allowed or forbidden Answer Modes.
+
+`claim-traversal-v1` automatically enumerates every non-empty generated value in `summary`, `answer`, `grounds[*]`, `review_points[*]`, `additional_checks[*]`, and `risk_warning` for every grounded-answer case, not only high-risk cases. It splits every value on normalized newlines and `.`, `?`, `!`, `。`, `？`, or `！`, and gives each atom the stable identity `(claim_path, atom_index, normalized_text_digest)`. A case cannot opt out a returned path. Case-declared required-output paths add a zero-score placeholder when expected content is absent or empty; they never narrow generated-content scoring.
+
+Normalization uses Unicode NFC, CRLF-to-LF conversion, edge trimming, internal whitespace collapse, and declared punctuation variants only; it never removes negation or modality and uses no stemming or embedding similarity. Matchers are anchored whole-atom literals or bounded regular expressions.
+
+An atom is supported only when it maps to exactly one proposition, at least one citation linked to its exact parent path belongs to the proposition's supporting evidence, no citation linked to that path belongs to contradicting evidence, polarity and modality match, the Answer Mode is allowed, and no forbidden proposition occurs in the atom. Therefore one supporting citation cannot cancel out a second contradictory citation. Atomizer, normalizer, matcher-set, and proposition-catalog versions and digests are required comparison compatibility fields.
+
+Unmapped, ambiguous, unsupported, and contradicted atoms receive score zero and remain in the denominator. An absent or empty required-output path adds one unsupported placeholder atom. `high-risk-guard-v1` consumes the same `claim-traversal-v1` atoms and adds fail-closed behavior rather than broader coverage. For high-risk cases, a matched conclusive proposition that is forbidden, unsupported, or contradicted fails closed as `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`, and every ambiguous or unmapped atom produces the same critical failure. An LLM judge may explain unmatched language but cannot alter the score or gate.
+
+Example: if rule 15 says that an employee cannot be dismissed immediately, the proposition “immediate dismissal is prohibited” lists rule 15 under `supports`, while “immediate dismissal is allowed” lists the same evidence under `contradicts` and is forbidden. An answer saying “dismiss immediately” with a citation to rule 15 therefore scores zero and triggers the high-risk gate even though it cited the correct document identity.
+
+Secondary citation coverage measures whether every generated path from `claim-traversal-v1` has a linked citation, with every absent or empty required-output path retained in the denominator. It is explicitly not semantic groundedness. Grounded cases with no citations score citation precision `0`. Zero applicable cases or missing required observation fields makes the run `INVALID`.
+
+Array order defines rank; duplicate identities keep the first occurrence. MRR@10 is reciprocal rank of the first unique relevant result or zero. Gates use unrounded exact counts and rational divisions. Stored decimals use half-even four-place display rounding and percentages use half-even two-place display rounding. Each primary metric requires a hand-calculated golden containing case and macro calculations plus expected gate delta. Claim-support goldens include a correct support, a correct-document contradiction, mixed supporting and contradicting citations, a negation or modality reversal, an unmapped atom, an ambiguous atom, a non-high-risk unsupported claim in `additional_checks[*]`, a rejected attempt to narrow traversal, and a high-risk fail-closed case.
+
+#### Issue #10 grounded-answer implementation lock
+
+Issue #10 introduces the bounded dataset `braincrew-grounded-answer-initial@1.0.0` with ten synthetic Verification cases. This is the minimum executable claim-support and citation-precision denominator, not the complete 40-case grounded-answer dataset and not the Issue #11 Answer Mode or abstention suite.
+
+The executable contract versions are `claim-proposition-v1`, `claim-traversal-v1`, `claim-atomizer-v1`, `claim-normalizer-v1`, `claim-matcher-set-v1`, `claim-proposition-catalog-v1`, `source-text-resolution-v1`, `high-risk-guard-v1`, and evaluator `grounded-answer-v1`. `claim-traversal-v1` owns coverage: cases may declare concrete required-output paths but cannot provide a traversal allowlist. Every non-empty `summary`, `answer`, `grounds[*]`, `review_points[*]`, `additional_checks[*]`, and `risk_warning` value is atomized. Required but absent concrete paths contribute one `missing_required` placeholder.
+
+Atom identity is `(claim_path, atom_index, normalized_text_digest)`. Normalization applies Unicode NFC, CRLF/CR-to-LF conversion, edge trimming, and inline-whitespace collapse before splitting on normalized newlines and sentence terminators. It does not remove negation or modality. Literal matchers use whole-atom equality; regular expressions must be explicitly bounded.
+
+Each proposition freezes subject, predicate, optional object, polarity, canonical modality (`must`, `may`, `must_not`, `unknown`, or `review_required`), risk, conclusion and forbidden flags, allowed and forbidden Answer Modes, digest-identified surface matchers, and supporting and contradicting evidence groups. A citation is eligible only when its `(record_kind, record_id, evidence_span_id, source_text_digest)` identity matches and `source-text-resolution-v1` verifies the permission-checked text returned through `AxHttpAdapter.source_text()` against the evidence matcher. Fixture observations store that normalized Adapter result; they do not replace the live Adapter seam or claim a live answer-quality run. Document identity alone is not semantic support.
+
+An atom is supported only when it maps to exactly one non-forbidden proposition, the observed Answer Mode is allowed and not forbidden, its exact parent path has resolved supporting evidence, and that path has no resolved contradicting evidence. Mixed support and contradiction therefore scores zero. Unsupported, contradicted, unmapped, ambiguous, and missing-required atoms remain in claim-support precision's denominator and use the locked identities `A-UNSUPPORTED-CLAIM`, `A-CONTRADICTED-CLAIM`, `A-UNMAPPED-CLAIM`, and `A-AMBIGUOUS-CLAIM` where applicable. Citation precision deduplicates citation identities and represents zero returned citations as exact zero `0/1`; citation coverage measures only cited generated paths while retaining missing required paths in the denominator. A citation naming an absent placeholder path cannot enter the coverage numerator. Zero applicable metric cases makes the run `INVALID`.
+
+The hand-calculated ten-case fixture goldens are claim-support precision `1/4`, citation precision `9/20`, and citation coverage `13/20`. Tests freeze every case numerator and denominator, the three macro aggregates, and a `0.00` percentage-point compatibility-replay gate delta. Cases cover correct support, mixed citations, a forbidden `may` conclusion, unmapped and ambiguous atoms, unsupported non-high-risk `additional_checks[*]`, a missing required path, disallowed modality/Answer Mode use, unresolved source support, and a cited `grounds[0]` claim. `GA-003` and `GA-008` preserve `A-UNSUPPORTED-HIGH-RISK-CONCLUSION` hard-failure evidence. A fully evaluated fixture run remains `COMPLETED`; hard-failure evidence is consumed by a later release gate and is not mislabeled as an infrastructure execution failure.
+
+The CLI command `braincrew-eval run-grounded` writes create-only `grounded-run-artifact-v1`. It fails closed when the CLI-declared SUT SHA differs from the observation batch SUT SHA. The artifact records the exact Evaluation Plane state, declared non-executed AX SUT SHA, dataset digest and version, fixture adapter version, prompt/model non-execution identities, and the atomizer, normalizer, matcher-set, proposition-catalog, case-catalog, traversal, source-resolution, guard, and evaluator compatibility versions or digests. Replay revalidates the complete artifact, recomputes every case and macro metric from stored dataset and observation snapshots, and rejects metric or digest tampering.
+
+Rejected alternatives were document-identity-only grounding, author-selected traversal allowlists, dropping unmatched atoms, and using an LLM judge to repair deterministic failures. They were rejected because each can inflate groundedness or hide unsafe uncertainty. The accepted trade-off is bounded closed-world language coverage: unseen valid paraphrases score unmapped until a reviewed matcher and new dataset version are added.
+
+Issue #10 validation is fixture-authoritative only. It does not claim the full grounded-answer benchmark, live AX answer quality, LLM-as-judge quality, AX product changes, or Agent trajectory evaluation.
+
+#### Issue #11 answer-mode, abstention, and visibility implementation lock
+
+Issue #11 replaces the bounded initial slice with `braincrew-answer-quality@1.0.0`: exactly 40 grounded-answer cases split 30 Calibration / 10 Verification and 10 visibility/abstention cases split 5 Calibration / 5 Verification. All 50 cases apply Answer Mode accuracy; the frozen Verification denominator is therefore 15. All ten visibility/abstention cases apply abstention accuracy; its frozen Verification denominator is 5. Missing or unavailable observations, runtime split drift, or lower applicable Verification coverage makes the run `INVALID` and suppresses aggregates.
+
+Answer Mode scoring uses `answer-mode-v1` exact enum equality across `direct_grounded`, `conditional_grounded`, `insufficient_evidence`, `out_of_scope`, and `review_required`. `abstention-v1` scores one only when the returned mode equals the case's required `insufficient_evidence` or `out_of_scope` mode and no generated atom matches a case-declared forbidden conclusive proposition. The forbidden scan fails closed when an atom is ambiguous but any candidate proposition is forbidden. A wrong required mode or forbidden conclusion emits the zero-tolerance `A-FAILED-ABSTENTION` hard failure. `answer-visibility-v1` scans each full normalized generated field before sentence punctuation is atomized, so a protected literal such as an email address cannot be split out of detection; case-declared forbidden-role propositions use the evaluator atoms. Either condition emits `A-ROLE-LEAKAGE` regardless of citation, Answer Mode, availability, or other metric quality.
+
+Every fixture observation records `executed_role`. A mismatch with the case role produces `SYS-GROUNDED-ROLE-MISMATCH` and `INVALID`; an answer produced under one role cannot be graded as evidence for another. An unavailable observation still makes the run `INVALID`, but any role-leakage evidence present in its returned fields remains in the case and run hard-failure records instead of being erased by the invalid-return path. Unsupported confident high-risk conclusions continue to emit `A-UNSUPPORTED-HIGH-RISK-CONCLUSION`, so Issue #11 extends rather than weakens the Issue #10 evidence guard. A fully scored run containing deterministic safety failures remains `COMPLETED` with immutable `hard_failure_codes`, atom identities, and case identities for the later release gate.
+
+The hand-calculated 50-case macro goldens are claim-support precision `13/16`, citation precision `69/80`, citation coverage `73/80`, Answer Mode accuracy `49/50`, and abstention accuracy `4/5`. Case-level exact fractions are frozen; `GA-003`, `GA-008`, `VA-003`, `VA-005`, `VA-008`, and `VA-009` preserve the intended unsupported-confidence, failed-abstention, protected-identifier, forbidden-conclusion, and forbidden-role hard-failure evidence.
+
+`grounded-run-artifact-v1` remains create-only and stores all 50 case evaluations plus macro aggregates. Its compatibility manifest adds the version and snapshot-derived digest of `answer-mode-v1`, `abstention-v1`, and `answer-visibility-v1` alongside the dataset, evaluator, Adapter, SUT, claim, traversal, normalizer, matcher, source-resolution, and guard identities. Replay recomputes evaluation, dataset provenance, SUT identity, and every compatibility digest from the immutable dataset and observation snapshots, rejecting a tampered dataset, SUT, or contract identity even when the attacker rehashes the top-level logical digest.
+
+Rejected alternatives were text-only abstention heuristics, trusting the declared case role without observation-side execution role, silently reducing denominators, and letting correct grounding or mode scores offset leakage. They were rejected because they make safety evidence ambiguous or allow missing execution to improve results. The accepted trade-off is a reviewed closed-world catalog: an unseen sensitive paraphrase requires a new protected literal or proposition and a new compatible dataset version. This ticket remains fixture-authoritative and does not introduce the Issue #12 full 100-case freeze, live baseline/candidate comparison, release thresholds, dashboard work, LLM-as-judge scoring, AX product changes, or Agent trajectory evaluation.
+
+## 11. Release gates
+
+Quality deltas use percentage points. Latency and cost deltas use relative percentages.
+
+Gate 1 fails on any forbidden document exposure, role leakage, unsupported high-risk conclusion, required-abstention violation, missing required provenance, unexecuted or unscored applicable Verification case, or invalid comparison.
+
+Gate 2 permits no primary metric regression greater than 2 percentage points, p95 latency increase greater than 15 percent, or compatible-case cost increase greater than 20 percent.
+
+After Gates 1 and 2 pass, Gate 3 requires at least one of:
+
+- a primary quality metric improves by at least 3 percentage points;
+- a critical baseline failure is removed without another critical failure;
+- all primary metrics stay within the regression limit and p95 latency falls by at least 15 percent;
+- all primary metrics stay within the regression limit and compatible-case cost falls by at least 20 percent.
+
+Non-critical absolute thresholds are calibrated once on Calibration, versioned, and frozen before final Verification. An LLM judge cannot pass, fail, or overturn a gate.
+
+## 12. Run states and errors
+
+```text
+CREATED -> RUNNING -> COMPLETED
+                   -> FAILED
+                   -> INVALID
+```
+
+`FAILED` means execution could not complete. `INVALID` means produced evidence cannot support the requested comparison. Neither state may pass a gate. Partial artifacts remain available for diagnosis.
+
+Only timeout, `429`, and `5xx` responses are retried, at most twice after the initial attempt. Every attempt is recorded. Contract, schema, validation, provenance, and non-transient `4xx` errors are not retried. Missing data is never converted to zero or success.
+
+## 13. Reproducibility manifest
+
+Every run records:
+
+- Evaluation Plane and AX commit SHAs and dirty flags;
+- dataset, split, and corpus identifiers and digests;
+- adapter, evaluator, atomizer, claim normalizer, matcher set, proposition catalog, and threshold versions and configuration digests;
+- prompt hash, provider, model, and generation parameters;
+- dependency-lock and runtime-environment digests;
+- live or fixture mode;
+- times, seeds where applicable, and all attempts.
+
+Published results require clean committed states. Fixture and live runs are never compared. Submission claims require at least one complete live-SUT Verification run. Results are append-only, secrets are redacted, and missing compatibility fails closed.
+
+Deterministic artifact replay recalculates evaluators, aggregates, and gates from stored normalized observations and must reproduce canonical logical-content digests in a clean container. A best-effort live rerun sends the same pinned inputs and configuration, creates a new run, and may differ because of external-model stochasticity or availability. It reports drift and never overwrites the original. Publication claims reproducible artifacts and calculations, not byte-identical external responses.
+
+## 14. Technology stack
+
+Evaluation core:
+
+- Python 3.12, `uv`, Pydantic v2, Typer, and `httpx`;
+- DuckDB querying canonical Parquet and JSON artifacts;
+- pytest, selective Hypothesis, Ruff, and mypy.
+
+Dashboard:
+
+- Next.js and TypeScript;
+- static export reading validated sanitized JSON;
+- client-side comparison and drill-down;
+- no runtime result mutation or experiment control.
+
+Reproduction and CI:
+
+- Docker environment;
+- Make-based one-command replay;
+- GitHub Actions for Python and dashboard quality gates, fixture benchmark, and static build;
+- explicit credentialed live Verification outside routine CI.
+
+PostgreSQL and pgvector remain in AX_portfolio. A local DuckDB database is disposable query cache; canonical evidence is versioned Parquet and JSON.
+
+### 14.1 Independent corpus schema-sealing boundary
+
+Braincrew pins the reviewed AX synthetic seed content and import schemas from merge
+`47673b83a9fb431f2bad550781db18c7bee8b67e` by exact bytes and fixed SHA-256. The Issue #31
+sealing path accepts only an isolated staging directory containing canonical
+`corpus-manifest.json` and its ordered declared source files. It rejects unknown model fields,
+recursive evaluation-derived fields, floats, unsafe paths, invalid UTF-8, BOM, CR/CRLF, non-NFC,
+digest drift, undeclared files, and any source that is not synthetic/demo, `CC0-1.0`, and reviewed.
+
+Successful sealing requires one external canonical `provenance-review.json` sidecar. Each review
+binds the sealed content digest and one source identity/digest to synthetic origin, authoring
+owner, `CC0-1.0` assignment, review date/timezone, and an approved decision. Reviewer identity
+must differ from the authoring owner. The input sidecar must be a single read-only regular file
+outside staging and the output; missing, self-reviewed, pending, mismatched, mutable, tampered, symlinked, or
+staging-contained evidence fails closed. Successful sealing creates one new
+`<corpus-id>/<corpus-version>` directory, copies only validated canonical bytes, preserves the
+sidecar beside the pack, and emits a create-only `corpus-sealing-receipt-v2` containing bounded
+identities and digests only, including the provenance digest. Replay recomputes the receipt,
+manifest, ordered content digest, every source digest, and the v2 sidecar binding; replay validates
+canonical bytes and digest independent of normalized filesystem write bits. Historical
+`corpus-sealing-receipt-v1` replay remains supported. No dataset, fixture, AX
+implementation, provider, database, service, import manifest, or experiment execution enters this
+boundary.
+
+### 14.2 Evaluation-blind corpus authoring boundary
+
+Issue #32 adds `braincrew-eval launch-authoring` as a separate pre-seal capability boundary. It
+requires a clean Braincrew Git source, one committed approved brief, the fixed Issue #31
+digest-pinned `ax-synthetic-seed-content-v1.schema.json` content schema and declaration, one empty
+writable staging directory outside the repository, and one digest-identified executable tool. The
+child process receives a cleared environment and exactly four read-only input files: the brief,
+content schema, schema digest declaration, and canonical input digest inventory. The later
+`ax-synthetic-seed-pack-v1.schema.json` is not mounted because it governs post-qualification import
+only.
+
+The verified macOS backend is a deny-by-default `sandbox-exec` profile; a Linux Bubblewrap backend
+is used only when already installed, and every unsupported environment fails closed without an
+unrestricted fallback. Braincrew/AX repositories, datasets, fixtures, prior artifacts, databases,
+credentials, private documents, undeclared filesystem content, network, and post-seal feedback are
+denied capability classes. A real acceptance probe observes each denial while preserving declared
+input reads and staging writes.
+
+The create-only `corpus-authoring-independence-receipt-v1` stores only the clean commit, tool and
+input digests, denied classes, sandbox identity, opaque staging identity, timing, exit state, and
+path-redacted output digests. It excludes stdout/stderr, prompt transcript, source text, secret or
+private paths, query/answer/expected-evidence material, scores, and split labels. The launcher does
+not invoke sealing or qualification, so later validator success or failure has no feedback edge
+into authoring.
+
+### 14.3 Read-only sealed-corpus qualification boundary
+
+Issue #33 adds `braincrew-eval qualify-corpus` after sealing. It reuses the Issue #31 validator and
+receipt replay before comparing semantics, accepts only the exact 100-case dataset v2 digest
+`sha256:ef6b0a1f50fcd2ecb8b5d7addc7bc5daaa54537899a1ac6faba7c784eee6e98a`, and preserves the
+v1 component bytes. The v2 manifest and dedicated card introduce only the qualification identity.
+
+Every dataset case contributes required or forbidden source identities, frozen full-source digests
+where present, and an authorization role projection. Qualification requires complete closure,
+required `Employee`/`Executive`/`HRPractitioner` visibility, zero forbidden exposure, reviewed
+synthetic `CC0-1.0` provenance, and non-empty distractor coverage. Failure returns an approved
+`CORPUS_*` blocker and publishes no receipt, import manifest, or repaired bytes.
+
+Success publishes a rollback-safe create-only `corpus-qualification-receipt-v1` and strict
+`ax-synthetic-seed-pack-v1` import manifest. Because AX's generic identifier grammar excludes `@`,
+the import `seed_version` is `braincrew-evaluation-dataset-2.0.0`; the receipt separately binds the
+exact dataset ID, `2.0.0` semantic version, integrated/component digests, and case count. Replay
+revalidates the current pack, packaged dataset bundle, receipt, and import bytes and rejects
+tampering. This boundary does not run authoring, sealing, AX import, preflight, or experiments.
+
+### 14.4 Source-first successor dataset candidate boundary
+
+Issue #53 adds the successor candidate `braincrew-evaluation-dataset@3.0.0`. It reuses the frozen
+`dataset-manifest-v2` manifest schema and the existing `parsing-dataset-v1`,
+`retrieval-dataset-v1`, and `grounded-dataset-v1` component schemas, so the successor is a data
+rebinding rather than a contract change. Every case now resolves its evidence against the sealed
+`braincrew-independent-hr-corpus@1.0.0` predecessor, whose sealed-content, provenance, and
+sealing-receipt digests are recorded inside the successor manifest's `source_corpus` block.
+
+The 100-case identity is preserved unchanged: 20/30/40/10 primary-focus allocation, 70/30
+Calibration/Verification split, per-metric minimum Verification denominators, evaluator semantics,
+metric applicability, risk policy, and threshold policy. Component and integrated digests are
+canonical-JSON digests over scoring-relevant normalized content, not raw file bytes, so a
+formatting-only edit does not change identity while any scoring-relevant edit does. Replay rejects
+case, source-digest, visibility, split, and predecessor tampering, and rejects a version-only
+`3.0.0` substitution of the v2 payload. Dataset `2.0.0` bytes, its digests, and `receipt-v1` replay
+remain immutable, and both bundles ship in the wheel.
+
+Freeze is not automatic. The candidate initially published `PENDING_MANUAL_APPROVAL` and bound its
+exact digests to a review checklist that only the `DHChe-successor-dataset-reviewer` authority
+could decide. On 2026-07-23 that authority confirmed all eight checklist items and recorded
+`Decision: APPROVED`; `datasets/DATASET_CARD_V3.md` now records `FROZEN`. This approval freezes only
+the exact dataset bytes and predecessor binding.
+
+### 14.5 Issue #37 terminal qualification boundary
+
+Issue #37 actual qualification: **SUCCEEDED_ONCE**.
+
+On 2026-07-23 the read-only qualifier ran exactly once against the unchanged
+`braincrew-independent-hr-corpus@1.0.0` sealed content digest
+`sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4` and exact
+`braincrew-evaluation-dataset@3.0.0` integrated digest
+`sha256:c07c561963f7d7f82159a2554370a77a4f5f26b495f7378f10af4a80f420a19d`.
+The parsing, retrieval, and grounded component digests remained
+`sha256:33e17fbb4d3f5485df1482de37e472e1b20fceef922c9b1dda90f8d9dfc25f73`,
+`sha256:9687ead24590cab1b9d244ef876f226545a1fb1aa2013c50e4be7a63430c8408`, and
+`sha256:f76a9a1fa9a6a4b467f76ce7649dc7c15f5ad7c615d6cbb20ed3394e486d94b2`.
+The create-only pair uses `corpus-qualification-receipt-v2` and
+`braincrew-evaluation-dataset-3.0.0`.
+
+- Receipt logical digest: `sha256:c564b1442c135fef5d5430b313914951e2b5ab4cc7e0fd0bbbdefb0b928ea6ce`
+- Qualification receipt file digest: `sha256:8843c87597db779ece932585445bae9dbdf9b5f26f4f81a7b9d069a1699968ed`
+- Import logical digest: `sha256:9df8dbd212c6e0253b3c58feb392869bffb226d816805ee7ed166072596003bd`
+- Import manifest file digest: `sha256:b1899d6be6017a2485d93c67066023a87f8aaa78b0b63012fb9f8d8a040f3821`
+
+Replay reproduced the receipt and import digests, redaction checks passed, historical receipt-v1
+compatibility remained green, and the sealed input tree was unchanged. No retry, repair, AX
+import, database, service, snapshot, preflight, or experiment execution was performed. The next
+operator-controlled step is AX Issue #37; no renewed preflight, baseline, candidate, comparison,
+or live quality claim exists.
+
+### 14.6 Issue #56 qualification-identity and publication-byte boundary
+
+Braincrew and AX use two related but distinct contracts. Braincrew qualification identity is bound
+to normalized logical content, while AX import requires the manifest file to equal its canonical
+JSON bytes exactly. PR #55 added one trailing line feed to the import file; exact AX PR #42 code at
+SHA `e25f333b55fca34118a954a17e5e0cd88dc7ea39` correctly rejects that representation with
+`AX_SEED_PACK_CANONICAL_BYTES_INVALID`.
+
+Issue #56 changes only newly created `import-manifest.json` publication bytes to newline-free
+canonical JSON. The receipt logical digest
+`sha256:c564b1442c135fef5d5430b313914951e2b5ab4cc7e0fd0bbbdefb0b928ea6ce`, receipt file digest
+`sha256:8843c87597db779ece932585445bae9dbdf9b5f26f4f81a7b9d069a1699968ed`, and import logical digest
+`sha256:9df8dbd212c6e0253b3c58feb392869bffb226d816805ee7ed166072596003bd` remain unchanged. Only the
+import file digest changes from historical PR #55
+`sha256:b1899d6be6017a2485d93c67066023a87f8aaa78b0b63012fb9f8d8a040f3821` to AX-canonical
+`sha256:e00c7036bd67f93347957215fddc4185a18eb2e62e90bfb58657f0b7598f20ac`.
+
+Replay accepts exactly two import representations: newline-free canonical JSON and the historical
+canonical JSON plus one trailing line feed. Receipt serialization remains canonical JSON plus one
+trailing line feed, receipt-v1 replay remains supported, and all other whitespace or non-canonical
+representations fail closed.
+
+Rejected alternative:
+: Normalize import bytes in AX. That would weaken the consumer's exact-byte integrity check and
+  would conceal a producer serialization defect.
+
+Trade-off:
+: Braincrew replay retains one narrow historical representation so PR #55 evidence remains
+  verifiable. New publication is stricter, and the exception does not permit arbitrary whitespace.
+
+Failure modes:
+: Adding any byte to a newly created import manifest makes it non-canonical for AX; changing receipt
+  bytes changes qualification evidence; broad normalization makes tampering indistinguishable from
+  historical compatibility.
+
+Validation evidence:
+: Acceptance tests first failed on the exact trailing line feed, then passed after only new import
+  publication changed. They preserve receipt-v1, receipt-v2, both known import representations, and
+  fail-closed behavior for all other tested whitespace forms. The exact AX read-only proof accepted
+  14 sources and 11,528 total source bytes without database or provider access.
+
+Likely follow-ups:
+
+- "Why can replay read old bytes that AX rejects?" — Replay verifies historical evidence; AX
+  consumes a new operational artifact and correctly requires its current exact-byte contract.
+- "Does the new file digest prove publication?" — No. It is a locally generated candidate digest
+  until a separately approved create-only republish records and independently reviews it.
+
+The exact-AX compatibility proof was read only and used no database or provider. It accepted 14
+sources totaling 11,528 source bytes. No existing external qualification artifact was modified; no
+actual republish, requalification, AX change, snapshot, dry-run, apply, service verification,
+baseline, candidate, or renewed quality claim occurred.
+
+## 15. Testing strategy
+
+Required layers are schema tests, hand-calculated metric goldens, claim atomization and proposition-matcher tests, relevant property tests, Adapter HTTP contracts, state and storage invariants, fixture-mode E2E, live AX smoke and Verification, dashboard export and browser checks, and clean Docker reproduction.
+
+Adversarial tests must prove that a correct document with the opposite proposition fails support, negation and modality reversals fail, unknown high-risk wording fails closed, retry limits hold, non-retryable errors invalidate, results remain immutable, incompatible and fixture-live comparisons are rejected, hard-gate safety failures block release, exports are redacted, and all 30 live Verification cases execute.
+
+## 16. Ten-day execution sequence
+
+```text
+Day 1  Design, reviewed spec and plan; pin baseline SUT SHA; preflight capabilities; freeze candidate-plan-v1
+Day 2  Contracts, manifests, artifact store and 20 parsing cases
+Day 3  Adapter, retrieval evaluator and 20 cases
+Day 4  Answer evaluators and 20 cases
+Day 5  Taxonomy, gates and 20 cases
+Day 6  Finish 100 cases; review and freeze 70/30 digest
+Day 7  Live baseline and failure analysis; candidate-configuration preparation
+Day 8  Reuse the pinned baseline SUT SHA, freeze candidate configuration, and run compatible live Verification A/B
+Day 9  Dashboard, README, reproduction and interview dossier
+Day 10 Independent QA, demo, resume bullets and release PR
+```
+
+The guaranteed first experiment is `candidate-plan-v1`: both runs use `top_k=5`; baseline uses `evidence_limit=3` and candidate uses `evidence_limit=5` through the existing answer endpoint. SUT SHA, corpus, model, prompt, roles, evaluators, thresholds, and retrieval depth stay fixed. This is labeled an answer-context-depth configuration experiment. Retrieval metrics must remain identical as a confound check. A product-code candidate may be evaluated separately but cannot replace the frozen pair without a new candidate-plan version.
+
+Day 1 preflight verifies health, retrieval, answer, role visibility, synthetic corpus identity, and parsed-artifact observability. If parsing needs the permitted local/test-only observation endpoint, it is the sole AX unblocking priority through Day 2. Missing that checkpoint is a no-go for the locked parsing acceptance criteria; dashboard ornamentation and supplementary judge analysis are cut before any evidence requirement.
+
+Evaluation work receives 9 to 10 hours per day. AX work is limited to 2 to 3 hours and must already be in progress or unblock evaluation. Product work blocking the portfolio for more than one day is deferred.
+
+## 17. Submission artifacts
+
+- public repository and architecture diagram;
+- 100-case dataset card and provenance report;
+- baseline-candidate experiment report;
+- failure taxonomy and representative failure analysis;
+- release-gate trace;
+- statically deployed interactive dashboard;
+- one-command reproduction and clean-environment evidence;
+- two-to-three-minute demo;
+- resume impact bullets;
+- `planned/not evaluated` matrix;
+- interview defense dossier.
+
+## 18. Acceptance criteria
+
+The first production release is acceptable only when:
+
+- all 100 cases validate and the frozen 70/30 digest is recorded;
+- metric goldens and boundary tests pass;
+- at least one baseline and candidate pair is compatible and auditable;
+- a complete live-SUT Verification run exists;
+- release-gate output is reproducible and includes reasons;
+- canonical artifacts reconstruct analytical outputs;
+- dashboard static build and sanitized export checks pass;
+- clean Docker reproduction succeeds or an external-provider limitation is explicitly evidenced;
+- every submission claim links to versioned evidence;
+- Agent evaluation remains explicitly unimplemented and unclaimed.
+
+## 19. Interview readiness
+
+Every locked decision must be mirrored in the interview defense dossier with rationale, rejected alternatives, trade-offs, failure modes, validation evidence, and likely follow-up questions. Implementation and experiment evidence replaces checklist placeholders as it becomes available.

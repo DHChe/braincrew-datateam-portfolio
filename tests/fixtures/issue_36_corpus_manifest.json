@@ -1,0 +1,449 @@
+{
+  "corpus_id": "braincrew-independent-hr-corpus",
+  "corpus_mode": "demo",
+  "corpus_version": "1.0.0",
+  "demo_company": true,
+  "license": "CC0-1.0",
+  "provenance_status": "reviewed",
+  "schema_version": "ax-synthetic-seed-content-v1",
+  "sealed_content_digest": "sha256:5f0c254b3dc64b23470029b1004106dc078a9602062da8fa8041623bf91fb7e4",
+  "sources": [
+    {
+      "applicability_scope": {
+        "authority_tier": 20,
+        "domain_family": "employment-terms",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "current"
+      },
+      "content_sha256": "sha256:6fb48c848c8d1fddd6472530d802a26b344e91d2d6191b802f3b6617b25773e4",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2026-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/employment/terms-and-responsibilities.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_rule",
+      "source_id": "demo-terms-policy-001",
+      "source_title": "Employment Terms and Worker Responsibilities",
+      "source_type": "workplace_policy",
+      "source_uri": "demo://northstar/demo-terms-policy-001",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "Executive",
+          "HRAdmin",
+          "HRPractitioner",
+          "Employee"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 50,
+        "domain_family": "employment-terms",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "superseded"
+      },
+      "content_sha256": "sha256:3e883e36506ea0f7df4256e1e37b6ba11351231cf5a1a32b2f1345e870495add",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2024-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/employment/old-manager-mobility-guide.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_reference",
+      "source_id": "demo-terms-guide-002",
+      "source_title": "Superseded Manager Mobility Guide",
+      "source_type": "manager_guide",
+      "source_uri": "demo://northstar/demo-terms-guide-002",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "Executive",
+          "HRAdmin",
+          "HRPractitioner"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 20,
+        "domain_family": "working-time",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "current"
+      },
+      "content_sha256": "sha256:f0ac1eb5e485c22c5c8014165f3745e09076bb476eb0b63e2daaf1f87509b6d7",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2026-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/working-time/attendance-leave-flex.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_rule",
+      "source_id": "demo-time-policy-003",
+      "source_title": "Working Time, Attendance, Leave, and Flexible Work Policy",
+      "source_type": "working_time_policy",
+      "source_uri": "demo://northstar/demo-time-policy-003",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "HRAdmin",
+          "HRPractitioner",
+          "Employee"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 60,
+        "domain_family": "working-time",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "superseded"
+      },
+      "content_sha256": "sha256:da87ece449c07efa7e31952675a211911aacda2940844e18137dfdb4b2e3f455",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2024-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/working-time/legacy-flex-faq.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_reference",
+      "source_id": "demo-time-faq-004",
+      "source_title": "Legacy Flexible Work FAQ",
+      "source_type": "faq",
+      "source_uri": "demo://northstar/demo-time-faq-004",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "HRPractitioner",
+          "Employee"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 20,
+        "domain_family": "compensation-benefits",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "current"
+      },
+      "content_sha256": "sha256:e1a4a30dded839b932f4e501c24c93c11bef02d2987b4c5a7442aab21d2e3c32",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2026-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/compensation/pay-benefits-expenses.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_rule",
+      "source_id": "demo-pay-policy-005",
+      "source_title": "Compensation, Benefits, Expenses, and Payroll Policy",
+      "source_type": "compensation_policy",
+      "source_uri": "demo://northstar/demo-pay-policy-005",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "Executive",
+          "HRAdmin",
+          "HRPractitioner",
+          "Employee"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 70,
+        "domain_family": "compensation-benefits",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "superseded"
+      },
+      "content_sha256": "sha256:c70c50dcc91de5bd55f598610d40a75d648eccb9b5035c846db3e966ae70daf6",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2024-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/compensation/old-benefit-brochure.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_reference",
+      "source_id": "demo-pay-brochure-006",
+      "source_title": "Archived Benefit Highlights Brochure",
+      "source_type": "benefit_brochure",
+      "source_uri": "demo://northstar/demo-pay-brochure-006",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "HRPractitioner",
+          "Employee"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 20,
+        "domain_family": "conduct-grievance",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "current"
+      },
+      "content_sha256": "sha256:ecb6fb3fe684de87eb46d35d381d4f071141d7cda20af691fcfba87bfecdb079",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2026-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/conduct/respect-grievance-discipline.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_rule",
+      "source_id": "demo-conduct-policy-007",
+      "source_title": "Respect, Grievance, Discipline, and Reporting Policy",
+      "source_type": "conduct_policy",
+      "source_uri": "demo://northstar/demo-conduct-policy-007",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "Executive",
+          "HRAdmin",
+          "HRPractitioner",
+          "Employee"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 80,
+        "domain_family": "conduct-grievance",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "superseded"
+      },
+      "content_sha256": "sha256:4c4274a3c23bcdaa3fae87528937d6ba6c6cca6a789cf65bbf23b03e6c92c75b",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2024-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/conduct/retired-supervisor-notes.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_reference",
+      "source_id": "demo-conduct-notes-008",
+      "source_title": "Retired Supervisor Conversation Notes",
+      "source_type": "training_notes",
+      "source_uri": "demo://northstar/demo-conduct-notes-008",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "Executive",
+          "HRAdmin",
+          "HRPractitioner"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 20,
+        "domain_family": "safety-accommodation",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "current"
+      },
+      "content_sha256": "sha256:7d226c4301f60e827508aad849cd76339eff7384a55003ab5993b080f8b25e58",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2026-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/safety/accommodation-wellbeing-return.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_rule",
+      "source_id": "demo-safety-policy-009",
+      "source_title": "Safety, Accommodation, Wellbeing, and Return-to-Work Policy",
+      "source_type": "safety_policy",
+      "source_uri": "demo://northstar/demo-safety-policy-009",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "Executive",
+          "HRAdmin",
+          "HRPractitioner",
+          "Employee"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 70,
+        "domain_family": "safety-accommodation",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "superseded"
+      },
+      "content_sha256": "sha256:163d9a2447b65f63c5881863e9c820b0294a29ac628ed531288d761797128ad7",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2024-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/safety/archived-wellbeing-poster.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_reference",
+      "source_id": "demo-safety-poster-010",
+      "source_title": "Archived Wellbeing Poster",
+      "source_type": "awareness_poster",
+      "source_uri": "demo://northstar/demo-safety-poster-010",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "HRPractitioner",
+          "Employee"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 20,
+        "domain_family": "performance-learning",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "current"
+      },
+      "content_sha256": "sha256:431aa440caeec3db549c188edb9c48b9d04c1b10e38cef6355dc97e2dab9aa10",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2026-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/growth/performance-learning-mobility.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_rule",
+      "source_id": "demo-growth-policy-011",
+      "source_title": "Performance, Learning, and Internal Mobility Policy",
+      "source_type": "growth_policy",
+      "source_uri": "demo://northstar/demo-growth-policy-011",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "Executive",
+          "HRAdmin",
+          "HRPractitioner",
+          "Employee"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 70,
+        "domain_family": "performance-learning",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "superseded"
+      },
+      "content_sha256": "sha256:46374630929985ff1585514a196bd94db7c7a609890deaf68a53e1a50f4c31a4",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2024-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/growth/retired-promotion-deck.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_reference",
+      "source_id": "demo-growth-deck-012",
+      "source_title": "Retired Promotion Workshop Notes",
+      "source_type": "training_notes",
+      "source_uri": "demo://northstar/demo-growth-deck-012",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "Executive",
+          "HRAdmin",
+          "HRPractitioner"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 20,
+        "domain_family": "worker-lifecycle",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "current"
+      },
+      "content_sha256": "sha256:86dce36f6a18f3cdbb7ea355a98a5ddb1fa0065c46d52cd8cf7f2342988f9b33",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2026-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/lifecycle/onboarding-change-separation-records.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_rule",
+      "source_id": "demo-lifecycle-policy-013",
+      "source_title": "Onboarding, Organizational Change, Separation, and Records Policy",
+      "source_type": "lifecycle_policy",
+      "source_uri": "demo://northstar/demo-lifecycle-policy-013",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "Executive",
+          "HRAdmin",
+          "HRPractitioner",
+          "Employee"
+        ]
+      }
+    },
+    {
+      "applicability_scope": {
+        "authority_tier": 70,
+        "domain_family": "worker-lifecycle",
+        "jurisdiction": "Northstar-Fictional-Jurisdiction",
+        "organization_scope": "Northstar-Demo-Works",
+        "status": "superseded"
+      },
+      "content_sha256": "sha256:e3b3ce56e1c575a9560e98f09421c2c431a68206384fb7c5dc54c04f4a5012ee",
+      "corpus_mode": "demo",
+      "demo_company": true,
+      "document_version": "1.0.0",
+      "effective_date": "2024-01-01",
+      "license": "CC0-1.0",
+      "path": "sources/lifecycle/archived-exit-checklist.md",
+      "provenance_status": "reviewed",
+      "revision_date": null,
+      "source_class": "company_reference",
+      "source_id": "demo-lifecycle-checklist-014",
+      "source_title": "Archived Exit Checklist",
+      "source_type": "operations_checklist",
+      "source_uri": "demo://northstar/demo-lifecycle-checklist-014",
+      "synthetic": true,
+      "visibility_scope": {
+        "roles": [
+          "HRAdmin",
+          "HRPractitioner"
+        ]
+      }
+    }
+  ],
+  "synthetic": true
+}
