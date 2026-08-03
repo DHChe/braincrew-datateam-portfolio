@@ -25,6 +25,28 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Dated completed release record, 2026-08-03.**
+  [PR #141](https://github.com/DHChe/evidence-first-rag-evaluation/pull/141) merged the reviewed
+  submission repair into `develop` as `43c96aa9a63580aa0d13d60d2624281cd4cb9434`; post-merge run
+  `30815892795` passed `python`, `fixture-container`, `secrets`, and `frontend` on that exact commit.
+  The documentation successor then reached `develop` as
+  `058e45a51a933da5d5fad4d3185e078d9ce18356`. Pull-request run `30818712060` and push run
+  `30818708920` each passed the same four jobs on that exact head, and independent Standards, Spec,
+  submission-document, and PR-body reviews found no remaining release blocker.
+
+  [PR #142](https://github.com/DHChe/evidence-first-rag-evaluation/pull/142) subsequently merged that
+  reviewed head into `main` as `5c8330aa28ef5a0c98b1e04f068d81cf48fd5a5e`. Post-merge run
+  `30821571815` passed `python`, `fixture-container`, `secrets`, and `frontend` on the exact `main`
+  merge commit. These are named historical facts, not a permanent claim about the repository's latest
+  head or an unnamed future pull request.
+
+  Before any future Git lifecycle decision, read the live local, remote, and pull-request state:
+  relevant heads must agree, all required jobs must succeed on the exact candidate head, and
+  independent review must have no unresolved blocker. The documentation-only successor containing
+  this record cannot name its own eventual merge SHA without creating another self-expiring pointer.
+  Owner completion of the private CV facts remains a separate submission task outside this repository.
+- **The release-gate checkpoint immediately below is the preserved state from before PR #142 left
+  Draft and merged; it is not the current GitHub state.**
 - **Current state, 2026-08-03 (develop integration complete; Draft release PR #142 active).**
   [PR #141](https://github.com/DHChe/evidence-first-rag-evaluation/pull/141) merged the reviewed
   submission repair into `develop` as merge commit

@@ -262,3 +262,26 @@ review must report zero unresolved blocker. A successful PR #141 or earlier PR #
 a later documentation successor. This delta changes no README claim, source, test, dependency, dataset,
 stored evidence, evaluator, metric, gate, or live `INVALID` result. PR #142 remains Draft and `main`
 merge remains unauthorized pending new-head verification and separate owner approval.
+
+## Cycle 212 delta — completed main release and non-expiring lifecycle evidence
+
+Cycle 211's final sentence is preserved evidence of the gate that existed before release, not the
+current GitHub state. PR #142 subsequently left Draft under separate owner authorization. Its exact
+candidate head was `058e45a51a933da5d5fad4d3185e078d9ce18356`; pull-request run `30818712060`
+and push run `30818708920` each passed `python`, `fixture-container`, `secrets`, and `frontend` on that
+head. Standards, Spec, submission-document, and PR-body review found no remaining release blocker, and
+GitHub reported zero unresolved review threads.
+
+PR #142 then merged into `main` as `5c8330aa28ef5a0c98b1e04f068d81cf48fd5a5e`. Post-merge run
+`30821571815` passed the same four jobs on that exact merge commit. Those facts establish the completed
+public repository release. They do not establish fresh live AX/provider quality, a compatible completed
+baseline/candidate comparison, token or provider cost, or any capability already marked `INVALID` or
+`not evaluated`.
+
+The durable claim is now event-relative rather than PR-name-relative. This record may name completed
+commits and runs, but it does not claim that they remain the repository's latest head. The
+documentation-only successor containing this section cannot name its own eventual merge SHA without
+changing that SHA. Any future release decision must read the actual candidate heads and same-head
+checks from GitHub and require zero unresolved independent-review blocker. No README claim, source,
+test, dependency, dataset, stored evidence, evaluator, metric, gate, or live result changes in this
+correction.
