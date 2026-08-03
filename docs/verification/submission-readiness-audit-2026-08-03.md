@@ -123,3 +123,23 @@ reports the platform outcomes; later submission-readiness commits through `d53d6
 documentation only. The remaining recruiter-submission gates are reviewed integration through
 `develop` to `main` and owner completion of the private CV facts. PR #141 remains Draft and merge
 remains unauthorized.
+
+## Release-phase supersession after PR #141 integration
+
+The final two sentences immediately above are preserved dated records, not the current GitHub state.
+[PR #141](https://github.com/DHChe/evidence-first-rag-evaluation/pull/141) later passed its exact-head
+checks and independent reviews, left Draft under separate owner authorization, and merged into
+`develop` as `43c96aa9a63580aa0d13d60d2624281cd4cb9434`. Post-merge run `30815892795` passed `python`,
+`fixture-container`, `secrets`, and `frontend` on that exact `develop` commit.
+
+[PR #142](https://github.com/DHChe/evidence-first-rag-evaluation/pull/142) is now the active
+`develop`-to-`main` release gate. Run `30816574010` passed all four required jobs at the pre-repair
+release head `43c96aa9a63580aa0d13d60d2624281cd4cb9434`. This section records only publicly retrievable GitHub
+evidence; it does not turn session-local command output into a durable receipt.
+
+The release review found this audit's PR #141 live pointer stale; that is a documentation-state defect,
+not a code, test, or evaluation-result failure. This append-only section supersedes it without claiming
+that the prior run certifies a new documentation commit. At any release decision, current evidence must
+come from the active release PR's actual head, four same-head successful jobs, and zero unresolved
+independent-review blockers. PR #142 remains Draft, `main` merge remains unauthorized, and the private
+CV facts remain owner-supplied work outside this repository.

@@ -244,3 +244,21 @@ exact SHA, and zero unresolved independent-review blockers. README now binds the
 code-bearing commit `2fc440b`: 613 collected, 613 passed on the measured local macOS run, and 610 passed
 plus 3 designed skips on the measured hosted Linux and network-isolated container runs. No source,
 test, dependency, dataset, stored evidence, evaluator, gate, or live result changes in this correction.
+
+## Cycle 211 delta — develop integration and active-release gate
+
+Cycle 210 correctly separated dated evidence from a live PR gate, but it fixed the live pointer to PR
+#141 rather than to the active lifecycle stage. PR #141 subsequently merged into `develop` as
+`43c96aa9a63580aa0d13d60d2624281cd4cb9434`; post-merge run `30815892795` passed `python`,
+`fixture-container`, `secrets`, and `frontend` on that exact commit. Draft
+[PR #142](https://github.com/DHChe/evidence-first-rag-evaluation/pull/142) then became the active
+`develop`-to-`main` release gate, and run `30816574010` passed the same four jobs at that pre-repair
+head.
+
+The corrected claim is lifecycle-relative: a static record may name already measured commits and runs,
+but release readiness must read the **currently active release PR**. Its actual head must match the
+relevant local and remote head, all four required jobs must succeed on that exact SHA, and independent
+review must report zero unresolved blocker. A successful PR #141 or earlier PR #142 run cannot certify
+a later documentation successor. This delta changes no README claim, source, test, dependency, dataset,
+stored evidence, evaluator, metric, gate, or live `INVALID` result. PR #142 remains Draft and `main`
+merge remains unauthorized pending new-head verification and separate owner approval.

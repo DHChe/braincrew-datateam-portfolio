@@ -25,6 +25,23 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-03 (develop integration complete; Draft release PR #142 active).**
+  [PR #141](https://github.com/DHChe/evidence-first-rag-evaluation/pull/141) merged the reviewed
+  submission repair into `develop` as merge commit
+  `43c96aa9a63580aa0d13d60d2624281cd4cb9434`. GitHub Actions run `30815892795` then passed
+  `python`, `fixture-container`, `secrets`, and `frontend` on that exact `develop` commit.
+  [PR #142](https://github.com/DHChe/evidence-first-rag-evaluation/pull/142) is the active
+  `develop`-to-`main` release gate. Its first run, `30816574010`, passed the same four jobs at
+  `43c96aa9a63580aa0d13d60d2624281cd4cb9434`; that run is dated evidence for the pre-repair release
+  head and does not certify this documentation successor.
+
+  At any Ready or merge decision, the authoritative live state must be read from the **currently
+  active release PR**, not from a permanently named historical PR: local, remote, and PR head must
+  agree; `python`, `fixture-container`, `secrets`, and `frontend` must all succeed on that exact head;
+  and independent review must have no unresolved blocker. PR #142 remains Draft, `main` merge remains
+  unauthorized, and owner completion of the private CV facts remains a separate submission gate.
+- **The self-reference-safe checkpoint immediately below is a dated PR #141 record from before the
+  active PR #142 release phase; despite its preserved heading, it is not the current live pointer.**
 - **Current state, 2026-08-03 (self-reference-safe submission gate).** The executable source, tests,
   dependencies, dataset, and stored evidence last changed at code-bearing commit
   `2fc440b2f3da9f086e0a180fe90d70729790b15d`. The first documentation-only successor,

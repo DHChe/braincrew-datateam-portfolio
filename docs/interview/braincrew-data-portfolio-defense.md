@@ -2776,19 +2776,21 @@ Likely follow-up questions:
 
 Multiple labels may attach to one observation because one user-visible failure can have more than one mechanism. Metrics summarize prevalence; taxonomy supports diagnosis; release gates enforce decisions. These are deliberately separate concepts.
 
-## Evidence ledger to complete during implementation
+## Evidence ledger status at release review
 
-- [ ] Final repository and SUT commit SHAs
-- [ ] Dataset manifest, schema version, split digest, and provenance report
-- [ ] SUT Adapter request and normalized-observation contracts
-- [ ] Contract, unit, integration, and live-SUT test outputs
-- [ ] Baseline and candidate run manifests
-- [ ] Metric definitions and release-gate thresholds
-- [ ] Representative failure analyses with before-and-after evidence
-- [ ] Latency, token, and cost comparison
-- [ ] Reproduction command and clean-machine result
-- [ ] Dashboard screenshots and two-to-three-minute demo script
-- [ ] Explicit `planned` and `not evaluated` capability matrix
+| Evidence | Status | Durable evidence and boundary |
+| --- | --- | --- |
+| Repository and SUT commit SHAs | **bounded** | Artifact-level SUT SHAs are recorded in the manifests and README; the public repository release SHA is created only when the active release PR merges. |
+| Dataset manifest, schema, split assignment/counts, integrated content digest, and provenance | **complete** | [`dataset_manifest_v3.json`](../../datasets/dataset_manifest_v3.json) and [`DATASET_CARD_V3.md`](../../datasets/DATASET_CARD_V3.md) record the current frozen dataset, 70/30 `split_counts`, per-case split assignments inside the integrated `content_digest`, schemas, and synthetic CC0-1.0 provenance; v1 remains the bounded legacy fixture used by the offline demo. |
+| SUT Adapter request and normalized-observation contracts | **complete** | [`ax-http-v1.yaml`](../../src/braincrew/ax-http-v1.yaml), the packaged schemas, and contract tests pin the request and normalized-observation boundary. |
+| Contract, unit, integration, and live-SUT outputs | **bounded** | Local, hosted, and network-isolated fixture/contract gates pass; stored live artifacts are published only after review, and no fresh live SUT run is claimed for release. |
+| Baseline and candidate run manifests | **bounded** | Public reviewed stored-live artifacts exist under `evidence/`; the compatible same-commit baseline and candidate manifests are owner-held and unpublished, both remain `INVALID`, and no live comparison artifact exists. |
+| Metric definitions and release-gate thresholds | **complete** | The locked design, evaluator implementation, metric golden tests, and three ordered gates define the thresholds and refusal behavior. |
+| Representative failure analyses | **complete** | The README, decision records, AX issues 60 and 61, and this dossier trace the ambiguous-label and discarded-answer findings through their upstream corrections. |
+| Latency, token, and cost comparison | **not evaluated** | Latency was captured in the unpublished same-commit artifacts but was not compared; token and provider cost were not measured, and no compatible completed live pair exists. |
+| Reproduction command and clean-machine result | **bounded** | The README and [three-minute demo](../submission/three-minute-demo.md) provide commands; hosted Linux and a no-cache network-isolated container pass, while a separate remote clean-clone rehearsal remains unperformed. |
+| Dashboard screenshots and demonstration | **bounded** | The static dashboard, browser smoke tests, and three-minute script are complete; a separate screenshot artifact is not committed. |
+| `planned` and `not evaluated` capability matrix | **complete** | The README capability matrix distinguishes evaluated fixture evidence, unavailable live evidence, and excluded Agent evaluation. |
 
 ## Update protocol for every future locked decision
 
