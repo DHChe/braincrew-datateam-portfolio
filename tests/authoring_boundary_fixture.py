@@ -12,6 +12,11 @@ BRIEF_RELATIVE_PATH = Path("docs/corpus/braincrew-evaluation-corpus-v2-authoring
 CONTENT_SCHEMA_RELATIVE_PATH = Path("schemas/ax-synthetic-seed-content-v1.schema.json")
 CONTENT_DIGEST_RELATIVE_PATH = Path("schemas/ax-synthetic-seed-content-v1.schema.sha256")
 EXPECTED_BRAINCREW_REMOTE = "https://github.com/DHChe/braincrew-datateam-portfolio.git"
+CURRENT_BRAINCREW_REMOTES = (
+    "git@github.com:DHChe/evidence-first-rag-evaluation.git",
+    "https://github.com/DHChe/evidence-first-rag-evaluation.git",
+    "ssh://git@github.com/DHChe/evidence-first-rag-evaluation.git",
+)
 
 
 def run_cli(
@@ -30,7 +35,11 @@ def run_cli(
     )
 
 
-def create_clean_braincrew_source(tmp_path: Path) -> Path:
+def create_clean_braincrew_source(
+    tmp_path: Path,
+    *,
+    origin_url: str = EXPECTED_BRAINCREW_REMOTE,
+) -> Path:
     source_root = tmp_path / "braincrew-source"
     brief_path = source_root / BRIEF_RELATIVE_PATH
     brief_path.parent.mkdir(parents=True)
@@ -80,7 +89,7 @@ def create_clean_braincrew_source(tmp_path: Path) -> Path:
         check=True,
     )
     subprocess.run(
-        ["git", "-C", source_root, "remote", "add", "origin", EXPECTED_BRAINCREW_REMOTE],
+        ["git", "-C", source_root, "remote", "add", "origin", origin_url],
         check=True,
     )
     return source_root

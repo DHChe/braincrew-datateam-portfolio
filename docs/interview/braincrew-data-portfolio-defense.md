@@ -52,7 +52,8 @@ Answer direction:
 ### D2. Use a separate Evaluation Plane repository with an HTTP SUT Adapter
 
 Decision:
-: `braincrew-datateam-portfolio` owns evaluation evidence; AX_portfolio remains the product SUT.
+: `evidence-first-rag-evaluation` (formerly `braincrew-datateam-portfolio`) owns evaluation evidence;
+  AX_portfolio remains the product SUT.
 
 Why:
 : Separate histories prevent evaluation logic from depending on AX internals and make the submission independently reviewable.
@@ -562,6 +563,15 @@ Validation evidence:
   from the receipt. The final repository gate reports `239 passed`; the authoring and reused sealing
   boundary subset reports `32 passed`; frozen sync, Ruff format/lint, mypy, installed CLI help, and
   Git whitespace validation also pass.
+
+Repository-rename follow-up:
+: Renaming the public repository exposed a gap in the exact remote allow-list: the current
+  `evidence-first-rag-evaluation` origin was rejected even though arbitrary-remote rejection tests stayed
+  green against a fixture using the former name. A public-CLI test first reproduced
+  `BRAINCREW_SOURCE_INVALID`. The repair adds the current HTTPS and SSH identities while retaining the
+  former GitHub names as compatibility aliases; it does not broaden acceptance by owner, hostname, or
+  string pattern. This is identity continuity after a GitHub rename, not a relaxation of the authoring
+  isolation boundary.
 
 Likely follow-ups:
 

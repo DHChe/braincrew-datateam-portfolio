@@ -193,3 +193,19 @@ read as "nothing is unverified":
 - The hosted CI workflow requires a pull request to execute and remains unverified until one runs.
 - A clean clone and a fresh virtual environment were not created; every command above was run in this
   working checkout.
+
+## Cycle 208 delta — hosted verification and repository-rename regression
+
+The four open bullets immediately above remain the Cycle 207 pre-publication record. PR #141 later
+supplied hosted evidence at `a089b645a89321fb57905f60111f1a1343289e96`: GitHub Actions installed and
+reported `npm 11.12.1`, completed the locked frontend chain with zero known install-time vulnerabilities,
+and passed `python`, `fixture-container`, `secrets`, and `frontend`. The container build/run and hosted-CI
+gaps are therefore resolved for that published head. A dedicated local clean-clone rehearsal remains
+unperformed and is not inferred from Actions checkout.
+
+The post-CI independent review also found a claim-to-runtime mismatch outside the original README
+inventory: the public repository had been renamed to `evidence-first-rag-evaluation`, but the authoring
+launcher and its fixture still recognized only `braincrew-datateam-portfolio`. A public-CLI regression
+test reproduced `BRAINCREW_SOURCE_INVALID` before repair. The accepted correction preserves the former
+remote URLs as compatibility aliases while adding the current HTTPS and SSH identities; it does not
+relax arbitrary-remote rejection or any sandbox capability boundary.

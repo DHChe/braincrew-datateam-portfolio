@@ -30,6 +30,9 @@ EXPECTED_BRAINCREW_REMOTES = frozenset(
         "git@github.com:DHChe/braincrew-datateam-portfolio.git",
         "https://github.com/DHChe/braincrew-datateam-portfolio.git",
         "ssh://git@github.com/DHChe/braincrew-datateam-portfolio.git",
+        "git@github.com:DHChe/evidence-first-rag-evaluation.git",
+        "https://github.com/DHChe/evidence-first-rag-evaluation.git",
+        "ssh://git@github.com/DHChe/evidence-first-rag-evaluation.git",
     }
 )
 DENIED_CAPABILITY_CLASSES = (

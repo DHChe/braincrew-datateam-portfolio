@@ -262,8 +262,11 @@ them through the existing CLI path. On Docker's default
 Linux namespace policy, the three authoring-boundary tests that require Bubblewrap are explicitly skipped:
 installing Bubblewrap makes them fail because the container may not create a user namespace, and this path
 does not request privileged or security-relaxed execution. It does not execute AX. The CI workflow has separate named fixture benchmark,
-fixture-replay, container, dashboard, and secret-scan steps; the workflow itself remains unverified until a
-pull request runs it.
+fixture-replay, container, dashboard, and secret-scan steps. The first hosted run on
+[PR #141](https://github.com/DHChe/evidence-first-rag-evaluation/pull/141), at commit
+`a089b645a89321fb57905f60111f1a1343289e96`, passed the `python`, `fixture-container`, `secrets`, and
+`frontend` jobs. That is hosted validation of the committed fixture, replay, container, and dashboard
+paths; it is not a live AX execution or quality result.
 
 **What the container does reproduce:** a one-command replay of the four reviewed stored-live
 artifacts under `evidence/`. It can see them, and the replay test recomputes their stored logical
@@ -333,8 +336,9 @@ criteria:
   submission claim.
 
 The local submission audit ran the pinned npm 11 toolchain, reported zero known npm-audit
-vulnerabilities, built the static dashboard, and passed its unit and browser tests. Hosted CI for these
-uncommitted changes remains pending until a pull request exists.
+vulnerabilities, built the static dashboard, and passed its unit and browser tests. PR #141 then ran
+the same declared `npm@11.12.1` contract on GitHub and passed all four hosted quality jobs on its first
+published head.
 
 The blocking dependency **for live answer quality** is in the SUT, not here:
 thirteen citation-contract violations discard provider answers and the remaining

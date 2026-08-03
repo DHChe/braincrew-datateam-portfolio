@@ -52,3 +52,13 @@ The important choice was not “always use the newest package.” It was to repr
 declared toolchain, repair the smallest supported version surface, and rerun the checks that could catch
 behavioral or platform regressions. The evaluation semantics and dashboard evidence boundary did not
 change.
+
+## Post-publication verification
+
+The “Hosted GitHub Actions: not yet tested” bullet above records the decision-time state and is retained
+as history. The first run of
+[PR #141](https://github.com/DHChe/evidence-first-rag-evaluation/pull/141), at
+`a089b645a89321fb57905f60111f1a1343289e96`, subsequently passed `python`, `fixture-container`,
+`secrets`, and `frontend`. The frontend log reported `npm 11.12.1`, zero known vulnerabilities after the
+locked install, a successful static build, and two passing browser tests. This closes the hosted
+toolchain gap for that head without broadening the compatibility claim for sharp.

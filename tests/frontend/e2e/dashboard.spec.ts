@@ -23,7 +23,7 @@ test("renders the immutable comparison and its three-gate decision trace", async
     page.getByRole("link", { name: "Decision record" }),
   ).toHaveAttribute(
     "href",
-    "https://github.com/DHChe/braincrew-datateam-portfolio/blob/develop/docs/decisions/2026-08-03-same-commit-30-case-run-and-grounded-coverage-correction.md",
+    "https://github.com/DHChe/evidence-first-rag-evaluation/blob/develop/docs/decisions/2026-08-03-same-commit-30-case-run-and-grounded-coverage-correction.md",
   );
   await expect(page.getByTestId("logical-digest")).toContainText(
     "d426e04c0c2b960d8c8c17efc216688891b2078faaaa51ff226c137c2f8694ae",

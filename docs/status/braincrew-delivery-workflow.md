@@ -25,6 +25,18 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-03 (Draft PR #141 independent-review repair).** The first hosted run for
+  `chore/submission-readiness` at `a089b645a89321fb57905f60111f1a1343289e96` passed `python`,
+  `fixture-container`, `secrets`, and `frontend`. Independent review then reproduced two submission
+  blockers: the renamed `evidence-first-rag-evaluation` origin was absent from the authoring launcher's
+  exact repository allow-list, and reviewer-facing documents still described the pre-publication CI
+  state. The owner selected the bounded repair: preserve the former repository URLs as compatibility
+  aliases, add the current HTTPS/SSH identities and a public-CLI regression test, update the dashboard
+  decision link, and supersede the stale status wording without changing evaluation evidence, metrics,
+  gates, or the `INVALID` live boundary. PR #141 remains Draft; every new head must pass the same four
+  hosted jobs before another independent review. Merge remains explicitly excluded.
+- **The two bullets below are the prior publication-authorization and local-audit checkpoints; neither
+  is the current state.**
 - **Current state, 2026-08-03 (submission-readiness Git publication authorized).** The owner approved
   creation of `chore/submission-readiness`, one Lore commit containing only the public repository
   submission changes, push to `origin`, and a pull request targeting `develop`. Merge is explicitly

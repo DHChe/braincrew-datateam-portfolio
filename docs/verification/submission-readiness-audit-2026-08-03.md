@@ -57,3 +57,26 @@ the repaired dependency lock and application code. No source or container contra
 
 The local change is ready for the Git lifecycle proposal. It is not yet ready to send to a recruiter
 because remote CI, reviewed integration into `main`, and owner-provided CV facts remain outstanding.
+
+## Post-publication verification and independent-review follow-up
+
+The scope, remaining-gate list, and decision above are the preserved pre-publication audit. They were
+accurate before commit `a089b645a89321fb57905f60111f1a1343289e96` was pushed and
+[PR #141](https://github.com/DHChe/evidence-first-rag-evaluation/pull/141) was opened; they are not the
+current GitHub state.
+
+The first hosted run on that exact commit passed all four jobs: `python`, `fixture-container`, `secrets`,
+and `frontend`. Its frontend log reports `npm 11.12.1`, a clean locked install with zero known
+vulnerabilities, a successful Next.js `16.2.12` static build, and two passing Playwright tests. The
+container job also completed successfully without a host mount and with `--network none` at runtime.
+
+Independent review after that run found a separate rename regression: the authoring launcher still
+accepted only the repository's former GitHub name, while the public origin is now
+`evidence-first-rag-evaluation`. The owner approved a bounded follow-up in the same Draft PR: retain the
+former URLs as compatibility aliases, accept the current HTTPS/SSH forms, add a public-CLI regression
+test, update the dashboard link, and synchronize the reviewer-facing status. No evaluation evidence,
+metric, gate, live run, or private application material enters that repair.
+
+The remaining submission gates are a successful hosted run and independent review on the repaired PR
+head, reviewed integration through `develop` to `main`, and completion of the private CV facts. Draft
+status and the explicit no-merge boundary remain unchanged.
