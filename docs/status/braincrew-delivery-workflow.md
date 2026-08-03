@@ -25,6 +25,16 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-03 (#15; same-commit 30-case re-capture).** The owner-authorized external
+  run now assembles all 30 Verification cases at `5b0f5f2`: parsing is `COMPLETED` 6/6 and retrieval is
+  `COMPLETED` 9/9. Both baseline and candidate remain `INVALID`, however, because grounded answer
+  coverage is zero. The 2026-08-02 baseline artifact already recorded that grounded failure, so the
+  earlier attribution to the parsing partition alone was an error, not a later discovery. No comparison
+  artifact, answer-quality verdict, or release decision exists; the dashboard keeps its golden fixture,
+  which a separately scoped frontend cycle labelled **“Fixture evidence — not a live AX verification.”**
+  The external artifacts are neither published under `evidence/` nor public-suitability reviewed.
+- **The two bullets below are the prior #131 clean replacement-capture checkpoint and its marker;
+  neither is the current state.**
 - **Current state, 2026-08-03 (#131; clean replacement parsing capture).** The
   external replacement manifest for `issue-131-parsing-2026-08-03` records a
   clean Evaluation Plane at `6c4f5ae`, a clean `5b0f5f2` SUT warrant, six exact
@@ -920,6 +930,27 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-03 (#15) — same-commit assembly completes two partitions and corrects the grounded attribution
+
+- **The 30-case assembly is now real but still `INVALID`.** The external preflight is `READY` with zero
+  blockers (`sha256:a13074e116c9664f04a1881dc2598d1ce4a02983b3e0279c1b6f19b5c7b0a532`). Reconstructed
+  baseline and candidate evaluations at AX `5b0f5f2` are `INVALID` with logical digests
+  `sha256:86f2563a714f711f2c1c6dcf3a2b0a80bfec087d26446e09f6785b9d3f2bd6b7` and
+  `sha256:dd03f4c4d198173d5cb8d6b9b1cffc8c3ec9785d365b2b606ed51faab4fd3365`. Parsing is `COMPLETED`
+  6/6 and retrieval is `COMPLETED` 9/9; grounded is `INVALID` with zero Verification citation-precision
+  and claim-support coverage.
+- **The prior attribution was wrong and is recorded as such.** The 2026-08-02 baseline artifact already
+  had `grounded: INVALID` with the same two zero coverage fields. The parsing partition was a real
+  assembly barrier, but it was not the cause of this outcome; the available artifact evidence was not
+  read before the re-capture decision. Thirteen grounded provider answers are discarded for
+  `citation_contract_violation=True` with `unsafe_provider_output=False`, and the two remaining paths add no
+  usable answer-quality evidence.
+- **The comparison and dashboard boundaries remain fail-closed.** `comparison.py:427` requires both
+  runs to be `COMPLETED`, so no comparison artifact can exist for this SUT state. The dashboard retains
+  its golden fixture instead of manufactured live data; a separately scoped frontend cycle labelled it
+  **“Fixture evidence — not a live AX verification.”** No source, test, fixture, dashboard, runtime,
+  attachment, provider, `evidence/`, or Git state changed in this documentation checkpoint.
 
 ### 2026-08-03 (#131) — clean replacement parsing capture resolves the post-guard permit gap
 

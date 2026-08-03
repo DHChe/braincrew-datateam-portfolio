@@ -132,6 +132,7 @@ h1 {
 }
 .evidence-mode {
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
   align-items: center;
   padding: 14px 0;
@@ -144,6 +145,16 @@ h1 {
   margin-right: auto;
   color: #f2c77c;
   font-size: 11px;
+}
+.evidence-mode-reason {
+  flex-basis: 100%;
+  margin: 0;
+  color: #c3cec8;
+  line-height: 1.5;
+}
+.evidence-mode-reason a {
+  color: #f2c77c;
+  text-underline-offset: 2px;
 }
 
 .content-section {
