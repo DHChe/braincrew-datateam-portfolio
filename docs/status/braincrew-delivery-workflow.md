@@ -25,6 +25,22 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Current state, 2026-08-03 (submission-readiness Git publication authorized).** The owner approved
+  creation of `chore/submission-readiness`, one Lore commit containing only the public repository
+  submission changes, push to `origin`, and a pull request targeting `develop`. Merge is explicitly
+  excluded. The sibling `/Users/astralpig/braincrew-submission-private` directory containing the CV,
+  application email, study plan, and practice records is outside the repository and outside the commit.
+  Completion requires the remote branch, commit, and pull-request head to agree; hosted checks then
+  become the active gate.
+- **Current state, 2026-08-03 (submission security and reproducibility audit).** A pinned
+  `npm@11.12.1` clean install reproduced four high-severity audit findings in the prior dashboard
+  dependency graph. Next.js and `eslint-config-next` are now `16.2.12`, transitive PostCSS is
+  `8.5.25`, and sharp is `0.35.3`; the same pinned audit reports zero known vulnerabilities. CI now
+  installs the declared npm version instead of relying on the Node image's bundled npm. Host-side
+  format, lint, type, unit, static-build, and Playwright checks pass; a no-cache, network-isolated
+  container also passes the Python and fixture gates. Hosted CI remains unverified until a pull
+  request runs. No commit, push, pull request, or merge has been performed for this audit.
+
 - **Current state, 2026-08-03 (#15; same-commit 30-case re-capture).** The owner-authorized external
   run now assembles all 30 Verification cases at `5b0f5f2`: parsing is `COMPLETED` 6/6 and retrieval is
   `COMPLETED` 9/9. Both baseline and candidate remain `INVALID`, however, because grounded answer

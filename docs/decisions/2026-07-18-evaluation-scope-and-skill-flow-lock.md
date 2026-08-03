@@ -519,9 +519,9 @@ The Evaluation Plane uses a Python evaluation core, DuckDB over Parquet and JSON
 
 ### Recruiter-facing dashboard
 
-- root-managed `npm@11.12.1` with committed `package-lock.json` lockfile v3; `npm ci` is the only frozen frontend install path and requires no additional global package manager;
-- Next.js `16.2.10`, React and React DOM `19.2.7`, and TypeScript `5.9.3` on Node.js `>=20.19.0`;
-- Prettier `3.9.5` for format checking and ESLint `9.39.5` with `eslint-config-next@16.2.10` for linting; npm overrides transitive PostCSS to `8.5.10` so the frozen install contains no known npm-audit vulnerability;
+- root-managed `npm@11.12.1` with committed `package-lock.json` lockfile v3; `npm ci` is the only frozen frontend install path and requires no additional package-manager family;
+- Next.js `16.2.12`, React and React DOM `19.2.7`, and TypeScript `5.9.3` on Node.js `>=20.19.0`;
+- Prettier `3.9.5` for format checking and ESLint `9.39.5` with `eslint-config-next@16.2.12` for linting; npm overrides transitive PostCSS to `8.5.25` and sharp to `0.35.3` so the frozen install contains no known npm-audit vulnerability;
 - Vitest `4.1.10` for deterministic TypeScript export/view-model contract tests;
 - Playwright `1.61.1` with its pinned Chromium binary for a browser smoke test against the completed static export;
 - static export with no required server runtime;
@@ -531,6 +531,14 @@ The Evaluation Plane uses a Python evaluation core, DuckDB over Parquet and JSON
 - changing experiment results requires generating a new export and rebuilding the site.
 
 The locked frontend command contract is `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`, and `npm run test:e2e`. `npm run build` must produce `dashboard/out` through `output: "export"`; `npm run test:e2e` installs the package-pinned Chromium binary when absent, serves only that completed directory, and checks the golden decision and totals in a real browser.
+
+The 2026-08-03 submission-security maintenance decision supersedes only the earlier Next.js,
+`eslint-config-next`, PostCSS, and sharp dependency pins. It preserves npm, Node, React, TypeScript, ESLint,
+Vitest, Playwright, static export, readonly evidence projection, and every scoring boundary. CI now
+installs `npm@11.12.1` explicitly so its runtime matches the declared package contract. The sharp
+override is deliberately outside Next.js `16.2.12`'s declared optional range; compatibility is locally
+measured for this static application, which does not import `next/image`, rather than claimed from the
+upstream range.
 
 Rejected package-manager alternatives are pnpm, Yarn, and Bun. They offer workspace or installation-performance benefits, but this repository has no existing frontend workspace, manifest, lockfile, or package-manager convention that justifies another bootstrap dependency. Rejected test alternatives are Jest, which duplicates Vitest's contract-test role with more configuration, and Cypress, which adds a second browser-test ecosystem when Playwright already provides a package-pinned browser and static-server orchestration. The accepted trade-off is a larger `package-lock.json` and a first-run Chromium download in exchange for a frozen, globally tool-free install and a browser check that exercises the actual static output.
 

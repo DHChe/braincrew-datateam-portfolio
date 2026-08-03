@@ -86,6 +86,12 @@ jobs:
           node-version: 20.19.0
           cache: npm
 
+      - name: Install repository-pinned npm
+        run: npm install --global npm@11.12.1
+
+      - name: Report npm version
+        run: npm --version
+
       - name: Install locked dependencies
         run: npm ci
 
