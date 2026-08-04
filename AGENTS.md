@@ -47,6 +47,7 @@ npx --yes npm@11.12.1 run lint
 npx --yes npm@11.12.1 run typecheck
 npx --yes npm@11.12.1 test -- --run
 npx --yes npm@11.12.1 run build
+npx --yes npm@11.12.1 run test:build-output
 npx playwright install --with-deps chromium
 npx --yes npm@11.12.1 run test:e2e
 ```
