@@ -25,6 +25,34 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Blocked phase, 2026-08-05 (Issue #152 — the separate CV link update).**
+  [#152](https://github.com/DHChe/evidence-first-rag-evaluation/issues/152) cannot start as written.
+  Its verification requires running "the private CV workspace's structural and rendered-output checks,
+  including its required-link and fixture-boundary checks", and it requires a CV source whose links can
+  be edited. Pane 1 inspected the known private applicant-materials path,
+  `/Users/astralpig/braincrew-private/`: it exists but contains only `docs/research/` (three files),
+  `docs/interview/braincrew-data-portfolio-defense.md`, and `misc/hackathon-talk-captions.ko.vtt`. It is
+  not a Git repository, and it holds **no CV source, no CV output, and no workspace with checks**. So the
+  artifact #152 targets is either somewhere this session cannot see or does not exist yet. This is an
+  owner question, not an implementation gap; nothing was created or edited to work around it. Per
+  [#147](https://github.com/DHChe/evidence-first-rag-evaluation/issues/147)'s own decision the CV is a
+  separate repository/artifact change that must not be bundled into this repository's Git lifecycle, so
+  no work on it belongs here regardless of the answer.
+- **Completed phase, 2026-08-05 (Issue #151 implementation — fresh-context implementation per ready ticket).**
+  Two review-gated cycles added four lines to `README.md`, committed as `4e440f3`, merged to `develop`
+  as `37387ae` via PR #160, and released to `main` as `b0523db` via PR #161. GitHub renders the default
+  branch's README and the default branch is `main`, so the release — not the `develop` merge — is what
+  puts the link in front of a visitor. Pane 3's review returned PASS on all four dimensions with no
+  blocking defects and recommended committing as written. Two omissions in the wording are deliberate:
+  it does not call the deployment "verified", because the smoke check proves the served surface is
+  coherent rather than current; and it does not reproduce the page's exact **“Fixture evidence — not a
+  live AX verification”** literal, because that string is the page's contract with exactly one gate
+  keeping it honest, and a second copy in the README would have none. The negation the README does make
+  is stricter than the page's own, adding "or an answer-quality result". Pane 1 verified before commit
+  that the Pages link is byte-identical to `gh api .../pages --jq .html_url` including its trailing
+  slash, so it takes no redirect; that the source link matches `full_name` from the API, worth
+  confirming on a repository that has been renamed before; and that the em dash is U+2014 rather than a
+  substituted hyphen.
 - **Completed phase, 2026-08-05 (Issue #150 implementation — fresh-context implementation per ready ticket).**
   Three review-gated cycles added a `smoke` job to `pages-deploy.yml` and
   `scripts/verify-deployed-pages.sh`, committed as `4a0bf91` on
@@ -1158,6 +1186,43 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-05 (#151, #152) — the public entry point is delivered, and the CV frontier stops at a missing artifact
+
+- **Phase and workflow.** Fresh-context implementation per ready ticket for
+  [#151](https://github.com/DHChe/evidence-first-rag-evaluation/issues/151), run as two review-gated
+  cycles. Expected artifact: `Live dashboard` and `Source code` links in the public README. Completion
+  condition: #151's acceptance criteria met with reproduced evidence and an independent review.
+- **The control this cycle existed to protect.** This is the first place in the repository where a
+  public URL is described to a reader who has **not yet clicked it**. The deployed page carries its
+  fixture boundary above the fold, but a reader who forms an expectation from the README first would
+  meet that boundary as a retraction rather than as a boundary. The disclaimer therefore sits in the
+  same clause that offers the link, ahead of any click.
+- **Completion evidence.** Both links resolve; the Pages link is byte-identical to
+  `gh api .../pages --jq .html_url` including its trailing slash, so it takes no redirect; the source
+  link matches `full_name` from the API; the em dash is U+2014 rather than a substituted hyphen; no
+  stale clone-and-build guidance remains. Nine pinned frontend gates from a tree with no build output,
+  plus `ruff`, `mypy`, and `pytest -q` at 614 passed — the Python suite matters here because acceptance
+  tests in this repository assert on README content. Released to `main` as `b0523db`; both post-release
+  `main` runs passed, including the Pages deployment and its smoke job.
+- **Two deliberate omissions, recorded so they are not "fixed" later.** The README does not describe the
+  deployment as *verified*, because the smoke check proves the served surface is coherent rather than
+  current. And it does not reproduce the page's exact boundary literal, because that string has exactly
+  one authoritative home and one gate; a second copy would have none, which is the drift shape this
+  project has already been bitten by twice.
+- **Three dated records now contradict the live URL and must stay.**
+  `docs/decisions/2026-08-04-github-pages-main-only-artifact-deployment.md:53` says Pages is disabled,
+  and this file at `:1237` and `:1272` says nothing is public. All three were true when written.
+  `AGENTS.md` requires completed phases and their evidence to remain visible, and #147 forbids
+  rewriting historic status entries. Reconcile only through a superseding note in a newer document —
+  this entry is that note.
+- **Next action and its entry condition.** [#152](https://github.com/DHChe/evidence-first-rag-evaluation/issues/152)
+  is unblocked by #150 but **cannot start**: the private applicant-materials path
+  `/Users/astralpig/braincrew-private/` holds only research documents, an interview defense dossier,
+  and a talk-captions file — no CV source, no CV output, and no workspace with the structural and
+  rendered-output checks #152's verification requires. The owner must say where the CV lives, or
+  whether it exists yet. No CV artifact was created or edited to work around this, and by #147's
+  decision none of that work belongs in this repository in any case.
 
 ### 2026-08-05 (#150) — the dashboard is public, and the workflow that publishes it now checks its own result
 
