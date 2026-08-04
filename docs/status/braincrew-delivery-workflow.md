@@ -1095,6 +1095,75 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
 
+### 2026-08-04 (#148) — the fixture dashboard resolves at its Pages project path, and that seam gains a gate that can fail
+
+- **Phase and workflow.** Fresh-context implementation per ready ticket, run as six review-gated cycles
+  on the standing three-pane cmux team: pane 1 orchestrating and reproducing, pane 2 implementing,
+  pane 3 reviewing independently. Expected artifact: a static export configured for
+  `/evidence-first-rag-evaluation` plus a build-output assertion protecting that seam. Completion
+  condition: #148's four acceptance criteria met with reproduced evidence and an independent review.
+- **The control this cycle existed to create.** The previous local static server answered a missing
+  asset under the project prefix with `200 text/html`, and answered a *real* chunk requested at that
+  prefix the same way. Every asset below the project path was a soft 404, so a browser gate could not
+  observe a broken deployment at all. `scripts/serve-static.mjs` now mounts `dashboard/out/` only below
+  the project path and returns real 404s, and the browser guard fails a `/_next/` response that is 4xx
+  **or** `text/html`.
+- **Completion evidence.** All nine pinned frontend gates reproduced from a tree containing no build
+  output, on the `develop` base. Controls proved by mutation rather than inspection: removing a loaded
+  chunk fails both browser tests; removing the `noModule` chunk Chromium never requests fails only
+  `npm run test:build-output`; the unmodified spec run against the old `serve -s` fails both tests on
+  seven assets; the build-output gate fails readably before a build; the runtime path pin fails on a
+  changed constant. Fixture values, provenance, the read-only data path, and the visible **“Fixture
+  evidence — not a live AX verification”** boundary are byte-unchanged.
+- **The blocking defect the review caught.** The build-output assertion first ran inside the default
+  Vitest suite, which CI executes before `Build static dashboard`. It passed locally only because a
+  stale build directory happened to exist, and would have failed on every clean checkout. Repaired by
+  splitting it behind `npm run test:build-output`, invoked after `build` in the workflow, `AGENTS.md`,
+  and `README.md`, so the ordering is stated by the tooling instead of remembered by a contributor.
+- **Limits recorded rather than closed.** Both sides of the path assertion derive from `pagesBasePath`,
+  so the export is proved self-consistent, not canonical; [#150](https://github.com/DHChe/evidence-first-rag-evaluation/issues/150)
+  owns that proof. A stale `dashboard/site-config.d.cts` declaration remains invisible to
+  `tsc --noEmit`.
+- **Next action and its entry condition.** [PR #153](https://github.com/DHChe/evidence-first-rag-evaluation/pull/153)
+  merges `feat/issue-148-pages-project-path` into `develop` once required checks pass; #148 must then be
+  closed by hand, because `Closes #N` does not fire on a merge into `develop`. The next ticket is
+  [#149](https://github.com/DHChe/evidence-first-rag-evaluation/issues/149), whose Pages workflow must
+  invoke `test:build-output` after its build.
+
+### 2026-08-04 (#147) — the Pages publication specification decomposes into a dependency-ordered ticket set
+
+- **Phase and workflow.** `to-tickets` against the locked implementation specification. Expected
+  artifact: `ready-for-agent` GitHub tickets carrying acceptance and verification contracts, in
+  dependency order. Completion condition: every ticket labelled and every blocking relationship
+  recorded natively.
+- **Completion evidence.** [#148](https://github.com/DHChe/evidence-first-rag-evaluation/issues/148)
+  makes the static export correct at the repository project path;
+  [#149](https://github.com/DHChe/evidence-first-rag-evaluation/issues/149) adds main-only Actions
+  artifact-to-Pages deployment; [#150](https://github.com/DHChe/evidence-first-rag-evaluation/issues/150)
+  verifies the actual public URL, static assets, fixture warning, and fixture-only PASS explanation.
+  The verified-URL frontier then splits into
+  [#151](https://github.com/DHChe/evidence-first-rag-evaluation/issues/151) (README links) and
+  [#152](https://github.com/DHChe/evidence-first-rag-evaluation/issues/152) (a separate private-CV link
+  update).
+- **Next action and its entry condition.** Implementation of the only unblocked ticket, #148, in fresh
+  context with TDD and independent review. No code, deployment, CV artifact, or Git lifecycle action
+  occurred in this phase.
+
+### 2026-08-04 (#147) — the owner locks the Pages publication route and its evidence boundary
+
+- **Phase and workflow.** `to-spec` for publishing the recruiter-facing fixture dashboard. Expected
+  artifact: a labelled implementation specification. Completion condition: owner decisions recorded and
+  the specification marked `ready-for-agent`.
+- **Completion evidence.** The owner chose the repository's default GitHub Pages project URL, automatic
+  publication from `main`, and a CV presentation of `Live dashboard` followed by `Source code`. The
+  resulting [specification](https://github.com/DHChe/evidence-first-rag-evaluation/issues/147) requires
+  a static artifact-to-Pages workflow, an actual public-URL smoke check, and retention of the visible
+  **“Fixture evidence — not a live AX verification”** boundary. It excludes live AX or provider
+  execution, changes to fixture evidence, custom domains, generated-output commits, and CV edits in this
+  repository.
+- **Next action and its entry condition.** `to-tickets`, entered once the specification carried the
+  `ready-for-agent` label. No code, deployment, CV edit, or Git lifecycle action occurred in this phase.
+
 ### 2026-08-03 (#15) — same-commit assembly completes two partitions and corrects the grounded attribution
 
 - **The 30-case assembly is now real but still `INVALID`.** The external preflight is `READY` with zero
