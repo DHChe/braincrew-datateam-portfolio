@@ -13,7 +13,6 @@ ISSUE_DRAFT_PATH = (
     PROJECT_ROOT
     / "docs/superpowers/specs/2026-07-21-independent-evaluation-corpus-provisioning-issue-draft.md"
 )
-INTERVIEW_PATH = PROJECT_ROOT / "docs/interview/braincrew-data-portfolio-defense.md"
 STATUS_PATH = PROJECT_ROOT / "docs/status/braincrew-delivery-workflow.md"
 
 CONTENT_SCHEMA_DIGEST = "372118334771854c867d3e7168331ed4cabb9380db95d4aa624345bbe004b1cb"
@@ -74,11 +73,10 @@ def test_issue_35_commit_and_ax_36_proof_converge_only_before_operator_load() ->
 def test_issue_36_data_creation_gate_is_approved_for_a_new_session() -> None:
     design = DESIGN_PATH.read_text(encoding="utf-8")
     issue_draft = ISSUE_DRAFT_PATH.read_text(encoding="utf-8")
-    interview = INTERVIEW_PATH.read_text(encoding="utf-8")
     status = STATUS_PATH.read_text(encoding="utf-8")
     normalized_design = " ".join(design.split())
 
-    for document in (design, issue_draft, interview):
+    for document in (design, issue_draft):
         normalized_document = " ".join(document.split())
         assert "schemas/ax-synthetic-seed-content-v1.schema.json" in document
         assert CONTENT_SCHEMA_DIGEST in document
@@ -134,7 +132,7 @@ def test_issue_36_data_creation_gate_is_approved_for_a_new_session() -> None:
         "four exact input digests",
         "all lifecycle target paths",
     )
-    for document in (design, interview, status):
+    for document in (design, status):
         normalized_document = " ".join(document.split())
         normalized_casefold = normalized_document.casefold()
         missing_facts = [
@@ -184,16 +182,11 @@ def test_issue_36_data_creation_gate_is_approved_for_a_new_session() -> None:
     assert "provenance sidecar" in design
     assert "sealer support for accepting, preserving, and replaying" in normalized_design
     assert "provenance sidecar" in issue_draft
-    assert "provenance sidecar" in interview
-    normalized_interview = " ".join(interview.split())
-    assert "post-commit byte equality is **PASS**" in normalized_interview
+    normalized_status = " ".join(status.split())
     assert (
         "PR #49 merged Issue #47 into `develop` as `4d80b9b8950f4d7356a9aa9806f492ae79126dab`"
-        in normalized_interview
+        in normalized_status
     )
-    assert "checks succeeded, and Issue #47 is closed" in normalized_interview
-    assert "The separate data-creation proposal gate must still pass" not in normalized_interview
-    assert "remains blocked until post-commit byte equality passes" not in normalized_interview
 
     assert "Issue #47 repaired staged authoring to expose the content schema" in normalized_design
     assert "The merged launcher still requires Issue #47 repair" not in normalized_design
@@ -236,7 +229,6 @@ def test_canonical_design_records_the_issue_47_sealing_and_authoring_boundary() 
 def test_issue_47_documents_independent_review_and_portable_replay() -> None:
     documents = (
         CANONICAL_DESIGN_PATH.read_text(encoding="utf-8"),
-        INTERVIEW_PATH.read_text(encoding="utf-8"),
         STATUS_PATH.read_text(encoding="utf-8"),
     )
 
@@ -291,7 +283,6 @@ def test_issue_46_locks_source_first_freeze_and_successor_version_boundary() -> 
     documents = (
         DESIGN_PATH.read_text(encoding="utf-8"),
         ISSUE_DRAFT_PATH.read_text(encoding="utf-8"),
-        INTERVIEW_PATH.read_text(encoding="utf-8"),
         STATUS_PATH.read_text(encoding="utf-8"),
     )
     required_contract_facts = (
@@ -346,7 +337,7 @@ def test_issue_46_locks_source_first_freeze_and_successor_version_boundary() -> 
         "cross-validate the unchanged sealed pack against the successor dataset" in execution_order
     )
 
-    current_checkpoint = _section(documents[3], "## Current checkpoint", "## Transition history")
+    current_checkpoint = _section(documents[2], "## Current checkpoint", "## Transition history")
     assert "Completed predecessor: PR #49 merged Issue #47" in current_checkpoint
     assert "Issue #46 is `CLOSED` after PR #48" in current_checkpoint
     assert "Issue #36 authoring, manual review, sealing, and replay are complete" in (
@@ -434,7 +425,6 @@ def test_issue_37_records_terminal_qualification_evidence_and_ax_gate() -> None:
     documents = (
         DESIGN_PATH.read_text(encoding="utf-8"),
         CANONICAL_DESIGN_PATH.read_text(encoding="utf-8"),
-        INTERVIEW_PATH.read_text(encoding="utf-8"),
         STATUS_PATH.read_text(encoding="utf-8"),
     )
     digest_evidence = (

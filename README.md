@@ -303,7 +303,6 @@ claim.
 | `datasets/` | frozen dataset manifests and case bundles |
 | `dashboard/` | statically exported Next.js dashboard (renders fixture evidence, labelled as such) |
 | `docs/decisions/` | locked design decisions, each with rejected alternatives and failure modes |
-| `docs/interview/` | defense dossier — every locked decision with its trade-offs and likely questions |
 | `docs/status/` | append-only delivery record |
 | `docs/superpowers/specs/` | the design specification this release is measured against |
 

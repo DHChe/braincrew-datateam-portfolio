@@ -204,10 +204,9 @@ These are active contract assertions or fixtures. They must move atomically with
 Their old SHA records what was locked or implemented at that time. This new decision supersedes the
 operative pin without erasing that audit trail.
 
-`docs/status/braincrew-delivery-workflow.md` and
-`docs/interview/braincrew-data-portfolio-defense.md` are living records, but their historical
-entries must also remain intact. They require appended current-state/defence entries, not a global
-replacement. They are intentionally outside this cycle's pane-2 write scope.
+`docs/status/braincrew-delivery-workflow.md` is a living record, but its historical
+entries must also remain intact. It requires appended current-state entries, not a global
+replacement. It is intentionally outside this cycle's pane-2 write scope.
 
 ## 7. Why a future re-pin could be wrong, and how to notice
 

@@ -500,7 +500,7 @@ def test_wheel_contains_historical_v2_and_successor_v3_replay_resources(
             "dataset-manifest-v2",
         ),
         (
-            "docs/interview/braincrew-data-portfolio-defense.md",
+            "docs/reviews/2026-07-23-issue-53-successor-dataset-review.md",
             "DHChe-successor-dataset-reviewer",
         ),
         (

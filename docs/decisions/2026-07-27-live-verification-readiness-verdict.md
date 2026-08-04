@@ -167,9 +167,9 @@ remaining work there is **operational**, not implementable.
   assert an arbitrary dataset, and because it is *evidence* rather than a *verdict* — it claims
   nothing about readiness. Present at `87c0fc4` and before. Recorded so it is a **known** choice
   rather than an unexamined one.
-- **The defense dossier is load-bearing for two test files.**
+- **Canonical documents are load-bearing for two test files.**
   `tests/contract/test_successor_dataset_freeze.py` and
-  `tests/acceptance/test_corpus_provisioning_workflow_order.py` assert that
-  `docs/interview/braincrew-data-portfolio-defense.md` contains specific strings. Additive edits are
-  safe; a future **rewrite** of that document can turn the suite red from a documentation change
-  alone. Worth knowing before anyone reorganizes it.
+  `tests/acceptance/test_corpus_provisioning_workflow_order.py` assert that the canonical design,
+  issue-draft, review, and status documents contain specific strings. Additive edits are
+  safe; a future **rewrite** of one of them can turn the suite red from a documentation change
+  alone. Worth knowing before anyone reorganizes them.
