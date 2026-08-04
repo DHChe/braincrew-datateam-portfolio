@@ -1,6 +1,6 @@
 # Braincrew Portfolio Delivery Workflow Status
 
-Last updated: 2026-08-04
+Last updated: 2026-08-05
 
 ## Purpose
 
@@ -25,6 +25,29 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Completed phase, 2026-08-05 (Issue #155 implementation — fresh-context implementation per ready ticket).**
+  Three review-gated cycles added a `workflow-lint` job to `Quality gates`, committed as `474449b` on
+  `feat/issue-155-workflow-lint`. It runs the official `actionlint` v1.7.12 OCI image, pinned by
+  digest, against every file under `.github/workflows/`, on every pull request. The ticket was
+  scheduled deliberately ahead of enabling GitHub Pages and ahead of the first `develop` → `main`
+  release, because `pages-deploy.yml` is `main`-triggered and had therefore never executed anywhere:
+  linting it before its first production run is the point. Pane 1 measured the gate's decisive
+  property directly — mistyping `branches:` as `branchez:` in that file yields exit 1, and parsing the
+  mistyped file shows `{'push': {'branchez': ['main']}}`, which GitHub would treat as a `push` trigger
+  with no branch filter and therefore publish the public dashboard from every branch. Pane 1 also
+  measured that the gate is fail-closed rather than vacuous: with nothing to examine it exits 3 with
+  `no project was found in any parent directories`, so a broken mount produces a red build instead of
+  a silent green one. Pane 3's review returned no blocking defects but found that the decision
+  document claimed the release binary "applies the same actionlint rules" as the image; pane 1
+  reproduced that this is false — the image bundles `shellcheck` and `pyflakes`, and the bare binary
+  silently accepts a genuine bash syntax error in a `run:` step — and the record was corrected without
+  weakening the gate, whose image is strictly stronger. The review also removed the command from
+  `README.md`, which #155 never required, and a new acceptance test now asserts that the digest in
+  `AGENTS.md` matches the workflow's, proved load-bearing by mutation. **Nothing was deployed and
+  nothing is public**; GitHub Pages remains disabled. One limit is recorded rather than closed: the
+  container invocation itself is unexercised, because the Docker daemon was unavailable, so every
+  control proof used the checksum-verified release binary and the first hosted run is the integration
+  evidence that closes it.
 - **Completed phase, 2026-08-04 (Issue #149 implementation — fresh-context implementation per ready ticket).**
   Three review-gated cycles produced `.github/workflows/pages-deploy.yml`, committed as `6bf763d` on
   `feat/issue-149-pages-deployment`. Its only trigger is a `push` whose branch filter is `main`; the
@@ -1113,6 +1136,44 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-05 (#155) — workflow YAML gains a pull-request gate before the main-only workflow ever runs
+
+- **Phase and workflow.** Fresh-context implementation per ready ticket, run as three review-gated
+  cycles. Expected artifact: a gate validating every file under `.github/workflows/` on pull requests.
+  Completion condition: #155's acceptance criteria met with reproduced evidence and an independent
+  review.
+- **Why this was scheduled before the release.** `pages-deploy.yml` triggers only on `push` to `main`,
+  so it cannot be exercised on a pull request and had never executed anywhere. Its first run would
+  otherwise have been in production, on the recruiter-facing branch. Ordering this ticket ahead of
+  enabling GitHub Pages was a deliberate sequencing decision, and the measured evidence supports it:
+  mistyping `branches:` as `branchez:` in that file gives exit 1 from the new gate, and the mistyped
+  file parses as `{'push': {'branchez': ['main']}}` — a `push` trigger GitHub would read as having no
+  branch filter, publishing the public dashboard from every branch.
+- **Completion evidence.** Pane 1 checksum-verified `actionlint` 1.7.12 against the published
+  checksums file; measured exit 3 for an empty directory and for workflows without `.git`, confirming
+  the gate is fail-closed rather than able to pass while examining nothing; measured exit 1 for the
+  `branchez:` defect; confirmed the pinned digest is byte-identical to the `1.7.12` tag's OCI index
+  and contains `linux/amd64`; proved the new digest-parity test load-bearing by mutating the
+  `AGENTS.md` copy, observing the failure, and restoring byte-identically; and reproduced the nine
+  pinned frontend gates plus `ruff`, `mypy`, and `pytest -q` at 614 passed with no `schemas/` drift.
+- **What the review changed.** Pane 3 returned no blocking defects but found the decision document
+  asserting that the release binary "applies the same actionlint rules" as the image. Pane 1
+  reproduced that this is false: the image bundles `shellcheck` and `pyflakes`, and the bare binary
+  exits 0 without comment on a genuine bash syntax error in a `run:` step. The record was corrected
+  rather than the gate weakened — CI is strictly stronger than the proof. The review also removed the
+  command from `README.md`, which #155 never required and where an unexplained Docker prerequisite sat
+  inside an otherwise pure `uv` sequence, and prompted the parity test that keeps the two remaining
+  digest copies from drifting.
+- **Limit recorded rather than closed.** The container invocation is unexercised: the Docker daemon
+  was unavailable, so every control proof used the release binary. The image config confirms
+  `Entrypoint: actionlint` with `Cmd: null`, so the argument shape tested matches what CI runs, but
+  the mount, the `:ro` flag, and the image's non-root `guest` user close only on the first hosted run.
+- **Next action and its entry condition.** Merge into `develop` through a reviewed pull request, then
+  close #155 by hand. **Nothing is public and nothing was deployed.** The reserved owner action —
+  enabling GitHub Pages with GitHub Actions as its publishing source — remains required before the
+  next `develop` → `main` release, and #150 is still the first check that can prove the deployment
+  works.
 
 ### 2026-08-04 (#149) — the deployment path exists and is unreachable from any branch but `main`
 

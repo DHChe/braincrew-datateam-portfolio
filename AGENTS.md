@@ -17,6 +17,19 @@ uv run mypy
 uv run pytest -q
 ```
 
+Lint every GitHub Actions workflow locally with Docker:
+
+```bash
+docker run --rm \
+  --volume "$PWD:/repo:ro" \
+  --workdir /repo \
+  docker.io/rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+```
+
+The image is the official `actionlint` v1.7.12 OCI manifest pinned by digest.
+It requires a running Docker daemon and, with no file argument, checks all
+workflows under `.github/workflows/`.
+
 Run the Issue #6 tracer-bullet benchmark and deterministic replay check with:
 
 ```bash
