@@ -25,6 +25,28 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Completed phase, 2026-08-05 (Issue #150 implementation — fresh-context implementation per ready ticket).**
+  Three review-gated cycles added a `smoke` job to `pages-deploy.yml` and
+  `scripts/verify-deployed-pages.sh`, committed as `4a0bf91` on
+  `feat/issue-150-deployed-url-verification`. The job takes the URL the deployment job reports —
+  `steps.deployment.outputs.page_url` → `deploy.outputs.page_url` → `needs.deploy.outputs.page_url` —
+  and asserts a successful response, the dashboard heading, the exact **“Fixture evidence — not a live
+  AX verification”** literal, the fixture-only PASS explanation, and a static asset that resolves.
+  Pane 1 re-proved eight control inputs after the retry change: the valid page passes; each of the
+  three literals fails individually; replacing the boundary's em dash with a hyphen fails; an empty URL
+  argument, a 302 without `Location`, an asset 404, and a clean 404 all fail. Pane 3's review returned
+  no blocking defects on all five dimensions and corrected pane 1 on a point pane 1 had held privately:
+  the status-code block is **not** dead code, because `curl --fail` covers only status ≥ 400, and it is
+  the sole guard against an unresolvable 3xx. Acting on pane 1's reading would have deleted it. The
+  review's most consequential addition was retry and timeout flags, because this check runs when a
+  freshly published Pages site is least stable and one transient 404 during edge propagation would
+  otherwise redden the release branch for a timing reason. **Criterion 3's manual browser check was
+  performed by pane 1 against the live public URL**: the heading, the fixture boundary above the fold,
+  the fixture-only PASS explanation, the read-only badge, and working tab interaction — the last
+  proving JavaScript loaded and hydrated from the project path, which is the #148 seam working in
+  production. One limit is recorded rather than closed: the check proves the deployed surface is
+  coherent, not that it is the revision just built, and threading a content-hashed asset filename from
+  the build job is recorded as a follow-up.
 - **Completed phase, 2026-08-05 (Issue #155 implementation — fresh-context implementation per ready ticket).**
   Three review-gated cycles added a `workflow-lint` job to `Quality gates`, committed as `474449b` on
   `feat/issue-155-workflow-lint`. It runs the official `actionlint` v1.7.12 OCI image, pinned by
@@ -1136,6 +1158,48 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-05 (#150) — the dashboard is public, and the workflow that publishes it now checks its own result
+
+- **Phase and workflow.** Fresh-context implementation per ready ticket, run as three review-gated
+  cycles. Expected artifact: a dependent job asserting the deployed URL. Completion condition: #150's
+  acceptance criteria met with reproduced evidence, an independent review, and the manual browser check
+  criterion 3 requires.
+- **The release that preceded it.** #148, #149 and #155 were released to `main` as `5685390`; GitHub
+  Pages was enabled with GitHub Actions as its publishing source; the first deployment run
+  `30923512858` succeeded, with the build job running both `test:build-output` and the browser smoke
+  before uploading. The dashboard is live at `https://dhche.github.io/evidence-first-rag-evaluation/`.
+- **Two things that were inferred are now measured.** The URL GitHub assigned has path
+  `/evidence-first-rag-evaluation`, exactly the pinned `pagesBasePath`, which answers from an
+  authoritative source the "self-consistent, not canonical" limit recorded in #148's review. And the
+  `github-pages` environment carries a `branch_policy` allowing only `main`, a second barrier
+  independent of the workflow trigger, which #149's review hypothesised but could not check while
+  Pages was disabled.
+- **Manual browser check, performed by pane 1 against the live URL.** The page renders the heading
+  **“Release evidence, without the rerun.”**, shows **“Fixture evidence — not a live AX verification”**
+  above the fold beside a large `PASS`, carries the fixture-only explanation naming the two INVALID
+  same-commit runs and the 13 of 15 discarded grounded answers, displays a `READ-ONLY ARTIFACT` badge
+  and the note that identifiers are synthetic and CC0-licensed with no source document text published,
+  and offers no experiment-running control. Switching to the case-evidence tab renders all fifteen
+  cases and its search input, which proves JavaScript loaded and hydrated from the project path — the
+  #148 asset seam working in production rather than only in a local export.
+- **What the review changed.** Pane 3 returned no blocking defects but added retry and timeout flags,
+  on the reasoning that this check runs when a freshly published site is least stable and its most
+  likely failure is therefore a timing false alarm on the release branch. It also corrected pane 1: the
+  status-code block pane 1 privately believed to be dead code is reachable, because `curl --fail`
+  covers only status ≥ 400, and a 302 without a resolvable `Location` exits 1 through it. Pane 1
+  re-measured and confirmed the correction; acting on its own reading would have removed the only 3xx
+  guard while every probe stayed green. Pane 3 also corrected a figure in pane 1's brief: a clean HTTP
+  404 exits 22, not 56 — 56 was a connection reset from the live host.
+- **Limits recorded rather than closed.** The check proves the deployed surface is coherent, not that
+  it is the revision just built; an edge still serving a previous build would pass. Threading a
+  content-hashed asset filename from the build job is recorded as a follow-up. Byte-exact literal
+  matching is deliberate, so an HTML-entity-encoded em dash would fail the gate on a page that still
+  renders correctly.
+- **Next action and its entry condition.** Merge into `develop`, then release to `main` so the smoke
+  job executes for the first time; its log must be read rather than its colour trusted. #150 closes by
+  hand after that. Only then are #151 (README links) and #152 (a separate private CV artifact) safe to
+  start, since both hardcode the URL this cycle verifies.
 
 ### 2026-08-05 (#155) — workflow YAML gains a pull-request gate before the main-only workflow ever runs
 
