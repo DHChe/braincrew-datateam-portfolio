@@ -25,6 +25,25 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Completed phase, 2026-08-04 (Issue #149 implementation — fresh-context implementation per ready ticket).**
+  Three review-gated cycles produced `.github/workflows/pages-deploy.yml`, committed as `6bf763d` on
+  `feat/issue-149-pages-deployment`. Its only trigger is a `push` whose branch filter is `main`; the
+  file contains no `pull_request`, `workflow_dispatch`, `schedule`, `workflow_call`, or `if:`, so a
+  pull request or feature branch cannot start either job rather than being stopped by a guard. A build
+  job rebuilds from `package-lock.json`, runs both #148 gates — `test:build-output` and the browser
+  smoke — and uploads only `dashboard/out`; a dependent deploy job consumes that artifact through the
+  standard `github-pages` environment with only `pages: write` and `id-token: write`. Pane 3's review
+  returned no blocking defects and established that omitting `actions/configure-pages` is required
+  rather than merely acceptable, because its documented role in GitHub's Next.js starter is to inject
+  `basePath` into the Next configuration, which would break the single-source path contract #148
+  locked. Pane 1 reproduced the trigger enumeration, the four action-tag resolutions, both `@v5`
+  action definitions, the nine frontend gates from a tree with no build output, and the Python gates
+  at 613 passed. **Nothing was deployed and nothing is public.** GitHub Pages remains disabled on the
+  repository (`gh api .../pages` → 404), and merging this work into `develop` cannot match the
+  workflow trigger. Two limits are recorded rather than closed: no gate in this repository validates
+  workflow YAML, so every command in #149's verification list gives zero signal for this file; and
+  #149's own bullet asking for validation on a pull request or non-production branch is foreclosed by
+  the main-only design and is closed as superseded, with the reason recorded.
 - **Completed phase, 2026-08-04 (Issue #148 implementation — fresh-context implementation per ready ticket).**
   Six review-gated cycles closed [#148](https://github.com/DHChe/evidence-first-rag-evaluation/issues/148).
   The static export now resolves routes and assets under `/evidence-first-rag-evaluation`, declared
@@ -1094,6 +1113,41 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-04 (#149) — the deployment path exists and is unreachable from any branch but `main`
+
+- **Phase and workflow.** Fresh-context implementation per ready ticket, run as three review-gated
+  cycles on the standing three-pane cmux team. Expected artifact: a GitHub Actions artifact-to-Pages
+  workflow publishing only `main`. Completion condition: #149's acceptance criteria met with
+  reproduced evidence and an independent review.
+- **The control this cycle existed to create.** For a recruiter-facing artifact, publishing unreviewed
+  work is a worse failure than not publishing at all. The workflow therefore has no trigger a pull
+  request or feature branch can match, rather than a condition that stops them: there is no
+  `pull_request`, `workflow_dispatch`, `schedule`, `workflow_call`, or `if:` anywhere in the file. An
+  absent event is unreachable; a guard is one edited expression away from publishing.
+- **Completion evidence.** Pane 1 parsed the workflow and enumerated its trigger surface as exactly
+  `{'push': {'branches': ['main']}}`; resolved all four action tags with `git ls-remote --refs`; read
+  `upload-pages-artifact@v5` and `deploy-pages@v5` definitions directly to confirm `path` and
+  `artifact_name` are unchanged and that v5 runs `node24`; and reproduced the nine pinned frontend
+  gates from a tree with no build output plus `ruff`, `mypy`, and `pytest -q` at 613 passed, with no
+  `schemas/` drift.
+- **What the review changed.** Pane 3 returned no blocking defects but found that the publishing path
+  ran only `test:build-output` — the one gate of #148's complementary pair that cannot prove HTTP
+  behaviour — while `pages-deploy.yml` and `python-ci.yml` fire independently with no dependency
+  between them. The browser smoke was added to the build job in response. The review also found both
+  Pages actions a major or more behind, with `deploy-pages@v4` on the `node20` runtime; both were
+  raised to `@v5`. Pane 1 corrected one review claim: the requirement to enable Pages binds before the
+  later `develop` → `main` release, not before this feature branch merges, because `develop` cannot
+  match the trigger.
+- **Limits recorded rather than closed.** No gate in this repository validates workflow YAML, so a
+  syntax error would be discovered in production; an `actionlint` gate is proposed as its own ticket
+  rather than folded into #149. The concurrency key `pages-${{ github.ref }}` and the `main`-only
+  branch filter carry two guarantees between them, and one edit to `branches:` would break both.
+- **Next action and its entry condition.** Merge into `develop` through a reviewed pull request; #149
+  must then be closed by hand. **Nothing is public and nothing was deployed**: GitHub Pages is still
+  disabled on the repository, and enabling it with GitHub Actions as the publishing source remains a
+  reserved owner action required before the next `develop` → `main` release. #150 is the first check
+  that can prove any of this works.
 
 ### 2026-08-04 (#148) — the fixture dashboard resolves at its Pages project path, and that seam gains a gate that can fail
 
