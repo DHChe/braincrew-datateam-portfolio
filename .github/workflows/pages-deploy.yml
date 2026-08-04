@@ -45,6 +45,8 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       pages: write
       id-token: write
@@ -55,3 +57,15 @@ jobs:
       - name: Deploy static dashboard to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  smoke:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Verify the deployed public dashboard
+        env:
+          PAGES_URL: ${{ needs.deploy.outputs.page_url }}
+        run: bash scripts/verify-deployed-pages.sh "$PAGES_URL"
