@@ -8,12 +8,13 @@
     "npm": ">=11.0.0"
   },
   "scripts": {
-    "format:check": "prettier --check package.json dashboard tests/frontend eslint.config.mjs playwright.config.ts tsconfig.json vitest.config.ts",
-    "lint": "eslint dashboard tests/frontend eslint.config.mjs playwright.config.ts vitest.config.ts",
+    "format:check": "prettier --check package.json dashboard scripts tests/frontend eslint.config.mjs playwright.config.ts tsconfig.json vitest.build-output.config.ts vitest.config.ts",
+    "lint": "eslint dashboard scripts tests/frontend eslint.config.mjs playwright.config.ts vitest.build-output.config.ts vitest.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "build": "next build dashboard",
-    "serve:static": "serve -s dashboard/out -l 4173",
+    "test:build-output": "vitest run --config vitest.build-output.config.ts",
+    "serve:static": "node scripts/serve-static.mjs",
     "pretest:e2e": "playwright install chromium",
     "test:e2e": "playwright test"
   },

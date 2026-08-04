@@ -1,9 +1,30 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+async function openDashboardWithStaticAssetGuard(page: Page) {
+  const failedStaticAssets: string[] = [];
+  page.on("response", (response) => {
+    const pathname = new URL(response.url()).pathname;
+    const contentType = response.headers()["content-type"] ?? "";
+
+    if (
+      pathname.includes("/_next/") &&
+      (response.status() >= 400 || contentType.includes("text/html"))
+    ) {
+      failedStaticAssets.push(
+        `${response.status()} ${contentType || "missing content-type"} ${pathname}`,
+      );
+    }
+  });
+
+  await page.goto("./", { waitUntil: "networkidle" });
+
+  expect(failedStaticAssets).toEqual([]);
+}
 
 test("renders the immutable comparison and its three-gate decision trace", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openDashboardWithStaticAssetGuard(page);
 
   await expect(
     page.getByRole("heading", { name: "Release evidence, without the rerun." }),
@@ -37,7 +58,7 @@ test("renders the immutable comparison and its three-gate decision trace", async
 test("drills into metric, taxonomy, and publishable case evidence without executing experiments", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openDashboardWithStaticAssetGuard(page);
 
   await page.getByRole("tab", { name: "Case evidence" }).click();
   await page.getByLabel("Find case evidence").fill("CASE-001");

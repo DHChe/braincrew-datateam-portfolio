@@ -20,6 +20,7 @@
     "dashboard/**/*.tsx",
     "tests/frontend/**/*.ts",
     "playwright.config.ts",
+    "vitest.build-output.config.ts",
     "vitest.config.ts",
     "dashboard/.next/types/**/*.ts"
   ],

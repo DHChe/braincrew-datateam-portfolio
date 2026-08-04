@@ -1,6 +1,6 @@
 # Braincrew Portfolio Delivery Workflow Status
 
-Last updated: 2026-08-03
+Last updated: 2026-08-05
 
 ## Purpose
 
@@ -25,6 +25,110 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Completed phase, 2026-08-05 (Issue #155 implementation — fresh-context implementation per ready ticket).**
+  Three review-gated cycles added a `workflow-lint` job to `Quality gates`, committed as `474449b` on
+  `feat/issue-155-workflow-lint`. It runs the official `actionlint` v1.7.12 OCI image, pinned by
+  digest, against every file under `.github/workflows/`, on every pull request. The ticket was
+  scheduled deliberately ahead of enabling GitHub Pages and ahead of the first `develop` → `main`
+  release, because `pages-deploy.yml` is `main`-triggered and had therefore never executed anywhere:
+  linting it before its first production run is the point. Pane 1 measured the gate's decisive
+  property directly — mistyping `branches:` as `branchez:` in that file yields exit 1, and parsing the
+  mistyped file shows `{'push': {'branchez': ['main']}}`, which GitHub would treat as a `push` trigger
+  with no branch filter and therefore publish the public dashboard from every branch. Pane 1 also
+  measured that the gate is fail-closed rather than vacuous: with nothing to examine it exits 3 with
+  `no project was found in any parent directories`, so a broken mount produces a red build instead of
+  a silent green one. Pane 3's review returned no blocking defects but found that the decision
+  document claimed the release binary "applies the same actionlint rules" as the image; pane 1
+  reproduced that this is false — the image bundles `shellcheck` and `pyflakes`, and the bare binary
+  silently accepts a genuine bash syntax error in a `run:` step — and the record was corrected without
+  weakening the gate, whose image is strictly stronger. The review also removed the command from
+  `README.md`, which #155 never required, and a new acceptance test now asserts that the digest in
+  `AGENTS.md` matches the workflow's, proved load-bearing by mutation. **Nothing was deployed and
+  nothing is public**; GitHub Pages remains disabled. One limit is recorded rather than closed: the
+  container invocation itself is unexercised, because the Docker daemon was unavailable, so every
+  control proof used the checksum-verified release binary and the first hosted run is the integration
+  evidence that closes it.
+- **Completed phase, 2026-08-04 (Issue #149 implementation — fresh-context implementation per ready ticket).**
+  Three review-gated cycles produced `.github/workflows/pages-deploy.yml`, committed as `6bf763d` on
+  `feat/issue-149-pages-deployment`. Its only trigger is a `push` whose branch filter is `main`; the
+  file contains no `pull_request`, `workflow_dispatch`, `schedule`, `workflow_call`, or `if:`, so a
+  pull request or feature branch cannot start either job rather than being stopped by a guard. A build
+  job rebuilds from `package-lock.json`, runs both #148 gates — `test:build-output` and the browser
+  smoke — and uploads only `dashboard/out`; a dependent deploy job consumes that artifact through the
+  standard `github-pages` environment with only `pages: write` and `id-token: write`. Pane 3's review
+  returned no blocking defects and established that omitting `actions/configure-pages` is required
+  rather than merely acceptable, because its documented role in GitHub's Next.js starter is to inject
+  `basePath` into the Next configuration, which would break the single-source path contract #148
+  locked. Pane 1 reproduced the trigger enumeration, the four action-tag resolutions, both `@v5`
+  action definitions, the nine frontend gates from a tree with no build output, and the Python gates
+  at 613 passed. **Nothing was deployed and nothing is public.** GitHub Pages remains disabled on the
+  repository (`gh api .../pages` → 404), and merging this work into `develop` cannot match the
+  workflow trigger. Two limits are recorded rather than closed: no gate in this repository validates
+  workflow YAML, so every command in #149's verification list gives zero signal for this file; and
+  #149's own bullet asking for validation on a pull request or non-production branch is foreclosed by
+  the main-only design and is closed as superseded, with the reason recorded.
+- **Completed phase, 2026-08-04 (Issue #148 implementation — fresh-context implementation per ready ticket).**
+  Six review-gated cycles closed [#148](https://github.com/DHChe/evidence-first-rag-evaluation/issues/148).
+  The static export now resolves routes and assets under `/evidence-first-rag-evaluation`, declared
+  once in `dashboard/site-config.cjs`; a strict local static server returns real 404s where the
+  previous single-page fallback answered every missing asset with HTTP 200 and the entry page; the
+  browser gate fails on a `/_next/` response that is 4xx **or** `text/html`; and a separate
+  `npm run test:build-output` gate asserts every emitted static reference. Pane 3's cycle-2 review
+  returned one blocking defect — the build-output assertion ran in the default Vitest suite, which CI
+  executes before the build, so it failed on any clean checkout — repaired in cycle 3 by splitting it
+  into its own script invoked after `build` in the workflow, `AGENTS.md`, and `README.md`. Pane 3's
+  cycle-5 re-review returned no blocking defects. Pane 1 independently reproduced every gate from a
+  tree with no build output and proved both controls by mutation: removing a loaded chunk fails both
+  browser tests, and removing a `noModule` chunk the browser never requests fails only the
+  build-output gate, so the two gates are complementary and neither is redundant. Fixture values,
+  provenance, the read-only data path, and the visible **“Fixture evidence — not a live AX
+  verification”** boundary are byte-unchanged. Two limits are recorded rather than closed: the
+  assertion proves the project path is self-consistent, not canonical, and a stale `.d.cts`
+  declaration remains invisible to `tsc`; the first is assigned to [#150](https://github.com/DHChe/evidence-first-rag-evaluation/issues/150).
+  No commit, push, pull request, merge, GitHub issue edit, Pages setting change, or deployment
+  occurred in this phase. The work is uncommitted in the working tree pending an owner-authorized Git
+  lifecycle proposal, and the branch placement is itself part of that proposal because the tree
+  currently sits on `main`.
+- **Started phase, 2026-08-04 (Issue #148 implementation — fresh-context implementation per ready ticket).**
+  The three-pane cmux team is executing [#148](https://github.com/DHChe/evidence-first-rag-evaluation/issues/148),
+  the first unblocked ticket of the GitHub Pages fixture-dashboard set. Pane 2 implements the
+  project-path static export and its build-output assertion; pane 3 will review it independently in
+  the next cycle; pane 1 owns this status file so no two panes edit one file. The cycle covers only
+  `dashboard/next.config.ts`, the new project-path assertion, and the serving and browser-gate wiring
+  needed to make that seam observable. It excludes the Pages workflow and any deployment (#149), the
+  deployed-URL smoke check (#150), the README link (#151), the CV link (#152), fixture values,
+  provenance, the visible boundary literal, and every Git write action. Pane 1 measured before
+  dispatch that the current `serve -s` static server answers a missing static asset with HTTP 200 and
+  the HTML entry page, so a browser gate on the root path cannot observe a broken asset path; making
+  that failure observable is this cycle's control. No commit, push, pull request, merge, Pages
+  setting change, or deployment is authorized by this phase.
+- **Started phase, 2026-08-04 (GitHub Pages fixture-dashboard `to-tickets`).**
+  Pane 1 is decomposing [Issue #147](https://github.com/DHChe/evidence-first-rag-evaluation/issues/147)
+  into dependency-ordered, `ready-for-agent` GitHub tickets. The ticket set will cover the
+  repository-path static export, main-only GitHub Pages artifact deployment, deployed-URL smoke
+  validation, README link, and a separately scoped later CV-link update. It will not change code,
+  deploy Pages, change the CV, commit, push, open a pull request, or merge.
+- **Completed phase, 2026-08-04 (GitHub Pages fixture-dashboard `to-tickets`).**
+  [#148](https://github.com/DHChe/evidence-first-rag-evaluation/issues/148) makes the static export
+  correct at the repository project path; [#149](https://github.com/DHChe/evidence-first-rag-evaluation/issues/149)
+  is blocked by #148 and adds main-only Actions artifact-to-Pages deployment; and
+  [#150](https://github.com/DHChe/evidence-first-rag-evaluation/issues/150) is blocked by #149 and
+  verifies the actual public URL, static asset, fixture warning, and fixture-only PASS explanation.
+  The verified-URL frontier then splits into [#151](https://github.com/DHChe/evidence-first-rag-evaluation/issues/151)
+  (README `Live dashboard` and `Source code` links) and
+  [#152](https://github.com/DHChe/evidence-first-rag-evaluation/issues/152) (a separate private-CV
+  link update); both are blocked by #150. Every ticket has the GitHub `ready-for-agent` label and a
+  native GitHub blocking relationship, as well as its acceptance and verification contract. No code,
+  deployment, CV artifact, commit, push, pull request, or merge occurred in this phase.
+- **Completed phase, 2026-08-04 (GitHub Pages fixture-dashboard `to-spec`).**
+  The owner chose the repository's default GitHub Pages project URL, automatic publication from
+  `main`, and a CV presentation of `Live dashboard` followed by `Source code`. The resulting
+  [implementation specification](https://github.com/DHChe/evidence-first-rag-evaluation/issues/147)
+  is labelled `ready-for-agent`. It requires a static artifact-to-Pages workflow, an actual public-URL
+  smoke check, and retention of the visible **“Fixture evidence — not a live AX verification”**
+  boundary. It excludes live AX/provider execution, changing fixture evidence, custom domains,
+  generated-output commits, and CV edits in this repository. The next locked step is `to-tickets`;
+  no code, deployment, CV edit, commit, push, pull request, or merge occurred in this phase.
 - **Dated completed release record, 2026-08-03.**
   [PR #141](https://github.com/DHChe/evidence-first-rag-evaluation/pull/141) merged the reviewed
   submission repair into `develop` as `43c96aa9a63580aa0d13d60d2624281cd4cb9434`; post-merge run
@@ -1032,6 +1136,148 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-05 (#155) — workflow YAML gains a pull-request gate before the main-only workflow ever runs
+
+- **Phase and workflow.** Fresh-context implementation per ready ticket, run as three review-gated
+  cycles. Expected artifact: a gate validating every file under `.github/workflows/` on pull requests.
+  Completion condition: #155's acceptance criteria met with reproduced evidence and an independent
+  review.
+- **Why this was scheduled before the release.** `pages-deploy.yml` triggers only on `push` to `main`,
+  so it cannot be exercised on a pull request and had never executed anywhere. Its first run would
+  otherwise have been in production, on the recruiter-facing branch. Ordering this ticket ahead of
+  enabling GitHub Pages was a deliberate sequencing decision, and the measured evidence supports it:
+  mistyping `branches:` as `branchez:` in that file gives exit 1 from the new gate, and the mistyped
+  file parses as `{'push': {'branchez': ['main']}}` — a `push` trigger GitHub would read as having no
+  branch filter, publishing the public dashboard from every branch.
+- **Completion evidence.** Pane 1 checksum-verified `actionlint` 1.7.12 against the published
+  checksums file; measured exit 3 for an empty directory and for workflows without `.git`, confirming
+  the gate is fail-closed rather than able to pass while examining nothing; measured exit 1 for the
+  `branchez:` defect; confirmed the pinned digest is byte-identical to the `1.7.12` tag's OCI index
+  and contains `linux/amd64`; proved the new digest-parity test load-bearing by mutating the
+  `AGENTS.md` copy, observing the failure, and restoring byte-identically; and reproduced the nine
+  pinned frontend gates plus `ruff`, `mypy`, and `pytest -q` at 614 passed with no `schemas/` drift.
+- **What the review changed.** Pane 3 returned no blocking defects but found the decision document
+  asserting that the release binary "applies the same actionlint rules" as the image. Pane 1
+  reproduced that this is false: the image bundles `shellcheck` and `pyflakes`, and the bare binary
+  exits 0 without comment on a genuine bash syntax error in a `run:` step. The record was corrected
+  rather than the gate weakened — CI is strictly stronger than the proof. The review also removed the
+  command from `README.md`, which #155 never required and where an unexplained Docker prerequisite sat
+  inside an otherwise pure `uv` sequence, and prompted the parity test that keeps the two remaining
+  digest copies from drifting.
+- **Limit recorded rather than closed.** The container invocation is unexercised: the Docker daemon
+  was unavailable, so every control proof used the release binary. The image config confirms
+  `Entrypoint: actionlint` with `Cmd: null`, so the argument shape tested matches what CI runs, but
+  the mount, the `:ro` flag, and the image's non-root `guest` user close only on the first hosted run.
+- **Next action and its entry condition.** Merge into `develop` through a reviewed pull request, then
+  close #155 by hand. **Nothing is public and nothing was deployed.** The reserved owner action —
+  enabling GitHub Pages with GitHub Actions as its publishing source — remains required before the
+  next `develop` → `main` release, and #150 is still the first check that can prove the deployment
+  works.
+
+### 2026-08-04 (#149) — the deployment path exists and is unreachable from any branch but `main`
+
+- **Phase and workflow.** Fresh-context implementation per ready ticket, run as three review-gated
+  cycles on the standing three-pane cmux team. Expected artifact: a GitHub Actions artifact-to-Pages
+  workflow publishing only `main`. Completion condition: #149's acceptance criteria met with
+  reproduced evidence and an independent review.
+- **The control this cycle existed to create.** For a recruiter-facing artifact, publishing unreviewed
+  work is a worse failure than not publishing at all. The workflow therefore has no trigger a pull
+  request or feature branch can match, rather than a condition that stops them: there is no
+  `pull_request`, `workflow_dispatch`, `schedule`, `workflow_call`, or `if:` anywhere in the file. An
+  absent event is unreachable; a guard is one edited expression away from publishing.
+- **Completion evidence.** Pane 1 parsed the workflow and enumerated its trigger surface as exactly
+  `{'push': {'branches': ['main']}}`; resolved all four action tags with `git ls-remote --refs`; read
+  `upload-pages-artifact@v5` and `deploy-pages@v5` definitions directly to confirm `path` and
+  `artifact_name` are unchanged and that v5 runs `node24`; and reproduced the nine pinned frontend
+  gates from a tree with no build output plus `ruff`, `mypy`, and `pytest -q` at 613 passed, with no
+  `schemas/` drift.
+- **What the review changed.** Pane 3 returned no blocking defects but found that the publishing path
+  ran only `test:build-output` — the one gate of #148's complementary pair that cannot prove HTTP
+  behaviour — while `pages-deploy.yml` and `python-ci.yml` fire independently with no dependency
+  between them. The browser smoke was added to the build job in response. The review also found both
+  Pages actions a major or more behind, with `deploy-pages@v4` on the `node20` runtime; both were
+  raised to `@v5`. Pane 1 corrected one review claim: the requirement to enable Pages binds before the
+  later `develop` → `main` release, not before this feature branch merges, because `develop` cannot
+  match the trigger.
+- **Limits recorded rather than closed.** No gate in this repository validates workflow YAML, so a
+  syntax error would be discovered in production; an `actionlint` gate is proposed as its own ticket
+  rather than folded into #149. The concurrency key `pages-${{ github.ref }}` and the `main`-only
+  branch filter carry two guarantees between them, and one edit to `branches:` would break both.
+- **Next action and its entry condition.** Merge into `develop` through a reviewed pull request; #149
+  must then be closed by hand. **Nothing is public and nothing was deployed**: GitHub Pages is still
+  disabled on the repository, and enabling it with GitHub Actions as the publishing source remains a
+  reserved owner action required before the next `develop` → `main` release. #150 is the first check
+  that can prove any of this works.
+
+### 2026-08-04 (#148) — the fixture dashboard resolves at its Pages project path, and that seam gains a gate that can fail
+
+- **Phase and workflow.** Fresh-context implementation per ready ticket, run as six review-gated cycles
+  on the standing three-pane cmux team: pane 1 orchestrating and reproducing, pane 2 implementing,
+  pane 3 reviewing independently. Expected artifact: a static export configured for
+  `/evidence-first-rag-evaluation` plus a build-output assertion protecting that seam. Completion
+  condition: #148's four acceptance criteria met with reproduced evidence and an independent review.
+- **The control this cycle existed to create.** The previous local static server answered a missing
+  asset under the project prefix with `200 text/html`, and answered a *real* chunk requested at that
+  prefix the same way. Every asset below the project path was a soft 404, so a browser gate could not
+  observe a broken deployment at all. `scripts/serve-static.mjs` now mounts `dashboard/out/` only below
+  the project path and returns real 404s, and the browser guard fails a `/_next/` response that is 4xx
+  **or** `text/html`.
+- **Completion evidence.** All nine pinned frontend gates reproduced from a tree containing no build
+  output, on the `develop` base. Controls proved by mutation rather than inspection: removing a loaded
+  chunk fails both browser tests; removing the `noModule` chunk Chromium never requests fails only
+  `npm run test:build-output`; the unmodified spec run against the old `serve -s` fails both tests on
+  seven assets; the build-output gate fails readably before a build; the runtime path pin fails on a
+  changed constant. Fixture values, provenance, the read-only data path, and the visible **“Fixture
+  evidence — not a live AX verification”** boundary are byte-unchanged.
+- **The blocking defect the review caught.** The build-output assertion first ran inside the default
+  Vitest suite, which CI executes before `Build static dashboard`. It passed locally only because a
+  stale build directory happened to exist, and would have failed on every clean checkout. Repaired by
+  splitting it behind `npm run test:build-output`, invoked after `build` in the workflow, `AGENTS.md`,
+  and `README.md`, so the ordering is stated by the tooling instead of remembered by a contributor.
+- **Limits recorded rather than closed.** Both sides of the path assertion derive from `pagesBasePath`,
+  so the export is proved self-consistent, not canonical; [#150](https://github.com/DHChe/evidence-first-rag-evaluation/issues/150)
+  owns that proof. A stale `dashboard/site-config.d.cts` declaration remains invisible to
+  `tsc --noEmit`.
+- **Next action and its entry condition.** [PR #153](https://github.com/DHChe/evidence-first-rag-evaluation/pull/153)
+  merges `feat/issue-148-pages-project-path` into `develop` once required checks pass; #148 must then be
+  closed by hand, because `Closes #N` does not fire on a merge into `develop`. The next ticket is
+  [#149](https://github.com/DHChe/evidence-first-rag-evaluation/issues/149), whose Pages workflow must
+  invoke `test:build-output` after its build.
+
+### 2026-08-04 (#147) — the Pages publication specification decomposes into a dependency-ordered ticket set
+
+- **Phase and workflow.** `to-tickets` against the locked implementation specification. Expected
+  artifact: `ready-for-agent` GitHub tickets carrying acceptance and verification contracts, in
+  dependency order. Completion condition: every ticket labelled and every blocking relationship
+  recorded natively.
+- **Completion evidence.** [#148](https://github.com/DHChe/evidence-first-rag-evaluation/issues/148)
+  makes the static export correct at the repository project path;
+  [#149](https://github.com/DHChe/evidence-first-rag-evaluation/issues/149) adds main-only Actions
+  artifact-to-Pages deployment; [#150](https://github.com/DHChe/evidence-first-rag-evaluation/issues/150)
+  verifies the actual public URL, static assets, fixture warning, and fixture-only PASS explanation.
+  The verified-URL frontier then splits into
+  [#151](https://github.com/DHChe/evidence-first-rag-evaluation/issues/151) (README links) and
+  [#152](https://github.com/DHChe/evidence-first-rag-evaluation/issues/152) (a separate private-CV link
+  update).
+- **Next action and its entry condition.** Implementation of the only unblocked ticket, #148, in fresh
+  context with TDD and independent review. No code, deployment, CV artifact, or Git lifecycle action
+  occurred in this phase.
+
+### 2026-08-04 (#147) — the owner locks the Pages publication route and its evidence boundary
+
+- **Phase and workflow.** `to-spec` for publishing the recruiter-facing fixture dashboard. Expected
+  artifact: a labelled implementation specification. Completion condition: owner decisions recorded and
+  the specification marked `ready-for-agent`.
+- **Completion evidence.** The owner chose the repository's default GitHub Pages project URL, automatic
+  publication from `main`, and a CV presentation of `Live dashboard` followed by `Source code`. The
+  resulting [specification](https://github.com/DHChe/evidence-first-rag-evaluation/issues/147) requires
+  a static artifact-to-Pages workflow, an actual public-URL smoke check, and retention of the visible
+  **“Fixture evidence — not a live AX verification”** boundary. It excludes live AX or provider
+  execution, changes to fixture evidence, custom domains, generated-output commits, and CV edits in this
+  repository.
+- **Next action and its entry condition.** `to-tickets`, entered once the specification carried the
+  `ready-for-agent` label. No code, deployment, CV edit, or Git lifecycle action occurred in this phase.
 
 ### 2026-08-03 (#15) — same-commit assembly completes two partitions and corrects the grounded attribution
 
