@@ -13,6 +13,10 @@ That rule is why this README tells you what has *not* been measured before it te
 
 ## Three-minute reviewer path
 
+Start with the [Live dashboard](https://dhche.github.io/evidence-first-rag-evaluation/) for immutable
+fixture evidence — not a live AX verification or an answer-quality result. The
+[Source code](https://github.com/DHChe/evidence-first-rag-evaluation) is available for implementation details.
+
 1. Read **The result worth reading first** below: the central result is a justified refusal to issue
    an answer-quality verdict when the evidence coverage is zero.
 2. Scan [How it works](#how-it-works) and the [repository map](#repository-map) to see the boundary
