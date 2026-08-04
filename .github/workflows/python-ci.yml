@@ -110,6 +110,9 @@ jobs:
       - name: Build static dashboard
         run: npm run build
 
+      - name: Test static dashboard build output
+        run: npm run test:build-output
+
       - name: Install browser dependencies
         run: npx playwright install --with-deps chromium
 
