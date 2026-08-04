@@ -355,5 +355,4 @@ default applies and all rights are reserved. The evaluation dataset is a separat
 its own provenance: `datasets/dataset_manifest_v3.json` records `source_type: synthetic` and
 `license: CC0-1.0`.
 
-Design decisions, their rejected alternatives and their failure modes are in `docs/decisions/`; the
-reasoning behind each is defended in `docs/interview/`.
+Design decisions, their rejected alternatives and their failure modes are in `docs/decisions/`.
