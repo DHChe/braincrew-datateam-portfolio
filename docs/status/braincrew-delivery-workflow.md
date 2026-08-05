@@ -25,6 +25,27 @@ research and AX_portfolio context
 
 ## Current checkpoint
 
+- **Correction, 2026-08-05 (Issue #152 — the preceding entry's reasoning was wrong).**
+  The entry below states that the private applicant-materials path holds no CV source, no CV output,
+  and no workspace with checks, and infers that the artifact #152 targets may not exist. **Both halves
+  of that reasoning are false, and the earlier entry is deliberately left intact as the record of what
+  pane 1 believed at the time.** Pane 1 searched `/Users/astralpig/braincrew-private/` because a stored
+  note pointed there; the submission workspace is a *different* directory,
+  `/Users/astralpig/braincrew-submission-private/`, and it contains `cv/Braincrew_CV_KO_source.md`,
+  `cv/Braincrew_CV_KO.docx`, `cv/Braincrew_CV_KO.pdf`, and a `README.md` describing a manual submission
+  checklist. The lesson is narrow and worth keeping: a remembered path is a claim like any other, and a
+  single `find` against one directory is not a census of the filesystem.
+  **The conclusion that #152 cannot be completed from a repository session still holds, on entirely
+  different grounds.** The owner supplied the CV of record at `~/Downloads/채동훈_CV.pdf` and confirmed
+  it was authored with Claude Design. It is three pages where the workspace CV is one, its content hash
+  differs, it is nine hours newer, it carries **no embedded hyperlinks at all**, and its metadata shows
+  a macOS print export with creator `Claude`. No published artifact for it exists under the owner's
+  account. So its source lives in a Claude conversation rather than on disk, the workspace's
+  markdown-to-docx chain appears superseded rather than authoritative, and neither can be edited from
+  here. What this session can supply is the exact link text and boundary wording for the owner to paste
+  and re-export; the edit itself, and the choice of which lineage is authoritative, are the owner's.
+  Nothing was created, edited, or copied in either private directory, and `git status` remained empty
+  throughout.
 - **Blocked phase, 2026-08-05 (Issue #152 — the separate CV link update).**
   [#152](https://github.com/DHChe/evidence-first-rag-evaluation/issues/152) cannot start as written.
   Its verification requires running "the private CV workspace's structural and rendered-output checks,
@@ -1186,6 +1207,42 @@ changed files, RED/GREEN evidence, verification, remaining risks, and the exact 
 live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ## Transition history
+
+### 2026-08-05 (#152) — the CV exists after all, and the blocker moves from "missing" to "not editable from here"
+
+- **What this supersedes.** The entry below concluded that #152 was blocked because no CV source, no CV
+  output, and no workspace with checks could be found. That reasoning was wrong and is left standing as
+  the record of what was believed. This entry replaces the *grounds*, not the conclusion.
+- **The search error.** Pane 1 inspected `/Users/astralpig/braincrew-private/` because a stored note
+  named it as where applicant materials live. That directory is real and does hold research documents
+  and an interview dossier — but the submission workspace is a different directory,
+  `/Users/astralpig/braincrew-submission-private/`, holding `cv/Braincrew_CV_KO_source.md`, its `.docx`
+  and `.pdf` outputs, and a `README.md` with a manual submission checklist and stop conditions. One
+  `find` against one remembered path was treated as a census of the filesystem; it was not.
+- **What the owner then supplied, and what it changes.** The CV of record is
+  `~/Downloads/채동훈_CV.pdf`, authored with Claude Design. Measured: three pages against the
+  workspace CV's one; a different content hash; nine hours newer; **zero embedded URI links**; metadata
+  showing a macOS print export with creator `Claude`. An artifact listing under the owner's account
+  returned only one unrelated published artifact from 2026-07-13, so the document was not published as
+  an artifact this session could open or update.
+- **Why the conclusion survives.** The authoritative source is inside a Claude conversation, not on
+  disk and not in a reachable artifact, so it cannot be edited from a repository session. The
+  workspace's markdown-to-docx-to-pdf chain still exists but appears superseded by the newer
+  three-page document, so editing it would risk changing an abandoned copy while the submitted file
+  stays linkless. Which lineage is authoritative is the owner's decision, not an inference this session
+  should make.
+- **What was deliberately not done.** No file in either private directory was created, edited, or
+  copied; no CV was generated to work around the gap; no personal material entered this repository —
+  `git status` stayed empty throughout. Reading of the CV stopped once the blocking question was
+  identified as one only the owner can answer, rather than continuing through a private document for
+  detail that would not change the question.
+- **Next action and its entry condition.** The owner edits the CV in Claude Design and re-exports,
+  using the verified link text and boundary wording this session supplies: `Live dashboard` primary at
+  `https://dhche.github.io/evidence-first-rag-evaluation/`, `Source code` secondary at
+  `https://github.com/DHChe/evidence-first-rag-evaluation`, with wording that keeps the fixture
+  boundary and claims no live AX verification, answer-quality result, or release decision. Both URLs
+  were re-verified at 200 on 2026-08-05, and the Pages URL matches `gh api .../pages --jq .html_url`
+  exactly. #152 closes only after the re-exported PDF's links are opened and confirmed.
 
 ### 2026-08-05 (#151, #152) — the public entry point is delivered, and the CV frontier stops at a missing artifact
 
