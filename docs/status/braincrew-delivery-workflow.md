@@ -240,8 +240,8 @@ research and AX_portfolio context
 - **Current state, 2026-08-03 (submission-readiness Git publication authorized).** The owner approved
   creation of `chore/submission-readiness`, one Lore commit containing only the public repository
   submission changes, push to `origin`, and a pull request targeting `develop`. Merge is explicitly
-  excluded. The sibling `/Users/astralpig/braincrew-submission-private` directory containing the CV,
-  application email, study plan, and practice records is outside the repository and outside the commit.
+  excluded. A sibling private directory holding the owner's application materials is outside the
+  repository and outside the commit.
   Completion requires the remote branch, commit, and pull-request head to agree; hosted checks then
   become the active gate.
 - **Current state, 2026-08-03 (submission security and reproducibility audit).** A pinned
@@ -921,18 +921,18 @@ research and AX_portfolio context
 - Authoring owner: `codex-issue-36-authoring-agent`.
 - Manual provenance reviewer: `DHChe-corpus-provenance-reviewer`. This human approval authority
   must differ from the authoring owner.
-- External lifecycle root: `/Users/astralpig/braincrew-issue-36-authoring`.
+- External lifecycle root: `<external-authoring-root>`.
 - Exact lifecycle targets are
-  `/Users/astralpig/braincrew-issue-36-authoring/authorization/data-creation-authorization.json`,
-  `/Users/astralpig/braincrew-issue-36-authoring/tool/author-corpus`, empty
-  `/Users/astralpig/braincrew-issue-36-authoring/staging`, absent
-  `/Users/astralpig/braincrew-issue-36-authoring/receipts/authoring-independence-receipt.json`, absent
-  `/Users/astralpig/braincrew-issue-36-authoring/review/provenance-review.json`, and absent
-  `/Users/astralpig/braincrew-issue-36-authoring/sealed`. The staging target must be empty; all
+  `<external-authoring-root>/authorization/data-creation-authorization.json`,
+  `<external-authoring-root>/tool/author-corpus`, empty
+  `<external-authoring-root>/staging`, absent
+  `<external-authoring-root>/receipts/authoring-independence-receipt.json`, absent
+  `<external-authoring-root>/review/provenance-review.json`, and absent
+  `<external-authoring-root>/sealed`. The staging target must be empty; all
   other create-only targets must be absent. All targets must be outside the repository and must not
   be symbolic links.
 - Create-only authorization record:
-  `/Users/astralpig/braincrew-issue-36-authoring/authorization/data-creation-authorization.json`
+  `<external-authoring-root>/authorization/data-creation-authorization.json`
   uses schema `corpus-data-creation-authorization-v1`. It binds approval authority `DHChe`, the
   exact execution SHA, authoring-tool SHA-256, four exact input digests, all lifecycle target paths,
   authoring owner, manual reviewer, and its own canonical digest. The authorization record is
@@ -1101,7 +1101,7 @@ published Issue #45 body now carries that correction directly:
 ```text
 $test-driven-development
 
-Work in repository DHChe/AX_portfolio at /Users/astralpig/portfolio/AX_portfolio. Read AGENTS.md,
+Work in repository DHChe/AX_portfolio at <local-ax-checkout>. Read AGENTS.md,
 fetch origin, verify that origin/develop contains the recorded AX-A merge SHA and is clean, then
 create feat/issue-45-evaluation-parse-sources from that verified base.
 
@@ -1474,7 +1474,7 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 - **Both live runs executed against AX `3bb27f8`.** Preflight `READY` with 0 blockers; baseline
   (`evidence_limit=3`) and candidate (`evidence_limit=5`), 24 live cases each, exit 0. The runtime was
   started and returned container-by-container to its prior state. Artifacts are outside the repository
-  in `/Users/astralpig/ax-live-verification-evidence/run-2026-08-02/`, unreviewed for publication.
+  in `<external-evidence-root>/run-2026-08-02/`, unreviewed for publication.
 - **The comparison's answer is "no difference".** The two runs differ only in `evidence_limit`. Every
   one of 15 grounded cases reached an identical answer-path verdict, the same single case succeeded
   (`VA-008`), all 9 retrieval results were identical, and 1 of 15 answers differed textually.
@@ -1610,7 +1610,7 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
   unchanged.** Those records describe the published live artifacts as `.gitignore`d benchmark output.
   Measured 2026-08-02 during Issue #16 review: `git check-ignore -v ax-live-verification-evidence`
   matches nothing, `.gitignore` names only `artifacts/`, and the directory is
-  `/Users/astralpig/ax-live-verification-evidence/` — **outside the repository entirely**, so no ignore
+  `<external-evidence-root>/` — **outside the repository entirely**, so no ignore
   rule applies to it. The consequence stated there is unaffected: a clean environment still cannot see
   those files, which is why the container validates fixture evidence only. The commit message is
   immutable and the entry above is append-only history; this pointer is the correction of record.
@@ -2327,7 +2327,7 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
   unexpectedly went empty, refused to accept the affected gate results, discarded two otherwise-green
   gate sequences, repaired the configuration and reran everything. pane 1 verified the repair
   independently: `core.worktree` unset, no local `user.email`/`user.name`, toplevel back to
-  `/Users/astralpig/braincrew`, `git diff --cached HEAD` clean, HEAD still `eac588b`, and the same
+  `<repository-working-tree>`, `git diff --cached HEAD` clean, HEAD still `eac588b`, and the same
   seven modified plus two untracked paths. **Reporting it rather than quietly passing is the
   behaviour this topology depends on**, and it is recorded as such.
 - **X2 is closed**: the census's per-shape `failure_reason` is renamed `failure_reason_example`, so an
@@ -2534,7 +2534,7 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
   every LLM call fails would publish as a valid comparison — is **in implementation** on
   `feat/issue-92-answer-path-health`, cut from `develop` at `eac588b` (verified equal to
   `origin/develop`, clean, **521 passing**). The standing three-pane team is adopted: pane 2
-  implements from `/Users/astralpig/ax-issue-45-review/brief-cycle121-issue92.md`, pane 3 reviews in
+  implements from `<external-review-root>/brief-cycle121-issue92.md`, pane 3 reviews in
   cycle 122, pane 1 owns this file.
 - **The crux, restated so it cannot be halved.** Two failure modes must stay distinguishable:
   `llm_call_succeeded: False` means the machinery failed and the observation is not evidence about
@@ -2744,7 +2744,7 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 - The entry below is left intact deliberately. Its "waiting on the owner" state was true when
   written and is the record that the proposal gate was honoured rather than assumed.
 - Cycle 117 is dispatched to pane 2 from
-  `/Users/astralpig/ax-issue-45-review/brief-cycle117-issue94-repair.md`. Six validator clauses
+  `<external-review-root>/brief-cycle117-issue94-repair.md`. Six validator clauses
   each need their own test and their own isolated mutation. pane 1 verified all four T3/T4
   documentation facts directly against the files before asking for any edit, including the
   nuance that the 2026-07-26 AX-SUT decision's "one SUT constant" held **"for this cycle"** — a
@@ -2794,10 +2794,10 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
   **in implementation** on `feat/issue-94-separate-pin-meanings`, cut from `develop` at
   `d74065f` (verified equal to `origin/develop`, clean tree).
 - The standing three-pane team is adopted per the session-close entry below: pane 2 implements
-  from the brief at `/Users/astralpig/ax-issue-45-review/brief-cycle115-issue94.md`, pane 3
+  from the brief at `<external-review-root>/brief-cycle115-issue94.md`, pane 3
   reviews independently in cycle 116, pane 1 owns this file for the cycle.
 - Pre-dispatch, pane 1 independently re-verified the ticket's two measured claims in the AX
-  checkout (`/Users/astralpig/portfolio/AX_portfolio`, `develop` at `1ead133`, clean):
+  checkout (`<local-ax-checkout>`, `develop` at `1ead133`, clean):
   `git diff --stat 2bcaee3..1ead133 -- backend/src` is exactly one file (+22/−2), and the
   `backend/src` tree hash is identical at `2bcaee3` and `d793097` (`846c06ba…`).
 - The framing choice the ticket demands (two constants + rule, receipt-coverage validity, or
@@ -2813,7 +2813,7 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 
 ### 2026-07-28 (session close) — Issue #91 merged, a live probe blocked #15 before it ran, and the first evaluation-found defect was fixed in the product
 
-**Where to resume: [Issue #94](https://github.com/DHChe/braincrew-datateam-portfolio/issues/94).** Everything below is recorded so that does not depend on conversation memory. A copy-ready start prompt, including the three-pane topology a fresh session would otherwise discard, is at `/Users/astralpig/ax-issue-45-review/NEXT-SESSION-PROMPT.md` — kept outside the repository because it goes stale by design.
+**Where to resume: [Issue #94](https://github.com/DHChe/braincrew-datateam-portfolio/issues/94).** Everything below is recorded so that does not depend on conversation memory. A copy-ready start prompt, including the three-pane topology a fresh session would otherwise discard, is at `<external-review-root>/NEXT-SESSION-PROMPT.md` — kept outside the repository because it goes stale by design.
 
 **Merged today.** Braincrew [#89](https://github.com/DHChe/braincrew-datateam-portfolio/issues/89) as `74ab1772` (PR #90, five review rounds) and [#91](https://github.com/DHChe/braincrew-datateam-portfolio/issues/91) as `43bd404d` (PR #93, two rounds). AX [#58](https://github.com/DHChe/AX_portfolio/issues/58) as `1ead1331` (AX PR #59, five CI jobs green). `develop` is at `43bd404`; the AX checkout is on `develop` at `1ead133`. Both trees clean, AX runtime stopped, volumes unchanged at 114.
 
@@ -2837,7 +2837,7 @@ The cause: AX's `_citations_valid` requires the union of cited claim paths to **
 
 **Not claimed.** No experiment has run. No baseline, no candidate, no quality claim. Every quality observation in this repository still comes from `httpx.MockTransport`.
 
-**Evidence outside the repository** (`/Users/astralpig/ax-live-verification-evidence/`): `08` probe and boundary, `09` the three blockers, `10` blocker A root cause, `11` runtime stop, `12`–`13` the variance measurement, `14`–`15` blocker B root cause. Two key-exposure incidents are recorded in `02` and `06`; the second prompted a standing rule that a secret value must never enter a pipeline that a downstream filter is trusted to clean.
+**Evidence outside the repository** (`<external-evidence-root>/`): `08` probe and boundary, `09` the three blockers, `10` blocker A root cause, `11` runtime stop, `12`–`13` the variance measurement, `14`–`15` blocker B root cause. Two key-exposure incidents are recorded in `02` and `06`; the second prompted a standing rule that a secret value must never enter a pipeline that a downstream filter is trusted to clean.
 
 ### 2026-07-28 — Cycle 111 repairs Issue #91 after the live-path tautology survived review mutation M4
 
@@ -4071,7 +4071,7 @@ The cause: AX's `_citations_valid` requires the union of cited claim paths to **
 - Upstream evidence: [PR #27](https://github.com/DHChe/braincrew-datateam-portfolio/pull/27) is `MERGED` at `2026-07-20T01:32:43Z` with squash merge commit `52e85ecc303291e0145ac0867c807e9579b04800`; its required `Python quality gates` check passed. [Issue #13](https://github.com/DHChe/braincrew-datateam-portfolio/issues/13) is `CLOSED/COMPLETED` at `2026-07-20T01:40:13Z`.
 - Remote and cleanup evidence: after `git fetch --prune origin`, `origin/develop` points exactly to `52e85ecc303291e0145ac0867c807e9579b04800`. No local `*issue-13*` branch, remote `origin/*issue-13*` branch, registered Issue #13 worktree, or Issue #13 directory under the Braincrew worktree root remains.
 - Dependency evidence: Issue #14's only declared blocker, Issue #13, is closed; Issue #14 is open and now carries `ready-for-agent`.
-- Branch evidence: `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-14-static-dashboard` was created on `feat/issue-14-static-dashboard` from exact `origin/develop@52e85ecc303291e0145ac0867c807e9579b04800`.
+- Branch evidence: `<worktree-root>/issue-14-static-dashboard` was created on `feat/issue-14-static-dashboard` from exact `origin/develop@52e85ecc303291e0145ac0867c807e9579b04800`.
 - Clean baseline: `uv sync --frozen --all-groups`, Ruff format and lint, strict mypy, full pytest (`200 passed in 10.57s`), `git diff --check`, and clean branch status succeeded before the first RED.
 - Locked frontend decision: root `npm@11.12.1` and `package-lock.json` lockfile v3; Node.js `>=20.19.0`; Next.js `16.2.10`; React `19.2.7`; TypeScript `5.9.3`; Prettier `3.9.5`; ESLint `9.39.5` with `eslint-config-next@16.2.10`; Vitest `4.1.10`; Playwright `1.61.1` Chromium smoke against `dashboard/out`; and transitive PostCSS `8.5.10` with zero npm-audit findings. ESLint 10 was rejected after clean-install peer conflicts with Next.js lint plugins.
 - Command contract: `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`, and `npm run test:e2e`.
@@ -4219,7 +4219,7 @@ The cause: AX's `_citations_valid` requires the union of cited claim paths to **
 
 - Upstream evidence: [PR #26](https://github.com/DHChe/braincrew-datateam-portfolio/pull/26) is `MERGED` into `develop` at `2026-07-19T14:52:55Z`; its squash merge commit is `eb252e4c32d1ea2167f0cc31371423541dc3b315`, fetched `origin/develop` points to that exact commit, and the required `Python quality gates` check completed successfully.
 - Dependency evidence: blocker [Issue #12](https://github.com/DHChe/braincrew-datateam-portfolio/issues/12) is `CLOSED` at `2026-07-19T14:53:22Z`; [Issue #13](https://github.com/DHChe/braincrew-datateam-portfolio/issues/13) is open and now carries `ready-for-agent`.
-- Branch evidence: dedicated worktree `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-13-experiment-comparison` was created on `feat/issue-13-experiment-comparison` from `origin/develop@eb252e4c32d1ea2167f0cc31371423541dc3b315`.
+- Branch evidence: dedicated worktree `<worktree-root>/issue-13-experiment-comparison` was created on `feat/issue-13-experiment-comparison` from `origin/develop@eb252e4c32d1ea2167f0cc31371423541dc3b315`.
 - Baseline evidence: `uv sync --frozen --all-groups` completed and the unchanged branch baseline reported `159 passed in 7.79s`.
 - Active skill: `test-driven-development`.
 - Expected artifact: compatible fixture baseline/candidate comparison with immutable canonical JSON and Parquet, disposable DuckDB query cache, complete version compatibility and confound evidence, exact case/macro aggregation and failure taxonomy, three ordered release gates, deterministic replay, and fixture PASS/FAIL/INVALID paths.
@@ -4276,7 +4276,7 @@ The cause: AX's `_citations_valid` requires the union of cited claim paths to **
 
 - Upstream evidence: [PR #25](https://github.com/DHChe/braincrew-datateam-portfolio/pull/25) is `MERGED` into `develop` at `2026-07-19T10:05:39Z`; its squash merge commit is `c6cd5920ed7b46798618734c7c55977b89c9d9af`, fetched `origin/develop` points to that exact commit, and the commit is an ancestor of the Issue #12 branch. The required `Python quality gates` check completed successfully.
 - Dependency evidence: blocker Issues [#8](https://github.com/DHChe/braincrew-datateam-portfolio/issues/8), [#9](https://github.com/DHChe/braincrew-datateam-portfolio/issues/9), and [#11](https://github.com/DHChe/braincrew-datateam-portfolio/issues/11) are all `CLOSED`; [Issue #12](https://github.com/DHChe/braincrew-datateam-portfolio/issues/12) is open and now carries `ready-for-agent`.
-- Branch evidence: dedicated worktree `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-12-dataset-freeze` was created on `feat/issue-12-dataset-freeze` from current `origin/develop@c6cd5920ed7b46798618734c7c55977b89c9d9af`.
+- Branch evidence: dedicated worktree `<worktree-root>/issue-12-dataset-freeze` was created on `feat/issue-12-dataset-freeze` from current `origin/develop@c6cd5920ed7b46798618734c7c55977b89c9d9af`.
 - Active skill: `test-driven-development`.
 - Expected artifact: one strict, versioned 100-case dataset registry that composes the frozen parsing, retrieval, grounded-answer, and visibility/abstention cases; validates identity, allocation, split, provenance, license, risk, applicability, and leakage invariants; records a scoring-content digest and dataset card; and executes all fixture observations into immutable case-level and aggregate results with deterministic replay.
 - Completion condition: every new validation and mutation is observed RED for the expected missing contract or actual defect before minimal GREEN; the existing 20/30/50-case fixture and replay paths remain compatible; the installed full 100-case fixture create/replay path, independent logical-digest comparison, repository gates, ticket-scoped Standards and Spec review, and `verification-before-completion` all pass before the Git Lifecycle Proposal Gate.
@@ -4331,7 +4331,7 @@ The cause: AX's `_citations_valid` requires the union of cited claim paths to **
 
 - Upstream evidence: [PR #24](https://github.com/DHChe/braincrew-datateam-portfolio/pull/24) is `MERGED` into `develop` at `2026-07-19T08:59:32Z`; its squash merge commit is `c4ae62f1d1dfa905f34a02dbb5fa647affe8076c`, fetched `origin/develop` points to that exact commit, and the commit is an ancestor of the Issue #11 branch.
 - Dependency evidence: blocker [Issue #10](https://github.com/DHChe/braincrew-datateam-portfolio/issues/10) is `CLOSED` at `2026-07-19T09:00:09Z`; [Issue #11](https://github.com/DHChe/braincrew-datateam-portfolio/issues/11) is open and now carries `ready-for-agent`.
-- Branch evidence: dedicated worktree `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-11-answer-mode-abstention` was created on `feat/issue-11-answer-mode-abstention` from current `origin/develop@c4ae62f1d1dfa905f34a02dbb5fa647affe8076c`.
+- Branch evidence: dedicated worktree `<worktree-root>/issue-11-answer-mode-abstention` was created on `feat/issue-11-answer-mode-abstention` from current `origin/develop@c4ae62f1d1dfa905f34a02dbb5fa647affe8076c`.
 - Active skill: `test-driven-development`.
 - Expected artifact: a deterministic 40-case grounded-answer plus 10-case visibility/abstention benchmark with exact Answer Mode and abstention metrics, zero-tolerance unsupported-confidence and forbidden-role leakage evidence, immutable case and aggregate results, and snapshot-derived replay tamper rejection.
 - Completion condition: every new behavior is observed failing for the expected missing-contract or real-defect reason before minimal implementation; the installed 50-case fixture create/replay path, repository gates, ticket-scoped Standards and Spec review, and `verification-before-completion` all pass before the Git Lifecycle Proposal Gate.
@@ -4400,7 +4400,7 @@ The cause: AX's `_citations_valid` requires the union of cited claim paths to **
 - Upstream evidence: [PR #23](https://github.com/DHChe/braincrew-datateam-portfolio/pull/23) is `MERGED` into `develop` at `2026-07-19T08:09:08Z`; its merge commit is `b67929a0546d32d6ffafc7b801028c9c53fc2d6a`, and fetched `origin/develop` points to that exact commit.
 - Ticket evidence: [Issue #9](https://github.com/DHChe/braincrew-datateam-portfolio/issues/9) is `CLOSED` at `2026-07-19T08:09:41Z`.
 - Dependency evidence: blocker Issues [#6](https://github.com/DHChe/braincrew-datateam-portfolio/issues/6) and [#7](https://github.com/DHChe/braincrew-datateam-portfolio/issues/7) are both `CLOSED`; Issue [#10](https://github.com/DHChe/braincrew-datateam-portfolio/issues/10) now carries `ready-for-agent`.
-- Branch evidence: dedicated worktree `/Users/astralpig/.config/superpowers/worktrees/braincrew/issue-10-grounded-claims` was created on `feat/issue-10-grounded-claims` from current `origin/develop` at `b67929a0546d32d6ffafc7b801028c9c53fc2d6a`.
+- Branch evidence: dedicated worktree `<worktree-root>/issue-10-grounded-claims` was created on `feat/issue-10-grounded-claims` from current `origin/develop` at `b67929a0546d32d6ffafc7b801028c9c53fc2d6a`.
 - Active skill: `test-driven-development`.
 - Expected artifact: versioned `claim-proposition-v1` and `claim-traversal-v1` contracts, deterministic grounded-claim metrics, fail-closed high-risk behavior, bounded golden cases, and fixture CLI/result-store/replay evidence.
 - Completion condition: clean baseline passes before the first RED; then every new behavior is observed failing for the expected missing-contract reason before minimal implementation, followed by ticket-scoped code review and `verification-before-completion`.

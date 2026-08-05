@@ -27,7 +27,7 @@ They remained unapproved; no attachment approval was authorized.
 | --- | --- | --- |
 | SUT warrant | AX `5b0f5f2ae2cfb4c4870a2228f9aa226e009241f5`, clean | Rechecked from the parsing capture manifest. |
 | Attachment state | Six scans clean; six parses parsed; approval pending; materialization `not_materialized` | Pane 1's live runtime measurement. Cycle 195 did not query AX again. |
-| Capture | `issue-131-parsing-2026-08-02.parsing-capture-manifest.json` and `issue-131-parsing-2026-08-02.parsing-observations.json` under `/Users/astralpig/ax-live-verification-evidence/run-2026-08-02-parsing/` | Rechecked from the two immutable external files. |
+| Capture | `issue-131-parsing-2026-08-02.parsing-capture-manifest.json` and `issue-131-parsing-2026-08-02.parsing-observations.json` under `<external-evidence-root>/run-2026-08-02-parsing/` | Rechecked from the two immutable external files. |
 | Capture logical digest | `sha256:34932d8ec5c03589f644a280ff3f442621aece91963a4daa372e2ab42f830349` | Rechecked from the manifest. |
 | Heading structure | All six cases match the frozen heading sequences element-for-element | Independently recomputed from the observation bundle and `datasets/parsing/parsing_cases_v2.json`. |
 | Evidence spans and metadata | Six of six have zero evidence spans and zero metadata fields | Rechecked from the observation bundle. |
