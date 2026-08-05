@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { copyFor, type DashboardCopy, type Locale } from "../lib/copy";
 import {
   operationalCostDisplay,
   taxonomyRows,
@@ -35,7 +37,9 @@ function metricTone(metric: DashboardMetric) {
 
 export function DashboardExplorer({
   data,
-}: Readonly<{ data: DashboardExport }>) {
+  locale,
+}: Readonly<{ data: DashboardExport; locale: Locale }>) {
+  const copy = copyFor(locale);
   const [detailView, setDetailView] = useState<DetailView>("metrics");
   const [caseQuery, setCaseQuery] = useState("");
   const matchingCases = useMemo(
@@ -61,41 +65,44 @@ export function DashboardExplorer({
     : null;
 
   return (
-    <main>
+    <main lang={copy.htmlLang}>
       <header className="hero">
-        <nav aria-label="Dashboard context">
+        <nav aria-label={copy.navLabel}>
           <span className="wordmark">BRAINCREW / EVALUATION PLANE</span>
-          <span className="read-only">READ-ONLY ARTIFACT</span>
+          <span className="read-only">{copy.readOnlyBadge}</span>
+          <Link className="locale-switch" href={copy.altLocalePath}>
+            {copy.altLocaleLabel}
+          </Link>
         </nav>
         <div className="hero-grid">
           <div>
-            <p className="eyebrow">Comparison {data.comparison_id}</p>
-            <h1>Release evidence, without the rerun.</h1>
-            <p className="lede">
-              One immutable comparison, projected for review. The dashboard can
-              reveal evidence, but it cannot execute an experiment or alter a
-              canonical result.
+            <p className="eyebrow">
+              {copy.comparisonEyebrow} {data.comparison_id}
             </p>
+            <h1>{copy.heroTitle}</h1>
+            <p className="lede">{copy.heroLede}</p>
           </div>
           <div
             className={`decision-card decision-${data.decision.toLowerCase()}`}
           >
-            <span>Canonical decision</span>
+            <span>{copy.canonicalDecisionLabel}</span>
             <strong data-testid="canonical-decision">{data.decision}</strong>
-            <small>Copied from the replay-validated artifact</small>
+            <small>{copy.canonicalDecisionNote}</small>
           </div>
         </div>
         <div className="artifact-strip">
-          <span>{data.totals.case_count} publishable cases</span>
-          <span>{data.totals.metric_count} canonical metrics</span>
-          <span>Dataset {data.dataset.version}</span>
+          <span>{copy.publishableCases(data.totals.case_count)}</span>
+          <span>{copy.canonicalMetrics(data.totals.metric_count)}</span>
+          <span>
+            {copy.datasetPrefix} {data.dataset.version}
+          </span>
           <span>{data.dataset.license}</span>
         </div>
         <div className="evidence-mode">
           <strong>
             {data.baseline.execution_mode === "fixture"
-              ? "Fixture evidence — not a live AX verification"
-              : "Live verification evidence"}
+              ? copy.fixtureEvidenceLabel
+              : copy.liveEvidenceLabel}
           </strong>
           <span>Evaluation Plane {data.baseline.evaluation_plane_sha}</span>
           <span>AX SUT {data.baseline.sut_sha}</span>
@@ -104,12 +111,9 @@ export function DashboardExplorer({
               className="evidence-mode-reason"
               data-testid="live-comparison-boundary"
             >
-              This PASS is a fixture-gate result, not a live release verdict:
-              both same-commit live runs are INVALID after 13 of 15 grounded
-              answers were discarded for citation-contract violations, leaving
-              no answer-quality evidence.{" "}
+              {copy.fixtureBoundaryReason}{" "}
               <a href="https://github.com/DHChe/evidence-first-rag-evaluation/blob/develop/docs/decisions/2026-08-03-same-commit-30-case-run-and-grounded-coverage-correction.md">
-                Decision record
+                {copy.decisionRecordLink}
               </a>
             </p>
           ) : null}
@@ -122,10 +126,10 @@ export function DashboardExplorer({
       >
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Release gate</p>
-            <h2 id="trace-title">Three checks. One recorded verdict.</h2>
+            <p className="eyebrow">{copy.gateEyebrow}</p>
+            <h2 id="trace-title">{copy.gateTitle}</h2>
           </div>
-          <p>Gate order and decisions are rendered exactly as exported.</p>
+          <p>{copy.gateNote}</p>
         </div>
         <ol className="gate-grid">
           {data.gates.map((gate, index) => (
@@ -137,7 +141,7 @@ export function DashboardExplorer({
                 <p>
                   {gate.reasons.length
                     ? gate.reasons.join(" · ")
-                    : "No blocking reason recorded."}
+                    : copy.gateNoReason}
                 </p>
               </div>
             </li>
@@ -151,16 +155,16 @@ export function DashboardExplorer({
       >
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Baseline / candidate</p>
-            <h2 id="comparison-title">The measured change</h2>
+            <p className="eyebrow">{copy.comparisonEyebrowLabel}</p>
+            <h2 id="comparison-title">{copy.comparisonTitle}</h2>
           </div>
-          <div className="run-legend" aria-label="Run evidence limits">
+          <div className="run-legend" aria-label={copy.runLegendLabel}>
             <span>
-              <i className="baseline-dot" /> Baseline · top{" "}
+              <i className="baseline-dot" /> {copy.baselineLegendSuffix}{" "}
               {data.baseline.evidence_limit}
             </span>
             <span>
-              <i className="candidate-dot" /> Candidate · top{" "}
+              <i className="candidate-dot" /> {copy.candidateLegendSuffix}{" "}
               {data.candidate.evidence_limit}
             </span>
           </div>
@@ -169,10 +173,10 @@ export function DashboardExplorer({
           <table>
             <thead>
               <tr>
-                <th>Metric</th>
+                <th>{copy.metricColumn}</th>
                 <th>Baseline</th>
                 <th>Candidate</th>
-                <th>Delta</th>
+                <th>{copy.deltaColumn}</th>
               </tr>
             </thead>
             <tbody>
@@ -190,14 +194,15 @@ export function DashboardExplorer({
         {operationalDelta && costDisplay ? (
           <div className="operational-grid">
             <article>
-              <span>P95 latency</span>
+              <span>{copy.p95LatencyLabel}</span>
               <strong>{operationalDelta.candidate_p95_latency_ms} ms</strong>
               <small>
-                {signed(operationalDelta.p95_latency_relative_delta)} relative
+                {signed(operationalDelta.p95_latency_relative_delta)}{" "}
+                {copy.relativeSuffix}
               </small>
             </article>
             <article>
-              <span>Mean cost</span>
+              <span>{copy.meanCostLabel}</span>
               <strong>{costDisplay.value}</strong>
               <small>{costDisplay.context}</small>
             </article>
@@ -211,22 +216,23 @@ export function DashboardExplorer({
       >
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Drill-down</p>
-            <h2 id="evidence-title">Trace the decision to evidence</h2>
+            <p className="eyebrow">{copy.drilldownEyebrow}</p>
+            <h2 id="evidence-title">{copy.drilldownTitle}</h2>
           </div>
-          <p>
-            Synthetic, CC0-licensed identifiers only. No source document text is
-            published.
-          </p>
+          <p>{copy.drilldownNote}</p>
         </div>
-        <div className="tabs" role="tablist" aria-label="Evidence views">
+        <div
+          className="tabs"
+          role="tablist"
+          aria-label={copy.evidenceViewsLabel}
+        >
           <button
             type="button"
             role="tab"
             aria-selected={detailView === "metrics"}
             onClick={() => setDetailView("metrics")}
           >
-            Metric evidence
+            {copy.metricEvidenceTab}
           </button>
           <button
             type="button"
@@ -234,7 +240,7 @@ export function DashboardExplorer({
             aria-selected={detailView === "taxonomy"}
             onClick={() => setDetailView("taxonomy")}
           >
-            Failure taxonomy
+            {copy.failureTaxonomyTab}
           </button>
           <button
             type="button"
@@ -242,7 +248,7 @@ export function DashboardExplorer({
             aria-selected={detailView === "cases"}
             onClick={() => setDetailView("cases")}
           >
-            Case evidence
+            {copy.caseEvidenceTab}
           </button>
         </div>
 
@@ -265,15 +271,18 @@ export function DashboardExplorer({
         {detailView === "taxonomy" ? (
           <div className="evidence-panel taxonomy-panel">
             {failureCodeRows.length === 0 ? (
-              <p className="empty-state">
-                No candidate failures in this verified artifact.
-              </p>
+              <p className="empty-state">{copy.emptyTaxonomy}</p>
             ) : (
               <div className="taxonomy-grid">
-                <TaxonomyTable title="Failure codes" rows={failureCodeRows} />
                 <TaxonomyTable
-                  title="Failure families"
+                  title={copy.failureCodesTitle}
+                  rows={failureCodeRows}
+                  copy={copy}
+                />
+                <TaxonomyTable
+                  title={copy.failureFamiliesTitle}
                   rows={failureFamilyRows}
+                  copy={copy}
                 />
               </div>
             )}
@@ -282,7 +291,7 @@ export function DashboardExplorer({
 
         {detailView === "cases" ? (
           <div className="evidence-panel cases-panel">
-            <label htmlFor="case-query">Find case evidence</label>
+            <label htmlFor="case-query">{copy.caseQueryLabel}</label>
             <input
               id="case-query"
               value={caseQuery}
@@ -292,9 +301,13 @@ export function DashboardExplorer({
             <div className="case-list">
               {matchingCases.map((item) => (
                 <details key={item.case_id}>
-                  <summary aria-label={`${item.case_id} details`}>
+                  <summary
+                    aria-label={`${item.case_id} ${copy.caseDetailsSuffix}`}
+                  >
                     <span>{item.case_id}</span>
-                    <span>{item.candidate_failures.length} failures</span>
+                    <span>
+                      {copy.caseFailures(item.candidate_failures.length)}
+                    </span>
                   </summary>
                   <div
                     className="case-detail"
@@ -316,7 +329,7 @@ export function DashboardExplorer({
 
       <footer>
         <div>
-          <span>Logical digest</span>
+          <span>{copy.logicalDigestLabel}</span>
           <code data-testid="logical-digest">{data.logical_digest}</code>
         </div>
         <p>
@@ -330,6 +343,7 @@ export function DashboardExplorer({
 function TaxonomyTable({
   title,
   rows,
+  copy,
 }: Readonly<{
   title: string;
   rows: readonly {
@@ -338,6 +352,7 @@ function TaxonomyTable({
     candidate: number;
     delta: number;
   }[];
+  copy: DashboardCopy;
 }>) {
   return (
     <div className="taxonomy-table">
@@ -345,10 +360,10 @@ function TaxonomyTable({
       <table>
         <thead>
           <tr>
-            <th>Name</th>
+            <th>{copy.nameColumn}</th>
             <th>Baseline</th>
             <th>Candidate</th>
-            <th>Delta</th>
+            <th>{copy.deltaColumn}</th>
           </tr>
         </thead>
         <tbody>

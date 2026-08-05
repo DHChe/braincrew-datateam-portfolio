@@ -40,11 +40,13 @@ nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   border-bottom: 1px solid #ffffff2c;
   padding-bottom: 20px;
 }
 .wordmark,
 .read-only,
+.locale-switch,
 .eyebrow,
 code {
   font-family: "SFMono-Regular", Consolas, monospace;
@@ -52,14 +54,24 @@ code {
 .wordmark {
   font-size: 13px;
   letter-spacing: 0.11em;
+  margin-right: auto;
 }
-.read-only {
+.read-only,
+.locale-switch {
   color: #abd6c3;
   border: 1px solid #75a992;
   border-radius: 999px;
   padding: 7px 12px;
   font-size: 11px;
   letter-spacing: 0.08em;
+}
+.locale-switch {
+  text-decoration: none;
+  white-space: nowrap;
+}
+.locale-switch:hover,
+.locale-switch:focus-visible {
+  background: #75a99226;
 }
 .hero-grid {
   display: grid;
