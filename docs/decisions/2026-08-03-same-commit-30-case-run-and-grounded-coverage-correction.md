@@ -20,7 +20,7 @@ misattribution as an error rather than presenting it as a newly discovered fact.
 ## Measured external run
 
 The checked files are outside this repository at
-`/Users/astralpig/ax-live-verification-evidence/run-2026-08-03-30case/` and have
+`<external-evidence-root>/run-2026-08-03-30case/` and have
 not had a public-suitability review or an `evidence/` publication.
 
 | Measurement | Result |
@@ -43,7 +43,7 @@ dataset evaluator; no evaluation output was written.
 
 The pane 1 closing-comment attribution was wrong. The 2026-08-02 baseline
 artifact at
-`/Users/astralpig/ax-live-verification-evidence/run-2026-08-02/issue-15-baseline-2026-08-02.json`
+`<external-evidence-root>/run-2026-08-02/issue-15-baseline-2026-08-02.json`
 already reports `state: INVALID`, `grounded.state: INVALID`,
 `verification_citation_precision_cases: 0`, and
 `verification_claim_support_cases: 0`. That evidence was available before the

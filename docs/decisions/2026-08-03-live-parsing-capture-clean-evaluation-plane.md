@@ -22,7 +22,7 @@ the project's one historical live parsing artifact, which truthfully reports
 ## Why this was necessary
 
 The parsing capture artifact reported the gap itself. Its manifest at
-`/Users/astralpig/ax-live-verification-evidence/run-2026-08-02-parsing/issue-131-parsing-2026-08-02.parsing-capture-manifest.json`
+`<external-evidence-root>/run-2026-08-02-parsing/issue-131-parsing-2026-08-02.parsing-capture-manifest.json`
 records `evaluation_plane_dirty: true`, even though its SUT warrant names clean AX
 `5b0f5f2ae2cfb4c4870a2228f9aa226e009241f5`. The sibling live-experiment capture
 already refuses a dirty Evaluation Plane, and the comparison gate reports
@@ -62,7 +62,7 @@ capture and remains out of scope here: no replay route is implemented.
 ## Replacement clean capture
 
 The replacement `live-parsing-capture-v1` exists outside the repository at
-`/Users/astralpig/ax-live-verification-evidence/run-2026-08-03-parsing/`. Its
+`<external-evidence-root>/run-2026-08-03-parsing/`. Its
 manifest names run `issue-131-parsing-2026-08-03` with logical digest
 `sha256:a29848fb58bfaf361ad848459fcfff878d96186e9de12913c9deff3d0aa692a8`.
 It records `evaluation_plane_dirty: false` at Evaluation Plane commit

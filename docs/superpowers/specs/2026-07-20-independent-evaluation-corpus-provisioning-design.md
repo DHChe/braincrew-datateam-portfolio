@@ -445,18 +445,18 @@ Data-creation proposal gate: **APPROVED_FOR_NEW_SESSION**.
 - Authoring owner: `codex-issue-36-authoring-agent`.
 - Manual provenance reviewer: `DHChe-corpus-provenance-reviewer`. This reviewer is the human
   approval authority and must differ from the authoring owner.
-- External lifecycle root: `/Users/astralpig/braincrew-issue-36-authoring`.
+- External lifecycle root: `<external-authoring-root>`.
 - Exact lifecycle targets are
-  `/Users/astralpig/braincrew-issue-36-authoring/authorization/data-creation-authorization.json`,
-  `/Users/astralpig/braincrew-issue-36-authoring/tool/author-corpus`, empty
-  `/Users/astralpig/braincrew-issue-36-authoring/staging`, absent
-  `/Users/astralpig/braincrew-issue-36-authoring/receipts/authoring-independence-receipt.json`, absent
-  `/Users/astralpig/braincrew-issue-36-authoring/review/provenance-review.json`, and absent
-  `/Users/astralpig/braincrew-issue-36-authoring/sealed`. The staging target must be empty; all
+  `<external-authoring-root>/authorization/data-creation-authorization.json`,
+  `<external-authoring-root>/tool/author-corpus`, empty
+  `<external-authoring-root>/staging`, absent
+  `<external-authoring-root>/receipts/authoring-independence-receipt.json`, absent
+  `<external-authoring-root>/review/provenance-review.json`, and absent
+  `<external-authoring-root>/sealed`. The staging target must be empty; all
   other create-only targets must be absent. All targets must be outside the repository and must not
   be symbolic links.
 - Create-only authorization record:
-  `/Users/astralpig/braincrew-issue-36-authoring/authorization/data-creation-authorization.json`
+  `<external-authoring-root>/authorization/data-creation-authorization.json`
   uses schema `corpus-data-creation-authorization-v1`. It binds approval authority `DHChe`, the
   exact execution SHA, authoring-tool SHA-256, four exact input digests, all lifecycle target
   paths, authoring owner, manual reviewer, and its own canonical digest. The authorization record
