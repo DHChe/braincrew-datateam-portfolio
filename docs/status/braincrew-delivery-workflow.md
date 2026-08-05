@@ -29,14 +29,15 @@ research and AX_portfolio context
   The entry below states that the private applicant-materials path holds no CV source, no CV output,
   and no workspace with checks, and infers that the artifact #152 targets may not exist. **Both halves
   of that reasoning are false, and the earlier entry is deliberately left intact as the record of what
-  pane 1 believed at the time.** Pane 1 searched `/Users/astralpig/braincrew-private/` because a stored
-  note pointed there; the submission workspace is a *different* directory,
-  `/Users/astralpig/braincrew-submission-private/`, and it contains `cv/Braincrew_CV_KO_source.md`,
-  `cv/Braincrew_CV_KO.docx`, `cv/Braincrew_CV_KO.pdf`, and a `README.md` describing a manual submission
-  checklist. The lesson is narrow and worth keeping: a remembered path is a claim like any other, and a
-  single `find` against one directory is not a census of the filesystem.
+  pane 1 believed at the time.** Pane 1 searched the one private directory a stored note named; the
+  submission workspace is a *different* private directory, and it holds a CV source, its rendered
+  outputs, and a README describing a manual submission checklist. Local paths and private filenames are
+  deliberately omitted here: they serve no evaluation purpose in a recruiter-facing document, and this
+  project's own submission stop conditions treat local absolute paths in the public repository as a
+  defect to repair. The lesson is narrow and worth keeping: a remembered path is a claim like any other,
+  and a single `find` against one directory is not a census of the filesystem.
   **The conclusion that #152 cannot be completed from a repository session still holds, on entirely
-  different grounds.** The owner supplied the CV of record at `~/Downloads/채동훈_CV.pdf` and confirmed
+  different grounds.** The owner supplied the CV of record and confirmed
   it was authored with Claude Design. It is three pages where the workspace CV is one, its content hash
   differs, it is nine hours newer, it carries **no embedded hyperlinks at all**, and its metadata shows
   a macOS print export with creator `Claude`. No published artifact for it exists under the owner's
@@ -50,9 +51,8 @@ research and AX_portfolio context
   [#152](https://github.com/DHChe/evidence-first-rag-evaluation/issues/152) cannot start as written.
   Its verification requires running "the private CV workspace's structural and rendered-output checks,
   including its required-link and fixture-boundary checks", and it requires a CV source whose links can
-  be edited. Pane 1 inspected the known private applicant-materials path,
-  `/Users/astralpig/braincrew-private/`: it exists but contains only `docs/research/` (three files),
-  `docs/interview/braincrew-data-portfolio-defense.md`, and `misc/hackathon-talk-captions.ko.vtt`. It is
+  be edited. Pane 1 inspected the private applicant-materials directory a stored note named: it exists
+  but holds only research documents, an interview defense dossier, and a talk-captions file. It is
   not a Git repository, and it holds **no CV source, no CV output, and no workspace with checks**. So the
   artifact #152 targets is either somewhere this session cannot see or does not exist yet. This is an
   owner question, not an implementation gap; nothing was created or edited to work around it. Per
@@ -1213,14 +1213,15 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
 - **What this supersedes.** The entry below concluded that #152 was blocked because no CV source, no CV
   output, and no workspace with checks could be found. That reasoning was wrong and is left standing as
   the record of what was believed. This entry replaces the *grounds*, not the conclusion.
-- **The search error.** Pane 1 inspected `/Users/astralpig/braincrew-private/` because a stored note
-  named it as where applicant materials live. That directory is real and does hold research documents
-  and an interview dossier — but the submission workspace is a different directory,
-  `/Users/astralpig/braincrew-submission-private/`, holding `cv/Braincrew_CV_KO_source.md`, its `.docx`
-  and `.pdf` outputs, and a `README.md` with a manual submission checklist and stop conditions. One
-  `find` against one remembered path was treated as a census of the filesystem; it was not.
-- **What the owner then supplied, and what it changes.** The CV of record is
-  `~/Downloads/채동훈_CV.pdf`, authored with Claude Design. Measured: three pages against the
+- **The search error.** Pane 1 inspected the one private directory a stored note named as where
+  applicant materials live. That directory is real and does hold research documents and an interview
+  dossier — but the submission workspace is a different private directory, holding a CV source, its
+  rendered outputs, and a README with a manual submission checklist and stop conditions. One
+  `find` against one remembered path was treated as a census of the filesystem; it was not. Local paths
+  and private filenames are omitted from this record on purpose; naming them would put private-workspace
+  detail into a recruiter-facing document for no evaluation benefit.
+- **What the owner then supplied, and what it changes.** The CV of record was
+  authored with Claude Design. Measured: three pages against the
   workspace CV's one; a different content hash; nine hours newer; **zero embedded URI links**; metadata
   showing a macOS print export with creator `Claude`. An artifact listing under the owner's account
   returned only one unrelated published artifact from 2026-07-13, so the document was not published as
@@ -1274,8 +1275,8 @@ live 운영 적용이나 Braincrew Issue #38 시작이 아니다.
   rewriting historic status entries. Reconcile only through a superseding note in a newer document —
   this entry is that note.
 - **Next action and its entry condition.** [#152](https://github.com/DHChe/evidence-first-rag-evaluation/issues/152)
-  is unblocked by #150 but **cannot start**: the private applicant-materials path
-  `/Users/astralpig/braincrew-private/` holds only research documents, an interview defense dossier,
+  is unblocked by #150 but **cannot start**: the private applicant-materials directory a stored note
+  named holds only research documents, an interview defense dossier,
   and a talk-captions file — no CV source, no CV output, and no workspace with the structural and
   rendered-output checks #152's verification requires. The owner must say where the CV lives, or
   whether it exists yet. No CV artifact was created or edited to work around this, and by #147's
